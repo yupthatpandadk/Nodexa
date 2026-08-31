@@ -5,6 +5,7 @@ use App\Models\Server;
 use App\Services\DaemonClient;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ServerController extends Controller
@@ -18,7 +19,14 @@ class ServerController extends Controller
             'name'=>'required|string|max:120','node_id'=>'required|exists:nodes,id','docker_image'=>'required|string',
             'startup'=>'required|string','memory_mb'=>'required|integer|min:128','disk_mb'=>'required|integer|min:512','cpu_limit'=>'required|integer|min:0|max:1000','environment'=>'array'
         ]);
-        $server = Server::create($data + ['uuid'=>(string) Str::uuid(),'owner_id'=>$r->user()->id,'status'=>'installing']);
+        $server = DB::transaction(function () use ($data, $r) {
+            $last = Server::query()->lockForUpdate()->max('server_number') ?? 0;
+            $number = $last + 1;
+            return Server::create($data + [
+                'uuid'=>(string) Str::uuid(), 'server_number'=>$number, 'identifier'=>'s'.$number,
+                'owner_id'=>$r->user()->id, 'status'=>'installing'
+            ]);
+        });
         $daemon->createServer($server->load('node'));
         $server->update(['status'=>'offline']);
         return response()->json($server, 201);
