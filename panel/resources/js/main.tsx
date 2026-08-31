@@ -5,4 +5,5 @@ import App from './App';
 import './styles.css';
 import './permissions.css';
 import './phpmyadmin.css';
+import './schedules.css';
 ReactDOM.createRoot(document.getElementById('app')!).render(<BrowserRouter><App /></BrowserRouter>);
