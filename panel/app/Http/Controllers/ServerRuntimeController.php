@@ -10,7 +10,7 @@ class ServerRuntimeController extends Controller
 {
     private function authorizeServer(Request $request, Server $server): void
     {
-        abort_unless($server->owner_id === $request->user()->id, 403);
+        abort_unless((bool)$request->user()->is_admin || $server->owner_id === $request->user()->id, 403);
     }
 
     public function stats(Request $request, Server $server, DaemonClient $daemon)
