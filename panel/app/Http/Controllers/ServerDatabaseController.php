@@ -11,26 +11,29 @@ use Illuminate\Support\Str;
 
 class ServerDatabaseController extends Controller
 {
-    private function authorizeServer(Request $request, Server $server): void
+    private function authorizeServer(Request $request, Server $server, string $permission): void
     {
         $user = $request->user();
-        $owner = $server->owner_id === $user->id;
-        $subuser = $server->subusers()->where('user_id', $user->id)->get()->contains(function ($entry) {
-            $permissions = $entry->permissions ?? [];
-            return in_array('database.read', $permissions, true) || in_array('database.*', $permissions, true);
-        });
-        abort_unless($owner || $subuser || (bool)$user->is_admin, 403);
+        if ((bool)$user->is_admin || $server->owner_id === $user->id) return;
+
+        $entry = $server->subusers()->where('user_id', $user->id)->first();
+        $permissions = $entry?->permissions ?? [];
+        abort_unless(
+            in_array('database.*', $permissions, true) || in_array($permission, $permissions, true),
+            403,
+            'You do not have permission to perform this database action.'
+        );
     }
 
     public function index(Request $request, Server $server)
     {
-        $this->authorizeServer($request, $server);
+        $this->authorizeServer($request, $server, 'database.read');
         return $server->databases()->select(['id','server_id','name','username','host','port','created_at'])->get();
     }
 
     public function store(Request $request, Server $server, DatabaseProvisioner $provisioner)
     {
-        $this->authorizeServer($request, $server);
+        $this->authorizeServer($request, $server, 'database.create');
         $data = $request->validate(['name'=>['required','string','max:40','regex:/^[A-Za-z0-9_-]+$/']]);
         abort_unless($server->server_number, 409, 'Server does not have a Nodexa server number yet.');
         $dbName = 's'.$server->server_number.'_'.$data['name'];
@@ -51,14 +54,14 @@ class ServerDatabaseController extends Controller
 
     public function credentials(Request $request, Server $server, ServerDatabase $database)
     {
-        $this->authorizeServer($request, $server);
+        $this->authorizeServer($request, $server, 'database.credentials');
         abort_unless($database->server_id === $server->id, 404);
         return ['name'=>$database->name,'username'=>$database->username,'password'=>$database->plainPassword(),'host'=>$database->host,'port'=>$database->port];
     }
 
     public function openPhpMyAdmin(Request $request, Server $server, ServerDatabase $database)
     {
-        $this->authorizeServer($request, $server);
+        $this->authorizeServer($request, $server, 'database.read');
         abort_unless($database->server_id === $server->id, 404);
         $token = Str::random(64);
         Cache::put('nodexa:pma:'.$token, [
@@ -71,7 +74,7 @@ class ServerDatabaseController extends Controller
 
     public function destroy(Request $request, Server $server, ServerDatabase $database, DatabaseProvisioner $provisioner)
     {
-        $this->authorizeServer($request, $server);
+        $this->authorizeServer($request, $server, 'database.delete');
         abort_unless($database->server_id === $server->id, 404);
         $provisioner->delete($database->name, $database->username);
         $database->delete();
