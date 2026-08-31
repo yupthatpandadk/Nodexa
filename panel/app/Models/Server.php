@@ -16,4 +16,5 @@ class Server extends Model
     public function node() { return $this->belongsTo(Node::class); }
     public function databases(): HasMany { return $this->hasMany(ServerDatabase::class); }
     public function subusers(): HasMany { return $this->hasMany(Subuser::class); }
+    public function schedules(): HasMany { return $this->hasMany(Schedule::class); }
 }
