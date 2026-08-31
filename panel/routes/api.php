@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\ServerRuntimeController;
+use App\Http\Controllers\ServerDatabaseController;
 use App\Http\Controllers\NodeController;
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -19,6 +20,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/servers/{server}/directory', [ServerRuntimeController::class, 'mkdir']);
     Route::delete('/servers/{server}/file', [ServerRuntimeController::class, 'deleteFile']);
     Route::post('/servers/{server}/backups', [ServerRuntimeController::class, 'backup']);
+
+    Route::get('/servers/{server}/databases', [ServerDatabaseController::class, 'index']);
+    Route::post('/servers/{server}/databases', [ServerDatabaseController::class, 'store']);
+    Route::get('/servers/{server}/databases/{database}/credentials', [ServerDatabaseController::class, 'credentials']);
+    Route::delete('/servers/{server}/databases/{database}', [ServerDatabaseController::class, 'destroy']);
+
     Route::get('/nodes', [NodeController::class, 'index']);
     Route::post('/nodes', [NodeController::class, 'store']);
 });
