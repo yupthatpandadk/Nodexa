@@ -1,0 +1,15 @@
+{
+  "name": "nodexa-ui",
+  "private": true,
+  "scripts": {"dev":"vite","build":"vite build"},
+  "dependencies": {
+    "@vitejs/plugin-react":"latest",
+    "axios":"latest",
+    "react":"latest",
+    "react-dom":"latest",
+    "react-router-dom":"latest",
+    "typescript":"latest",
+    "vite":"latest"
+  },
+  "devDependencies": {}
+}
