@@ -1,0 +1,25 @@
+services:
+  mariadb:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: nodexa
+      MARIADB_USER: nodexa
+      MARIADB_PASSWORD: change-me
+      MARIADB_ROOT_PASSWORD: change-root-me
+    volumes: ["db:/var/lib/mysql"]
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+  agent:
+    build: ./agent
+    restart: unless-stopped
+    environment:
+      NODEXA_TOKEN: change-node-token
+      NODEXA_DATA: /var/lib/nodexa/servers
+    ports: ["8080:8080"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/nodexa:/var/lib/nodexa
+volumes:
+  db:
