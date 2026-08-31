@@ -1,17 +1,18 @@
 {
-  "name": "nodexa-ui",
-  "private": true,
-  "scripts": {"dev":"vite","build":"vite build"},
-  "dependencies": {
+  "name":"nodexa-ui",
+  "private":true,
+  "scripts":{"dev":"vite","build":"vite build"},
+  "dependencies":{
     "axios":"latest",
     "react":"latest",
     "react-dom":"latest",
     "react-router-dom":"latest"
   },
-  "devDependencies": {
+  "devDependencies":{
     "@types/react":"latest",
     "@types/react-dom":"latest",
     "@vitejs/plugin-react":"latest",
+    "laravel-vite-plugin":"latest",
     "typescript":"latest",
     "vite":"latest"
   }
