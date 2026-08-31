@@ -41,7 +41,22 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get install -y ca-certificates curl gnupg unzip tar git nginx mariadb-server redis-server \
   php-cli php-fpm php-mysql php-sqlite3 php-redis php-mbstring php-xml php-curl php-zip php-bcmath php-gd php-intl \
-  composer nodejs npm build-essential pkg-config docker.io
+  composer build-essential pkg-config docker.io
+
+log "Installing Node.js 22..."
+install -m 0755 -d /etc/apt/keyrings
+rm -f /etc/apt/keyrings/nodesource.gpg
+curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+chmod a+r /etc/apt/keyrings/nodesource.gpg
+echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" > /etc/apt/sources.list.d/nodesource.list
+apt-get update -y
+apt-get install -y nodejs
+NODE_VERSION="$(node -p 'process.versions.node')"
+NODE_MAJOR="${NODE_VERSION%%.*}"
+if [[ "$NODE_MAJOR" -lt 22 ]]; then
+  fail "Node.js 22+ is required, but ${NODE_VERSION} was installed."
+fi
+log "Node.js ${NODE_VERSION} and npm $(npm --version) ready."
 
 systemctl enable --now mariadb redis-server docker nginx
 
