@@ -9,7 +9,14 @@ trap 'rm -rf "$TMP"' EXIT
 if [[ $EUID -ne 0 ]]; then echo "[Nodexa] Run as root: sudo -i" >&2; exit 1; fi
 command -v curl >/dev/null 2>&1 || { apt-get update -y && apt-get install -y curl; }
 command -v unzip >/dev/null 2>&1 || { apt-get update -y && apt-get install -y unzip; }
+
+NODEXA_SOURCE_COMMIT="$(curl -fsSL -H 'Accept: application/vnd.github+json' -H 'User-Agent: Nodexa-Installer' "https://api.github.com/repos/${REPO}/commits/${BRANCH}" 2>/dev/null | sed -n 's/^[[:space:]]*"sha": "\([0-9a-f]\{40\}\)",/\1/p' | head -n1 || true)"
+export NODEXA_SOURCE_COMMIT
+export NODEXA_UPDATE_REPOSITORY="$REPO"
+export NODEXA_UPDATE_BRANCH="$BRANCH"
+
 echo "[Nodexa] Downloading installer ${VERSION}..."
+[[ -n "$NODEXA_SOURCE_COMMIT" ]] && echo "[Nodexa] Source commit: ${NODEXA_SOURCE_COMMIT:0:8}"
 curl -fL "$URL" -o "$TMP/nodexa.zip"
 unzip -q "$TMP/nodexa.zip" -d "$TMP/src"
 MENU="$(find "$TMP/src" -type f -path '*/installer/local-menu.sh' | head -n1)"
