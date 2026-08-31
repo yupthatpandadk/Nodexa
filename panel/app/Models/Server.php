@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Server extends Model
 {
@@ -13,5 +14,6 @@ class Server extends Model
     protected $casts = ['environment'=>'array','memory_mb'=>'integer','disk_mb'=>'integer','cpu_limit'=>'integer','server_number'=>'integer'];
 
     public function node() { return $this->belongsTo(Node::class); }
-    public function databases() { return $this->hasMany(ServerDatabase::class); }
+    public function databases(): HasMany { return $this->hasMany(ServerDatabase::class); }
+    public function subusers(): HasMany { return $this->hasMany(Subuser::class); }
 }
