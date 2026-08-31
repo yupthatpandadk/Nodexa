@@ -11,8 +11,11 @@ class PhpMyAdminGatewayController extends Controller
     {
         $payload = Cache::pull('nodexa:pma:'.$token);
         abort_unless(is_array($payload), 410, 'This phpMyAdmin link has expired or has already been used.');
-        $database = ServerDatabase::findOrFail($payload['database_id']);
+        $database = ServerDatabase::with('databaseHost')->findOrFail($payload['database_id']);
         abort_unless($database->server_id === $payload['server_id'], 403);
+
+        $host = $database->databaseHost?->host ?? $database->host;
+        $port = $database->databaseHost?->port ?? $database->port;
 
         if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
         ini_set('session.use_cookies', '1');
@@ -27,8 +30,8 @@ class PhpMyAdminGatewayController extends Controller
         session_start();
         $_SESSION['PMA_single_signon_user'] = $database->username;
         $_SESSION['PMA_single_signon_password'] = $database->plainPassword();
-        $_SESSION['PMA_single_signon_host'] = $database->host;
-        $_SESSION['PMA_single_signon_port'] = (string)$database->port;
+        $_SESSION['PMA_single_signon_host'] = $host;
+        $_SESSION['PMA_single_signon_port'] = (string)$port;
         $_SESSION['PMA_single_signon_cfgupdate'] = [
             'verbose'=>'Nodexa · '.$database->name,
             'only_db'=>$database->name,
