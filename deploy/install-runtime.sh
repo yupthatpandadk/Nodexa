@@ -40,7 +40,7 @@ log "Installing system packages..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get install -y ca-certificates curl gnupg unzip tar git nginx mariadb-server redis-server \
-  php-cli php-fpm php-mysql php-sqlite3 php-mbstring php-xml php-curl php-zip php-bcmath php-gd php-intl \
+  php-cli php-fpm php-mysql php-sqlite3 php-redis php-mbstring php-xml php-curl php-zip php-bcmath php-gd php-intl \
   composer nodejs npm build-essential pkg-config docker.io
 
 systemctl enable --now mariadb redis-server docker nginx
@@ -59,8 +59,6 @@ mkdir -p "$INSTALL_DIR"
 TMP_LARAVEL="$(mktemp -d)"
 trap 'rm -rf "$TMP_LARAVEL"' EXIT
 
-# Create the Laravel skeleton without running its post-create scripts. Nodexa's
-# own application files and database configuration are applied afterwards.
 composer create-project laravel/laravel:^11.0 "$TMP_LARAVEL/panel" --no-interaction --prefer-dist --no-scripts
 rm -rf "$PANEL_DIR"
 mkdir -p "$PANEL_DIR"
@@ -68,9 +66,6 @@ cp -a "$TMP_LARAVEL/panel/." "$PANEL_DIR/"
 cp -a "$SOURCE_DIR/panel/." "$PANEL_DIR/"
 
 cd "$PANEL_DIR"
-# The repository intentionally does not depend on a stale generated lock file.
-# Resolve the Nodexa composer.json here so Sanctum/Predis and future dependencies
-# are guaranteed to be present on a fresh installation.
 rm -f composer.lock
 composer update --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
@@ -94,6 +89,7 @@ DB_PASSWORD=${DB_PASS}
 CACHE_STORE=redis
 QUEUE_CONNECTION=redis
 SESSION_DRIVER=redis
+REDIS_CLIENT=predis
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 
@@ -104,7 +100,7 @@ ENV
 for kv in \
   "DB_CONNECTION=mysql" "DB_HOST=127.0.0.1" "DB_PORT=3306" "DB_DATABASE=$DB_NAME" \
   "DB_USERNAME=$DB_USER" "DB_PASSWORD=$DB_PASS" "CACHE_STORE=redis" \
-  "QUEUE_CONNECTION=redis" "SESSION_DRIVER=redis"; do
+  "QUEUE_CONNECTION=redis" "SESSION_DRIVER=redis" "REDIS_CLIENT=predis"; do
   key="${kv%%=*}"; val="${kv#*=}"
   if grep -q "^${key}=" .env; then sed -i "0,/^${key}=.*/s||${key}=${val}|" .env; fi
 done
