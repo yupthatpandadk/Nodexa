@@ -50,126 +50,103 @@ setup_wizard(){
  [[ "${NODEXA_SETUP_DONE:-0}" == "1" ]] && return 0
 
  clear 2>/dev/null || true
- echo "============================================================"
- echo "                    Nodexa Setup"
- echo "============================================================"
- echo "This setup configures the same core information you would"
- echo "normally configure separately in a game-panel installation:"
- echo "application, database, Redis, mail, administrator and HTTPS."
- echo
+ echo "################################################################"
+ echo "#                     Nodexa Panel Setup                       #"
+ echo "################################################################"
+ echo ""
+ echo "This setup configures the panel database, timezone, contact"
+ echo "information, first administrator, FQDN, firewall and HTTPS."
+ echo ""
 
- echo "[1/6] Application Environment"
- echo "------------------------------------------------------------"
- if [[ -z "${NODEXA_DOMAIN:-}" ]]; then
-  read -rp "Panel FQDN (example panel.example.com, blank for IP only): " NODEXA_DOMAIN || true
- fi
- NODEXA_DOMAIN="$(normalize_domain "${NODEXA_DOMAIN:-}")"
- NODEXA_DOMAIN="${NODEXA_DOMAIN:-_}"
- if [[ "$NODEXA_DOMAIN" != "_" ]] && ! valid_domain "$NODEXA_DOMAIN"; then
-  fail "Invalid panel domain: $NODEXA_DOMAIN"
- fi
+ echo "################################################################"
+ echo "# Database configuration"
+ echo "################################################################"
+ echo "These credentials are used by Nodexa to communicate with MySQL."
+ echo "For a local database, Nodexa creates the database and user for you."
+ echo ""
 
- if [[ -z "${NODEXA_TIMEZONE:-}" ]]; then
-  read -rp "Application timezone [Europe/Copenhagen]: " NODEXA_TIMEZONE || true
- fi
- NODEXA_TIMEZONE="${NODEXA_TIMEZONE:-Europe/Copenhagen}"
- if [[ ! -e "/usr/share/zoneinfo/$NODEXA_TIMEZONE" ]]; then
-  fail "Unknown timezone: $NODEXA_TIMEZONE"
- fi
-
- if [[ -z "${NODEXA_APP_LOCALE:-}" ]]; then
-  read -rp "Default language/locale [da]: " NODEXA_APP_LOCALE || true
- fi
- NODEXA_APP_LOCALE="${NODEXA_APP_LOCALE:-da}"
-
- echo
- echo "[2/6] Database"
- echo "------------------------------------------------------------"
- if [[ -z "${NODEXA_DB_HOST:-}" ]]; then read -rp "Database host [127.0.0.1]: " NODEXA_DB_HOST || true; fi
  NODEXA_DB_HOST="${NODEXA_DB_HOST:-127.0.0.1}"
- if [[ -z "${NODEXA_DB_PORT:-}" ]]; then read -rp "Database port [3306]: " NODEXA_DB_PORT || true; fi
  NODEXA_DB_PORT="${NODEXA_DB_PORT:-3306}"
- [[ "$NODEXA_DB_PORT" =~ ^[0-9]+$ ]] || fail "Database port must be numeric."
- if [[ -z "${NODEXA_DB_NAME:-}" ]]; then read -rp "Database name [nodexa]: " NODEXA_DB_NAME || true; fi
+ if [[ -z "${NODEXA_DB_NAME:-}" ]]; then
+  read -rp "Database name [nodexa]: " NODEXA_DB_NAME || true
+ fi
  NODEXA_DB_NAME="${NODEXA_DB_NAME:-nodexa}"
- if [[ -z "${NODEXA_DB_USER:-}" ]]; then read -rp "Database username [nodexa]: " NODEXA_DB_USER || true; fi
+ [[ "$NODEXA_DB_NAME" =~ ^[A-Za-z0-9_-]{1,64}$ ]] || fail "Database name may only contain letters, numbers, underscore and dash."
+
+ if [[ -z "${NODEXA_DB_USER:-}" ]]; then
+  read -rp "Database username [nodexa]: " NODEXA_DB_USER || true
+ fi
  NODEXA_DB_USER="${NODEXA_DB_USER:-nodexa}"
+ [[ "$NODEXA_DB_USER" =~ ^[A-Za-z0-9_-]{1,32}$ ]] || fail "Database username may only contain letters, numbers, underscore and dash."
 
  if [[ -z "${NODEXA_DB_PASS+x}" ]]; then
-  if [[ "$NODEXA_DB_HOST" == "127.0.0.1" || "$NODEXA_DB_HOST" == "localhost" ]]; then
-   ask_secret "Database password (blank = generate secure password): " NODEXA_DB_PASS
-   if [[ -z "$NODEXA_DB_PASS" ]]; then NODEXA_DB_PASS="$(openssl rand -hex 24)"; NODEXA_DB_PASSWORD_GENERATED=1; fi
-  else
-   while [[ -z "${NODEXA_DB_PASS:-}" ]]; do ask_secret "Database password: " NODEXA_DB_PASS; done
-  fi
+  ask_secret "Database password (press Enter to generate a secure password): " NODEXA_DB_PASS
  fi
- NODEXA_DB_PASSWORD_GENERATED="${NODEXA_DB_PASSWORD_GENERATED:-0}"
+ if [[ -z "${NODEXA_DB_PASS:-}" ]]; then
+  NODEXA_DB_PASS="$(openssl rand -hex 24)"
+  NODEXA_DB_PASSWORD_GENERATED=1
+ else
+  NODEXA_DB_PASSWORD_GENERATED=0
+ fi
 
- echo
- echo "[3/6] Cache, Session, Queue & Redis"
- echo "------------------------------------------------------------"
- NODEXA_CACHE_STORE="${NODEXA_CACHE_STORE:-redis}"
- NODEXA_SESSION_DRIVER="${NODEXA_SESSION_DRIVER:-redis}"
- NODEXA_QUEUE_CONNECTION="${NODEXA_QUEUE_CONNECTION:-redis}"
- if [[ -z "${NODEXA_REDIS_HOST:-}" ]]; then read -rp "Redis host [127.0.0.1]: " NODEXA_REDIS_HOST || true; fi
- NODEXA_REDIS_HOST="${NODEXA_REDIS_HOST:-127.0.0.1}"
- if [[ -z "${NODEXA_REDIS_PORT:-}" ]]; then read -rp "Redis port [6379]: " NODEXA_REDIS_PORT || true; fi
- NODEXA_REDIS_PORT="${NODEXA_REDIS_PORT:-6379}"
- [[ "$NODEXA_REDIS_PORT" =~ ^[0-9]+$ ]] || fail "Redis port must be numeric."
- if [[ -z "${NODEXA_REDIS_PASSWORD+x}" ]]; then ask_secret "Redis password [none]: " NODEXA_REDIS_PASSWORD; fi
+ echo ""
+ echo "################################################################"
+ echo "# Panel information"
+ echo "################################################################"
 
- echo
- echo "[4/6] Mail"
- echo "------------------------------------------------------------"
- if [[ -z "${NODEXA_MAIL_MAILER:-}" ]]; then
-  read -rp "Mail driver (log/smtp) [log]: " NODEXA_MAIL_MAILER || true
+ if [[ -z "${NODEXA_TIMEZONE:-}" ]]; then
+  read -rp "Select timezone [Europe/Copenhagen]: " NODEXA_TIMEZONE || true
  fi
- NODEXA_MAIL_MAILER="${NODEXA_MAIL_MAILER:-log}"
- case "$NODEXA_MAIL_MAILER" in
-  log) ;;
-  smtp)
-   if [[ -z "${NODEXA_MAIL_HOST:-}" ]]; then read -rp "SMTP host: " NODEXA_MAIL_HOST; fi
-   [[ -n "$NODEXA_MAIL_HOST" ]] || fail "SMTP host is required."
-   if [[ -z "${NODEXA_MAIL_PORT:-}" ]]; then read -rp "SMTP port [587]: " NODEXA_MAIL_PORT || true; fi
-   NODEXA_MAIL_PORT="${NODEXA_MAIL_PORT:-587}"
-   if [[ -z "${NODEXA_MAIL_USERNAME+x}" ]]; then read -rp "SMTP username [none]: " NODEXA_MAIL_USERNAME || true; fi
-   if [[ -z "${NODEXA_MAIL_PASSWORD+x}" ]]; then ask_secret "SMTP password [none]: " NODEXA_MAIL_PASSWORD; fi
-   if [[ -z "${NODEXA_MAIL_ENCRYPTION+x}" ]]; then read -rp "SMTP encryption (tls/ssl/none) [tls]: " NODEXA_MAIL_ENCRYPTION || true; fi
-   NODEXA_MAIL_ENCRYPTION="${NODEXA_MAIL_ENCRYPTION:-tls}"
-   [[ "$NODEXA_MAIL_ENCRYPTION" == "none" ]] && NODEXA_MAIL_ENCRYPTION=""
-   ;;
-  *) fail "Mail driver must be log or smtp.";;
- esac
+ NODEXA_TIMEZONE="${NODEXA_TIMEZONE:-Europe/Copenhagen}"
+ [[ -e "/usr/share/zoneinfo/$NODEXA_TIMEZONE" ]] || fail "Unknown timezone: $NODEXA_TIMEZONE"
+ NODEXA_APP_LOCALE="${NODEXA_APP_LOCALE:-da}"
 
- echo
- echo "[5/6] Administrator Account"
- echo "------------------------------------------------------------"
- echo "Create the first Nodexa administrator account."
- if [[ -z "${NODEXA_ADMIN_FIRST_NAME:-}" ]]; then
-  while [[ -z "${NODEXA_ADMIN_FIRST_NAME:-}" ]]; do read -rp "First name: " NODEXA_ADMIN_FIRST_NAME || true; done
+ if [[ -z "${NODEXA_CONTACT_EMAIL:-}" ]]; then
+  while true; do
+   read -rp "Email used for Nodexa and Let's Encrypt: " NODEXA_CONTACT_EMAIL || true
+   [[ "$NODEXA_CONTACT_EMAIL" == *@*.* ]] && break
+   echo "Please enter a valid email address."
+  done
  fi
- if [[ -z "${NODEXA_ADMIN_LAST_NAME:-}" ]]; then
-  while [[ -z "${NODEXA_ADMIN_LAST_NAME:-}" ]]; do read -rp "Last name: " NODEXA_ADMIN_LAST_NAME || true; done
+ [[ "$NODEXA_CONTACT_EMAIL" == *@*.* ]] || fail "Invalid contact email."
+
+ echo ""
+ echo "################################################################"
+ echo "# Initial administrator account"
+ echo "################################################################"
+ echo "You choose the account information yourself. Nodexa does not"
+ echo "generate or store your administrator password in plaintext."
+ echo ""
+
+ if [[ -z "${NODEXA_ADMIN_EMAIL:-}" ]]; then
+  read -rp "Email address for the initial admin account [${NODEXA_CONTACT_EMAIL}]: " NODEXA_ADMIN_EMAIL || true
  fi
+ NODEXA_ADMIN_EMAIL="${NODEXA_ADMIN_EMAIL:-$NODEXA_CONTACT_EMAIL}"
+ [[ "$NODEXA_ADMIN_EMAIL" == *@*.* ]] || fail "Invalid administrator email."
+
  if [[ -z "${NODEXA_ADMIN_USERNAME:-}" ]]; then
   while true; do
-   read -rp "Username: " NODEXA_ADMIN_USERNAME || true
+   read -rp "Username for the initial admin account: " NODEXA_ADMIN_USERNAME || true
    [[ "$NODEXA_ADMIN_USERNAME" =~ ^[A-Za-z0-9._-]{3,64}$ ]] && break
    echo "Use 3-64 letters, numbers, dot, underscore or dash."
   done
  fi
- if [[ -z "${NODEXA_ADMIN_EMAIL:-}" ]]; then
-  while true; do
-   read -rp "Email address: " NODEXA_ADMIN_EMAIL || true
-   [[ "$NODEXA_ADMIN_EMAIL" == *@*.* ]] && break
-   echo "Please enter a valid email address."
+
+ if [[ -z "${NODEXA_ADMIN_FIRST_NAME:-}" ]]; then
+  while [[ -z "${NODEXA_ADMIN_FIRST_NAME:-}" ]]; do
+   read -rp "First name for the initial admin account: " NODEXA_ADMIN_FIRST_NAME || true
+  done
+ fi
+ if [[ -z "${NODEXA_ADMIN_LAST_NAME:-}" ]]; then
+  while [[ -z "${NODEXA_ADMIN_LAST_NAME:-}" ]]; do
+   read -rp "Last name for the initial admin account: " NODEXA_ADMIN_LAST_NAME || true
   done
  fi
 
  if [[ -z "${NODEXA_ADMIN_PASSWORD:-}" ]]; then
   while true; do
-   ask_secret "Password (minimum 12 characters): " NODEXA_ADMIN_PASSWORD
-   ask_secret "Confirm password: " NODEXA_ADMIN_PASSWORD_CONFIRM
+   ask_secret "Password for the initial admin account (minimum 12 characters): " NODEXA_ADMIN_PASSWORD
+   ask_secret "Confirm admin password: " NODEXA_ADMIN_PASSWORD_CONFIRM
    if [[ ${#NODEXA_ADMIN_PASSWORD} -lt 12 ]]; then
     echo "Password must be at least 12 characters."
     NODEXA_ADMIN_PASSWORD=""
@@ -184,64 +161,86 @@ setup_wizard(){
   done
  fi
 
- if [[ -z "${NODEXA_MAIL_FROM_ADDRESS:-}" ]]; then
-  read -rp "Mail from address [${NODEXA_ADMIN_EMAIL}]: " NODEXA_MAIL_FROM_ADDRESS || true
- fi
- NODEXA_MAIL_FROM_ADDRESS="${NODEXA_MAIL_FROM_ADDRESS:-$NODEXA_ADMIN_EMAIL}"
- if [[ -z "${NODEXA_MAIL_FROM_NAME:-}" ]]; then read -rp "Mail from name [Nodexa]: " NODEXA_MAIL_FROM_NAME || true; fi
- NODEXA_MAIL_FROM_NAME="${NODEXA_MAIL_FROM_NAME:-Nodexa}"
+ echo ""
+ echo "################################################################"
+ echo "# Web configuration"
+ echo "################################################################"
 
- echo
- echo "[6/6] HTTPS / Let's Encrypt"
- echo "------------------------------------------------------------"
- if [[ "$NODEXA_DOMAIN" == "_" ]]; then
-  NODEXA_ENABLE_SSL=0
-  echo "No FQDN selected; Let's Encrypt will be skipped."
- else
-  if [[ -z "${NODEXA_ENABLE_SSL:-}" ]]; then
-   if ask_yes_no "Enable free HTTPS with Let's Encrypt? [Y/n]: " y; then NODEXA_ENABLE_SSL=1; else NODEXA_ENABLE_SSL=0; fi
+ if [[ -z "${NODEXA_DOMAIN:-}" ]]; then
+  read -rp "Set the FQDN of this panel (panel.example.com, blank for IP): " NODEXA_DOMAIN || true
+ fi
+ NODEXA_DOMAIN="$(normalize_domain "${NODEXA_DOMAIN:-}")"
+ NODEXA_DOMAIN="${NODEXA_DOMAIN:-_}"
+ if [[ "$NODEXA_DOMAIN" != "_" ]] && ! valid_domain "$NODEXA_DOMAIN"; then
+  fail "Invalid panel FQDN: $NODEXA_DOMAIN"
+ fi
+
+ if [[ -z "${NODEXA_CONFIGURE_UFW:-}" ]]; then
+  if ask_yes_no "Automatically configure UFW firewall? (y/N): " n; then
+   NODEXA_CONFIGURE_UFW=1
+  else
+   NODEXA_CONFIGURE_UFW=0
   fi
  fi
 
- if [[ "${NODEXA_ENABLE_SSL:-0}" == "1" ]]; then
-  if [[ -z "${NODEXA_SSL_EMAIL:-}" ]]; then read -rp "Let's Encrypt email [${NODEXA_ADMIN_EMAIL}]: " NODEXA_SSL_EMAIL || true; fi
-  NODEXA_SSL_EMAIL="${NODEXA_SSL_EMAIL:-$NODEXA_ADMIN_EMAIL}"
-  [[ "$NODEXA_SSL_EMAIL" == *@*.* ]] || fail "Invalid Let's Encrypt email."
+ if [[ "$NODEXA_DOMAIN" == "_" ]]; then
+  NODEXA_ENABLE_SSL=0
+  echo "HTTPS via Let's Encrypt is unavailable without an FQDN."
+ else
+  if [[ -z "${NODEXA_ENABLE_SSL:-}" ]]; then
+   if ask_yes_no "Automatically configure HTTPS using Let's Encrypt? (y/N): " n; then
+    NODEXA_ENABLE_SSL=1
+   else
+    NODEXA_ENABLE_SSL=0
+   fi
+  fi
  fi
+ NODEXA_SSL_EMAIL="${NODEXA_SSL_EMAIL:-$NODEXA_CONTACT_EMAIL}"
 
- echo
- echo "============================================================"
- echo "Configuration summary"
- echo "============================================================"
- echo "Panel FQDN:       $([[ "$NODEXA_DOMAIN" == "_" ]] && echo 'IP only' || echo "$NODEXA_DOMAIN")"
- echo "Timezone:         ${NODEXA_TIMEZONE}"
- echo "Locale:           ${NODEXA_APP_LOCALE}"
- echo "Database:         ${NODEXA_DB_USER}@${NODEXA_DB_HOST}:${NODEXA_DB_PORT}/${NODEXA_DB_NAME}"
+ # Keep Redis local by default. Advanced mail/Redis settings can be changed in
+ # Nodexa after installation or supplied as NODEXA_* environment variables.
+ NODEXA_CACHE_STORE="${NODEXA_CACHE_STORE:-redis}"
+ NODEXA_SESSION_DRIVER="${NODEXA_SESSION_DRIVER:-redis}"
+ NODEXA_QUEUE_CONNECTION="${NODEXA_QUEUE_CONNECTION:-redis}"
+ NODEXA_REDIS_HOST="${NODEXA_REDIS_HOST:-127.0.0.1}"
+ NODEXA_REDIS_PORT="${NODEXA_REDIS_PORT:-6379}"
+ NODEXA_REDIS_PASSWORD="${NODEXA_REDIS_PASSWORD:-}"
+ NODEXA_MAIL_MAILER="${NODEXA_MAIL_MAILER:-log}"
+ NODEXA_MAIL_FROM_ADDRESS="${NODEXA_MAIL_FROM_ADDRESS:-$NODEXA_CONTACT_EMAIL}"
+ NODEXA_MAIL_FROM_NAME="${NODEXA_MAIL_FROM_NAME:-Nodexa}"
+
+ echo ""
+ echo "################################################################"
+ echo "# Configuration summary"
+ echo "################################################################"
+ echo "Database name:     ${NODEXA_DB_NAME}"
+ echo "Database username: ${NODEXA_DB_USER}"
  echo "Database password: ************"
- echo "Redis:            ${NODEXA_REDIS_HOST}:${NODEXA_REDIS_PORT}"
- echo "Mail:             ${NODEXA_MAIL_MAILER}"
- echo "Administrator:    ${NODEXA_ADMIN_FIRST_NAME} ${NODEXA_ADMIN_LAST_NAME} (${NODEXA_ADMIN_USERNAME})"
- echo "Admin email:      ${NODEXA_ADMIN_EMAIL}"
- echo "Admin password:   ************"
- echo "HTTPS:            $([[ "${NODEXA_ENABLE_SSL:-0}" == "1" ]] && echo "Let's Encrypt" || echo 'Disabled')"
- echo "Updates:          Admin → Opdateringer"
- echo
+ echo "Timezone:          ${NODEXA_TIMEZONE}"
+ echo "Contact email:     ${NODEXA_CONTACT_EMAIL}"
+ echo "Admin account:     ${NODEXA_ADMIN_USERNAME} (${NODEXA_ADMIN_FIRST_NAME} ${NODEXA_ADMIN_LAST_NAME})"
+ echo "Admin email:       ${NODEXA_ADMIN_EMAIL}"
+ echo "Admin password:    ************"
+ echo "Panel FQDN:        $([[ "$NODEXA_DOMAIN" == "_" ]] && echo 'IP only' || echo "$NODEXA_DOMAIN")"
+ echo "UFW firewall:      $([[ "$NODEXA_CONFIGURE_UFW" == "1" ]] && echo 'Configure automatically' || echo 'Leave unchanged')"
+ echo "HTTPS:             $([[ "${NODEXA_ENABLE_SSL:-0}" == "1" ]] && echo "Let's Encrypt" || echo 'Disabled')"
+ echo "Updates:           Admin → Opdateringer"
+ echo ""
 
  if [[ "${NODEXA_SKIP_CONFIRM:-0}" != "1" && -t 0 ]]; then
-  if ! ask_yes_no "Save these settings and start installation? [Y/n]: " y; then
+  if ! ask_yes_no "Start installation with these settings? [Y/n]: " y; then
    echo "Installation cancelled."
    exit 0
   fi
  fi
 
- export NODEXA_DOMAIN NODEXA_TIMEZONE NODEXA_APP_LOCALE
+ export NODEXA_DOMAIN NODEXA_TIMEZONE NODEXA_APP_LOCALE NODEXA_CONTACT_EMAIL
  export NODEXA_DB_HOST NODEXA_DB_PORT NODEXA_DB_NAME NODEXA_DB_USER NODEXA_DB_PASS NODEXA_DB_PASSWORD_GENERATED
  export NODEXA_CACHE_STORE NODEXA_SESSION_DRIVER NODEXA_QUEUE_CONNECTION NODEXA_REDIS_HOST NODEXA_REDIS_PORT NODEXA_REDIS_PASSWORD
- export NODEXA_MAIL_MAILER NODEXA_MAIL_HOST NODEXA_MAIL_PORT NODEXA_MAIL_USERNAME NODEXA_MAIL_PASSWORD NODEXA_MAIL_ENCRYPTION NODEXA_MAIL_FROM_ADDRESS NODEXA_MAIL_FROM_NAME
+ export NODEXA_MAIL_MAILER NODEXA_MAIL_FROM_ADDRESS NODEXA_MAIL_FROM_NAME
  export NODEXA_ADMIN_FIRST_NAME NODEXA_ADMIN_LAST_NAME NODEXA_ADMIN_USERNAME NODEXA_ADMIN_EMAIL NODEXA_ADMIN_PASSWORD
- export NODEXA_ENABLE_SSL NODEXA_SSL_EMAIL
+ export NODEXA_CONFIGURE_UFW NODEXA_ENABLE_SSL NODEXA_SSL_EMAIL
  export NODEXA_SETUP_DONE=1
 }
 
-# Backwards-compatible helper used by installer scripts.
 ask_domain(){ setup_wizard; }
