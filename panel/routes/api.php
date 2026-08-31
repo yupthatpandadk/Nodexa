@@ -66,6 +66,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/database-hosts/{databaseHost}', [DatabaseHostController::class, 'destroy']);
 
     Route::get('/system-errors', [SystemIssueController::class, 'index']);
+    Route::post('/system-errors/scan-all', [SystemIssueController::class, 'scanAll']);
+    Route::post('/system-errors/scan-system', [SystemIssueController::class, 'scanSystem']);
     Route::post('/system-errors/scan-nodes', [SystemIssueController::class, 'scanNodes']);
     Route::post('/system-errors/client', [SystemIssueController::class, 'clientError']);
     Route::post('/system-errors/{issue}/resolve', [SystemIssueController::class, 'resolve']);
