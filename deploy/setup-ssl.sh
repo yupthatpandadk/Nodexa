@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 [[ $EUID -eq 0 ]] || { echo "[Nodexa] setup-ssl.sh must run as root." >&2; exit 1; }
 
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
 PANEL_DIR="${NODEXA_PANEL_DIR:-/var/www/nodexa/panel}"
 DOMAIN="${NODEXA_DOMAIN:-_}"
 ENABLE_SSL="${NODEXA_ENABLE_SSL:-0}"
@@ -13,6 +14,9 @@ log(){ printf '\n\033[1;36m[Nodexa]\033[0m %s\n' "$*"; }
 warn(){ printf '\n\033[1;33m[Nodexa WARN]\033[0m %s\n' "$*" >&2; }
 
 mkdir -p "$STATE_DIR"
+if [[ "$SELF" != "/usr/local/sbin/nodexa-ssl-setup" ]]; then
+ install -m 0755 "$SELF" /usr/local/sbin/nodexa-ssl-setup
+fi
 
 set_app_url(){
  local url="$1"
@@ -53,7 +57,7 @@ log "Checking DNS for ${DOMAIN}..."
 RESOLVED="$(getent ahostsv4 "$DOMAIN" 2>/dev/null | awk '{print $1}' | sort -u | tr '\n' ' ' | sed 's/[[:space:]]*$//' || true)"
 if [[ -z "$RESOLVED" ]]; then
  warn "${DOMAIN} does not resolve yet. Nodexa installation will finish over HTTP."
- warn "After DNS has propagated, rerun: NODEXA_DOMAIN=${DOMAIN} NODEXA_ENABLE_SSL=1 NODEXA_SSL_EMAIL=${SSL_EMAIL} bash ${PANEL_DIR%/panel}/deploy/setup-ssl.sh"
+ warn "After DNS has propagated, run: NODEXA_DOMAIN=${DOMAIN} NODEXA_ENABLE_SSL=1 NODEXA_SSL_EMAIL=${SSL_EMAIL} nodexa-ssl-setup"
  printf '{"enabled":false,"status":"waiting_for_dns","domain":"%s","updated_at":"%s"}\n' "$DOMAIN" "$(date --iso-8601=seconds)" > "$STATE_DIR/ssl.json"
  chmod 0644 "$STATE_DIR/ssl.json"
  exit 0
@@ -86,7 +90,7 @@ if certbot --nginx \
  log "HTTPS is active: https://${DOMAIN}"
 else
  warn "Let's Encrypt could not issue the certificate. Nodexa remains available at http://${DOMAIN}."
- warn "Check that DNS points to this VPS and ports 80/443 are open, then retry SSL setup."
+ warn "Check DNS and ports 80/443, then run: NODEXA_DOMAIN=${DOMAIN} NODEXA_ENABLE_SSL=1 NODEXA_SSL_EMAIL=${SSL_EMAIL} nodexa-ssl-setup"
  printf '{"enabled":false,"status":"certbot_failed","domain":"%s","updated_at":"%s"}\n' "$DOMAIN" "$(date --iso-8601=seconds)" > "$STATE_DIR/ssl.json"
  chmod 0644 "$STATE_DIR/ssl.json"
  exit 0
