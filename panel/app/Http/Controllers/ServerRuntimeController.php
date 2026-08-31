@@ -12,7 +12,8 @@ class ServerRuntimeController extends Controller
     {
         $user = $request->user();
         if ((bool)$user->is_admin || $server->owner_id === $user->id) return;
-        $permissions = $server->subusers()->where('user_id', $user->id)->value('permissions') ?? [];
+        $entry = $server->subusers()->where('user_id', $user->id)->first();
+        $permissions = $entry?->permissions ?? [];
         abort_unless(in_array($permission, $permissions, true), 403, 'You do not have permission to perform this action.');
     }
 
