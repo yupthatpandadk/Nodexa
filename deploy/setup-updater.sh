@@ -43,11 +43,14 @@ visudo -cf /etc/sudoers.d/nodexa-updater >/dev/null
 
 systemctl daemon-reload
 
-LATEST_SHA="$(curl -fsSL -H 'Accept: application/vnd.github+json' -H 'User-Agent: Nodexa-Updater' "https://api.github.com/repos/${REPO}/commits/${BRANCH}" 2>/dev/null | sed -n 's/^[[:space:]]*"sha": "\([0-9a-f]\{40\}\)",/\1/p' | head -n1 || true)"
+INSTALLED_SHA="${NODEXA_SOURCE_COMMIT:-}"
+if [[ -z "$INSTALLED_SHA" ]]; then
+  INSTALLED_SHA="$(curl -fsSL -H 'Accept: application/vnd.github+json' -H 'User-Agent: Nodexa-Updater' "https://api.github.com/repos/${REPO}/commits/${BRANCH}" 2>/dev/null | sed -n 's/^[[:space:]]*"sha": "\([0-9a-f]\{40\}\)",/\1/p' | head -n1 || true)"
+fi
 
-if [[ -n "$LATEST_SHA" ]]; then
+if [[ -n "$INSTALLED_SHA" ]]; then
   printf '{"version":"%s","commit":"%s","repository":"%s","branch":"%s","installed_at":"%s"}\n' \
-    "$VERSION" "$LATEST_SHA" "$REPO" "$BRANCH" "$(date --iso-8601=seconds)" > "$STATE_DIR/version.json"
+    "$VERSION" "$INSTALLED_SHA" "$REPO" "$BRANCH" "$(date --iso-8601=seconds)" > "$STATE_DIR/version.json"
   chmod 0644 "$STATE_DIR/version.json"
 fi
 
