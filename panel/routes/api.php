@@ -1,13 +1,17 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\ServerRuntimeController;
 use App\Http\Controllers\ServerDatabaseController;
 use App\Http\Controllers\NodeController;
 
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [UserController::class, 'me']);
 
     Route::get('/servers', [ServerController::class, 'index']);
