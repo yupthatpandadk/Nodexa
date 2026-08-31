@@ -10,6 +10,7 @@ use App\Http\Controllers\ServerSubuserController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\NodeController;
 use App\Http\Controllers\DatabaseHostController;
+use App\Http\Controllers\AdminServerStartupController;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
@@ -47,6 +48,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/servers/{server}/users', [ServerSubuserController::class, 'store']);
     Route::put('/servers/{server}/users/{subuser}', [ServerSubuserController::class, 'update']);
     Route::delete('/servers/{server}/users/{subuser}', [ServerSubuserController::class, 'destroy']);
+
+    Route::get('/admin/servers/{server}/startup', [AdminServerStartupController::class, 'show']);
+    Route::put('/admin/servers/{server}/startup', [AdminServerStartupController::class, 'update']);
 
     Route::get('/nodes', [NodeController::class, 'index']);
     Route::post('/nodes', [NodeController::class, 'store']);
