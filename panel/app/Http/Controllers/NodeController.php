@@ -58,15 +58,31 @@ class NodeController extends Controller
 
     private function configurationArray(Node $node, string $token): array
     {
+        $https = $node->scheme === 'https';
+        $internalPort = $https ? 8080 : (int) $node->daemon_port;
+        $panelUrl = rtrim((string) config('app.url'), '/');
+
+        $parts = [
+            'NODEXA_AGENT_TOKEN='.$token,
+            'NODEXA_PANEL_URL='.$panelUrl,
+            'NODEXA_AGENT_FQDN='.$node->fqdn,
+            'NODEXA_AGENT_HTTPS='.($https ? '1' : '0'),
+            'NODEXA_AGENT_PUBLIC_PORT='.(int) $node->daemon_port,
+            'NODEXA_AGENT_INTERNAL_PORT='.$internalPort,
+        ];
+
         return [
             'node_id'=>$node->id,
-            'panel_url'=>config('app.url'),
+            'panel_url'=>$panelUrl,
             'token'=>$token,
-            'listen'=>'0.0.0.0:'.$node->daemon_port,
+            'scheme'=>$node->scheme,
+            'fqdn'=>$node->fqdn,
+            'listen'=>'127.0.0.1:'.$internalPort,
+            'public_port'=>(int) $node->daemon_port,
             'sftp_port'=>$node->sftp_port,
             'data'=>'/var/lib/nodexa',
             'backups'=>'/var/lib/nodexa/backups',
-            'install_command'=>'NODEXA_AGENT_TOKEN='.$token.' NODEXA_AGENT_PORT='.$node->daemon_port.' bash <(curl -fsSL https://raw.githubusercontent.com/yupthatpandadk/Nodexa/main/install.sh) node',
+            'install_command'=>implode(' ', $parts).' bash <(curl -fsSL https://raw.githubusercontent.com/yupthatpandadk/Nodexa/main/install.sh) node',
         ];
     }
 }
