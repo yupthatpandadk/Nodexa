@@ -14,7 +14,8 @@ class ServerController extends Controller
     {
         $user = $request->user();
         if ((bool)$user->is_admin || $server->owner_id === $user->id) return ['*'];
-        return $server->subusers()->where('user_id', $user->id)->value('permissions') ?? [];
+        $entry = $server->subusers()->where('user_id', $user->id)->first();
+        return $entry?->permissions ?? [];
     }
 
     private function authorizeServer(Request $request, Server $server, ?string $permission = null): array
