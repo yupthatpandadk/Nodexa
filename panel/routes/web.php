@@ -9,4 +9,5 @@ Route::get('/database-gateway/{token}', PhpMyAdminGatewayController::class)
 Route::view('/admin/database-hosts', 'admin.database-hosts')->name('admin.database-hosts');
 Route::view('/admin/servers/{server}/startup', 'admin.server-startup')->name('admin.server-startup');
 Route::view('/admin/errors', 'admin-errors')->name('admin.errors');
+Route::view('/admin/update', 'admin-update')->name('admin.update');
 Route::view('/{any?}', 'app')->where('any', '.*');
