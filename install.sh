@@ -1,12 +1,26 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-VERSION="0.9.0"
+VERSION="0.9.1"
 REPO="${NODEXA_REPOSITORY:-yupthatpandadk/Nodexa}"
 BRANCH="${NODEXA_BRANCH:-main}"
 URL="${NODEXA_SOURCE_URL:-https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 if [[ $EUID -ne 0 ]]; then echo "[Nodexa] Run as root: sudo -i" >&2; exit 1; fi
+
+# Recover automatically when a previous apt/dpkg operation was interrupted.
+# This makes Nodexa safe to rerun after a disconnected SSH/mobile session.
+if command -v dpkg >/dev/null 2>&1; then
+  echo "[Nodexa] Checking package-manager state..."
+  export DEBIAN_FRONTEND=noninteractive
+  dpkg --configure -a || {
+    echo "[Nodexa] dpkg configuration needs repair; attempting dependency recovery..."
+    apt-get -f install -y
+    dpkg --configure -a
+  }
+  apt-get -f install -y >/dev/null 2>&1 || true
+fi
+
 command -v curl >/dev/null 2>&1 || { apt-get update -y && apt-get install -y curl; }
 command -v unzip >/dev/null 2>&1 || { apt-get update -y && apt-get install -y unzip; }
 
