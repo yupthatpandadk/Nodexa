@@ -1,1 +1,13 @@
-import { defineConfig } from 'vite';import react from '@vitejs/plugin-react';export default defineConfig({plugins:[react()],build:{outDir:'public/build',manifest:true}});
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import laravel from 'laravel-vite-plugin';
+
+export default defineConfig({
+  plugins: [
+    laravel({
+      input: ['resources/js/main.tsx'],
+      refresh: true,
+    }),
+    react(),
+  ],
+});
