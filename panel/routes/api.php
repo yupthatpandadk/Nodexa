@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\ServerRuntimeController;
 use App\Http\Controllers\ServerDatabaseController;
+use App\Http\Controllers\ServerSubuserController;
 use App\Http\Controllers\NodeController;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
@@ -33,6 +34,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/servers/{server}/databases/{database}/credentials', [ServerDatabaseController::class, 'credentials']);
     Route::post('/servers/{server}/databases/{database}/open', [ServerDatabaseController::class, 'openPhpMyAdmin']);
     Route::delete('/servers/{server}/databases/{database}', [ServerDatabaseController::class, 'destroy']);
+
+    Route::get('/servers/{server}/users', [ServerSubuserController::class, 'index']);
+    Route::post('/servers/{server}/users', [ServerSubuserController::class, 'store']);
+    Route::put('/servers/{server}/users/{subuser}', [ServerSubuserController::class, 'update']);
+    Route::delete('/servers/{server}/users/{subuser}', [ServerSubuserController::class, 'destroy']);
 
     Route::get('/nodes', [NodeController::class, 'index']);
     Route::post('/nodes', [NodeController::class, 'store']);
