@@ -8,6 +8,7 @@ use App\Http\Controllers\ServerRuntimeController;
 use App\Http\Controllers\ServerDatabaseController;
 use App\Http\Controllers\ServerSubuserController;
 use App\Http\Controllers\NodeController;
+use App\Http\Controllers\DatabaseHostController;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
@@ -44,4 +45,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/nodes', [NodeController::class, 'store']);
     Route::get('/nodes/{node}/configuration', [NodeController::class, 'configuration']);
     Route::post('/nodes/{node}/rotate-token', [NodeController::class, 'rotateToken']);
+
+    Route::get('/database-hosts', [DatabaseHostController::class, 'index']);
+    Route::post('/database-hosts', [DatabaseHostController::class, 'store']);
+    Route::put('/database-hosts/{databaseHost}', [DatabaseHostController::class, 'update']);
+    Route::post('/database-hosts/{databaseHost}/test', [DatabaseHostController::class, 'test']);
+    Route::get('/database-hosts/{databaseHost}/credentials', [DatabaseHostController::class, 'credentials']);
+    Route::delete('/database-hosts/{databaseHost}', [DatabaseHostController::class, 'destroy']);
 });
