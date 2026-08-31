@@ -11,7 +11,7 @@ apt-get update -y
 # Avoid phpMyAdmin asking which webserver/dbconfig to manage; Nodexa configures both itself.
 echo 'phpmyadmin phpmyadmin/reconfigure-webserver multiselect' | debconf-set-selections || true
 echo 'phpmyadmin phpmyadmin/dbconfig-install boolean false' | debconf-set-selections || true
-apt-get install -y phpmyadmin php-mbstring php-zip php-gd php-json php-curl
+apt-get install -y phpmyadmin php-mbstring php-zip php-gd php-curl python3
 
 mysql -uroot <<SQL
 CREATE USER IF NOT EXISTS '${DB_ADMIN_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_ADMIN_PASS}';
@@ -47,12 +47,14 @@ if (isset($cfg['Servers'][1])) {
 }
 PHP
 
-# Debian/Ubuntu phpMyAdmin is served through this Nginx alias.
 if [[ -f /etc/nginx/sites-available/nodexa ]] && ! grep -q 'location /phpmyadmin' /etc/nginx/sites-available/nodexa; then
   python3 - <<'PY'
 from pathlib import Path
+import glob
 p=Path('/etc/nginx/sites-available/nodexa')
 s=p.read_text()
+socks=sorted(glob.glob('/run/php/php*-fpm.sock'))
+if not socks: raise SystemExit('No PHP-FPM socket found')
 block=r'''
     location /phpmyadmin/ {
         alias /usr/share/phpmyadmin/;
@@ -67,11 +69,7 @@ block=r'''
         fastcgi_param DOCUMENT_ROOT /usr/share/phpmyadmin;
         fastcgi_pass unix:__PHP_FPM_SOCK__;
     }
-'''
-import glob
-socks=sorted(glob.glob('/run/php/php*-fpm.sock'))
-if not socks: raise SystemExit('No PHP-FPM socket found')
-block=block.replace('__PHP_FPM_SOCK__', socks[-1])
+'''.replace('__PHP_FPM_SOCK__', socks[-1])
 pos=s.rfind('}')
 if pos<0: raise SystemExit('Invalid Nodexa nginx config')
 p.write_text(s[:pos]+block+s[pos:])
