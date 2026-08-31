@@ -1,12 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\ServerRuntimeController;
 use App\Http\Controllers\ServerDatabaseController;
 use App\Http\Controllers\NodeController;
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/me', [UserController::class, 'me']);
+
     Route::get('/servers', [ServerController::class, 'index']);
     Route::post('/servers', [ServerController::class, 'store']);
     Route::get('/servers/{server}', [ServerController::class, 'show']);
@@ -24,8 +27,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/servers/{server}/databases', [ServerDatabaseController::class, 'index']);
     Route::post('/servers/{server}/databases', [ServerDatabaseController::class, 'store']);
     Route::get('/servers/{server}/databases/{database}/credentials', [ServerDatabaseController::class, 'credentials']);
+    Route::post('/servers/{server}/databases/{database}/open', [ServerDatabaseController::class, 'openPhpMyAdmin']);
     Route::delete('/servers/{server}/databases/{database}', [ServerDatabaseController::class, 'destroy']);
 
     Route::get('/nodes', [NodeController::class, 'index']);
     Route::post('/nodes', [NodeController::class, 'store']);
+    Route::get('/nodes/{node}/configuration', [NodeController::class, 'configuration']);
+    Route::post('/nodes/{node}/rotate-token', [NodeController::class, 'rotateToken']);
 });
