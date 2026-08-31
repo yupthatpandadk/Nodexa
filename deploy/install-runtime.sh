@@ -35,11 +35,12 @@ SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 log(){ printf '\n\033[1;36m[Nodexa]\033[0m %s\n' "$*"; }
 fail(){ printf '\n\033[1;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
 
+export COMPOSER_ALLOW_SUPERUSER=1
 log "Installing system packages..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get install -y ca-certificates curl gnupg unzip tar git nginx mariadb-server redis-server \
-  php-cli php-fpm php-mysql php-mbstring php-xml php-curl php-zip php-bcmath php-gd php-intl \
+  php-cli php-fpm php-mysql php-sqlite3 php-mbstring php-xml php-curl php-zip php-bcmath php-gd php-intl \
   composer nodejs npm build-essential pkg-config docker.io
 
 systemctl enable --now mariadb redis-server docker nginx
@@ -58,14 +59,21 @@ mkdir -p "$INSTALL_DIR"
 TMP_LARAVEL="$(mktemp -d)"
 trap 'rm -rf "$TMP_LARAVEL"' EXIT
 
-composer create-project laravel/laravel:^11.0 "$TMP_LARAVEL/panel" --no-interaction --prefer-dist
+# Create the Laravel skeleton without running its post-create scripts. Nodexa's
+# own application files and database configuration are applied afterwards.
+composer create-project laravel/laravel:^11.0 "$TMP_LARAVEL/panel" --no-interaction --prefer-dist --no-scripts
 rm -rf "$PANEL_DIR"
 mkdir -p "$PANEL_DIR"
 cp -a "$TMP_LARAVEL/panel/." "$PANEL_DIR/"
 cp -a "$SOURCE_DIR/panel/." "$PANEL_DIR/"
 
 cd "$PANEL_DIR"
-composer install --no-dev --optimize-autoloader --no-interaction
+# The repository intentionally does not depend on a stale generated lock file.
+# Resolve the Nodexa composer.json here so Sanctum/Predis and future dependencies
+# are guaranteed to be present on a fresh installation.
+rm -f composer.lock
+composer update --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
 cp .env.example .env
 php artisan key:generate --force
 
