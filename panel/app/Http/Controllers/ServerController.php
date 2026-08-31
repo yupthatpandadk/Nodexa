@@ -10,21 +10,39 @@ use Illuminate\Support\Str;
 
 class ServerController extends Controller
 {
-    public function index(Request $r) { return Server::where('owner_id', $r->user()->id)->with('node')->paginate(25); }
-    public function show(Request $r, Server $server) { abort_unless($server->owner_id === $r->user()->id, 403); return $server->load('node'); }
-
-    public function store(Request $r, DaemonClient $daemon)
+    private function authorizeServer(Request $request, Server $server): void
     {
-        $data = $r->validate([
+        abort_unless((bool)$request->user()->is_admin || $server->owner_id === $request->user()->id, 403);
+    }
+
+    public function index(Request $request)
+    {
+        $query = Server::with('node')->orderByDesc('created_at');
+        if (!$request->user()->is_admin) $query->where('owner_id', $request->user()->id);
+        return $query->paginate(25);
+    }
+
+    public function show(Request $request, Server $server)
+    {
+        $this->authorizeServer($request, $server);
+        return $server->load('node');
+    }
+
+    public function store(Request $request, DaemonClient $daemon)
+    {
+        $data = $request->validate([
             'name'=>'required|string|max:120','node_id'=>'required|exists:nodes,id','docker_image'=>'required|string',
-            'startup'=>'required|string','memory_mb'=>'required|integer|min:128','disk_mb'=>'required|integer|min:512','cpu_limit'=>'required|integer|min:0|max:1000','environment'=>'array'
+            'startup'=>'required|string','memory_mb'=>'required|integer|min:128','disk_mb'=>'required|integer|min:512','cpu_limit'=>'required|integer|min:0|max:1000','environment'=>'array',
+            'owner_id'=>'nullable|integer|exists:users,id'
         ]);
-        $server = DB::transaction(function () use ($data, $r) {
+        $ownerId = $request->user()->is_admin && isset($data['owner_id']) ? (int)$data['owner_id'] : $request->user()->id;
+        unset($data['owner_id']);
+        $server = DB::transaction(function () use ($data, $ownerId) {
             $last = Server::query()->lockForUpdate()->max('server_number') ?? 0;
             $number = $last + 1;
             return Server::create($data + [
                 'uuid'=>(string) Str::uuid(), 'server_number'=>$number, 'identifier'=>'s'.$number,
-                'owner_id'=>$r->user()->id, 'status'=>'installing'
+                'owner_id'=>$ownerId, 'status'=>'installing'
             ]);
         });
         $daemon->createServer($server->load('node'));
@@ -32,17 +50,17 @@ class ServerController extends Controller
         return response()->json($server, 201);
     }
 
-    public function power(Request $r, Server $server, DaemonClient $daemon)
+    public function power(Request $request, Server $server, DaemonClient $daemon)
     {
-        abort_unless($server->owner_id === $r->user()->id, 403);
-        $data = $r->validate(['signal'=>'required|in:start,stop,restart,kill']);
+        $this->authorizeServer($request, $server);
+        $data = $request->validate(['signal'=>'required|in:start,stop,restart,kill']);
         return $daemon->power($server->load('node'), $data['signal']);
     }
 
-    public function command(Request $r, Server $server, DaemonClient $daemon)
+    public function command(Request $request, Server $server, DaemonClient $daemon)
     {
-        abort_unless($server->owner_id === $r->user()->id, 403);
-        $data = $r->validate(['command'=>'required|string|max:4096']);
+        $this->authorizeServer($request, $server);
+        $data = $request->validate(['command'=>'required|string|max:4096']);
         return $daemon->command($server->load('node'), $data['command']);
     }
 }
