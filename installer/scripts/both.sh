@@ -15,6 +15,8 @@ fi
 systemctl disable --now nodexa-agent 2>/dev/null || true
 
 bash deploy/setup-database-tools.sh
+bash deploy/setup-updater.sh
 bash deploy/create-admin.sh
 log "Panel + Agent installed. Agent status: WAITING FOR CONFIGURATION."
 echo "Log in to Nodexa → Admin → Nodes, create the Node, then run its generated command."
+echo "Future updates can be installed from Admin → Opdateringer."
