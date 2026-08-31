@@ -26,14 +26,43 @@ DATA_DIR="${NODEXA_DATA:-/var/lib/nodexa}"
 BACKUP_DIR="${NODEXA_BACKUPS:-/var/lib/nodexa/backups}"
 AGENT_PORT="${NODEXA_AGENT_PORT:-8080}"
 DOMAIN="${NODEXA_DOMAIN:-_}"
+TIMEZONE="${NODEXA_TIMEZONE:-Europe/Copenhagen}"
+APP_LOCALE="${NODEXA_APP_LOCALE:-da}"
+DB_HOST="${NODEXA_DB_HOST:-127.0.0.1}"
+DB_PORT="${NODEXA_DB_PORT:-3306}"
 DB_NAME="${NODEXA_DB_NAME:-nodexa}"
 DB_USER="${NODEXA_DB_USER:-nodexa}"
-DB_PASS="${NODEXA_DB_PASS:-$(openssl rand -hex 18)}"
+DB_PASS="${NODEXA_DB_PASS:-$(openssl rand -hex 24)}"
+CACHE_STORE="${NODEXA_CACHE_STORE:-redis}"
+SESSION_DRIVER="${NODEXA_SESSION_DRIVER:-redis}"
+QUEUE_CONNECTION="${NODEXA_QUEUE_CONNECTION:-redis}"
+REDIS_HOST="${NODEXA_REDIS_HOST:-127.0.0.1}"
+REDIS_PORT="${NODEXA_REDIS_PORT:-6379}"
+REDIS_PASSWORD="${NODEXA_REDIS_PASSWORD:-}"
+MAIL_MAILER="${NODEXA_MAIL_MAILER:-log}"
+MAIL_HOST="${NODEXA_MAIL_HOST:-127.0.0.1}"
+MAIL_PORT="${NODEXA_MAIL_PORT:-587}"
+MAIL_USERNAME="${NODEXA_MAIL_USERNAME:-}"
+MAIL_PASSWORD="${NODEXA_MAIL_PASSWORD:-}"
+MAIL_ENCRYPTION="${NODEXA_MAIL_ENCRYPTION:-}"
+MAIL_FROM_ADDRESS="${NODEXA_MAIL_FROM_ADDRESS:-admin@localhost}"
+MAIL_FROM_NAME="${NODEXA_MAIL_FROM_NAME:-Nodexa}"
 AGENT_TOKEN="${NODEXA_AGENT_TOKEN:-$(openssl rand -hex 32)}"
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 log(){ printf '\n\033[1;36m[Nodexa]\033[0m %s\n' "$*"; }
 fail(){ printf '\n\033[1;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
+
+dotenv_quote(){
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  value="${value//\$/\\$}"
+  value="${value//\`/\\\`}"
+  printf '"%s"' "$value"
+}
+
+sql_escape(){ printf '%s' "$1" | sed "s/'/''/g"; }
 
 export COMPOSER_ALLOW_SUPERUSER=1
 log "Installing system packages..."
@@ -60,14 +89,19 @@ log "Node.js ${NODE_VERSION} and npm $(npm --version) ready."
 
 systemctl enable --now mariadb redis-server docker nginx
 
-log "Creating database..."
-mysql -uroot <<SQL
+if [[ "$DB_HOST" == "127.0.0.1" || "$DB_HOST" == "localhost" ]]; then
+  log "Creating local database..."
+  DB_PASS_SQL="$(sql_escape "$DB_PASS")"
+  mysql -uroot <<SQL
 CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASS}';
-ALTER USER '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASS}';
+CREATE USER IF NOT EXISTS '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASS_SQL}';
+ALTER USER '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASS_SQL}';
 GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'127.0.0.1';
 FLUSH PRIVILEGES;
 SQL
+else
+  log "Using remote database ${DB_HOST}:${DB_PORT}; database/user creation is skipped."
+fi
 
 log "Preparing Laravel panel..."
 mkdir -p "$INSTALL_DIR"
@@ -87,39 +121,85 @@ composer update --no-dev --optimize-autoloader --no-interaction --prefer-dist
 cp .env.example .env
 php artisan key:generate --force
 
+APP_URL="http://${DOMAIN/_/localhost}"
+REDIS_PASSWORD_ENV="null"
+[[ -n "$REDIS_PASSWORD" ]] && REDIS_PASSWORD_ENV="$(dotenv_quote "$REDIS_PASSWORD")"
+MAIL_USERNAME_ENV="null"
+[[ -n "$MAIL_USERNAME" ]] && MAIL_USERNAME_ENV="$(dotenv_quote "$MAIL_USERNAME")"
+MAIL_PASSWORD_ENV="null"
+[[ -n "$MAIL_PASSWORD" ]] && MAIL_PASSWORD_ENV="$(dotenv_quote "$MAIL_PASSWORD")"
+MAIL_ENCRYPTION_ENV="null"
+[[ -n "$MAIL_ENCRYPTION" ]] && MAIL_ENCRYPTION_ENV="$(dotenv_quote "$MAIL_ENCRYPTION")"
+
 cat >> .env <<ENV
 
+# Nodexa installation settings
 APP_NAME=Nodexa
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=http://${DOMAIN/_/localhost}
+APP_URL=$(dotenv_quote "$APP_URL")
+APP_TIMEZONE=$(dotenv_quote "$TIMEZONE")
+APP_LOCALE=$(dotenv_quote "$APP_LOCALE")
+APP_FALLBACK_LOCALE=en
 
 DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=${DB_NAME}
-DB_USERNAME=${DB_USER}
-DB_PASSWORD=${DB_PASS}
+DB_HOST=$(dotenv_quote "$DB_HOST")
+DB_PORT=${DB_PORT}
+DB_DATABASE=$(dotenv_quote "$DB_NAME")
+DB_USERNAME=$(dotenv_quote "$DB_USER")
+DB_PASSWORD=$(dotenv_quote "$DB_PASS")
 
-CACHE_STORE=redis
-QUEUE_CONNECTION=redis
-SESSION_DRIVER=redis
+CACHE_STORE=${CACHE_STORE}
+QUEUE_CONNECTION=${QUEUE_CONNECTION}
+SESSION_DRIVER=${SESSION_DRIVER}
 REDIS_CLIENT=predis
-REDIS_HOST=127.0.0.1
-REDIS_PORT=6379
+REDIS_HOST=$(dotenv_quote "$REDIS_HOST")
+REDIS_PASSWORD=${REDIS_PASSWORD_ENV}
+REDIS_PORT=${REDIS_PORT}
+
+MAIL_MAILER=${MAIL_MAILER}
+MAIL_HOST=$(dotenv_quote "$MAIL_HOST")
+MAIL_PORT=${MAIL_PORT}
+MAIL_USERNAME=${MAIL_USERNAME_ENV}
+MAIL_PASSWORD=${MAIL_PASSWORD_ENV}
+MAIL_ENCRYPTION=${MAIL_ENCRYPTION_ENV}
+MAIL_FROM_ADDRESS=$(dotenv_quote "$MAIL_FROM_ADDRESS")
+MAIL_FROM_NAME=$(dotenv_quote "$MAIL_FROM_NAME")
 
 NODEXA_AGENT_URL=http://127.0.0.1:${AGENT_PORT}
 NODEXA_AGENT_TOKEN=${AGENT_TOKEN}
 ENV
 
-for kv in \
-  "DB_CONNECTION=mysql" "DB_HOST=127.0.0.1" "DB_PORT=3306" "DB_DATABASE=$DB_NAME" \
-  "DB_USERNAME=$DB_USER" "DB_PASSWORD=$DB_PASS" "CACHE_STORE=redis" \
-  "QUEUE_CONNECTION=redis" "SESSION_DRIVER=redis" "REDIS_CLIENT=predis"; do
-  key="${kv%%=*}"; val="${kv#*=}"
-  if grep -q "^${key}=" .env; then sed -i "0,/^${key}=.*/s||${key}=${val}|" .env; fi
-done
+# Remove earlier duplicate keys from the Laravel template, keeping the final
+# Nodexa values above as the authoritative production configuration.
+python3 - "$PANEL_DIR/.env" <<'PY'
+import sys
+from pathlib import Path
+p = Path(sys.argv[1])
+lines = p.read_text().splitlines()
+keys = {
+    'APP_NAME','APP_ENV','APP_DEBUG','APP_URL','APP_TIMEZONE','APP_LOCALE','APP_FALLBACK_LOCALE',
+    'DB_CONNECTION','DB_HOST','DB_PORT','DB_DATABASE','DB_USERNAME','DB_PASSWORD',
+    'CACHE_STORE','QUEUE_CONNECTION','SESSION_DRIVER','REDIS_CLIENT','REDIS_HOST','REDIS_PASSWORD','REDIS_PORT',
+    'MAIL_MAILER','MAIL_HOST','MAIL_PORT','MAIL_USERNAME','MAIL_PASSWORD','MAIL_ENCRYPTION','MAIL_FROM_ADDRESS','MAIL_FROM_NAME',
+    'NODEXA_AGENT_URL','NODEXA_AGENT_TOKEN'
+}
+last = {}
+for i,line in enumerate(lines):
+    if '=' in line and not line.lstrip().startswith('#'):
+        k = line.split('=',1)[0]
+        if k in keys: last[k] = i
+out=[]
+for i,line in enumerate(lines):
+    if '=' in line and not line.lstrip().startswith('#'):
+        k=line.split('=',1)[0]
+        if k in keys and last.get(k) != i:
+            continue
+    out.append(line)
+p.write_text('\n'.join(out)+'\n')
+PY
 
+log "Running database migrations..."
 php artisan migrate --force
 php artisan storage:link 2>/dev/null || true
 php artisan optimize:clear
@@ -279,16 +359,17 @@ systemctl reload nginx
 
 SERVER_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 
-log "Installation complete."
+log "Runtime installation complete."
 echo ""
 echo "Panel:       http://${DOMAIN/_/${SERVER_IP:-SERVER-IP}}"
 echo "Install dir: $INSTALL_DIR"
 echo "Agent:       systemctl status nodexa-agent"
 echo "Queue:       systemctl status nodexa-queue"
 echo "Monitor:     systemctl status nodexa-monitor.timer"
-echo "Database:    $DB_NAME"
-echo "DB user:     $DB_USER"
-echo "DB password: $DB_PASS"
-echo ""
-echo "IMPORTANT: Save the database password above."
-echo "For SSL, point your domain to this server and install certbot afterwards."
+echo "Database:    ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+if [[ "${NODEXA_DB_PASSWORD_GENERATED:-0}" == "1" ]]; then
+ echo "DB password: $DB_PASS"
+ echo "IMPORTANT: Save the generated database password above."
+else
+ echo "DB password: chosen during setup"
+fi
