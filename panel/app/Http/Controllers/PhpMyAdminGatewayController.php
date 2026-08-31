@@ -14,16 +14,26 @@ class PhpMyAdminGatewayController extends Controller
         $database = ServerDatabase::findOrFail($payload['database_id']);
         abort_unless($database->server_id === $payload['server_id'], 403);
 
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_write_close();
-        }
+        if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+        ini_set('session.use_cookies', '1');
+        session_set_cookie_params([
+            'lifetime'=>0,
+            'path'=>'/',
+            'secure'=>request()->isSecure(),
+            'httponly'=>true,
+            'samesite'=>'Lax',
+        ]);
         session_name(config('nodexa.phpmyadmin_signon_session', 'NodexaSignon'));
         session_start();
         $_SESSION['PMA_single_signon_user'] = $database->username;
         $_SESSION['PMA_single_signon_password'] = $database->plainPassword();
         $_SESSION['PMA_single_signon_host'] = $database->host;
         $_SESSION['PMA_single_signon_port'] = (string)$database->port;
-        $_SESSION['PMA_single_signon_database'] = $database->name;
+        $_SESSION['PMA_single_signon_cfgupdate'] = [
+            'verbose'=>'Nodexa · '.$database->name,
+            'only_db'=>$database->name,
+        ];
+        $_SESSION['PMA_single_signon_HMAC_secret'] = hash('sha256', random_bytes(32));
         session_write_close();
 
         return redirect(config('nodexa.phpmyadmin_url', '/phpmyadmin/'));
