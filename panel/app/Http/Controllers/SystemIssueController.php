@@ -79,7 +79,6 @@ class SystemIssueController extends Controller
 
     public function clientError(Request $request)
     {
-        $this->admin($request);
         $data = $request->validate([
             'message'=>'required|string|max:4000',
             'source'=>'nullable|string|max:500',
@@ -96,6 +95,7 @@ class SystemIssueController extends Controller
             severity: 'error',
             type: 'javascript',
             context: [
+                'user_id'=>$request->user()?->id,
                 'source'=>$data['source'] ?? null,
                 'line'=>$data['line'] ?? null,
                 'column'=>$data['column'] ?? null,
