@@ -11,6 +11,7 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\NodeController;
 use App\Http\Controllers\DatabaseHostController;
 use App\Http\Controllers\AdminServerStartupController;
+use App\Http\Controllers\SystemIssueController;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
@@ -63,4 +64,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/database-hosts/{databaseHost}/test', [DatabaseHostController::class, 'test']);
     Route::get('/database-hosts/{databaseHost}/credentials', [DatabaseHostController::class, 'credentials']);
     Route::delete('/database-hosts/{databaseHost}', [DatabaseHostController::class, 'destroy']);
+
+    Route::get('/system-errors', [SystemIssueController::class, 'index']);
+    Route::post('/system-errors/scan-nodes', [SystemIssueController::class, 'scanNodes']);
+    Route::post('/system-errors/client', [SystemIssueController::class, 'clientError']);
+    Route::post('/system-errors/{issue}/resolve', [SystemIssueController::class, 'resolve']);
 });
