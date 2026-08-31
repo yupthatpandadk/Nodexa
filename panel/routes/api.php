@@ -7,6 +7,7 @@ use App\Http\Controllers\ServerController;
 use App\Http\Controllers\ServerRuntimeController;
 use App\Http\Controllers\ServerDatabaseController;
 use App\Http\Controllers\ServerSubuserController;
+use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\NodeController;
 use App\Http\Controllers\DatabaseHostController;
 
@@ -35,6 +36,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/servers/{server}/databases/{database}/credentials', [ServerDatabaseController::class, 'credentials']);
     Route::post('/servers/{server}/databases/{database}/open', [ServerDatabaseController::class, 'openPhpMyAdmin']);
     Route::delete('/servers/{server}/databases/{database}', [ServerDatabaseController::class, 'destroy']);
+
+    Route::get('/servers/{server}/schedules', [ScheduleController::class, 'index']);
+    Route::post('/servers/{server}/schedules', [ScheduleController::class, 'store']);
+    Route::put('/servers/{server}/schedules/{schedule}', [ScheduleController::class, 'update']);
+    Route::post('/servers/{server}/schedules/{schedule}/run', [ScheduleController::class, 'run']);
+    Route::delete('/servers/{server}/schedules/{schedule}', [ScheduleController::class, 'destroy']);
 
     Route::get('/servers/{server}/users', [ServerSubuserController::class, 'index']);
     Route::post('/servers/{server}/users', [ServerSubuserController::class, 'store']);
