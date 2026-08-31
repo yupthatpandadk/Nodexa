@@ -191,8 +191,39 @@ WorkingDirectory=${PANEL_DIR}
 [Install]
 WantedBy=multi-user.target
 UNIT
+
+cat > /etc/systemd/system/nodexa-monitor.service <<UNIT
+[Unit]
+Description=Nodexa Node Health Monitor
+After=network-online.target mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=${PANEL_DIR}
+ExecStart=/usr/bin/php ${PANEL_DIR}/bin/monitor-nodes.php
+UNIT
+
+cat > /etc/systemd/system/nodexa-monitor.timer <<'UNIT'
+[Unit]
+Description=Run Nodexa Node Health Monitor every minute
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=60s
+AccuracySec=5s
+Persistent=true
+Unit=nodexa-monitor.service
+
+[Install]
+WantedBy=timers.target
+UNIT
+
 systemctl daemon-reload
 systemctl enable --now nodexa-queue
+systemctl enable --now nodexa-monitor.timer
 
 log "Configuring Nginx..."
 PHP_FPM_SOCK="$(find /run/php -maxdepth 1 -name 'php*-fpm.sock' | sort -V | tail -n1)"
@@ -235,6 +266,7 @@ echo "Panel:       http://${DOMAIN/_/${SERVER_IP:-SERVER-IP}}"
 echo "Install dir: $INSTALL_DIR"
 echo "Agent:       systemctl status nodexa-agent"
 echo "Queue:       systemctl status nodexa-queue"
+echo "Monitor:     systemctl status nodexa-monitor.timer"
 echo "Database:    $DB_NAME"
 echo "DB user:     $DB_USER"
 echo "DB password: $DB_PASS"
