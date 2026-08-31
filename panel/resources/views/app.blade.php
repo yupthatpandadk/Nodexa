@@ -4,6 +4,7 @@
  const headers={Authorization:'Bearer '+token,Accept:'application/json','Content-Type':'application/json'};
  fetch('/api/me',{headers}).then(r=>r.ok?r.json():null).then(me=>{
   if(!me||!me.is_admin)return;
+  let updateAvailable=false;
   const add=()=>{
    const nav=document.querySelector('aside nav'); if(!nav)return false;
    if(!document.getElementById('nodexa-db-hosts-link')){
@@ -12,9 +13,14 @@
    if(!document.getElementById('nodexa-errors-link')){
     const e=document.createElement('button'); e.id='nodexa-errors-link'; e.textContent='Fejl'; e.onclick=()=>location.href='/admin/errors'; nav.appendChild(e);
    }
+   let u=document.getElementById('nodexa-update-link');
+   if(!u){u=document.createElement('button');u.id='nodexa-update-link';u.onclick=()=>location.href='/admin/update';nav.appendChild(u)}
+   u.textContent=updateAvailable?'Opdatering tilgængelig •':'Opdateringer';
+   if(updateAvailable){u.style.color='#c4b5fd';u.style.fontWeight='700'}
    return true;
   };
-  if(add())return; const o=new MutationObserver(()=>{if(add())o.disconnect()}); o.observe(document.getElementById('app'),{childList:true,subtree:true});
+  const observer=new MutationObserver(()=>add());observer.observe(document.getElementById('app'),{childList:true,subtree:true});add();
+  fetch('/api/admin/update/check',{headers}).then(r=>r.ok?r.json():null).then(d=>{if(!d)return;updateAvailable=!!d.available;add()}).catch(()=>{});
  }).catch(()=>{});
 
  const report=(payload)=>fetch('/api/system-errors/client',{method:'POST',headers,body:JSON.stringify(payload)}).catch(()=>{});
