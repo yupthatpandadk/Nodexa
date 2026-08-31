@@ -10,32 +10,57 @@ use Illuminate\Support\Str;
 
 class ServerController extends Controller
 {
-    private function authorizeServer(Request $request, Server $server): void
+    private function permissions(Request $request, Server $server): array
     {
-        abort_unless((bool)$request->user()->is_admin || $server->owner_id === $request->user()->id, 403);
+        $user = $request->user();
+        if ((bool)$user->is_admin || $server->owner_id === $user->id) return ['*'];
+        return $server->subusers()->where('user_id', $user->id)->value('permissions') ?? [];
+    }
+
+    private function authorizeServer(Request $request, Server $server, ?string $permission = null): array
+    {
+        $permissions = $this->permissions($request, $server);
+        abort_if(empty($permissions), 403);
+        if ($permission !== null && !in_array('*', $permissions, true)) {
+            abort_unless(in_array($permission, $permissions, true), 403, 'You do not have permission to perform this action.');
+        }
+        return $permissions;
     }
 
     public function index(Request $request)
     {
+        $user = $request->user();
         $query = Server::with('node')->orderByDesc('created_at');
-        if (!$request->user()->is_admin) $query->where('owner_id', $request->user()->id);
-        return $query->paginate(25);
+        if (!$user->is_admin) {
+            $query->where(function ($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                  ->orWhereHas('subusers', fn($sq) => $sq->where('user_id', $user->id));
+            });
+        }
+        $page = $query->paginate(25);
+        $page->through(function (Server $server) use ($request) {
+            $server->setAttribute('access_permissions', $this->permissions($request, $server));
+            return $server;
+        });
+        return $page;
     }
 
     public function show(Request $request, Server $server)
     {
-        $this->authorizeServer($request, $server);
-        return $server->load('node');
+        $permissions = $this->authorizeServer($request, $server);
+        $server->load('node')->setAttribute('access_permissions', $permissions);
+        return $server;
     }
 
     public function store(Request $request, DaemonClient $daemon)
     {
+        abort_unless((bool)$request->user()->is_admin, 403, 'Only administrators can create servers.');
         $data = $request->validate([
             'name'=>'required|string|max:120','node_id'=>'required|exists:nodes,id','docker_image'=>'required|string',
             'startup'=>'required|string','memory_mb'=>'required|integer|min:128','disk_mb'=>'required|integer|min:512','cpu_limit'=>'required|integer|min:0|max:1000','environment'=>'array',
-            'owner_id'=>'nullable|integer|exists:users,id'
+            'owner_id'=>'required|integer|exists:users,id'
         ]);
-        $ownerId = $request->user()->is_admin && isset($data['owner_id']) ? (int)$data['owner_id'] : $request->user()->id;
+        $ownerId = (int)$data['owner_id'];
         unset($data['owner_id']);
         $server = DB::transaction(function () use ($data, $ownerId) {
             $last = Server::query()->lockForUpdate()->max('server_number') ?? 0;
@@ -52,14 +77,17 @@ class ServerController extends Controller
 
     public function power(Request $request, Server $server, DaemonClient $daemon)
     {
-        $this->authorizeServer($request, $server);
         $data = $request->validate(['signal'=>'required|in:start,stop,restart,kill']);
+        $permission = match ($data['signal']) {
+            'start'=>'power.start', 'restart'=>'power.restart', default=>'power.stop'
+        };
+        $this->authorizeServer($request, $server, $permission);
         return $daemon->power($server->load('node'), $data['signal']);
     }
 
     public function command(Request $request, Server $server, DaemonClient $daemon)
     {
-        $this->authorizeServer($request, $server);
+        $this->authorizeServer($request, $server, 'console.command');
         $data = $request->validate(['command'=>'required|string|max:4096']);
         return $daemon->command($server->load('node'), $data['command']);
     }
