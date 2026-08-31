@@ -1,0 +1,9 @@
+/vendor/
+/node_modules/
+.env
+.env.*
+!/panel/.env.example
+/panel/public/build/
+/panel/storage/logs/*.log
+*.zip
+.DS_Store
