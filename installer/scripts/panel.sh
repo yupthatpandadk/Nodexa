@@ -7,4 +7,5 @@ log "Installing Nodexa Panel..."
 cd "$SOURCE_ROOT"
 NODEXA_DOMAIN="${NODEXA_DOMAIN:-_}" bash deploy/install-runtime.sh
 bash deploy/setup-database-tools.sh
+bash deploy/create-admin.sh
 log "Panel installed. Create and configure Nodes from Admin → Nodes inside Nodexa."
