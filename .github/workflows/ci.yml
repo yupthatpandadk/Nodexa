@@ -27,6 +27,8 @@ jobs:
           node-version: '22'
       - name: Install frontend dependencies
         run: npm install
+      - name: Typecheck frontend
+        run: npx tsc --noEmit
       - name: Build frontend
         run: npm run build
 
