@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-VERSION="0.5.0"
+VERSION="0.6.0"
 REPO="${NODEXA_REPOSITORY:-yupthatpandadk/Nodexa}"
 BRANCH="${NODEXA_BRANCH:-main}"
 URL="${NODEXA_SOURCE_URL:-https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip}"
