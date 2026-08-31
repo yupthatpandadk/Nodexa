@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-VERSION="0.4.2"
+VERSION="0.5.0"
 REPO="${NODEXA_REPOSITORY:-yupthatpandadk/Nodexa}"
 BRANCH="${NODEXA_BRANCH:-main}"
 URL="${NODEXA_SOURCE_URL:-https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip}"
@@ -14,4 +14,4 @@ curl -fL "$URL" -o "$TMP/nodexa.zip"
 unzip -q "$TMP/nodexa.zip" -d "$TMP/src"
 MENU="$(find "$TMP/src" -type f -path '*/installer/local-menu.sh' | head -n1)"
 [[ -n "$MENU" ]] || { echo "[Nodexa] Invalid source archive." >&2; exit 1; }
-exec bash "$MENU"
+exec bash "$MENU" "$@"
