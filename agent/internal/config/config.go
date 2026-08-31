@@ -12,6 +12,8 @@ func Load() Config {
 	c := Config{Listen: ":8080", Token: os.Getenv("NODEXA_TOKEN"), DataRoot: "/var/lib/nodexa/servers"}
 	if v := os.Getenv("NODEXA_LISTEN"); v != "" {
 		c.Listen = v
+	} else if v := os.Getenv("NODEXA_ADDR"); v != "" {
+		c.Listen = v
 	}
 	if v := os.Getenv("NODEXA_DATA"); v != "" {
 		c.DataRoot = v
