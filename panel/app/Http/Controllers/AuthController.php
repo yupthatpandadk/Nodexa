@@ -10,14 +10,35 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $data = $request->validate(['email'=>'required|email','password'=>'required|string']);
-        $user = User::where('email', strtolower($data['email']))->first();
+        $data = $request->validate([
+            'login' => 'nullable|string|max:255|required_without:email',
+            'email' => 'nullable|string|max:255|required_without:login',
+            'password' => 'required|string',
+        ]);
+
+        $identifier = strtolower(trim($data['login'] ?? $data['email'] ?? ''));
+        $user = User::query()
+            ->whereRaw('LOWER(email) = ?', [$identifier])
+            ->orWhereRaw('LOWER(username) = ?', [$identifier])
+            ->first();
+
         if (!$user || !Hash::check($data['password'], $user->password)) {
-            return response()->json(['message'=>'Invalid email or password.'], 422);
+            return response()->json(['message' => 'Forkert e-mail/brugernavn eller adgangskode.'], 422);
         }
+
         $user->tokens()->where('name', 'panel')->delete();
         $token = $user->createToken('panel')->plainTextToken;
-        return ['token'=>$token,'user'=>['id'=>$user->id,'name'=>$user->name,'email'=>$user->email,'is_admin'=>(bool)$user->is_admin]];
+
+        return [
+            'token' => $token,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'username' => $user->username,
+                'is_admin' => (bool) $user->is_admin,
+            ],
+        ];
     }
 
     public function logout(Request $request)
