@@ -12,6 +12,7 @@ use App\Http\Controllers\NodeController;
 use App\Http\Controllers\DatabaseHostController;
 use App\Http\Controllers\AdminServerStartupController;
 use App\Http\Controllers\SystemIssueController;
+use App\Http\Controllers\AdminUpdateController;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
@@ -71,4 +72,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/system-errors/scan-nodes', [SystemIssueController::class, 'scanNodes']);
     Route::post('/system-errors/client', [SystemIssueController::class, 'clientError']);
     Route::post('/system-errors/{issue}/resolve', [SystemIssueController::class, 'resolve']);
+
+    Route::get('/admin/update/check', [AdminUpdateController::class, 'check']);
+    Route::get('/admin/update/status', [AdminUpdateController::class, 'status']);
+    Route::post('/admin/update/start', [AdminUpdateController::class, 'start']);
 });
