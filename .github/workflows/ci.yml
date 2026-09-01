@@ -29,6 +29,7 @@ jobs:
         run: |
           NODEXA_PANEL_DIR="$GITHUB_WORKSPACE/panel" bash "$GITHUB_WORKSPACE/deploy/optimize-frontend-source.sh"
           NODEXA_PANEL_DIR="$GITHUB_WORKSPACE/panel" bash "$GITHUB_WORKSPACE/deploy/enable-managed-server-templates.sh"
+          NODEXA_PANEL_DIR="$GITHUB_WORKSPACE/panel" bash "$GITHUB_WORKSPACE/deploy/enable-runtime-modules.sh"
           NODEXA_PANEL_DIR="$GITHUB_WORKSPACE/panel" bash "$GITHUB_WORKSPACE/deploy/optimize-frontend-delivery-source.sh"
       - name: Install frontend dependencies
         run: npm install
