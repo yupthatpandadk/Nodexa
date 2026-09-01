@@ -45,9 +45,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/servers/{server}/backups', [ServerRuntimeController::class, 'backups']);
     Route::post('/servers/{server}/backups', [ServerRuntimeController::class, 'backup']);
-    Route::get('/servers/{server}/backups/{name}/download', [ServerRuntimeController::class, 'downloadBackup'])->where('name', '.*');
-    Route::post('/servers/{server}/backups/{name}/restore', [ServerRuntimeController::class, 'restoreBackup'])->where('name', '.*');
-    Route::delete('/servers/{server}/backups/{name}', [ServerRuntimeController::class, 'deleteBackup'])->where('name', '.*');
+    Route::get('/servers/{server}/backups/{name}/download', [ServerRuntimeController::class, 'downloadBackup']);
+    Route::post('/servers/{server}/backups/{name}/restore', [ServerRuntimeController::class, 'restoreBackup']);
+    Route::delete('/servers/{server}/backups/{name}', [ServerRuntimeController::class, 'deleteBackup']);
 
     Route::get('/servers/{server}/databases', [ServerDatabaseController::class, 'index']);
     Route::post('/servers/{server}/databases', [ServerDatabaseController::class, 'store']);
