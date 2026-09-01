@@ -70,12 +70,33 @@ if [[ -d "$PANEL_DIR" ]]; then
 fi
 
 if [[ -d "$AGENT_DIR" ]]; then
-  log "Updating Nodexa Agent..."
+  log "Updating Nodexa Agent files..."
   rsync -a --delete "$SOURCE_ROOT/agent/" "$AGENT_DIR/"
   cd "$AGENT_DIR"
   go mod tidy
   go build -trimpath -ldflags='-s -w' -o /usr/local/bin/nodexad ./cmd/nodexad
-  systemctl restart nodexa-agent 2>/dev/null || true
+
+  # Panel-only installations deliberately keep an unconfigured Agent tree so a
+  # Node can be enabled later. Do not restart that service with an empty token:
+  # nodexad exits immediately and Restart=always would otherwise create a
+  # crash-loop that consumes CPU and fills journald after every panel update.
+  AGENT_TOKEN=""
+  if [[ -f /etc/nodexa.env ]]; then
+    AGENT_TOKEN="$(sed -n 's/^NODEXA_TOKEN=//p' /etc/nodexa.env | tail -n1)"
+    AGENT_TOKEN="${AGENT_TOKEN%\"}"
+    AGENT_TOKEN="${AGENT_TOKEN#\"}"
+    AGENT_TOKEN="${AGENT_TOKEN%\'}"
+    AGENT_TOKEN="${AGENT_TOKEN#\'}"
+  fi
+
+  if [[ -n "$AGENT_TOKEN" ]]; then
+    log "Restarting configured Nodexa Agent..."
+    systemctl enable nodexa-agent >/dev/null 2>&1 || true
+    systemctl restart nodexa-agent
+  else
+    log "Agent is not configured on this host; leaving nodexa-agent stopped."
+    systemctl disable --now nodexa-agent >/dev/null 2>&1 || true
+  fi
 fi
 
 bash "$SOURCE_ROOT/deploy/setup-updater.sh"
