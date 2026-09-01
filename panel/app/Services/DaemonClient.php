@@ -11,16 +11,15 @@ use Throwable;
 
 final class DaemonClient
 {
-    private function client(Node $node): PendingRequest
+    private function client(Node $node, int $timeout = 8): PendingRequest
     {
-        // Agent calls must fail fast. A dead/offline Node must never occupy a
-        // PHP-FPM worker for ~60 seconds and make the whole control panel look
-        // frozen. Healthy Agent requests normally complete in milliseconds.
+        // Keep normal Agent calls fail-fast. Provisioning may legitimately take
+        // longer because the Agent can need to pull a Docker image first.
         return Http::baseUrl(sprintf('%s://%s:%d', $node->scheme, $node->fqdn, $node->daemon_port))
             ->withToken($node->token)
             ->acceptJson()
             ->connectTimeout(3)
-            ->timeout(8);
+            ->timeout($timeout);
     }
 
     private function guarded(Node $node, ?string $serverId, string $action, callable $callback): mixed
@@ -39,6 +38,8 @@ final class DaemonClient
                     'agent_internal_error',
                     'agent_request_failed',
                     'agent_error',
+                    'agent_conflict',
+                    'agent_validation_failed',
                     'node_timeout',
                     'node_connection_refused',
                     'node_dns_failed',
@@ -129,7 +130,10 @@ final class DaemonClient
     {
         $node = $server->node;
         return $this->guarded($node, (string) $server->id, 'create_server', fn () =>
-            $this->client($node)->post('/api/servers', [
+            // A fresh Node can need to pull a multi-hundred-MB image. Give this
+            // one operation enough time while retaining the 3-second connect
+            // timeout, so an offline Node still fails immediately.
+            $this->client($node, 180)->post('/api/servers', [
                 'id' => $server->uuid,
                 'name' => $server->name,
                 'image' => $server->docker_image,
