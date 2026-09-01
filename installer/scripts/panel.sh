@@ -22,6 +22,7 @@ bash deploy/setup-storefront.sh
 bash deploy/setup-storefront-sync.sh
 bash deploy/optimize-panel-runtime.sh
 bash deploy/optimize-frontend-source.sh
+bash deploy/enable-managed-server-templates.sh
 (cd /var/www/nodexa/panel && npm run build)
 bash deploy/create-admin.sh
 
