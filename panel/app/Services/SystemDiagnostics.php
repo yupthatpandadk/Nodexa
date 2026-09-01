@@ -81,7 +81,7 @@ final class SystemDiagnostics
             Redis::connection()->ping();
             return $this->ok('redis_connection', 'Redis', ['latency_ms'=>(int)round((microtime(true)-$start)*1000)]);
         } catch (Throwable $e) {
-            return $this->fail('redis_connection', 'Redis', $e->getMessage(), 'Panelet kan ikke kommunikere med Redis. Sessions, cache og kø-job kan derfor fejle.', 'Kontroller redis-server og REDIS_HOST/REDIS_PORT i .env.', 'critical', ['exception'=>get_class($e)]);
+            return $this->fail('redis_connection', 'Redis', $e->getMessage(), 'Panelets Redis-kø kan ikke kontaktes. Almindelige sidevisninger bruger lokal session/cache, men baggrundsjobs og planlagte handlinger kan fejle.', 'Kontroller redis-server og REDIS_HOST/REDIS_PORT i .env.', 'critical', ['exception'=>get_class($e)]);
         }
     }
 
@@ -127,7 +127,10 @@ final class SystemDiagnostics
         try {
             $options = [\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION, \PDO::ATTR_TIMEOUT=>4];
             if ($host->ssl && defined('PDO::MYSQL_ATTR_SSL_CA')) $options[\PDO::MYSQL_ATTR_SSL_CA] = config('database.connections.mysql.options.' . \PDO::MYSQL_ATTR_SSL_CA);
-            new \PDO($dsn, $host->username, $host->password, $options);
+            // DatabaseHost encrypts its administrator password at rest. Using
+            // the model attribute directly sends the ciphertext to MySQL and
+            // falsely marks a healthy host as offline.
+            new \PDO($dsn, $host->username, $host->plainPassword(), $options);
             $this->resolve('database-host', $key);
             return ['key'=>$key,'label'=>'Database Host: '.$host->name,'status'=>'ok','latency_ms'=>(int)round((microtime(true)-$start)*1000),'database_host_id'=>$host->id];
         } catch (Throwable $e) {
