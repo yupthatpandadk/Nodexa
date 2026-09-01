@@ -14,6 +14,11 @@ declare global {
   }
 }
 
+// Never let the whole control panel remain on the splash screen forever if an
+// API endpoint becomes slow or unavailable. Individual modules may retry, but
+// the shell itself should always become usable again.
+axios.defaults.timeout = 10000;
+
 function safeText(value: unknown, fallback = ''): string {
   if (typeof value === 'string') {
     const text = value.trim();
@@ -80,6 +85,27 @@ axios.interceptors.response.use(response => {
   }
 
   return response;
+}, error => {
+  const url = String(error?.config?.url ?? '');
+  const method = String(error?.config?.method ?? 'get').toLowerCase();
+
+  // The server list is useful dashboard data, but it must never block auth or
+  // keep the entire panel on "Indlæser kontrolpanel…". If this endpoint is
+  // temporarily unavailable, open the panel with an empty list instead. The
+  // admin error monitor can then surface the backend problem separately.
+  if (method === 'get' && /^\/api\/servers(?:\?.*)?$/.test(url)) {
+    console.error('[Nodexa] Server list unavailable; continuing panel boot.', error);
+    return Promise.resolve({
+      data: [],
+      status: 200,
+      statusText: 'Nodexa fallback',
+      headers: {},
+      config: error.config,
+      request: error.request,
+    });
+  }
+
+  return Promise.reject(error);
 });
 
 function showBootError(error: unknown) {
