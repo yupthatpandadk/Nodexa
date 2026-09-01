@@ -26,8 +26,16 @@ class AuthController extends Controller
             return response()->json(['message' => 'Forkert e-mail/brugernavn eller adgangskode.'], 422);
         }
 
-        $user->tokens()->where('name', 'panel')->delete();
-        $token = $user->createToken('panel')->plainTextToken;
+        try {
+            $user->tokens()->where('name', 'panel')->delete();
+            $token = $user->createToken('panel')->plainTextToken;
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => 'Login-systemet kunne ikke oprette en sikker session. Nodexa-databasen mangler muligvis en migration. Kør den nyeste Nodexa-opdatering og prøv igen.',
+            ], 503);
+        }
 
         $name = trim((string) ($user->name ?? ''));
         if ($name === '') {
