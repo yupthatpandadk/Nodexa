@@ -123,9 +123,13 @@ fi
 bash "$SOURCE_ROOT/deploy/setup-updater.sh"
 
 if [[ -d "$PANEL_DIR" ]]; then
+  # Repair/normalize the panel Nginx block before anything else runs nginx -t.
+  # Older Nodexa versions could leave duplicate FastCGI timeout directives in
+  # the site file, which made setup-storefront abort before the repair script
+  # had a chance to run.
+  bash "$SOURCE_ROOT/deploy/optimize-panel-runtime.sh"
   bash "$SOURCE_ROOT/deploy/setup-storefront.sh"
   bash "$SOURCE_ROOT/deploy/setup-storefront-sync.sh"
-  bash "$SOURCE_ROOT/deploy/optimize-panel-runtime.sh"
 fi
 
 systemctl restart nodexa-queue 2>/dev/null || true
