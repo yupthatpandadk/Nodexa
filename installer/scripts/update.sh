@@ -99,6 +99,27 @@ if [[ -d "$AGENT_DIR" ]]; then
   fi
 fi
 
+# Existing HTTPS Nodes may still have the old 120-second reverse-proxy limit.
+# First-time image pulls are allowed up to 180 seconds by the Panel/Agent, so
+# keep Nginx above that ceiling to avoid a false 504 during successful pulls.
+if [[ -f /etc/nginx/sites-available/nodexa-agent ]]; then
+  python3 - /etc/nginx/sites-available/nodexa-agent <<'PY'
+from pathlib import Path
+import re, sys
+p = Path(sys.argv[1])
+text = p.read_text()
+if re.search(r'proxy_read_timeout\s+[^;]+;', text):
+    text = re.sub(r'proxy_read_timeout\s+[^;]+;', 'proxy_read_timeout 210s;', text)
+else:
+    text = re.sub(r'(proxy_pass\s+[^;]+;)', r'\1\n        proxy_read_timeout 210s;', text, count=1)
+if re.search(r'proxy_send_timeout\s+[^;]+;', text):
+    text = re.sub(r'proxy_send_timeout\s+[^;]+;', 'proxy_send_timeout 210s;', text)
+else:
+    text = re.sub(r'(proxy_read_timeout\s+210s;)', r'\1\n        proxy_send_timeout 210s;', text, count=1)
+p.write_text(text)
+PY
+fi
+
 bash "$SOURCE_ROOT/deploy/setup-updater.sh"
 
 if [[ -d "$PANEL_DIR" ]]; then
