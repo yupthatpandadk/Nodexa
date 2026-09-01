@@ -5,7 +5,8 @@ set -Eeuo pipefail
 
 PANEL_DIR="${NODEXA_PANEL_DIR:-/var/www/nodexa/panel}"
 ENV_FILE="$PANEL_DIR/.env"
-NGINX_SITE="/etc/nginx/sites-available/nodexa"
+NGINX_AVAILABLE="/etc/nginx/sites-available/nodexa"
+NGINX_ENABLED="/etc/nginx/sites-enabled/nodexa"
 
 log(){ printf '\n\033[1;36m[Nodexa]\033[0m %s\n' "$*"; }
 
@@ -14,6 +15,43 @@ set_env(){
  [[ -f "$ENV_FILE" ]] || return 0
  sed -i "/^${key}=/d" "$ENV_FILE"
  printf '%s=%s\n' "$key" "$value" >> "$ENV_FILE"
+}
+
+repair_nginx_site(){
+ local file="$1"
+ [[ -f "$file" ]] || return 0
+ python3 - "$file" <<'PY'
+from pathlib import Path
+import re, sys
+p = Path(sys.argv[1])
+text = p.read_text()
+
+# Remove every Nodexa FastCGI timeout directive regardless of indentation or
+# whether an older updater placed more than one on the same line/context.
+text = re.sub(r'fastcgi_(?:connect|send|read)_timeout\s+[^;]+;\s*', '', text)
+
+# Re-add one canonical timeout set after every FastCGI pass in this site file.
+def add_timeouts(match):
+    indent = match.group('indent')
+    return (
+        f"{match.group(0)}\n"
+        f"{indent}fastcgi_connect_timeout 5s;\n"
+        f"{indent}fastcgi_send_timeout 210s;\n"
+        f"{indent}fastcgi_read_timeout 210s;"
+    )
+
+text = re.sub(
+    r'(?P<indent>^[ \t]*)(?:fastcgi_pass\s+[^;]+;)',
+    add_timeouts,
+    text,
+    flags=re.M,
+)
+
+# Keep formatting stable after removing inline duplicates.
+text = re.sub(r'[ \t]+\n', '\n', text)
+text = re.sub(r'\n{3,}', '\n\n', text)
+p.write_text(text)
+PY
 }
 
 [[ -f "$ENV_FILE" ]] || { echo "[Nodexa] Panel .env was not found." >&2; exit 0; }
@@ -47,25 +85,25 @@ php artisan view:cache >/dev/null 2>&1 || true
 
 # Normal browser bootstrap requests have their own short client timeout. Some
 # administrator operations, especially first-time server provisioning, may need
-# up to three minutes while a Node pulls a Docker image. Nginx must not turn a
-# healthy long-running provisioning request into a 504 after 20 seconds.
-if [[ -f "$NGINX_SITE" ]]; then
- python3 - "$NGINX_SITE" <<'PY'
-from pathlib import Path
-import re, sys
-p = Path(sys.argv[1])
-text = p.read_text()
-# Remove previously injected Nodexa FastCGI timeout directives so this script
-# remains idempotent across upgrades from the old 20-second policy.
-text = re.sub(r'^[ \t]*fastcgi_(?:connect|send|read)_timeout\s+[^;]+;\s*\n?', '', text, flags=re.M)
-text = re.sub(
-    r'(fastcgi_pass\s+unix:[^;]+;)',
-    r'\1\n        fastcgi_connect_timeout 5s;\n        fastcgi_send_timeout 210s;\n        fastcgi_read_timeout 210s;',
-    text,
-    count=1,
-)
-p.write_text(text)
-PY
+# up to three minutes while a Node pulls a Docker image. Repair BOTH the
+# sites-available source and the active sites-enabled file: older installs could
+# have sites-enabled/nodexa as a copied file instead of a symlink, which is why
+# repairing only sites-available did not clear duplicate directives.
+repair_nginx_site "$NGINX_AVAILABLE"
+
+if [[ -e "$NGINX_ENABLED" || -L "$NGINX_ENABLED" ]]; then
+ if [[ -L "$NGINX_ENABLED" ]]; then
+  enabled_target="$(readlink -f "$NGINX_ENABLED" 2>/dev/null || true)"
+  available_target="$(readlink -f "$NGINX_AVAILABLE" 2>/dev/null || true)"
+  if [[ -z "$enabled_target" || "$enabled_target" != "$available_target" ]]; then
+   repair_nginx_site "$NGINX_ENABLED"
+  fi
+ else
+  repair_nginx_site "$NGINX_ENABLED"
+ fi
+fi
+
+if [[ -f "$NGINX_AVAILABLE" || -f "$NGINX_ENABLED" ]]; then
  nginx -t >/dev/null
  systemctl reload nginx
 fi
