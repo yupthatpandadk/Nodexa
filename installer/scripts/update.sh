@@ -51,11 +51,8 @@ if [[ -d "$PANEL_DIR" ]]; then
   php artisan optimize:clear
   rm -f storage/framework/views/*.php 2>/dev/null || true
 
-  # Do not make the dashboard wait for the complete server list on every page
-  # refresh. Apply the fast-bootstrap patch before Vite compiles the production
-  # bundle so cached account/server snapshots can render immediately while the
-  # API refreshes in the background.
   bash "$SOURCE_ROOT/deploy/optimize-frontend-source.sh"
+  bash "$SOURCE_ROOT/deploy/enable-managed-server-templates.sh"
   npm install
   npm run build
 
@@ -81,10 +78,6 @@ if [[ -d "$AGENT_DIR" ]]; then
   go mod tidy
   go build -trimpath -ldflags='-s -w' -o /usr/local/bin/nodexad ./cmd/nodexad
 
-  # Panel-only installations deliberately keep an unconfigured Agent tree so a
-  # Node can be enabled later. Do not restart that service with an empty token:
-  # nodexad exits immediately and Restart=always would otherwise create a
-  # crash-loop that consumes CPU and fills journald after every panel update.
   AGENT_TOKEN=""
   if [[ -f /etc/nodexa.env ]]; then
     AGENT_TOKEN="$(sed -n 's/^NODEXA_TOKEN=//p' /etc/nodexa.env | tail -n1)"
@@ -104,9 +97,6 @@ if [[ -d "$AGENT_DIR" ]]; then
   fi
 fi
 
-# Existing HTTPS Nodes may still have the old 120-second reverse-proxy limit.
-# First-time image pulls are allowed up to 180 seconds by the Panel/Agent, so
-# keep Nginx above that ceiling to avoid a false 504 during successful pulls.
 if [[ -f /etc/nginx/sites-available/nodexa-agent ]]; then
   python3 - /etc/nginx/sites-available/nodexa-agent <<'PY'
 from pathlib import Path
@@ -128,10 +118,6 @@ fi
 bash "$SOURCE_ROOT/deploy/setup-updater.sh"
 
 if [[ -d "$PANEL_DIR" ]]; then
-  # Repair/normalize the panel Nginx block before anything else runs nginx -t.
-  # Older Nodexa versions could leave duplicate FastCGI timeout directives in
-  # the site file, which made setup-storefront abort before the repair script
-  # had a chance to run.
   bash "$SOURCE_ROOT/deploy/optimize-panel-runtime.sh"
   bash "$SOURCE_ROOT/deploy/setup-storefront.sh"
   bash "$SOURCE_ROOT/deploy/setup-storefront-sync.sh"
