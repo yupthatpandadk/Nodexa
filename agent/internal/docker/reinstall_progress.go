@@ -133,19 +133,36 @@ func (m *Manager) installTemplateWithProgress(ctx context.Context, r server.Crea
 cd /mnt/server
 VERSION="${MINECRAFT_VERSION:-1.21.8}"
 PORT="${SERVER_PORT:-25565}"
+PAPER_UA="Nodexa/0.13.7 (https://github.com/yupthatpandadk/Nodexa)"
+PAPER_API="https://fill.papermc.io/v3/projects/paper/versions/${VERSION}/builds/latest"
 echo "container@nodexa~ Server marked as installing..."
 echo "[Nodexa Installer] [1/7] Preparing installation directory"
 echo "[Nodexa Installer] Template: Minecraft Java / Paper"
 echo "[Nodexa Installer] Minecraft version: ${VERSION}"
-echo "[Nodexa Installer] [2/7] Resolving latest Paper build"
-META="$(curl -fsSL "https://api.papermc.io/v2/projects/paper/versions/${VERSION}/builds")"
-BUILD="$(printf '%s' "$META" | sed -n 's/.*"builds"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p' | tr ',' '\n' | tail -n1 | tr -dc '0-9')"
-if [ -z "$BUILD" ]; then echo "[Nodexa Installer] ERROR: No Paper build found for Minecraft ${VERSION}" >&2; exit 42; fi
-echo "[Nodexa Installer] Selected Paper build ${BUILD}"
-URL="https://api.papermc.io/v2/projects/paper/versions/${VERSION}/builds/${BUILD}/downloads/paper-${VERSION}-${BUILD}.jar"
+echo "[Nodexa Installer] [2/7] Resolving latest Paper build from Fill v3"
+if ! META="$(curl -fsSL -H "User-Agent: ${PAPER_UA}" -H "Accept: application/json" "${PAPER_API}")"; then
+  echo "[Nodexa Installer] ERROR: PaperMC Fill API request failed for Minecraft ${VERSION}" >&2
+  exit 44
+fi
+BUILD="$(printf '%s' "$META" | sed -n 's/.*"id":\([0-9][0-9]*\).*/\1/p')"
+CHANNEL="$(printf '%s' "$META" | sed -n 's/.*"channel":"\([^"]*\)".*/\1/p')"
+URL="$(printf '%s' "$META" | grep -o '"url":"[^"]*"' | head -n1 | cut -d'"' -f4)"
+SHA="$(printf '%s' "$META" | grep -o '"sha256":"[^"]*"' | head -n1 | cut -d'"' -f4)"
+if [ -z "$BUILD" ] || [ -z "$URL" ]; then
+  echo "[Nodexa Installer] ERROR: PaperMC returned no downloadable build for Minecraft ${VERSION}" >&2
+  exit 42
+fi
+echo "[Nodexa Installer] Selected Paper build ${BUILD}${CHANNEL:+ (${CHANNEL})}"
 echo "[Nodexa Installer] [3/7] Downloading server.jar"
 rm -f server.jar.nodexa
-curl -fL --progress-bar "$URL" -o server.jar.nodexa
+if ! curl -fL --progress-bar -H "User-Agent: ${PAPER_UA}" "$URL" -o server.jar.nodexa; then
+  rm -f server.jar.nodexa
+  echo "[Nodexa Installer] ERROR: Download of Paper build ${BUILD} failed" >&2
+  exit 45
+fi
+if [ -n "$SHA" ] && command -v sha256sum >/dev/null 2>&1; then
+  echo "${SHA}  server.jar.nodexa" | sha256sum -c -
+fi
 echo "[Nodexa Installer] Download complete: $(wc -c < server.jar.nodexa | tr -d ' ') bytes"
 echo "[Nodexa Installer] [4/7] Installing Paper runtime"
 mv -f server.jar.nodexa server.jar
@@ -170,9 +187,7 @@ echo "container@nodexa~ Installation process completed."`
 	// Runtime yolks normally start as their unprivileged container user and may
 	// have an image entrypoint tailored for /home/container. An Egg installer,
 	// however, writes to a separate /mnt/server bind. Run that one-shot installer
-	// explicitly as root and bypass the runtime entrypoint, matching the way a
-	// dedicated install container is expected to behave. This prevents
-	// `/bin/sh: cd: can't cd to /mnt/server` on 0750 server directories.
+	// explicitly as root and bypass the runtime entrypoint.
 	cfg := &container.Config{
 		Image:      r.Image,
 		User:       "0:0",
