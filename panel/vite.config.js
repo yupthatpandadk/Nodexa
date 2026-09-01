@@ -10,4 +10,20 @@ export default defineConfig({
     }),
     react(),
   ],
+  build: {
+    target: 'es2020',
+    sourcemap: false,
+    cssCodeSplit: true,
+    modulePreload: { polyfill: false },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) return 'react-core';
+          if (id.includes('/axios/')) return 'http-client';
+          return 'vendor';
+        },
+      },
+    },
+  },
 });
