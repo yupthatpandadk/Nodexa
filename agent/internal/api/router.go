@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	gpDocker "nodexa/agent/internal/docker"
 	"nodexa/agent/internal/server"
-	"github.com/gin-gonic/gin"
 )
 
 type API struct {
@@ -20,6 +20,7 @@ type API struct {
 }
 
 func New(token string, d *gpDocker.Manager) *API { return &API{token, d} }
+
 func (a *API) Router() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -38,6 +39,7 @@ func (a *API) Router() *gin.Engine {
 	api.POST("/servers/:id/backups", a.backup)
 	return r
 }
+
 func (a *API) auth(c *gin.Context) {
 	if c.GetHeader("Authorization") != "Bearer "+a.token {
 		c.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
@@ -45,45 +47,55 @@ func (a *API) auth(c *gin.Context) {
 	}
 	c.Next()
 }
+
 func (a *API) create(c *gin.Context) {
 	var q server.CreateRequest
-	if c.ShouldBindJSON(&q) != nil {
-		c.JSON(422, gin.H{"error": "invalid request"})
+	if err := c.ShouldBindJSON(&q); err != nil {
+		c.JSON(422, gin.H{"error": "invalid request", "detail": err.Error()})
 		return
 	}
-	if e := a.docker.Create(c, q); e != nil {
-		c.JSON(500, gin.H{"error": e.Error()})
+	if err := a.docker.Create(c, q); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(201, gin.H{"id": q.ID, "status": "created"})
 }
+
 func (a *API) power(c *gin.Context) {
-	var q struct { Signal string `json:"signal"` }
-	_ = c.ShouldBindJSON(&q)
+	var q struct {
+		Signal string `json:"signal"`
+	}
+	if err := c.ShouldBindJSON(&q); err != nil {
+		c.JSON(422, gin.H{"error": "invalid request"})
+		return
+	}
 	id := c.Param("id")
-	var e error
+	var err error
 	switch q.Signal {
 	case "start":
-		e = a.docker.Start(c, id)
+		err = a.docker.Start(c, id)
 	case "stop":
-		e = a.docker.Stop(c, id)
+		err = a.docker.Stop(c, id)
 	case "restart":
-		e = a.docker.Restart(c, id)
+		err = a.docker.Restart(c, id)
 	case "kill":
-		e = a.docker.Kill(c, id)
+		err = a.docker.Kill(c, id)
 	default:
 		c.JSON(422, gin.H{"error": "invalid signal"})
 		return
 	}
-	if e != nil {
-		c.JSON(500, gin.H{"error": e.Error()})
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(200, gin.H{"ok": true})
 }
+
 func (a *API) command(c *gin.Context) {
-	var q struct { Command string `json:"command"` }
-	if c.ShouldBindJSON(&q) != nil {
+	var q struct {
+		Command string `json:"command"`
+	}
+	if err := c.ShouldBindJSON(&q); err != nil {
 		c.JSON(422, gin.H{"error": "invalid request"})
 		return
 	}
@@ -93,112 +105,156 @@ func (a *API) command(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"ok": true})
 }
+
 func (a *API) stats(c *gin.Context) {
-	s, e := a.docker.Stats(c, c.Param("id"))
-	if e != nil {
-		c.JSON(500, gin.H{"error": e.Error()})
+	stats, err := a.docker.Stats(c, c.Param("id"))
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(200, s)
+	c.JSON(200, stats)
 }
+
 func (a *API) logs(c *gin.Context) {
-	r, e := a.docker.Logs(c, c.Param("id"), c.DefaultQuery("tail", "200"))
-	if e != nil {
-		c.JSON(500, gin.H{"error": e.Error()})
+	reader, err := a.docker.Logs(c, c.Param("id"), c.DefaultQuery("tail", "200"))
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	defer r.Close()
+	defer reader.Close()
 	c.Header("Content-Type", "text/plain; charset=utf-8")
-	scanner := bufio.NewScanner(r)
+	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := scanner.Bytes()
-		if len(line) > 8 { line = line[8:] }
-		_, _ = c.Writer.Write(append(line, '\n'))
+		if len(line) > 8 {
+			line = line[8:]
+		}
+		if _, err := c.Writer.Write(append(line, '\n')); err != nil {
+			return
+		}
 		c.Writer.Flush()
 	}
-}
-func (a *API) listFiles(c *gin.Context) {
-	p, e := a.docker.SafePath(c.Param("id"), c.DefaultQuery("path", "/"))
-	if e != nil {
-		c.JSON(400, gin.H{"error": e.Error()})
+	if err := scanner.Err(); err != nil {
+		// Headers/output may already have been written, so log by terminating the
+		// stream instead of attempting to append a second JSON response.
 		return
 	}
-	items, e := os.ReadDir(p)
-	if e != nil {
-		c.JSON(500, gin.H{"error": e.Error()})
+}
+
+func (a *API) listFiles(c *gin.Context) {
+	path, err := a.docker.SafePath(c.Param("id"), c.DefaultQuery("path", "/"))
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	items, err := os.ReadDir(path)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	out := make([]gin.H, 0, len(items))
-	for _, it := range items {
-		info, _ := it.Info()
-		out = append(out, gin.H{"name": it.Name(), "directory": it.IsDir(), "size": info.Size(), "modified_at": info.ModTime()})
+	for _, item := range items {
+		info, infoErr := item.Info()
+		if infoErr != nil {
+			// A file may disappear between ReadDir and Info. Skip it rather than
+			// dereferencing a nil FileInfo and crashing the whole Agent request.
+			continue
+		}
+		out = append(out, gin.H{
+			"name":        item.Name(),
+			"directory":   item.IsDir(),
+			"size":        info.Size(),
+			"modified_at": info.ModTime(),
+		})
 	}
 	c.JSON(200, gin.H{"items": out})
 }
+
 func (a *API) readFile(c *gin.Context) {
-	p, e := a.docker.SafePath(c.Param("id"), c.Query("path"))
-	if e != nil {
-		c.JSON(400, gin.H{"error": e.Error()})
+	path, err := a.docker.SafePath(c.Param("id"), c.Query("path"))
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	b, e := os.ReadFile(p)
-	if e != nil {
-		c.JSON(500, gin.H{"error": e.Error()})
+	body, err := os.ReadFile(path)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.Data(200, "text/plain; charset=utf-8", b)
+	c.Data(200, "text/plain; charset=utf-8", body)
 }
+
 func (a *API) writeFile(c *gin.Context) {
-	p, e := a.docker.SafePath(c.Param("id"), c.Query("path"))
-	if e != nil {
-		c.JSON(400, gin.H{"error": e.Error()})
+	path, err := a.docker.SafePath(c.Param("id"), c.Query("path"))
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	b, e := io.ReadAll(io.LimitReader(c.Request.Body, 8*1024*1024))
-	if e != nil {
-		c.JSON(400, gin.H{"error": e.Error()})
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, 8*1024*1024))
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	if e = os.MkdirAll(filepath.Dir(p), 0750); e == nil { e = os.WriteFile(p, b, 0640) }
-	if e != nil {
-		c.JSON(500, gin.H{"error": e.Error()})
+	if err = os.MkdirAll(filepath.Dir(path), 0750); err == nil {
+		err = os.WriteFile(path, body, 0640)
+	}
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(200, gin.H{"ok": true, "bytes": len(b)})
+	c.JSON(200, gin.H{"ok": true, "bytes": len(body)})
 }
+
 func (a *API) makeDirectory(c *gin.Context) {
-	var q struct { Path string `json:"path"` }
-	if c.ShouldBindJSON(&q) != nil {
+	var q struct {
+		Path string `json:"path"`
+	}
+	if err := c.ShouldBindJSON(&q); err != nil {
 		c.JSON(422, gin.H{"error": "invalid request"})
 		return
 	}
-	p, e := a.docker.SafePath(c.Param("id"), q.Path)
-	if e == nil { e = os.MkdirAll(p, 0750) }
-	if e != nil {
-		c.JSON(500, gin.H{"error": e.Error()})
+	path, err := a.docker.SafePath(c.Param("id"), q.Path)
+	if err == nil {
+		err = os.MkdirAll(path, 0750)
+	}
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(201, gin.H{"ok": true})
 }
+
 func (a *API) deleteFile(c *gin.Context) {
-	p, e := a.docker.SafePath(c.Param("id"), c.Query("path"))
-	if e == nil { e = os.RemoveAll(p) }
-	if e != nil {
-		c.JSON(500, gin.H{"error": e.Error()})
+	path, err := a.docker.SafePath(c.Param("id"), c.Query("path"))
+	if err == nil {
+		err = os.RemoveAll(path)
+	}
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(200, gin.H{"ok": true})
 }
+
 func (a *API) backup(c *gin.Context) {
-	var q struct { Name string `json:"name"` }
-	_ = c.ShouldBindJSON(&q)
-	p, e := a.docker.Backup(c.Param("id"), q.Name)
-	if e != nil {
-		c.JSON(500, gin.H{"error": e.Error()})
+	var q struct {
+		Name string `json:"name"`
+	}
+	if err := c.ShouldBindJSON(&q); err != nil {
+		c.JSON(422, gin.H{"error": "invalid request"})
 		return
 	}
-	info, _ := os.Stat(p)
-	c.JSON(201, gin.H{"ok": true, "name": filepath.Base(p), "bytes": info.Size()})
+	path, err := a.docker.Backup(c.Param("id"), q.Name)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "backup was created but could not be inspected: " + err.Error()})
+		return
+	}
+	c.JSON(201, gin.H{"ok": true, "name": filepath.Base(path), "bytes": info.Size()})
 }
 
 var _ = http.StatusOK
