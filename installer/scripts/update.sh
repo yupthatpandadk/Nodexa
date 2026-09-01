@@ -14,7 +14,7 @@ repair_laravel_skeleton(){
   local tmp
   tmp="$(mktemp -d)"
   log "Repairing Laravel runtime files..."
-  composer create-project laravel/laravel:^11.0 "$tmp/panel" --no-interaction --prefer-dist --no-scripts >/dev/null
+  composer create-project laravel/laravel:^12.0 "$tmp/panel" --no-interaction --prefer-dist --no-scripts >/dev/null
 
   rsync -a \
     --exclude='.env' \
