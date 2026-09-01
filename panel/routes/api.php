@@ -25,6 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/servers', [ServerController::class, 'index']);
     Route::post('/servers', [ServerController::class, 'store']);
     Route::post('/servers/{server}/retry-install', [ServerController::class, 'retryInstall']);
+    Route::post('/servers/{server}/reinstall', [ServerController::class, 'reinstall']);
     Route::get('/servers/{server}', [ServerController::class, 'show']);
     Route::post('/servers/{server}/power', [ServerController::class, 'power']);
     Route::post('/servers/{server}/command', [ServerController::class, 'command']);
