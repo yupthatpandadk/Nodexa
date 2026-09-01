@@ -27,6 +27,21 @@ p=Path(sys.argv[1]); text=p.read_text()
 # stale public/hot file must not make mobile browsers wait for a dev server.
 text=text.replace("    @viteReactRefresh\n", "")
 
+# The old admin navigation enhancer used a subtree MutationObserver. add() also
+# updated the update-button text, which itself produced another mutation. On an
+# administrator account this could create a self-triggering observer loop that
+# pegged the browser main thread: the dashboard was visible, but taps/clicks no
+# longer fired. Replace it with a short bounded retry while React mounts.
+text=text.replace(
+    "if(app){const observer=new MutationObserver(()=>add());observer.observe(app,{childList:true,subtree:true})}",
+    "if(app){let tries=0;const timer=setInterval(()=>{tries++;if(add()||tries>=20)clearInterval(timer)},150)}"
+)
+# Avoid needless DOM writes when the updater badge is refreshed.
+text=text.replace(
+    "u.textContent=updateAvailable?'Opdatering tilgængelig •':'Opdateringer';",
+    "const updateLabel=updateAvailable?'Opdatering tilgængelig •':'Opdateringer';if(u.textContent!==updateLabel)u.textContent=updateLabel;"
+)
+
 start="\n fetch('/api/me',{headers}).then(r=>r.ok?r.json():null).then(me=>{"
 end="\n }).catch(()=>{});\n})();"
 pos=text.find(start)
@@ -51,4 +66,4 @@ p.write_text(text)
 PY
 fi
 
-echo "[Nodexa] Critical frontend path trimmed; admin enrichment deferred until idle."
+echo "[Nodexa] Critical frontend path trimmed; admin enrichment deferred without blocking UI interactions."
