@@ -47,9 +47,6 @@ if [[ -d "$PANEL_DIR" ]]; then
   composer update --no-dev --optimize-autoloader --no-interaction --prefer-dist
   php artisan migrate --force
 
-  # Never leave Laravel/Vite in development-mode or serve stale compiled Blade
-  # templates after an update. A leftover public/hot file makes @vite point at
-  # a non-existent dev server; stale compiled views can keep an old blank shell.
   rm -f public/hot
   php artisan optimize:clear
   rm -f storage/framework/views/*.php 2>/dev/null || true
@@ -67,8 +64,6 @@ if [[ -d "$PANEL_DIR" ]]; then
   chown -R www-data:www-data storage bootstrap/cache
   chmod -R 775 storage bootstrap/cache
 
-  # Flush PHP OPcache/process memory so the first request after an update is
-  # guaranteed to execute the newly deployed Blade/PHP code.
   while read -r svc; do
     [[ -n "$svc" ]] && systemctl restart "$svc" 2>/dev/null || true
   done < <(systemctl list-unit-files --type=service --no-legend 'php*-fpm.service' 2>/dev/null | awk '{print $1}')
@@ -85,13 +80,9 @@ fi
 
 bash "$SOURCE_ROOT/deploy/setup-updater.sh"
 
-# Existing installs created before the storefront was introduced only had the
-# panel FQDN in Nginx. Derive panel.example.com -> example.com, persist it in
-# .env, add Nginx hostnames and expand HTTPS when DNS is ready.
 if [[ -d "$PANEL_DIR" ]]; then
   bash "$SOURCE_ROOT/deploy/setup-storefront.sh"
-  # Keep ordinary web requests independent of Redis. The queue may continue to
-  # use Redis, but a Redis/node issue must never hold the panel HTML request open.
+  bash "$SOURCE_ROOT/deploy/setup-storefront-sync.sh"
   bash "$SOURCE_ROOT/deploy/optimize-panel-runtime.sh"
 fi
 
