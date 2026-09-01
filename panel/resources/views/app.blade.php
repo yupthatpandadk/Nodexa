@@ -7,44 +7,55 @@
     @viteReactRefresh
     @vite(['resources/js/main.tsx'])
     <style>
-        #nodexa-boot-fallback{display:none;min-height:100vh;place-items:center;padding:24px;background:#0b0d12;color:#eef1f7;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
-        #nodexa-boot-fallback .box{width:min(560px,100%);padding:28px;border:1px solid #2a3140;border-radius:18px;background:#11151d;box-shadow:0 30px 100px rgba(0,0,0,.45)}
+        html,body{margin:0;min-height:100%;background:#0b0d12}
+        #nodexa-boot-fallback{position:fixed;inset:0;z-index:2147483647;display:grid;min-height:100vh;place-items:center;padding:24px;background:#0b0d12;color:#eef1f7;font-family:Inter,ui-sans-serif,system-ui,sans-serif;box-sizing:border-box}
+        #nodexa-boot-fallback .box{width:min(560px,100%);padding:28px;border:1px solid #2a3140;border-radius:18px;background:#11151d;box-shadow:0 30px 100px rgba(0,0,0,.45);box-sizing:border-box}
         #nodexa-boot-fallback h1{margin:0 0 10px;font-size:24px}
         #nodexa-boot-fallback p{color:#9aa4b5;line-height:1.55}
-        #nodexa-boot-fallback code{display:block;margin-top:14px;padding:12px;border-radius:10px;background:#090b0f;color:#f2a1b4;white-space:pre-wrap;word-break:break-word}
-        #nodexa-boot-fallback button{margin-top:16px;padding:10px 14px;border:1px solid #786cff;border-radius:9px;background:#695cff;color:white;font:inherit;cursor:pointer}
+        #nodexa-boot-fallback code{display:none;margin-top:14px;padding:12px;border-radius:10px;background:#090b0f;color:#f2a1b4;white-space:pre-wrap;word-break:break-word}
+        #nodexa-boot-fallback button{display:none;margin-top:16px;padding:10px 14px;border:1px solid #786cff;border-radius:9px;background:#695cff;color:white;font:inherit;cursor:pointer}
+        #nodexa-boot-fallback.failed code,#nodexa-boot-fallback.failed button{display:block}
+        .nodexa-spinner{width:28px;height:28px;border:3px solid #2b3140;border-top-color:#786cff;border-radius:50%;animation:nodexa-spin .8s linear infinite;margin-bottom:16px}
+        @keyframes nodexa-spin{to{transform:rotate(360deg)}}
     </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="nodexa-boot-fallback">
     <div class="box">
-        <h1>Nodexa kunne ikke indlæse frontenden</h1>
-        <p>Selve panelet svarer, men React-frontenden blev ikke startet. Genindlæs siden. Hvis problemet fortsætter, vises den tekniske fejl nedenfor.</p>
-        <code data-nodexa-error>Frontend bundle blev ikke indlæst eller startede ikke inden for tidsgrænsen.</code>
+        <div class="nodexa-spinner"></div>
+        <h1 data-nodexa-title>Nodexa indlæses…</h1>
+        <p data-nodexa-description>Kontrolpanelet starter. Det tager normalt kun et øjeblik.</p>
+        <code data-nodexa-error>Frontend bundle blev ikke indlæst eller React startede ikke inden for tidsgrænsen.</code>
         <button type="button" onclick="location.reload()">Genindlæs</button>
     </div>
 </div>
-<noscript><div style="padding:24px;color:white;background:#0b0d12">Nodexa kræver JavaScript.</div></noscript>
+<noscript><div style="position:fixed;inset:0;z-index:2147483647;padding:24px;color:white;background:#0b0d12">Nodexa kræver JavaScript.</div></noscript>
 <script>
 (function(){
  const fallback=document.getElementById('nodexa-boot-fallback');
  const errorBox=fallback&&fallback.querySelector('[data-nodexa-error]');
- const showError=(message)=>{
+ const title=fallback&&fallback.querySelector('[data-nodexa-title]');
+ const description=fallback&&fallback.querySelector('[data-nodexa-description]');
+ const fail=(message)=>{
+  if(!fallback)return;
+  fallback.classList.add('failed');
+  const spinner=fallback.querySelector('.nodexa-spinner'); if(spinner)spinner.remove();
+  if(title)title.textContent='Nodexa kunne ikke indlæse frontenden';
+  if(description)description.textContent='Selve webserveren svarer, men React-frontenden kunne ikke starte. Den tekniske fejl vises nedenfor.';
   if(errorBox&&message)errorBox.textContent=String(message);
-  if(fallback)fallback.style.display='grid';
  };
-
- // Never leave the customer with an empty dark page if the frontend bundle
- // fails to download or React never mounts.
- setTimeout(()=>{if(!window.__NODEXA_BOOTED__)showError(errorBox?.textContent)},3500);
+ const booted=()=>{ if(fallback)fallback.remove(); };
+ window.addEventListener('nodexa:booted',booted,{once:true});
+ if(window.__NODEXA_BOOTED__)booted();
+ setTimeout(()=>{if(!window.__NODEXA_BOOTED__)fail(errorBox?.textContent)},5000);
  window.addEventListener('error',e=>{
   const source=e.filename?`\n${e.filename}${e.lineno?':'+e.lineno:''}`:'';
-  showError((e.message||'JavaScript/frontend resource error')+source);
+  fail((e.message||'JavaScript/frontend resource error')+source);
  });
  window.addEventListener('unhandledrejection',e=>{
   const r=e.reason;
-  showError(r&&r.message?String(r.message):String(r||'Unhandled promise rejection'));
+  fail(r&&r.message?String(r.message):String(r||'Unhandled promise rejection'));
  });
 
  const token=localStorage.getItem('nodexa_panel_token');
