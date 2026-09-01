@@ -14,7 +14,9 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/errdefs"
 	"nodexa/agent/internal/server"
 )
 
@@ -33,14 +35,14 @@ type Stats struct {
 }
 
 func New(dataRoot string) (*Manager, error) {
-	c, e := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if e != nil {
-		return nil, e
+	c, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return nil, err
 	}
 	if err := os.MkdirAll(dataRoot, 0750); err != nil {
 		return nil, err
 	}
-	return &Manager{c, dataRoot}, nil
+	return &Manager{cli: c, dataRoot: dataRoot}, nil
 }
 
 func (m *Manager) serverRoot(id string) (string, error) {
@@ -67,7 +69,41 @@ func (m *Manager) SafePath(id, relative string) (string, error) {
 	return target, nil
 }
 
+func (m *Manager) ensureImage(ctx context.Context, ref string) error {
+	if strings.TrimSpace(ref) == "" {
+		return errors.New("docker image is required")
+	}
+
+	if _, _, err := m.cli.ImageInspectWithRaw(ctx, ref); err == nil {
+		return nil
+	} else if !errdefs.IsNotFound(err) {
+		return fmt.Errorf("inspect docker image %q: %w", ref, err)
+	}
+
+	reader, err := m.cli.ImagePull(ctx, ref, image.PullOptions{})
+	if err != nil {
+		return fmt.Errorf("pull docker image %q: %w", ref, err)
+	}
+	defer reader.Close()
+
+	// Docker only finishes the pull while the response stream is consumed.
+	if _, err := io.Copy(io.Discard, reader); err != nil {
+		return fmt.Errorf("download docker image %q: %w", ref, err)
+	}
+	return nil
+}
+
 func (m *Manager) Create(ctx context.Context, r server.CreateRequest) error {
+	if r.MemoryMB < 128 {
+		return errors.New("memory_mb must be at least 128")
+	}
+	if r.CPULimit < 0 {
+		return errors.New("cpu_limit cannot be negative")
+	}
+	if strings.TrimSpace(r.Startup) == "" {
+		return errors.New("startup command is required")
+	}
+
 	root, err := m.serverRoot(r.ID)
 	if err != nil {
 		return err
@@ -75,29 +111,67 @@ func (m *Manager) Create(ctx context.Context, r server.CreateRequest) error {
 	if err := os.MkdirAll(root, 0750); err != nil {
 		return err
 	}
-	mem := r.MemoryMB * 1024 * 1024
-	cfg := &container.Config{Image: r.Image, Cmd: []string{"/bin/sh", "-lc", r.Startup}, Env: env(r.Environment), Tty: true, OpenStdin: true, AttachStdin: true, AttachStdout: true, AttachStderr: true, Labels: map[string]string{"nodexa.server": r.ID}}
-	host := &container.HostConfig{Resources: container.Resources{Memory: mem, NanoCPUs: r.CPULimit * 10_000_000}, Binds: []string{fmt.Sprintf("%s:/home/container", root)}}
-	_, err = m.cli.ContainerCreate(ctx, cfg, host, nil, nil, "nx-"+r.ID)
-	return err
-}
-func env(mv map[string]string) []string {
-	o := make([]string, 0, len(mv))
-	for k, v := range mv {
-		o = append(o, k+"="+v)
+
+	containerName := "nx-" + r.ID
+	if _, err := m.cli.ContainerInspect(ctx, containerName); err == nil {
+		// Provisioning is idempotent. A retry after a network timeout must not
+		// create a duplicate container or turn a successful install into a 500.
+		return nil
+	} else if !errdefs.IsNotFound(err) {
+		return fmt.Errorf("inspect existing container: %w", err)
 	}
-	return o
+
+	if err := m.ensureImage(ctx, r.Image); err != nil {
+		return err
+	}
+
+	mem := r.MemoryMB * 1024 * 1024
+	cfg := &container.Config{
+		Image:        r.Image,
+		Cmd:          []string{"/bin/sh", "-lc", r.Startup},
+		Env:          env(r.Environment),
+		Tty:          true,
+		OpenStdin:    true,
+		AttachStdin:  true,
+		AttachStdout: true,
+		AttachStderr: true,
+		Labels:       map[string]string{"nodexa.server": r.ID},
+	}
+	host := &container.HostConfig{
+		Resources: container.Resources{
+			Memory:   mem,
+			NanoCPUs: r.CPULimit * 10_000_000,
+		},
+		Binds: []string{fmt.Sprintf("%s:/home/container", root)},
+	}
+
+	if _, err := m.cli.ContainerCreate(ctx, cfg, host, nil, nil, containerName); err != nil {
+		return fmt.Errorf("create docker container: %w", err)
+	}
+	return nil
 }
+
+func env(values map[string]string) []string {
+	out := make([]string, 0, len(values))
+	for key, value := range values {
+		out = append(out, key+"="+value)
+	}
+	return out
+}
+
 func (m *Manager) Start(ctx context.Context, id string) error {
 	return m.cli.ContainerStart(ctx, "nx-"+id, container.StartOptions{})
 }
+
 func (m *Manager) Stop(ctx context.Context, id string) error {
 	t := 10
 	return m.cli.ContainerStop(ctx, "nx-"+id, container.StopOptions{Timeout: &t})
 }
+
 func (m *Manager) Kill(ctx context.Context, id string) error {
 	return m.cli.ContainerKill(ctx, "nx-"+id, "SIGKILL")
 }
+
 func (m *Manager) Restart(ctx context.Context, id string) error {
 	t := 10
 	return m.cli.ContainerRestart(ctx, "nx-"+id, container.StopOptions{Timeout: &t})
@@ -107,7 +181,11 @@ func (m *Manager) Command(ctx context.Context, id, command string) error {
 	if strings.TrimSpace(command) == "" {
 		return errors.New("empty command")
 	}
-	exec, err := m.cli.ContainerExecCreate(ctx, "nx-"+id, container.ExecOptions{AttachStdout: true, AttachStderr: true, Cmd: []string{"/bin/sh", "-lc", command}})
+	exec, err := m.cli.ContainerExecCreate(ctx, "nx-"+id, container.ExecOptions{
+		AttachStdout: true,
+		AttachStderr: true,
+		Cmd:          []string{"/bin/sh", "-lc", command},
+	})
 	if err != nil {
 		return err
 	}
@@ -118,7 +196,12 @@ func (m *Manager) Logs(ctx context.Context, id string, tail string) (io.ReadClos
 	if tail == "" {
 		tail = "200"
 	}
-	return m.cli.ContainerLogs(ctx, "nx-"+id, container.LogsOptions{ShowStdout: true, ShowStderr: true, Timestamps: true, Tail: tail})
+	return m.cli.ContainerLogs(ctx, "nx-"+id, container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Timestamps: true,
+		Tail:       tail,
+	})
 }
 
 func (m *Manager) Stats(ctx context.Context, id string) (Stats, error) {
@@ -130,32 +213,41 @@ func (m *Manager) Stats(ctx context.Context, id string) (Stats, error) {
 	if !inspect.State.Running {
 		return out, nil
 	}
-	r, err := m.cli.ContainerStatsOneShot(ctx, "nx-"+id)
+
+	response, err := m.cli.ContainerStatsOneShot(ctx, "nx-"+id)
 	if err != nil {
 		return out, err
 	}
-	defer r.Body.Close()
-	var s container.StatsResponse
-	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
+	defer response.Body.Close()
+
+	var stats container.StatsResponse
+	if err := json.NewDecoder(response.Body).Decode(&stats); err != nil {
 		return out, err
 	}
-	cpuDelta := float64(s.CPUStats.CPUUsage.TotalUsage - s.PreCPUStats.CPUUsage.TotalUsage)
-	sysDelta := float64(s.CPUStats.SystemUsage - s.PreCPUStats.SystemUsage)
-	cpus := float64(s.CPUStats.OnlineCPUs)
+
+	var cpuDelta, sysDelta float64
+	if stats.CPUStats.CPUUsage.TotalUsage >= stats.PreCPUStats.CPUUsage.TotalUsage {
+		cpuDelta = float64(stats.CPUStats.CPUUsage.TotalUsage - stats.PreCPUStats.CPUUsage.TotalUsage)
+	}
+	if stats.CPUStats.SystemUsage >= stats.PreCPUStats.SystemUsage {
+		sysDelta = float64(stats.CPUStats.SystemUsage - stats.PreCPUStats.SystemUsage)
+	}
+	cpus := float64(stats.CPUStats.OnlineCPUs)
 	if cpus == 0 {
-		cpus = float64(len(s.CPUStats.CPUUsage.PercpuUsage))
+		cpus = float64(len(stats.CPUStats.CPUUsage.PercpuUsage))
 	}
 	if cpus == 0 {
 		cpus = 1
 	}
-	if sysDelta > 0 && cpuDelta >= 0 {
+	if sysDelta > 0 {
 		out.CPUPercent = (cpuDelta / sysDelta) * cpus * 100
 	}
-	out.MemoryBytes = s.MemoryStats.Usage
-	out.MemoryLimit = s.MemoryStats.Limit
-	for _, n := range s.Networks {
-		out.NetworkRxBytes += n.RxBytes
-		out.NetworkTxBytes += n.TxBytes
+
+	out.MemoryBytes = stats.MemoryStats.Usage
+	out.MemoryLimit = stats.MemoryStats.Limit
+	for _, network := range stats.Networks {
+		out.NetworkRxBytes += network.RxBytes
+		out.NetworkTxBytes += network.TxBytes
 	}
 	return out, nil
 }
@@ -165,10 +257,17 @@ func (m *Manager) Backup(id, name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if info, err := os.Stat(root); err != nil {
+		return "", fmt.Errorf("server data directory unavailable: %w", err)
+	} else if !info.IsDir() {
+		return "", errors.New("server data path is not a directory")
+	}
+
 	backupDir := filepath.Join(m.dataRoot, ".backups", id)
 	if err := os.MkdirAll(backupDir, 0750); err != nil {
 		return "", err
 	}
+
 	safe := strings.Map(func(r rune) rune {
 		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_' {
 			return r
@@ -178,39 +277,42 @@ func (m *Manager) Backup(id, name string) (string, error) {
 	if safe == "" {
 		safe = time.Now().UTC().Format("20060102-150405")
 	}
+
 	dest := filepath.Join(backupDir, safe+".tar.gz")
-	f, err := os.Create(dest)
+	file, err := os.Create(dest)
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
-	gz := gzip.NewWriter(f)
-	defer gz.Close()
-	tw := tar.NewWriter(gz)
-	defer tw.Close()
-	err = filepath.Walk(root, func(p string, info os.FileInfo, e error) error {
-		if e != nil {
-			return e
+	defer file.Close()
+
+	gzipWriter := gzip.NewWriter(file)
+	defer gzipWriter.Close()
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+
+	err = filepath.Walk(root, func(path string, info os.FileInfo, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
 		}
-		rel, e := filepath.Rel(root, p)
-		if e != nil {
-			return e
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
 		}
-		h, e := tar.FileInfoHeader(info, "")
-		if e != nil {
-			return e
+		header, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return err
 		}
-		h.Name = filepath.ToSlash(rel)
-		if e = tw.WriteHeader(h); e != nil {
-			return e
+		header.Name = filepath.ToSlash(rel)
+		if err := tarWriter.WriteHeader(header); err != nil {
+			return err
 		}
 		if info.Mode().IsRegular() {
-			rf, e := os.Open(p)
-			if e != nil {
-				return e
+			input, err := os.Open(path)
+			if err != nil {
+				return err
 			}
-			_, copyErr := io.Copy(tw, rf)
-			closeErr := rf.Close()
+			_, copyErr := io.Copy(tarWriter, input)
+			closeErr := input.Close()
 			if copyErr != nil {
 				return copyErr
 			}
