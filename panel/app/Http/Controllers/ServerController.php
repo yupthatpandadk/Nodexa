@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Throwable;
 
 class ServerController extends Controller
 {
@@ -60,16 +61,17 @@ class ServerController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:120',
             'node_id' => 'required|exists:nodes,id',
-            'docker_image' => 'required|string',
-            'startup' => 'required|string',
+            'docker_image' => 'required|string|max:512',
+            'startup' => 'required|string|max:10000',
             'memory_mb' => 'required|integer|min:128',
             'disk_mb' => 'required|integer|min:512',
             'cpu_limit' => 'required|integer|min:0|max:1000',
-            'environment' => 'array',
+            'environment' => 'nullable|array',
             'owner_id' => 'required|integer|exists:users,id',
         ]);
         $ownerId = (int) $data['owner_id'];
         unset($data['owner_id']);
+
         $server = DB::transaction(function () use ($data, $ownerId) {
             $last = Server::query()->lockForUpdate()->max('server_number') ?? 0;
             $number = $last + 1;
@@ -81,9 +83,24 @@ class ServerController extends Controller
                 'status' => 'installing',
             ]);
         });
-        $daemon->createServer($server->load('node'));
-        $server->update(['status' => 'offline']);
-        return response()->json($server, 201);
+
+        try {
+            $daemon->createServer($server->load('node'));
+            $server->update(['status' => 'offline']);
+
+            return response()->json($server->fresh()->load('node'), 201);
+        } catch (Throwable $e) {
+            // Keep the database record so the administrator can see which
+            // provisioning attempt failed and repair/retry it later. DaemonClient
+            // separately records the detailed Node error under Admin → Fejl.
+            $server->update(['status' => 'install_failed']);
+
+            return response()->json([
+                'message' => 'Serveren blev oprettet i Nodexa, men installationen på noden fejlede.',
+                'error' => $e->getMessage(),
+                'server' => $server->fresh()->load('node'),
+            ], 502);
+        }
     }
 
     public function power(Request $request, Server $server, DaemonClient $daemon)
