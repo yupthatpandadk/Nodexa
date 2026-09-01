@@ -24,20 +24,28 @@ function showBootError(error: unknown) {
   console.error('[Nodexa] Frontend boot failed:', error);
 }
 
+function NodexaRoot() {
+  React.useEffect(() => {
+    window.__NODEXA_BOOTED__ = true;
+    window.dispatchEvent(new Event('nodexa:booted'));
+  }, []);
+
+  return (
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  );
+}
+
 try {
   const mount = document.getElementById('app');
   if (!mount) throw new Error('Missing #app mount element.');
 
   ReactDOM.createRoot(mount).render(
     <React.StrictMode>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <NodexaRoot />
     </React.StrictMode>,
   );
-
-  window.__NODEXA_BOOTED__ = true;
-  document.getElementById('nodexa-boot-fallback')?.remove();
 } catch (error) {
   showBootError(error);
 }
