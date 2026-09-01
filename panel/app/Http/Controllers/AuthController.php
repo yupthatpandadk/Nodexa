@@ -29,13 +29,29 @@ class AuthController extends Controller
         $user->tokens()->where('name', 'panel')->delete();
         $token = $user->createToken('panel')->plainTextToken;
 
+        $name = trim((string) ($user->name ?? ''));
+        if ($name === '') {
+            $name = trim(implode(' ', array_filter([
+                (string) ($user->first_name ?? ''),
+                (string) ($user->last_name ?? ''),
+            ])));
+        }
+        if ($name === '') {
+            $name = trim((string) ($user->username ?? ''));
+        }
+        if ($name === '') {
+            $name = trim((string) ($user->email ?? 'Nodexa User'));
+        }
+
         return [
             'token' => $token,
             'user' => [
                 'id' => $user->id,
-                'name' => $user->name,
+                'name' => $name,
                 'email' => $user->email,
                 'username' => $user->username,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
                 'is_admin' => (bool) $user->is_admin,
             ],
         ];
