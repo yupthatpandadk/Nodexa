@@ -45,22 +45,25 @@ php artisan config:cache >/dev/null 2>&1 || true
 php artisan route:cache >/dev/null 2>&1 || true
 php artisan view:cache >/dev/null 2>&1 || true
 
-# Do not let a broken PHP request spin forever in the browser. These limits are
-# deliberately generous for normal Nodexa requests, while still turning an
-# actual PHP-FPM stall into a visible gateway error that can be diagnosed.
+# Normal browser bootstrap requests have their own short client timeout. Some
+# administrator operations, especially first-time server provisioning, may need
+# up to three minutes while a Node pulls a Docker image. Nginx must not turn a
+# healthy long-running provisioning request into a 504 after 20 seconds.
 if [[ -f "$NGINX_SITE" ]]; then
  python3 - "$NGINX_SITE" <<'PY'
 from pathlib import Path
 import re, sys
 p = Path(sys.argv[1])
 text = p.read_text()
-if 'fastcgi_read_timeout 20s;' not in text:
-    text = re.sub(
-        r'(fastcgi_pass\s+unix:[^;]+;)',
-        r'\1\n        fastcgi_connect_timeout 5s;\n        fastcgi_send_timeout 20s;\n        fastcgi_read_timeout 20s;',
-        text,
-        count=1,
-    )
+# Remove previously injected Nodexa FastCGI timeout directives so this script
+# remains idempotent across upgrades from the old 20-second policy.
+text = re.sub(r'^[ \t]*fastcgi_(?:connect|send|read)_timeout\s+[^;]+;\s*\n?', '', text, flags=re.M)
+text = re.sub(
+    r'(fastcgi_pass\s+unix:[^;]+;)',
+    r'\1\n        fastcgi_connect_timeout 5s;\n        fastcgi_send_timeout 210s;\n        fastcgi_read_timeout 210s;',
+    text,
+    count=1,
+)
 p.write_text(text)
 PY
  nginx -t >/dev/null
