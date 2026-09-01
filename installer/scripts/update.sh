@@ -90,6 +90,9 @@ bash "$SOURCE_ROOT/deploy/setup-updater.sh"
 # .env, add Nginx hostnames and expand HTTPS when DNS is ready.
 if [[ -d "$PANEL_DIR" ]]; then
   bash "$SOURCE_ROOT/deploy/setup-storefront.sh"
+  # Keep ordinary web requests independent of Redis. The queue may continue to
+  # use Redis, but a Redis/node issue must never hold the panel HTML request open.
+  bash "$SOURCE_ROOT/deploy/optimize-panel-runtime.sh"
 fi
 
 systemctl restart nodexa-queue 2>/dev/null || true
