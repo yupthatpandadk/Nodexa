@@ -13,6 +13,7 @@ use App\Http\Controllers\DatabaseHostController;
 use App\Http\Controllers\AdminServerStartupController;
 use App\Http\Controllers\SystemIssueController;
 use App\Http\Controllers\AdminUpdateController;
+use App\Http\Controllers\StorefrontSiteController;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
@@ -65,6 +66,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/database-hosts/{databaseHost}/test', [DatabaseHostController::class, 'test']);
     Route::get('/database-hosts/{databaseHost}/credentials', [DatabaseHostController::class, 'credentials']);
     Route::delete('/database-hosts/{databaseHost}', [DatabaseHostController::class, 'destroy']);
+
+    Route::get('/admin/storefronts', [StorefrontSiteController::class, 'index']);
+    Route::post('/admin/storefronts', [StorefrontSiteController::class, 'store']);
+    Route::put('/admin/storefronts/{site}', [StorefrontSiteController::class, 'update']);
+    Route::delete('/admin/storefronts/{site}', [StorefrontSiteController::class, 'destroy']);
+    Route::post('/admin/storefronts/{site}/products', [StorefrontSiteController::class, 'storeProduct']);
+    Route::put('/admin/storefronts/{site}/products/{product}', [StorefrontSiteController::class, 'updateProduct']);
+    Route::delete('/admin/storefronts/{site}/products/{product}', [StorefrontSiteController::class, 'destroyProduct']);
 
     Route::get('/system-errors', [SystemIssueController::class, 'index']);
     Route::post('/system-errors/scan-all', [SystemIssueController::class, 'scanAll']);
