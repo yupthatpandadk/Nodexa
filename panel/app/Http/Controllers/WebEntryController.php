@@ -69,9 +69,8 @@ class WebEntryController extends Controller
         $name = trim((string) ($site->name ?: 'Nodexa Hosting'));
         $initial = strtoupper(substr($name, 0, 1) ?: 'N');
 
-        // Precompute JSON here rather than putting closures/arrow functions
-        // inside Blade @json directives. This keeps compiled views simple and
-        // avoids Blade parser/runtime failures on production installs.
+        // Precompute JSON here instead of putting closures/arrow functions in
+        // Blade directives. That keeps compiled production views deterministic.
         $sitePayload = [
             'id' => $site->id ?: 0,
             'slug' => $site->slug ?: 'default',
@@ -81,6 +80,7 @@ class WebEntryController extends Controller
             'tagline' => $site->tagline,
             'description' => $site->description,
             'support_email' => $site->support_email,
+            'panel_url' => $panelUrl,
         ];
 
         $productPayload = $products->map(static fn ($p) => [
@@ -96,7 +96,7 @@ class WebEntryController extends Controller
 
         $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
 
-        return response()->view('storefront', [
+        return response()->view('storefront-v2', [
             'site' => $site,
             'products' => $products,
             'storefrontPath' => $path,
