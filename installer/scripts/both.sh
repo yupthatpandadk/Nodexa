@@ -21,6 +21,7 @@ NODEXA_OPEN_AGENT_PORT=1 bash deploy/setup-firewall.sh
 bash deploy/setup-storefront.sh
 bash deploy/setup-ssl.sh
 bash deploy/setup-storefront.sh
+bash deploy/optimize-panel-runtime.sh
 bash deploy/create-admin.sh
 
 PANEL_URL="$(sed -n 's/^APP_URL=//p' /var/www/nodexa/panel/.env 2>/dev/null | tail -n1)"
