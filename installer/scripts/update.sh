@@ -121,6 +121,10 @@ if [[ -d "$PANEL_DIR" ]]; then
   bash "$SOURCE_ROOT/deploy/optimize-panel-runtime.sh"
   bash "$SOURCE_ROOT/deploy/setup-storefront.sh"
   bash "$SOURCE_ROOT/deploy/setup-storefront-sync.sh"
+  # Serve Vite's content-hashed assets directly from Nginx with long-lived
+  # immutable caching and gzip. This makes repeat panel loads substantially
+  # faster and avoids sending static asset misses through Laravel/PHP.
+  bash "$SOURCE_ROOT/deploy/optimize-web-assets.sh"
 fi
 
 systemctl restart nodexa-queue 2>/dev/null || true
