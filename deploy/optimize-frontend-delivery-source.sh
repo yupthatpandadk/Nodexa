@@ -42,10 +42,9 @@ if pos != -1 and endpos != -1 and endpos > pos:
         " };\n"
         " if(window.__NODEXA_BOOTED__) scheduleAdminEnhancements();\n"
         " else window.addEventListener('nodexa:booted',scheduleAdminEnhancements,{once:true});\n"
-        ")();"
+        "})();"
     )
-    # replacement above deliberately contains the IIFE closing token. Replace
-    # the complete tail from the old admin fetch through the original close.
+    # Replace the old immediate admin bootstrap and the original IIFE close.
     text=text[:pos]+replacement+text[endpos+len(end):]
 
 p.write_text(text)
