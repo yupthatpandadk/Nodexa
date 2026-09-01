@@ -7,6 +7,7 @@ use App\Models\StorefrontSite;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
 
 class StorefrontSiteController extends Controller
@@ -28,26 +29,32 @@ class StorefrontSiteController extends Controller
         $data = $this->siteData($request);
         $this->assertDomainsAvailable($data['primary_domain'], $data['aliases']);
 
-        return DB::transaction(function () use ($data) {
+        $site = DB::transaction(function () use ($data) {
             if (($data['is_default'] ?? false) === true) StorefrontSite::query()->update(['is_default' => false]);
             $site = StorefrontSite::create($data);
             if (!StorefrontSite::query()->where('is_default', true)->exists()) $site->update(['is_default' => true]);
-            return response()->json($site->fresh()->load('products'), 201);
+            return $site->fresh()->load('products');
         });
+        $this->requestDomainSync();
+        return response()->json($site, 201);
     }
 
     public function update(Request $request, StorefrontSite $site)
     {
         $this->admin($request);
+        $before = [$site->primary_domain, $site->aliases ?? [], (bool) $site->enabled];
         $data = $this->siteData($request, $site);
         $this->assertDomainsAvailable($data['primary_domain'], $data['aliases'], $site->id);
 
-        return DB::transaction(function () use ($site, $data) {
-            if (($data['is_default'] ?? false) === true) StorefrontSite::query()->whereKeyNot($site->id)->update(['is_default' => false]);
+        $result = DB::transaction(function () use ($site, $data) {
+            if (($data['is_default'] ?? false) === true) StorefrontSite::query()->where('id', '!=', $site->id)->update(['is_default' => false]);
             $site->update($data);
             if (!$site->is_default && !StorefrontSite::query()->where('is_default', true)->exists()) $site->update(['is_default' => true]);
             return $site->fresh()->load('products');
         });
+        $after = [$result->primary_domain, $result->aliases ?? [], (bool) $result->enabled];
+        if ($before !== $after) $this->requestDomainSync();
+        return $result;
     }
 
     public function destroy(Request $request, StorefrontSite $site)
@@ -57,6 +64,7 @@ class StorefrontSiteController extends Controller
         $wasDefault = $site->is_default;
         $site->delete();
         if ($wasDefault) StorefrontSite::query()->orderBy('id')->first()?->update(['is_default' => true]);
+        $this->requestDomainSync();
         return response()->noContent();
     }
 
@@ -135,10 +143,20 @@ class StorefrontSiteController extends Controller
     private function assertDomainsAvailable(string $primary, array $aliases, ?int $ignoreId = null): void
     {
         $wanted = array_values(array_unique(array_merge([$primary], $aliases)));
-        $sites = StorefrontSite::query()->when($ignoreId, fn ($q) => $q->whereKeyNot($ignoreId))->get(['id','primary_domain','aliases']);
+        $sites = StorefrontSite::query()->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))->get(['id','primary_domain','aliases']);
         foreach ($sites as $existing) {
             $domains = array_map([StorefrontSite::class, 'normalizeDomain'], array_merge([$existing->primary_domain], $existing->aliases ?? []));
             foreach ($wanted as $domain) abort_if(in_array($domain, $domains, true), 422, "Domain {$domain} is already assigned to another storefront.");
+        }
+    }
+
+    private function requestDomainSync(): void
+    {
+        try {
+            File::ensureDirectoryExists(storage_path('app'));
+            File::put(storage_path('app/storefront-sync.request'), now()->toIso8601String());
+        } catch (\Throwable) {
+            // Domain data is already saved. The next updater run can still sync it.
         }
     }
 }
