@@ -15,16 +15,30 @@ import re, sys
 p=Path(sys.argv[1])
 text=p.read_text()
 
-# Remove an earlier Nodexa-managed optimization block so the updater is
-# idempotent and never accumulates duplicate Nginx directives.
+# Remove the previous managed block so repeated updates never accumulate
+# duplicate performance directives.
 text=re.sub(r'\n\s*# NODEXA_STATIC_BEGIN.*?# NODEXA_STATIC_END\s*\n', '\n', text, flags=re.S)
+
+# Ubuntu 22.04/24.04 Nginx ships the HTTP/2 module. Certbot commonly leaves the
+# TLS listener as plain HTTP/1.1, which makes the browser serialize more of the
+# initial JS/CSS work on mobile connections.
+text=re.sub(r'listen\s+443\s+ssl\s*;', 'listen 443 ssl http2;', text)
+text=re.sub(r'listen\s+\[::\]:443\s+ssl\s*;', 'listen [::]:443 ssl http2;', text)
 
 block=r'''
     # NODEXA_STATIC_BEGIN
-    # Vite filenames are content hashed, so they can safely stay in the browser
-    # cache for a year. This avoids downloading/revalidating the React bundle on
-    # every page load and, importantly, prevents a missing static asset from
-    # falling through to Laravel/PHP.
+    # Keep the critical panel bundle entirely on Nginx's static-file fast path.
+    sendfile on;
+    tcp_nopush on;
+    keepalive_timeout 30s;
+    open_file_cache max=1000 inactive=60s;
+    open_file_cache_valid 120s;
+    open_file_cache_min_uses 2;
+    open_file_cache_errors on;
+
+    # Vite filenames are content hashed. A year-long immutable cache is safe and
+    # means React/vendor chunks remain cached even when the Nodexa app chunk is
+    # replaced by a later update.
     location ^~ /build/ {
         try_files $uri =404;
         access_log off;
@@ -34,19 +48,15 @@ block=r'''
         add_header Cache-Control "public, max-age=31536000, immutable" always;
     }
 
-    # Compress the JS/CSS/JSON responses on first download. Subsequent loads are
-    # served directly from the browser cache because of the immutable rule above.
     gzip on;
     gzip_vary on;
     gzip_comp_level 5;
-    gzip_min_length 1024;
+    gzip_min_length 768;
     gzip_proxied any;
     gzip_types text/plain text/css application/json application/javascript application/xml image/svg+xml;
     # NODEXA_STATIC_END
 '''
 
-# Insert into every server block that serves the Nodexa public directory. There
-# is normally one block; Certbot may add SSL directives to that same block.
 needle=re.compile(r'(root\s+[^;]*?/panel/public\s*;)')
 if needle.search(text):
     text=needle.sub(lambda m: m.group(1)+"\n"+block.rstrip(), text)
@@ -73,4 +83,4 @@ fi
 nginx -t
 systemctl reload nginx
 
-echo "[Nodexa] Vite assets now use immutable browser caching and gzip compression."
+echo "[Nodexa] Nginx static fast path, HTTP/2, caching and gzip are enabled."
