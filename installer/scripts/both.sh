@@ -8,8 +8,6 @@ log "Installing Nodexa Panel + Agent..."
 cd "$SOURCE_ROOT"
 bash deploy/install-runtime.sh
 
-# The Agent binary/service is installed, but its identity must come from
-# Admin → Nodes in Nodexa Panel.
 if [[ -f /etc/nodexa.env ]]; then
  sed -i 's/^NODEXA_TOKEN=.*/NODEXA_TOKEN=/' /etc/nodexa.env
 fi
@@ -21,6 +19,7 @@ NODEXA_OPEN_AGENT_PORT=1 bash deploy/setup-firewall.sh
 bash deploy/setup-storefront.sh
 bash deploy/setup-ssl.sh
 bash deploy/setup-storefront.sh
+bash deploy/setup-storefront-sync.sh
 bash deploy/optimize-panel-runtime.sh
 bash deploy/create-admin.sh
 
@@ -30,7 +29,8 @@ STORE_DOMAIN="$(sed -n 's/^NODEXA_STOREFRONT_DOMAIN=//p' /var/www/nodexa/panel/.
 
 log "Nodexa Panel + Agent installation complete."
 echo ""
-echo "  Storefront:     $([[ -n "$STORE_DOMAIN" ]] && echo "https://${STORE_DOMAIN}" || echo 'not configured')"
+echo "  Storefront:     $([[ -n "$STORE_DOMAIN" ]] && echo "https://${STORE_DOMAIN}" || echo 'configure in Admin → Storefronts')"
+echo "  Multisite:      Admin → Storefronts"
 echo "  Panel:          ${PANEL_URL}"
 echo "  Administrator:  ${NODEXA_ADMIN_USERNAME} <${NODEXA_ADMIN_EMAIL}>"
 echo "  Account info:   /root/nodexa-admin.txt"
