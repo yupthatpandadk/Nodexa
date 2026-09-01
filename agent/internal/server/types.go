@@ -12,6 +12,7 @@ type CreateRequest struct {
 	Name        string            `json:"name" binding:"required"`
 	Image       string            `json:"image" binding:"required"`
 	Startup     string            `json:"startup" binding:"required"`
+	Template    string            `json:"template"`
 	MemoryMB    int64             `json:"memory_mb"`
 	DiskMB      int64             `json:"disk_mb"`
 	CPULimit    int64             `json:"cpu_limit"`
@@ -28,6 +29,7 @@ func (r *CreateRequest) UnmarshalJSON(data []byte) error {
 		Name        string          `json:"name"`
 		Image       string          `json:"image"`
 		Startup     string          `json:"startup"`
+		Template    string          `json:"template"`
 		MemoryMB    int64           `json:"memory_mb"`
 		DiskMB      int64           `json:"disk_mb"`
 		CPULimit    int64           `json:"cpu_limit"`
@@ -43,6 +45,10 @@ func (r *CreateRequest) UnmarshalJSON(data []byte) error {
 	r.Name = w.Name
 	r.Image = w.Image
 	r.Startup = w.Startup
+	r.Template = strings.TrimSpace(w.Template)
+	if r.Template == "" {
+		r.Template = "custom"
+	}
 	r.MemoryMB = w.MemoryMB
 	r.DiskMB = w.DiskMB
 	r.CPULimit = w.CPULimit
@@ -88,7 +94,6 @@ func (r *CreateRequest) UnmarshalJSON(data []byte) error {
 						r.Environment[key] = fmt.Sprint(val)
 					}
 				}
-			}
 		}
 		return nil
 	}
