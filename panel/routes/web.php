@@ -8,6 +8,7 @@ Route::get('/database-gateway/{token}', PhpMyAdminGatewayController::class)
     ->where('token', '[A-Za-z0-9]{64}')
     ->name('database.gateway');
 
+Route::view('/admin', 'admin-dashboard')->name('admin.dashboard');
 Route::view('/admin/servers/create', 'admin-server-create')->name('admin.servers.create');
 Route::view('/admin/nodes/setup', 'admin.node-setup')->name('admin.nodes.setup');
 Route::view('/admin/database-hosts', 'admin.database-hosts')->name('admin.database-hosts');
