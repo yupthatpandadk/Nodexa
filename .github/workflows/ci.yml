@@ -32,6 +32,40 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+  laravel-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, curl, zip, bcmath, intl, pdo_sqlite, sqlite3
+          coverage: none
+      - name: Build the same Laravel skeleton used by the installer
+        run: |
+          composer create-project laravel/laravel:^11.0 /tmp/nodexa-panel --no-interaction --prefer-dist --no-scripts
+          cp -a panel/. /tmp/nodexa-panel/
+          cd /tmp/nodexa-panel
+          rm -f composer.lock
+          composer update --no-interaction --prefer-dist
+          cp .env.example .env
+          php artisan key:generate --force
+          touch database/database.sqlite
+      - name: Run migrations and framework boot checks
+        working-directory: /tmp/nodexa-panel
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: /tmp/nodexa-panel/database/database.sqlite
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+        run: |
+          php artisan migrate --force
+          php artisan route:list
+          php artisan config:cache
+          php artisan view:cache
+
   agent:
     runs-on: ubuntu-latest
     defaults:
