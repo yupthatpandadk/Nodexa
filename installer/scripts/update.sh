@@ -85,6 +85,13 @@ fi
 
 bash "$SOURCE_ROOT/deploy/setup-updater.sh"
 
+# Existing installs created before the storefront was introduced only had the
+# panel FQDN in Nginx. Derive panel.example.com -> example.com, persist it in
+# .env, add Nginx hostnames and expand HTTPS when DNS is ready.
+if [[ -d "$PANEL_DIR" ]]; then
+  bash "$SOURCE_ROOT/deploy/setup-storefront.sh"
+fi
+
 systemctl restart nodexa-queue 2>/dev/null || true
 systemctl restart nodexa-monitor.timer 2>/dev/null || true
 nginx -t
