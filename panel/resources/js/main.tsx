@@ -14,19 +14,30 @@ declare global {
   }
 }
 
-// Never let the whole control panel remain on the splash screen forever if an
-// API endpoint becomes slow or unavailable. Individual modules may retry, but
-// the shell itself should always become usable again.
 axios.defaults.timeout = 10000;
 
-// Bootstrap endpoints are deliberately much stricter than ordinary module
-// requests. A busy/offline Node or a backed-up PHP worker must not leave users
-// staring at "Indlæser kontrolpanel…" for a long time.
+function abortSignal(ms: number): AbortSignal | undefined {
+  try {
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+      return AbortSignal.timeout(ms);
+    }
+  } catch {}
+  return undefined;
+}
+
+// Authentication/bootstrap must always fail fast. Axios' timeout alone is not
+// enough on every mobile browser/proxy combination, so also attach a native
+// AbortSignal deadline. This guarantees App.tsx reaches its .catch/.finally
+// path instead of leaving the user on "Indlæser kontrolpanel…" forever.
 axios.interceptors.request.use(config => {
   const url = String(config.url ?? '');
   const method = String(config.method ?? 'get').toLowerCase();
   if (method === 'get' && (url === '/api/me' || /^\/api\/servers(?:\?.*)?$/.test(url))) {
     config.timeout = 3500;
+    if (!config.signal) config.signal = abortSignal(4000);
+    config.headers = config.headers ?? {};
+    config.headers['Cache-Control'] = 'no-cache';
+    config.headers.Pragma = 'no-cache';
   }
   return config;
 });
@@ -63,9 +74,6 @@ function normalizeUser(value: any) {
   };
 }
 
-// Old Nodexa accounts and older API payloads may miss `name`. Normalise every
-// authenticated user payload before App.tsx sees it, so rendering can never
-// crash on string operations such as split().
 axios.interceptors.response.use(response => {
   const url = String(response.config?.url ?? '');
 
@@ -101,10 +109,6 @@ axios.interceptors.response.use(response => {
   const url = String(error?.config?.url ?? '');
   const method = String(error?.config?.method ?? 'get').toLowerCase();
 
-  // The server list is useful dashboard data, but it must never block auth or
-  // keep the entire panel on "Indlæser kontrolpanel…". If this endpoint is
-  // temporarily unavailable, open the panel with an empty list instead. The
-  // admin error monitor can then surface the backend problem separately.
   if (method === 'get' && /^\/api\/servers(?:\?.*)?$/.test(url)) {
     console.error('[Nodexa] Server list unavailable; continuing panel boot.', error);
     return Promise.resolve({
@@ -174,6 +178,31 @@ function NodexaRoot() {
   React.useEffect(() => {
     window.__NODEXA_BOOTED__ = true;
     window.dispatchEvent(new Event('nodexa:booted'));
+
+    // Last-resort watchdog for stale cached bundles or unusual browser/network
+    // behaviour. Never leave a permanent splash screen. If App still displays
+    // its loading shell after 7 seconds, remove the stale bearer token once and
+    // reload into the login screen. sessionStorage prevents reload loops.
+    const watchdog = window.setTimeout(() => {
+      const loading = document.querySelector('.loading-screen');
+      if (!loading) {
+        sessionStorage.removeItem('nodexa_boot_recovery');
+        return;
+      }
+
+      const alreadyRecovered = sessionStorage.getItem('nodexa_boot_recovery') === '1';
+      if (!alreadyRecovered) {
+        sessionStorage.setItem('nodexa_boot_recovery', '1');
+        localStorage.removeItem('nodexa_panel_token');
+        delete axios.defaults.headers.common.Authorization;
+        location.reload();
+        return;
+      }
+
+      loading.innerHTML = '<div class="loading-logo"><div class="brand-mark large">N</div><strong>NOD<span>EXA</span></strong></div><div style="max-width:420px;text-align:center;color:#9aa4b5;line-height:1.55;padding:16px">Panelets API svarer ikke. Genindlæs siden eller kontrollér PHP/Nginx under Admin → Fejl.</div><button onclick="location.reload()" style="padding:10px 14px;border:0;border-radius:9px;background:#745cff;color:white;font-weight:700">Genindlæs</button>';
+    }, 7000);
+
+    return () => window.clearTimeout(watchdog);
   }, []);
 
   return (
