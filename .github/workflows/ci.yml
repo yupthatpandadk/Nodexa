@@ -25,6 +25,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Apply production frontend optimization
+        run: NODEXA_PANEL_DIR="$GITHUB_WORKSPACE/panel" bash "$GITHUB_WORKSPACE/deploy/optimize-frontend-source.sh"
       - name: Install frontend dependencies
         run: npm install
       - name: Typecheck frontend
