@@ -51,6 +51,11 @@ if [[ -d "$PANEL_DIR" ]]; then
   php artisan optimize:clear
   rm -f storage/framework/views/*.php 2>/dev/null || true
 
+  # Do not make the dashboard wait for the complete server list on every page
+  # refresh. Apply the fast-bootstrap patch before Vite compiles the production
+  # bundle so cached account/server snapshots can render immediately while the
+  # API refreshes in the background.
+  bash "$SOURCE_ROOT/deploy/optimize-frontend-source.sh"
   npm install
   npm run build
 
