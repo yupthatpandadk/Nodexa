@@ -43,10 +43,13 @@ jobs:
           coverage: none
       - name: Build the same Laravel skeleton used by the installer
         run: |
-          composer create-project laravel/laravel:^11.0 /tmp/nodexa-panel --no-interaction --prefer-dist --no-scripts
+          composer create-project laravel/laravel:^12.0 /tmp/nodexa-panel --no-interaction --prefer-dist --no-scripts
           cp -a panel/. /tmp/nodexa-panel/
+          install -m 0644 panel/composer.json /tmp/nodexa-panel/composer.json
           cd /tmp/nodexa-panel
           rm -f composer.lock
+          echo "Nodexa runtime composer constraint:"
+          grep -A8 '"require"' composer.json
           composer update --no-interaction --prefer-dist
           cp .env.example .env
           php artisan key:generate --force
