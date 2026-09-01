@@ -108,7 +108,10 @@ mkdir -p "$INSTALL_DIR"
 TMP_LARAVEL="$(mktemp -d)"
 trap 'rm -rf "$TMP_LARAVEL"' EXIT
 
-composer create-project laravel/laravel:^11.0 "$TMP_LARAVEL/panel" --no-interaction --prefer-dist --no-scripts
+# Laravel 11 no longer receives security fixes and current Composer versions
+# refuse its vulnerable framework releases. Build fresh Nodexa installs on the
+# supported Laravel 12 skeleton instead.
+composer create-project laravel/laravel:^12.0 "$TMP_LARAVEL/panel" --no-interaction --prefer-dist --no-scripts
 rm -rf "$PANEL_DIR"
 mkdir -p "$PANEL_DIR"
 cp -a "$TMP_LARAVEL/panel/." "$PANEL_DIR/"
