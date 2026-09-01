@@ -70,6 +70,9 @@
   let updateAvailable=false;
   const add=()=>{
    const nav=document.querySelector('aside nav'); if(!nav)return false;
+   if(!document.getElementById('nodexa-create-server-link')){
+    const c=document.createElement('button'); c.id='nodexa-create-server-link'; c.textContent='Opret server'; c.onclick=()=>location.href='/admin/servers/create'; nav.appendChild(c);
+   }
    if(!document.getElementById('nodexa-node-setup-link')){
     const n=document.createElement('button'); n.id='nodexa-node-setup-link'; n.textContent='Node Setup'; n.onclick=()=>location.href='/admin/nodes/setup'; nav.appendChild(n);
    }
