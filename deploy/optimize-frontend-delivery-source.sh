@@ -42,6 +42,23 @@ text=text.replace(
     "const updateLabel=updateAvailable?'Opdatering tilgængelig •':'Opdateringer';if(u.textContent!==updateLabel)u.textContent=updateLabel;"
 )
 
+# Admin links are injected after React boots. Give them the same navigation
+# class as native sidebar items so mobile browsers do not render them as large
+# white default HTML buttons.
+for marker in [
+    "c.textContent='Opret server';",
+    "n.textContent='Node Setup';",
+    "b.textContent='Database Hosts';",
+    "s.textContent='Storefronts';",
+    "e.textContent='Fejl';",
+]:
+    var = marker.split('.', 1)[0]
+    text=text.replace(marker, f"{var}.className='nav-item';{marker}")
+text=text.replace(
+    "if(!u){u=document.createElement('button');u.id='nodexa-update-link';u.onclick=()=>location.href='/admin/update';nav.appendChild(u)}",
+    "if(!u){u=document.createElement('button');u.id='nodexa-update-link';u.className='nav-item';u.onclick=()=>location.href='/admin/update';nav.appendChild(u)}"
+)
+
 start="\n fetch('/api/me',{headers}).then(r=>r.ok?r.json():null).then(me=>{"
 end="\n }).catch(()=>{});\n})();"
 pos=text.find(start)
