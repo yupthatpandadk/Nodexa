@@ -24,6 +24,7 @@ bash deploy/optimize-panel-runtime.sh
 bash deploy/optimize-frontend-source.sh
 bash deploy/enable-managed-server-templates.sh
 (cd /var/www/nodexa/panel && npm run build)
+bash deploy/optimize-web-assets.sh
 bash deploy/create-admin.sh
 
 PANEL_URL="$(sed -n 's/^APP_URL=//p' /var/www/nodexa/panel/.env 2>/dev/null | tail -n1)"
