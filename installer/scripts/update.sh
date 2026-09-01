@@ -82,6 +82,7 @@ if [[ -d "$PANEL_DIR" ]]; then
   bash "$SOURCE_ROOT/deploy/setup-storefront-sync.sh"
   bash "$SOURCE_ROOT/deploy/optimize-web-assets.sh"
 fi
+bash "$SOURCE_ROOT/deploy/setup-upload-limits.sh"
 systemctl restart nodexa-queue 2>/dev/null || true
 systemctl restart nodexa-monitor.timer 2>/dev/null || true
 nginx -t
