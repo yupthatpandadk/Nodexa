@@ -30,7 +30,7 @@ if [[ -z "$STORE_DOMAIN" && "$PANEL_DOMAIN" == panel.* ]]; then
  STORE_DOMAIN="${PANEL_DOMAIN#panel.}"
 fi
 
-if [[ -z "$STORE_DOMAIN" || "$STORE_DOMAIN" == "$PANEL_DOMAIN" || ! $(valid_domain "$STORE_DOMAIN"; echo $?) -eq 0 ]]; then
+if [[ -z "$STORE_DOMAIN" || "$STORE_DOMAIN" == "$PANEL_DOMAIN" ]] || ! valid_domain "$STORE_DOMAIN"; then
  warn "Could not derive a separate storefront domain from panel domain '${PANEL_DOMAIN}'."
  warn "Set NODEXA_STOREFRONT_DOMAIN=example.com and rerun the updater if needed."
  exit 0
