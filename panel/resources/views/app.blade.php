@@ -76,6 +76,9 @@
    if(!document.getElementById('nodexa-db-hosts-link')){
     const b=document.createElement('button'); b.id='nodexa-db-hosts-link'; b.textContent='Database Hosts'; b.onclick=()=>location.href='/admin/database-hosts'; nav.appendChild(b);
    }
+   if(!document.getElementById('nodexa-storefronts-link')){
+    const s=document.createElement('button'); s.id='nodexa-storefronts-link'; s.textContent='Storefronts'; s.onclick=()=>location.href='/admin/storefronts'; nav.appendChild(s);
+   }
    if(!document.getElementById('nodexa-errors-link')){
     const e=document.createElement('button'); e.id='nodexa-errors-link'; e.textContent='Fejl'; e.onclick=()=>location.href='/admin/errors'; nav.appendChild(e);
    }
