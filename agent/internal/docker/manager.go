@@ -110,71 +110,20 @@ func (m *Manager) installTemplate(ctx context.Context, r server.CreateRequest, f
 		if _, err := os.Stat(marker); err == nil {
 			return nil
 		}
+		resetInstallLog(root)
+		appendInstallLog(root, "container@nodexa~ Server marked as installing...")
+		appendInstallLog(root, "[Nodexa Installer] Starting initial Minecraft provisioning")
 	}
 
-	// Nodexa's built-in Minecraft template behaves like an Egg installer: it
-	// restores the runtime-owned files while preserving worlds, plugins and
-	// customer configuration. server.properties is only created when missing.
-	installScript := `set -eu
-cd /mnt/server
-VERSION="${MINECRAFT_VERSION:-1.21.8}"
-echo "[Nodexa] Installing Paper Minecraft ${VERSION}..."
-META="$(curl -fsSL "https://api.papermc.io/v2/projects/paper/versions/${VERSION}/builds")"
-BUILD="$(printf '%s' "$META" | sed -n 's/.*"builds"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p' | tr ',' '\n' | tail -n1 | tr -dc '0-9')"
-if [ -z "$BUILD" ]; then echo "No Paper build found for Minecraft ${VERSION}" >&2; exit 42; fi
-URL="https://api.papermc.io/v2/projects/paper/versions/${VERSION}/builds/${BUILD}/downloads/paper-${VERSION}-${BUILD}.jar"
-curl -fL "$URL" -o server.jar.nodexa
-mv -f server.jar.nodexa server.jar
-printf 'eula=true\n' > eula.txt
-if [ ! -f server.properties ]; then
-  PORT="${SERVER_PORT:-25565}"
-  printf 'server-port=%s\nmotd=A Nodexa Minecraft Server\nenable-query=true\nquery.port=%s\n' "$PORT" "$PORT" > server.properties
-fi
-printf 'template=minecraft-java\nversion=%s\nbuild=%s\ninstalled_at=%s\n' "$VERSION" "$BUILD" "$(date -u +%FT%TZ)" > .nodexa-installed
-echo "[Nodexa] Minecraft files installed successfully."`
-
-	name := "nx-install-" + r.ID
-	_ = m.cli.ContainerRemove(ctx, name, container.RemoveOptions{Force: true})
-	cfg := &container.Config{
-		Image:      r.Image,
-		Cmd:        []string{"/bin/sh", "-lc", installScript},
-		Env:        env(r.Environment),
-		WorkingDir: "/mnt/server",
+	// Initial provisioning and reinstall intentionally share the exact same
+	// installer implementation. This prevents new servers and Reinstall from
+	// drifting onto different PaperMC APIs or container permissions.
+	if err := m.installTemplateWithProgress(ctx, r, root); err != nil {
+		appendInstallLog(root, "[Nodexa Installer] INSTALLATION FAILED: "+err.Error())
+		return err
 	}
-	host := &container.HostConfig{Binds: []string{fmt.Sprintf("%s:/mnt/server", root)}}
-	created, err := m.cli.ContainerCreate(ctx, cfg, host, nil, nil, name)
-	if err != nil {
-		return fmt.Errorf("create template installer: %w", err)
-	}
-	defer m.cli.ContainerRemove(context.Background(), name, container.RemoveOptions{Force: true})
-	if err := m.cli.ContainerStart(ctx, created.ID, container.StartOptions{}); err != nil {
-		return fmt.Errorf("start template installer: %w", err)
-	}
-
-	for {
-		inspect, err := m.cli.ContainerInspect(ctx, created.ID)
-		if err != nil {
-			return fmt.Errorf("inspect template installer: %w", err)
-		}
-		if !inspect.State.Running {
-			if inspect.State.ExitCode != 0 {
-				logs, _ := m.cli.ContainerLogs(ctx, created.ID, container.LogsOptions{ShowStdout: true, ShowStderr: true, Tail: "40"})
-				message := ""
-				if logs != nil {
-					body, _ := io.ReadAll(io.LimitReader(logs, 8192))
-					_ = logs.Close()
-					message = strings.TrimSpace(string(body))
-				}
-				return fmt.Errorf("Minecraft installer exited with code %d%s", inspect.State.ExitCode, func() string { if message != "" { return ": " + message }; return "" }())
-			}
-			return nil
-		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(250 * time.Millisecond):
-		}
-	}
+	appendInstallLog(root, "[Nodexa Installer] Managed template files are ready")
+	return nil
 }
 
 func (m *Manager) createContainer(ctx context.Context, r server.CreateRequest, root string) error {
