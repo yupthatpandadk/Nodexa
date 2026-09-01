@@ -19,10 +19,6 @@ type CreateRequest struct {
 	Environment map[string]string `json:"environment"`
 }
 
-// UnmarshalJSON keeps the Agent compatible with both the current Panel payload
-// (an object such as {"PORT":"30120"}) and older/empty payloads that Laravel
-// can encode as JSON arrays. This prevents a harmless empty environment list
-// from turning server provisioning into HTTP 422.
 func (r *CreateRequest) UnmarshalJSON(data []byte) error {
 	type wireRequest struct {
 		ID          string          `json:"id"`
@@ -94,6 +90,7 @@ func (r *CreateRequest) UnmarshalJSON(data []byte) error {
 						r.Environment[key] = fmt.Sprint(val)
 					}
 				}
+			}
 		}
 		return nil
 	}
