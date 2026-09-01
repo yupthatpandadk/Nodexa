@@ -16,8 +16,6 @@ repair_laravel_skeleton(){
   log "Repairing Laravel runtime files..."
   composer create-project laravel/laravel:^11.0 "$tmp/panel" --no-interaction --prefer-dist --no-scripts >/dev/null
 
-  # Restore framework/runtime files that are not stored in the Nodexa source
-  # repository. Never overwrite local configuration or persistent data.
   rsync -a \
     --exclude='.env' \
     --exclude='storage/' \
@@ -30,17 +28,11 @@ repair_laravel_skeleton(){
 }
 
 if [[ -d "$PANEL_DIR" ]]; then
-  # Older Nodexa updaters used rsync --delete against the source overlay. Since
-  # the repository intentionally contains only Nodexa-specific panel files,
-  # that could remove Laravel's public/index.php, artisan and other framework
-  # skeleton files and make Nginx return 403. Recover those files automatically.
   if [[ ! -f "$PANEL_DIR/public/index.php" || ! -f "$PANEL_DIR/artisan" || ! -f "$PANEL_DIR/bootstrap/app.php" ]]; then
     repair_laravel_skeleton
   fi
 
   log "Updating panel files without touching local configuration or data..."
-  # IMPORTANT: do not use --delete here. Nodexa's repository is an overlay on
-  # top of a Laravel installation, not a complete Laravel skeleton.
   rsync -a \
     --exclude='.env' \
     --exclude='storage/' \
@@ -54,7 +46,13 @@ if [[ -d "$PANEL_DIR" ]]; then
   rm -f composer.lock
   composer update --no-dev --optimize-autoloader --no-interaction --prefer-dist
   php artisan migrate --force
+
+  # Never leave Laravel/Vite in development-mode or serve stale compiled Blade
+  # templates after an update. A leftover public/hot file makes @vite point at
+  # a non-existent dev server; stale compiled views can keep an old blank shell.
+  rm -f public/hot
   php artisan optimize:clear
+  rm -f storage/framework/views/*.php 2>/dev/null || true
 
   npm install
   npm run build
@@ -63,13 +61,17 @@ if [[ -d "$PANEL_DIR" ]]; then
   php artisan route:cache || true
   php artisan view:cache || true
 
-  # Nginx needs traverse/read access to the application and public directory;
-  # only Laravel's writable directories are owned by www-data.
   chmod 755 /var/www /var/www/nodexa "$PANEL_DIR" "$PANEL_DIR/public" 2>/dev/null || true
   find "$PANEL_DIR/public" -type d -exec chmod 755 {} + 2>/dev/null || true
   find "$PANEL_DIR/public" -type f -exec chmod 644 {} + 2>/dev/null || true
   chown -R www-data:www-data storage bootstrap/cache
   chmod -R 775 storage bootstrap/cache
+
+  # Flush PHP OPcache/process memory so the first request after an update is
+  # guaranteed to execute the newly deployed Blade/PHP code.
+  while read -r svc; do
+    [[ -n "$svc" ]] && systemctl restart "$svc" 2>/dev/null || true
+  done < <(systemctl list-unit-files --type=service --no-legend 'php*-fpm.service' 2>/dev/null | awk '{print $1}')
 fi
 
 if [[ -d "$AGENT_DIR" ]]; then
@@ -81,7 +83,6 @@ if [[ -d "$AGENT_DIR" ]]; then
   systemctl restart nodexa-agent 2>/dev/null || true
 fi
 
-# Refresh the dedicated updater helper/service itself and record the installed commit.
 bash "$SOURCE_ROOT/deploy/setup-updater.sh"
 
 systemctl restart nodexa-queue 2>/dev/null || true
