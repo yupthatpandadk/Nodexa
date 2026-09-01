@@ -13,8 +13,6 @@ final class DaemonClient
 {
     private function client(Node $node, int $timeout = 8): PendingRequest
     {
-        // Keep normal Agent calls fail-fast. Provisioning may legitimately take
-        // longer because the Agent can need to pull a Docker image first.
         return Http::baseUrl(sprintf('%s://%s:%d', $node->scheme, $node->fqdn, $node->daemon_port))
             ->withToken($node->token)
             ->acceptJson()
@@ -26,54 +24,16 @@ final class DaemonClient
     {
         try {
             $result = $callback();
-
-            SystemIssue::where('source', 'agent')
-                ->where('node_id', $node->id)
-                ->where('server_id', $serverId)
-                ->where('status', 'open')
-                ->whereIn('type', [
-                    'node_connection_failed',
-                    'agent_authentication_failed',
-                    'agent_endpoint_missing',
-                    'agent_internal_error',
-                    'agent_request_failed',
-                    'agent_error',
-                    'agent_conflict',
-                    'agent_validation_failed',
-                    'node_timeout',
-                    'node_connection_refused',
-                    'node_dns_failed',
-                    'node_tls_failed',
-                ])
-                ->get()
-                ->each(fn (SystemIssue $issue) => $issue->resolveIssue());
-
+            SystemIssue::where('source', 'agent')->where('node_id', $node->id)->where('server_id', $serverId)->where('status', 'open')
+                ->whereIn('type', ['node_connection_failed','agent_authentication_failed','agent_endpoint_missing','agent_internal_error','agent_request_failed','agent_error','agent_conflict','agent_validation_failed','node_timeout','node_connection_refused','node_dns_failed','node_tls_failed'])
+                ->get()->each(fn (SystemIssue $issue) => $issue->resolveIssue());
             return $result;
         } catch (Throwable $e) {
             [$type, $severity, $title, $message, $extra] = $this->diagnose($node, $action, $e);
-
             try {
-                SystemIssue::report(
-                    source: 'agent',
-                    title: $title,
-                    message: $message,
-                    severity: $severity,
-                    type: $type,
-                    nodeId: $node->id,
-                    serverId: $serverId,
-                    context: array_merge([
-                        'action' => $action,
-                        'node' => $node->name,
-                        'host' => $node->fqdn,
-                        'port' => $node->daemon_port,
-                        'scheme' => $node->scheme,
-                        'exception' => get_class($e),
-                    ], $extra)
-                );
-            } catch (Throwable) {
-                // Diagnostic logging must never hide the original error.
-            }
-
+                SystemIssue::report(source: 'agent', title: $title, message: $message, severity: $severity, type: $type, nodeId: $node->id, serverId: $serverId,
+                    context: array_merge(['action'=>$action,'node'=>$node->name,'host'=>$node->fqdn,'port'=>$node->daemon_port,'scheme'=>$node->scheme,'exception'=>get_class($e)], $extra));
+            } catch (Throwable) {}
             throw $e;
         }
     }
@@ -82,67 +42,52 @@ final class DaemonClient
     {
         if ($e instanceof ConnectionException) {
             $raw = strtolower($e->getMessage());
-            if (str_contains($raw, 'timed out') || str_contains($raw, 'timeout')) {
-                return ['node_timeout', 'critical', "Timeout til {$node->name}", 'Nodexa Agent svarede ikke inden timeout. Noden kan være overbelastet, offline eller blokeret af firewall.', []];
-            }
-            if (str_contains($raw, 'connection refused')) {
-                return ['node_connection_refused', 'critical', "Forbindelse afvist af {$node->name}", 'Serveren kan nås, men Nodexa Agent lytter ikke på den konfigurerede port. Kontroller Agent-service og daemon-port.', []];
-            }
-            if (str_contains($raw, 'could not resolve') || str_contains($raw, 'name or service not known')) {
-                return ['node_dns_failed', 'critical', "DNS-fejl på {$node->name}", 'Node-hostnavnet kunne ikke slås op. Kontroller FQDN/DNS-indstillingerne.', []];
-            }
-            if (str_contains($raw, 'ssl') || str_contains($raw, 'certificate')) {
-                return ['node_tls_failed', 'critical', "SSL/TLS-fejl på {$node->name}", 'TLS-forbindelsen til Nodexa Agent kunne ikke valideres. Kontroller certifikat, hostname og HTTPS-konfiguration.', []];
-            }
-            return ['node_connection_failed', 'critical', "Kan ikke forbinde til {$node->name}", 'Panelet kunne ikke oprette forbindelse til Nodexa Agent: '.$e->getMessage(), []];
+            if (str_contains($raw, 'timed out') || str_contains($raw, 'timeout')) return ['node_timeout','critical',"Timeout til {$node->name}",'Nodexa Agent svarede ikke inden timeout. Noden kan være overbelastet, offline eller blokeret af firewall.',[]];
+            if (str_contains($raw, 'connection refused')) return ['node_connection_refused','critical',"Forbindelse afvist af {$node->name}",'Serveren kan nås, men Nodexa Agent lytter ikke på den konfigurerede port. Kontroller Agent-service og daemon-port.',[]];
+            if (str_contains($raw, 'could not resolve') || str_contains($raw, 'name or service not known')) return ['node_dns_failed','critical',"DNS-fejl på {$node->name}",'Node-hostnavnet kunne ikke slås op. Kontroller FQDN/DNS-indstillingerne.',[]];
+            if (str_contains($raw, 'ssl') || str_contains($raw, 'certificate')) return ['node_tls_failed','critical',"SSL/TLS-fejl på {$node->name}",'TLS-forbindelsen til Nodexa Agent kunne ikke valideres. Kontroller certifikat, hostname og HTTPS-konfiguration.',[]];
+            return ['node_connection_failed','critical',"Kan ikke forbinde til {$node->name}",'Panelet kunne ikke oprette forbindelse til Nodexa Agent: '.$e->getMessage(),[]];
         }
-
         if ($e instanceof RequestException) {
-            $response = $e->response;
-            $status = $response?->status();
-            $body = trim((string) $response?->body());
-            $extra = ['http_status'=>$status, 'response'=>mb_substr($body, 0, 4000)];
-
-            if ($status === 401 || $status === 403) {
-                return ['agent_authentication_failed', 'critical', "Agent-token afvist på {$node->name}", 'Panelet kan nå Agenten, men autentificeringen blev afvist. Kontroller eller roter node-tokenet.', $extra];
-            }
-            if ($status === 404) {
-                return ['agent_endpoint_missing', 'error', "Agent endpoint mangler på {$node->name}", "Agenten returnerede HTTP 404 under {$action}. Panel og Agent kan være på forskellige versioner.", $extra];
-            }
-            if ($status === 409) {
-                return ['agent_conflict', 'warning', "Konflikt på {$node->name}", "Agenten returnerede HTTP 409 under {$action}. Handlingen konflikter med serverens nuværende tilstand.", $extra];
-            }
-            if ($status === 422) {
-                return ['agent_validation_failed', 'error', "Ugyldig Agent-request på {$node->name}", "Agenten afviste data under {$action} med HTTP 422".($body !== '' ? ': '.mb_substr($body, 0, 1000) : '.'), $extra];
-            }
-            if ($status !== null && $status >= 500) {
-                return ['agent_internal_error', 'critical', "Intern Agent-fejl på {$node->name}", "Agenten returnerede HTTP {$status} under {$action}".($body !== '' ? ': '.mb_substr($body, 0, 1000) : '.'), $extra];
-            }
-            if ($status !== null) {
-                return ['agent_request_failed', 'error', "Agent-request fejlede på {$node->name}", "HTTP {$status} under {$action}".($body !== '' ? ': '.mb_substr($body, 0, 1000) : '.'), $extra];
-            }
+            $response = $e->response; $status = $response?->status(); $body = trim((string) $response?->body()); $extra=['http_status'=>$status,'response'=>mb_substr($body,0,4000)];
+            if ($status === 401 || $status === 403) return ['agent_authentication_failed','critical',"Agent-token afvist på {$node->name}",'Panelet kan nå Agenten, men autentificeringen blev afvist. Kontroller eller roter node-tokenet.',$extra];
+            if ($status === 404) return ['agent_endpoint_missing','error',"Agent endpoint mangler på {$node->name}","Agenten returnerede HTTP 404 under {$action}. Panel og Agent kan være på forskellige versioner.",$extra];
+            if ($status === 409) return ['agent_conflict','warning',"Konflikt på {$node->name}","Agenten returnerede HTTP 409 under {$action}. Handlingen konflikter med serverens nuværende tilstand.",$extra];
+            if ($status === 422) return ['agent_validation_failed','error',"Ugyldig Agent-request på {$node->name}","Agenten afviste data under {$action} med HTTP 422".($body!==''?': '.mb_substr($body,0,1000):'.'),$extra];
+            if ($status !== null && $status >= 500) return ['agent_internal_error','critical',"Intern Agent-fejl på {$node->name}","Agenten returnerede HTTP {$status} under {$action}".($body!==''?': '.mb_substr($body,0,1000):'.'),$extra];
+            if ($status !== null) return ['agent_request_failed','error',"Agent-request fejlede på {$node->name}","HTTP {$status} under {$action}".($body!==''?': '.mb_substr($body,0,1000):'.'),$extra];
         }
+        return ['agent_error','error',"Ukendt Agent-fejl på {$node->name}",$e->getMessage(),[]];
+    }
 
-        return ['agent_error', 'error', "Ukendt Agent-fejl på {$node->name}", $e->getMessage(), []];
+    private function serverPayload($server): array
+    {
+        return [
+            'id' => $server->uuid,
+            'name' => $server->name,
+            'image' => $server->docker_image,
+            'startup' => $server->startup,
+            'template' => $server->template_slug ?? 'custom',
+            'memory_mb' => $server->memory_mb,
+            'disk_mb' => $server->disk_mb,
+            'cpu_limit' => $server->cpu_limit,
+            'environment' => $server->environment ?? [],
+        ];
     }
 
     public function createServer($server): array
     {
         $node = $server->node;
         return $this->guarded($node, (string) $server->id, 'create_server', fn () =>
-            // A fresh Node can need to pull a multi-hundred-MB image. Give this
-            // one operation enough time while retaining the 3-second connect
-            // timeout, so an offline Node still fails immediately.
-            $this->client($node, 180)->post('/api/servers', [
-                'id' => $server->uuid,
-                'name' => $server->name,
-                'image' => $server->docker_image,
-                'startup' => $server->startup,
-                'memory_mb' => $server->memory_mb,
-                'disk_mb' => $server->disk_mb,
-                'cpu_limit' => $server->cpu_limit,
-                'environment' => $server->environment ?? [],
-            ])->throw()->json()
+            $this->client($node, 180)->post('/api/servers', $this->serverPayload($server))->throw()->json()
+        );
+    }
+
+    public function reinstall($server): array
+    {
+        $node = $server->node;
+        return $this->guarded($node, (string) $server->id, 'reinstall_server', fn () =>
+            $this->client($node, 180)->post("/api/servers/{$server->uuid}/reinstall", $this->serverPayload($server))->throw()->json()
         );
     }
 
