@@ -35,8 +35,17 @@ func (a *API) Router() *gin.Engine {
 	api.GET("/servers/:id/files/content", a.readFile)
 	api.PUT("/servers/:id/files/content", a.writeFile)
 	api.POST("/servers/:id/files/directory", a.makeDirectory)
+	api.POST("/servers/:id/files/rename", a.renameFile)
+	api.POST("/servers/:id/files/upload", a.uploadFile)
+	api.GET("/servers/:id/files/download", a.downloadFile)
+	api.POST("/servers/:id/files/archive", a.archiveFile)
+	api.POST("/servers/:id/files/extract", a.extractFile)
 	api.DELETE("/servers/:id/files", a.deleteFile)
+	api.GET("/servers/:id/backups", a.listBackups)
 	api.POST("/servers/:id/backups", a.backup)
+	api.GET("/servers/:id/backups/:name", a.downloadBackup)
+	api.POST("/servers/:id/backups/:name/restore", a.restoreBackup)
+	api.DELETE("/servers/:id/backups/:name", a.deleteBackup)
 	return r
 }
 
@@ -105,26 +114,16 @@ func (a *API) stats(c *gin.Context) {
 func (a *API) logs(c *gin.Context) {
 	id := c.Param("id")
 	tail := c.DefaultQuery("tail", "200")
-
-	// Managed-template installation output takes over the normal console while
-	// a reinstall is running. Once the game container starts, normal runtime
-	// logs automatically become visible again.
 	if output, handled, err := a.docker.InstallConsole(c, id, tail); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
+		c.JSON(500, gin.H{"error": err.Error()}); return
 	} else if handled {
-		c.Data(200, "text/plain; charset=utf-8", []byte(output+"\n"))
-		return
+		c.Data(200, "text/plain; charset=utf-8", []byte(output+"\n")); return
 	}
-
 	reader, err := a.docker.Logs(c, id, tail)
 	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
 	defer reader.Close()
 	body, err := io.ReadAll(io.LimitReader(reader, 2*1024*1024))
 	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
-	// Server containers use a TTY, therefore Docker returns plain console text.
-	// Do not strip the first eight bytes from each line; doing so previously
-	// truncated timestamps and the beginning of Minecraft/FiveM messages.
 	c.Data(200, "text/plain; charset=utf-8", body)
 }
 
@@ -138,12 +137,14 @@ func (a *API) listFiles(c *gin.Context) {
 
 func (a *API) readFile(c *gin.Context) {
 	path, err := a.docker.SafePath(c.Param("id"), c.Query("path")); if err != nil { c.JSON(400, gin.H{"error": err.Error()}); return }
+	info, err := os.Stat(path); if err != nil { c.JSON(404, gin.H{"error": err.Error()}); return }; if info.IsDir() { c.JSON(422, gin.H{"error":"path is a directory"}); return }
+	if info.Size() > 8*1024*1024 { c.JSON(413, gin.H{"error":"file is too large for the web editor; download it instead"}); return }
 	body, err := os.ReadFile(path); if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }; c.Data(200, "text/plain; charset=utf-8", body)
 }
 
 func (a *API) writeFile(c *gin.Context) {
 	path, err := a.docker.SafePath(c.Param("id"), c.Query("path")); if err != nil { c.JSON(400, gin.H{"error": err.Error()}); return }
-	body, err := io.ReadAll(io.LimitReader(c.Request.Body, 8*1024*1024)); if err != nil { c.JSON(400, gin.H{"error": err.Error()}); return }
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, 8*1024*1024+1)); if err != nil { c.JSON(400, gin.H{"error": err.Error()}); return }; if len(body)>8*1024*1024 { c.JSON(413,gin.H{"error":"editor payload exceeds 8 MB"}); return }
 	if err = os.MkdirAll(filepath.Dir(path), 0750); err == nil { err = os.WriteFile(path, body, 0640) }
 	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }; c.JSON(200, gin.H{"ok": true, "bytes": len(body)})
 }
@@ -153,16 +154,55 @@ func (a *API) makeDirectory(c *gin.Context) {
 	path, err := a.docker.SafePath(c.Param("id"), q.Path); if err == nil { err = os.MkdirAll(path, 0750) }; if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }; c.JSON(201, gin.H{"ok": true})
 }
 
+func (a *API) renameFile(c *gin.Context) {
+	var q struct { From string `json:"from"`; To string `json:"to"` }; if err:=c.ShouldBindJSON(&q); err!=nil { c.JSON(422,gin.H{"error":"invalid request"}); return }
+	if err:=a.docker.RenamePath(c.Param("id"),q.From,q.To); err!=nil { c.JSON(500,gin.H{"error":err.Error()}); return }; c.JSON(200,gin.H{"ok":true})
+}
+
+func (a *API) uploadFile(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 512*1024*1024)
+	fileHeader, err := c.FormFile("file"); if err!=nil { c.JSON(422,gin.H{"error":"file is required"}); return }
+	name:=filepath.Base(fileHeader.Filename); if name=="."||name=="" { c.JSON(422,gin.H{"error":"invalid filename"}); return }
+	targetRel:=filepath.ToSlash(filepath.Join(c.PostForm("path"),name)); target,err:=a.docker.SafePath(c.Param("id"),targetRel); if err!=nil { c.JSON(400,gin.H{"error":err.Error()}); return }
+	if err:=os.MkdirAll(filepath.Dir(target),0750); err!=nil { c.JSON(500,gin.H{"error":err.Error()}); return }
+	src,err:=fileHeader.Open(); if err!=nil { c.JSON(500,gin.H{"error":err.Error()}); return }; defer src.Close()
+	dst,err:=os.OpenFile(target,os.O_CREATE|os.O_TRUNC|os.O_WRONLY,0640); if err!=nil { c.JSON(500,gin.H{"error":err.Error()}); return }
+	written,copyErr:=io.Copy(dst,src); closeErr:=dst.Close(); if copyErr!=nil { c.JSON(500,gin.H{"error":copyErr.Error()}); return }; if closeErr!=nil { c.JSON(500,gin.H{"error":closeErr.Error()}); return }
+	c.JSON(201,gin.H{"ok":true,"name":name,"bytes":written})
+}
+
+func (a *API) downloadFile(c *gin.Context) {
+	path,err:=a.docker.SafePath(c.Param("id"),c.Query("path")); if err!=nil { c.JSON(400,gin.H{"error":err.Error()}); return }
+	info,err:=os.Stat(path); if err!=nil { c.JSON(404,gin.H{"error":err.Error()}); return }; if info.IsDir(){c.JSON(422,gin.H{"error":"directories must be archived before download"});return}
+	c.FileAttachment(path,filepath.Base(path))
+}
+
+func (a *API) archiveFile(c *gin.Context) {
+	var q struct{Path string `json:"path"`}; if err:=c.ShouldBindJSON(&q);err!=nil{c.JSON(422,gin.H{"error":"invalid request"});return}
+	path,err:=a.docker.ArchivePath(c.Param("id"),q.Path); if err!=nil{c.JSON(500,gin.H{"error":err.Error()});return};c.JSON(201,gin.H{"ok":true,"path":path})
+}
+
+func (a *API) extractFile(c *gin.Context) {
+	var q struct{Path string `json:"path"`}; if err:=c.ShouldBindJSON(&q);err!=nil{c.JSON(422,gin.H{"error":"invalid request"});return}
+	if err:=a.docker.ExtractPath(c.Param("id"),q.Path);err!=nil{c.JSON(500,gin.H{"error":err.Error()});return};c.JSON(200,gin.H{"ok":true})
+}
+
 func (a *API) deleteFile(c *gin.Context) {
 	path, err := a.docker.SafePath(c.Param("id"), c.Query("path")); if err == nil { err = os.RemoveAll(path) }; if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }; c.JSON(200, gin.H{"ok": true})
 }
+
+func (a *API) listBackups(c *gin.Context){items,err:=a.docker.ListBackups(c.Param("id"));if err!=nil{c.JSON(500,gin.H{"error":err.Error()});return};c.JSON(200,gin.H{"items":items})}
 
 func (a *API) backup(c *gin.Context) {
 	var q struct { Name string `json:"name"` }; if err := c.ShouldBindJSON(&q); err != nil { c.JSON(422, gin.H{"error": "invalid request"}); return }
 	path, err := a.docker.Backup(c.Param("id"), q.Name); if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
 	info, err := os.Stat(path); if err != nil { c.JSON(500, gin.H{"error": "backup was created but could not be inspected: " + err.Error()}); return }
-	c.JSON(201, gin.H{"ok": true, "name": filepath.Base(path), "bytes": info.Size()})
+	c.JSON(201, gin.H{"ok": true, "name": filepath.Base(path), "bytes": info.Size(), "modified_at":info.ModTime()})
 }
+
+func (a *API) downloadBackup(c *gin.Context){path,err:=a.docker.BackupPath(c.Param("id"),c.Param("name"));if err!=nil{c.JSON(404,gin.H{"error":err.Error()});return};c.FileAttachment(path,filepath.Base(path))}
+func (a *API) restoreBackup(c *gin.Context){if err:=a.docker.RestoreBackup(c,c.Param("id"),c.Param("name"));err!=nil{c.JSON(500,gin.H{"error":err.Error()});return};c.JSON(200,gin.H{"ok":true,"status":"restored"})}
+func (a *API) deleteBackup(c *gin.Context){if err:=a.docker.DeleteBackup(c.Param("id"),c.Param("name"));err!=nil{c.JSON(500,gin.H{"error":err.Error()});return};c.JSON(200,gin.H{"ok":true})}
 
 var _ = http.StatusOK
 var _ = strconv.Itoa
