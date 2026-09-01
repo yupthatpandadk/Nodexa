@@ -31,12 +31,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/servers/{server}/command', [ServerController::class, 'command']);
     Route::get('/servers/{server}/stats', [ServerRuntimeController::class, 'stats']);
     Route::get('/servers/{server}/logs', [ServerRuntimeController::class, 'logs']);
+
     Route::get('/servers/{server}/files', [ServerRuntimeController::class, 'files']);
     Route::get('/servers/{server}/file', [ServerRuntimeController::class, 'readFile']);
     Route::put('/servers/{server}/file', [ServerRuntimeController::class, 'writeFile']);
+    Route::post('/servers/{server}/file/rename', [ServerRuntimeController::class, 'renameFile']);
     Route::post('/servers/{server}/directory', [ServerRuntimeController::class, 'mkdir']);
+    Route::post('/servers/{server}/upload', [ServerRuntimeController::class, 'upload']);
+    Route::get('/servers/{server}/download', [ServerRuntimeController::class, 'download']);
+    Route::post('/servers/{server}/archive', [ServerRuntimeController::class, 'archive']);
+    Route::post('/servers/{server}/extract', [ServerRuntimeController::class, 'extract']);
     Route::delete('/servers/{server}/file', [ServerRuntimeController::class, 'deleteFile']);
+
+    Route::get('/servers/{server}/backups', [ServerRuntimeController::class, 'backups']);
     Route::post('/servers/{server}/backups', [ServerRuntimeController::class, 'backup']);
+    Route::get('/servers/{server}/backups/{name}/download', [ServerRuntimeController::class, 'downloadBackup'])->where('name', '.*');
+    Route::post('/servers/{server}/backups/{name}/restore', [ServerRuntimeController::class, 'restoreBackup'])->where('name', '.*');
+    Route::delete('/servers/{server}/backups/{name}', [ServerRuntimeController::class, 'deleteBackup'])->where('name', '.*');
 
     Route::get('/servers/{server}/databases', [ServerDatabaseController::class, 'index']);
     Route::post('/servers/{server}/databases', [ServerDatabaseController::class, 'store']);
