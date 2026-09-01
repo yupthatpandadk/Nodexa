@@ -12,7 +12,7 @@ class ServerSubuserController extends Controller
     private const ALLOWED = [
         'console.read','console.command','power.start','power.stop','power.restart',
         'files.read','files.write',
-        'backups.read','backups.create','backups.restore','backups.delete',
+        'backups.read','backups.create','backups.download','backups.restore','backups.delete',
         'database.read','database.create','database.credentials','database.delete',
         'schedule.read','schedule.create','schedule.update','schedule.delete','schedule.execute',
         'settings.read','settings.update',
@@ -39,17 +39,10 @@ class ServerSubuserController extends Controller
         abort_if($user->id === $request->user()->id, 422, 'Du kan ikke invitere dig selv.');
         abort_if($user->id === $server->owner_id, 422, 'Serverejeren har allerede fuld adgang.');
         abort_if($server->subusers()->where('user_id', $user->id)->exists(), 409, 'Brugeren har allerede adgang til denne server.');
-
         $permissions = array_values(array_unique(array_intersect($data['permissions'], self::ALLOWED)));
         abort_if(count($permissions) !== count(array_unique($data['permissions'])), 422, 'En eller flere rettigheder er ugyldige.');
         abort_if(empty($permissions), 422, 'Vælg mindst én rettighed.');
-
-        $entry = Subuser::create([
-            'server_id'=>$server->id,
-            'user_id'=>$user->id,
-            'permissions'=>$permissions,
-        ]);
-
+        $entry = Subuser::create(['server_id'=>$server->id,'user_id'=>$user->id,'permissions'=>$permissions]);
         return response()->json($entry->load('user:id,name,email'), 201);
     }
 
