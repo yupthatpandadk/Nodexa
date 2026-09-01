@@ -20,6 +20,7 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [UserController::class, 'me']);
+    Route::get('/admin/users', [UserController::class, 'adminIndex']);
 
     Route::get('/servers', [ServerController::class, 'index']);
     Route::post('/servers', [ServerController::class, 'store']);
