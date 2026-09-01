@@ -19,6 +19,18 @@ declare global {
 // the shell itself should always become usable again.
 axios.defaults.timeout = 10000;
 
+// Bootstrap endpoints are deliberately much stricter than ordinary module
+// requests. A busy/offline Node or a backed-up PHP worker must not leave users
+// staring at "Indlæser kontrolpanel…" for a long time.
+axios.interceptors.request.use(config => {
+  const url = String(config.url ?? '');
+  const method = String(config.method ?? 'get').toLowerCase();
+  if (method === 'get' && (url === '/api/me' || /^\/api\/servers(?:\?.*)?$/.test(url))) {
+    config.timeout = 3500;
+  }
+  return config;
+});
+
 function safeText(value: unknown, fallback = ''): string {
   if (typeof value === 'string') {
     const text = value.trim();
