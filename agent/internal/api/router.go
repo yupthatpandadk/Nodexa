@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bufio"
 	"io"
 	"net/http"
 	"os"
@@ -69,7 +68,7 @@ func (a *API) reinstall(c *gin.Context) {
 		return
 	}
 	q.ID = c.Param("id")
-	if err := a.docker.Reinstall(c, q); err != nil {
+	if err := a.docker.ReinstallWithProgress(c, q); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
@@ -104,10 +103,29 @@ func (a *API) stats(c *gin.Context) {
 }
 
 func (a *API) logs(c *gin.Context) {
-	reader, err := a.docker.Logs(c, c.Param("id"), c.DefaultQuery("tail", "200")); if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
-	defer reader.Close(); c.Header("Content-Type", "text/plain; charset=utf-8")
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() { line := scanner.Bytes(); if len(line) > 8 { line = line[8:] }; if _, err := c.Writer.Write(append(line, '\n')); err != nil { return }; c.Writer.Flush() }
+	id := c.Param("id")
+	tail := c.DefaultQuery("tail", "200")
+
+	// Managed-template installation output takes over the normal console while
+	// a reinstall is running. Once the game container starts, normal runtime
+	// logs automatically become visible again.
+	if output, handled, err := a.docker.InstallConsole(c, id, tail); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	} else if handled {
+		c.Data(200, "text/plain; charset=utf-8", []byte(output+"\n"))
+		return
+	}
+
+	reader, err := a.docker.Logs(c, id, tail)
+	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+	defer reader.Close()
+	body, err := io.ReadAll(io.LimitReader(reader, 2*1024*1024))
+	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+	// Server containers use a TTY, therefore Docker returns plain console text.
+	// Do not strip the first eight bytes from each line; doing so previously
+	// truncated timestamps and the beginning of Minecraft/FiveM messages.
+	c.Data(200, "text/plain; charset=utf-8", body)
 }
 
 func (a *API) listFiles(c *gin.Context) {
