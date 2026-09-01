@@ -115,6 +115,14 @@ func (m *Manager) InstallConsole(ctx context.Context, id, tail string) (string, 
 	return "", false, nil
 }
 
+func installerError(exitCode int, captured string) error {
+	detail := tailInstallText(captured, "8")
+	if detail == "" {
+		return fmt.Errorf("Minecraft installer exited with code %d", exitCode)
+	}
+	return fmt.Errorf("Minecraft installer exited with code %d: %s", exitCode, detail)
+}
+
 func (m *Manager) installTemplateWithProgress(ctx context.Context, r server.CreateRequest, root string) error {
 	template := strings.ToLower(strings.TrimSpace(r.Template))
 	if template != "minecraft" && template != "minecraft-java" {
@@ -158,11 +166,20 @@ echo "container@nodexa~ Installation process completed."`
 
 	name := "nx-install-" + r.ID
 	_ = m.cli.ContainerRemove(ctx, name, container.RemoveOptions{Force: true})
+
+	// Runtime yolks normally start as their unprivileged container user and may
+	// have an image entrypoint tailored for /home/container. An Egg installer,
+	// however, writes to a separate /mnt/server bind. Run that one-shot installer
+	// explicitly as root and bypass the runtime entrypoint, matching the way a
+	// dedicated install container is expected to behave. This prevents
+	// `/bin/sh: cd: can't cd to /mnt/server` on 0750 server directories.
 	cfg := &container.Config{
 		Image:      r.Image,
-		Cmd:        []string{"/bin/sh", "-lc", installScript},
+		User:       "0:0",
+		Entrypoint: []string{"/bin/sh", "-lc"},
+		Cmd:        []string{installScript},
 		Env:        env(r.Environment),
-		WorkingDir: "/mnt/server",
+		WorkingDir: "/",
 	}
 	host := &container.HostConfig{Binds: []string{fmt.Sprintf("%s:/mnt/server", root)}}
 	created, err := m.cli.ContainerCreate(ctx, cfg, host, nil, nil, name)
@@ -185,7 +202,7 @@ echo "container@nodexa~ Installation process completed."`
 				appendInstallLog(root, captured)
 			}
 			if inspect.State.ExitCode != 0 {
-				return fmt.Errorf("Minecraft installer exited with code %d", inspect.State.ExitCode)
+				return installerError(inspect.State.ExitCode, captured)
 			}
 			return nil
 		}
