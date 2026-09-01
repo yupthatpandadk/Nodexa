@@ -29,6 +29,36 @@ class ServerController extends Controller
         return $permissions;
     }
 
+    /**
+     * Convert all supported UI/legacy environment shapes to the canonical
+     * associative KEY => VALUE map expected by Nodexa Agent.
+     */
+    private function normalizeEnvironment(mixed $environment): array
+    {
+        if (!is_array($environment)) return [];
+
+        $normalized = [];
+        foreach ($environment as $key => $value) {
+            if (is_string($key) && !ctype_digit($key)) {
+                $key = trim($key);
+                if ($key !== '' && (is_scalar($value) || $value === null)) {
+                    $normalized[$key] = (string) ($value ?? '');
+                }
+                continue;
+            }
+
+            // Older clients could submit ["KEY=value", ...]. Keep those
+            // records compatible instead of forwarding a JSON array to Go.
+            if (is_string($value) && str_contains($value, '=')) {
+                [$envKey, $envValue] = explode('=', $value, 2);
+                $envKey = trim($envKey);
+                if ($envKey !== '') $normalized[$envKey] = $envValue;
+            }
+        }
+
+        return $normalized;
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -71,6 +101,7 @@ class ServerController extends Controller
         ]);
         $ownerId = (int) $data['owner_id'];
         unset($data['owner_id']);
+        $data['environment'] = $this->normalizeEnvironment($data['environment'] ?? []);
 
         $server = DB::transaction(function () use ($data, $ownerId) {
             $last = Server::query()->lockForUpdate()->max('server_number') ?? 0;
@@ -84,11 +115,29 @@ class ServerController extends Controller
             ]);
         });
 
+        return $this->provision($server, $daemon, true);
+    }
+
+    public function retryInstall(Request $request, Server $server, DaemonClient $daemon)
+    {
+        abort_unless((bool) $request->user()->is_admin, 403, 'Only administrators can retry server installation.');
+        abort_unless(in_array((string) $server->status, ['install_failed', 'installing'], true), 409, 'Only failed or interrupted installations can be retried.');
+
+        // Repair records created by older Panel builds before retrying them.
+        $server->environment = $this->normalizeEnvironment($server->environment ?? []);
+        $server->status = 'installing';
+        $server->save();
+
+        return $this->provision($server, $daemon, false);
+    }
+
+    private function provision(Server $server, DaemonClient $daemon, bool $created): mixed
+    {
         try {
             $daemon->createServer($server->load('node'));
             $server->update(['status' => 'offline']);
 
-            return response()->json($server->fresh()->load('node'), 201);
+            return response()->json($server->fresh()->load('node'), $created ? 201 : 200);
         } catch (Throwable $e) {
             // Keep the database record so the administrator can see which
             // provisioning attempt failed and repair/retry it later. DaemonClient
@@ -99,6 +148,7 @@ class ServerController extends Controller
                 'message' => 'Serveren blev oprettet i Nodexa, men installationen på noden fejlede.',
                 'error' => $e->getMessage(),
                 'server' => $server->fresh()->load('node'),
+                'retry_endpoint' => '/api/servers/'.$server->id.'/retry-install',
             ], 502);
         }
     }
