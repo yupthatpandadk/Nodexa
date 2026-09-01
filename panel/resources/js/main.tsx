@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import axios from 'axios';
 import App from './App';
 import './styles.css';
 import './permissions.css';
@@ -12,6 +13,74 @@ declare global {
     __NODEXA_BOOTED__?: boolean;
   }
 }
+
+function safeText(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') {
+    const text = value.trim();
+    if (text) return text;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return fallback;
+}
+
+function normalizeUser(value: any) {
+  if (!value || typeof value !== 'object') {
+    return { id: 0, name: 'Nodexa User', email: '', username: '', first_name: '', last_name: '', is_admin: false };
+  }
+
+  const firstName = safeText(value.first_name);
+  const lastName = safeText(value.last_name);
+  const fullName = [firstName, lastName].filter(Boolean).join(' ');
+  const email = safeText(value.email);
+  const username = safeText(value.username);
+  const name = safeText(value.name, fullName || username || email || 'Nodexa User');
+
+  return {
+    ...value,
+    name,
+    email,
+    username,
+    first_name: firstName,
+    last_name: lastName,
+    is_admin: Boolean(value.is_admin),
+  };
+}
+
+// Old Nodexa accounts and older API payloads may miss `name`. Normalise every
+// authenticated user payload before App.tsx sees it, so rendering can never
+// crash on string operations such as split().
+axios.interceptors.response.use(response => {
+  const url = String(response.config?.url ?? '');
+
+  if (url.includes('/api/me')) {
+    const payload = response.data?.data && typeof response.data.data === 'object'
+      ? response.data.data
+      : response.data;
+    response.data = normalizeUser(payload);
+  }
+
+  if (url.includes('/api/login') && response.data?.user) {
+    response.data.user = normalizeUser(response.data.user);
+  }
+
+  if (/\/api\/servers\/[^/]+\/users/.test(url)) {
+    const container = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+        ? response.data.data
+        : null;
+
+    if (container) {
+      for (const entry of container) {
+        if (entry && typeof entry === 'object' && entry.user) {
+          entry.user = normalizeUser(entry.user);
+        }
+      }
+    }
+  }
+
+  return response;
+});
 
 function showBootError(error: unknown) {
   const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error ?? 'Unknown frontend error');
