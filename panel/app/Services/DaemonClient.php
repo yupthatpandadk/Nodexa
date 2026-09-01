@@ -13,8 +13,14 @@ final class DaemonClient
 {
     private function client(Node $node): PendingRequest
     {
+        // Agent calls must fail fast. A dead/offline Node must never occupy a
+        // PHP-FPM worker for ~60 seconds and make the whole control panel look
+        // frozen. Healthy Agent requests normally complete in milliseconds.
         return Http::baseUrl(sprintf('%s://%s:%d', $node->scheme, $node->fqdn, $node->daemon_port))
-            ->withToken($node->token)->acceptJson()->timeout(20)->retry(2, 200);
+            ->withToken($node->token)
+            ->acceptJson()
+            ->connectTimeout(3)
+            ->timeout(8);
     }
 
     private function guarded(Node $node, ?string $serverId, string $action, callable $callback): mixed
@@ -33,6 +39,10 @@ final class DaemonClient
                     'agent_internal_error',
                     'agent_request_failed',
                     'agent_error',
+                    'node_timeout',
+                    'node_connection_refused',
+                    'node_dns_failed',
+                    'node_tls_failed',
                 ])
                 ->get()
                 ->each(fn (SystemIssue $issue) => $issue->resolveIssue());
