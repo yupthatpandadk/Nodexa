@@ -72,4 +72,12 @@ class AdminUpdateController extends Controller
         }
         return response()->json(['message'=>'Opdateringen er startet.','status'=>'running'],202);
     }
+
+    // Backwards compatibility for older cached routes/frontends that still call
+    // AdminUpdateController::run(). Keeping this alias prevents another 500
+    // during the self-update that installs the canonical /start endpoint.
+    public function run(Request $request)
+    {
+        return $this->start($request);
+    }
 }
