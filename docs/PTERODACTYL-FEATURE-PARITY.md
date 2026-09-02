@@ -15,7 +15,7 @@ Goal: implement the useful game-server management capabilities users expect from
 - [x] Backup Agent API: list/create/download/restore/delete
 - [x] Replace Backups placeholder with complete React backup manager
 - [x] Schedule backend foundation
-- [ ] Replace Schedules placeholder with complete React scheduler
+- [x] Replace Schedules placeholder with complete React scheduler
 - [x] Background scheduler worker with next-run calculation, task chains and online-only rules
 - [x] Network/allocation management UI and API
 - [ ] Primary/additional allocation assignment
