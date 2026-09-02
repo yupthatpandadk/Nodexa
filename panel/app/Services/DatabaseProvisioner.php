@@ -45,6 +45,15 @@ class DatabaseProvisioner
         }
     }
 
+    public function rotatePassword(DatabaseHost $host, string $username, string $password): void
+    {
+        if (!preg_match('/^u\d+_[A-Za-z0-9]{8}$/', $username)) throw new RuntimeException('Invalid Nodexa database username.');
+        $pdo = $this->pdo($host);
+        $remote = $host->remote_host ?: '%';
+        $account = $this->quote($pdo,$username).'@'.$this->quote($pdo,$remote);
+        $pdo->exec('ALTER USER '.$account.' IDENTIFIED BY '.$this->quote($pdo,$password));
+    }
+
     public function delete(DatabaseHost $host, string $database, string $username): void
     {
         $pdo = $this->pdo($host);
