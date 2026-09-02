@@ -17,4 +17,6 @@ class Server extends Model
     public function databases(): HasMany { return $this->hasMany(ServerDatabase::class); }
     public function subusers(): HasMany { return $this->hasMany(Subuser::class); }
     public function schedules(): HasMany { return $this->hasMany(Schedule::class); }
+    public function allocations(): HasMany { return $this->hasMany(Allocation::class); }
+    public function primaryAllocation() { return $this->hasOne(Allocation::class)->where('is_primary', true); }
 }
