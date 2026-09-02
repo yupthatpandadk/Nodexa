@@ -5,18 +5,19 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	gpDocker "nodexa/agent/internal/docker"
 	"nodexa/agent/internal/server"
+	nodexaSFTP "nodexa/agent/internal/sftp"
 )
 
-type API struct { token string; docker *gpDocker.Manager }
-func New(token string,d *gpDocker.Manager)*API{return &API{token,d}}
-func(a *API)Router()*gin.Engine{r:=gin.New();r.Use(gin.Recovery());r.GET("/health",func(c *gin.Context){c.JSON(200,gin.H{"ok":true,"service":"nodexa-agent"})});api:=r.Group("/api",a.auth);api.POST("/servers",a.create);api.POST("/servers/:id/reinstall",a.reinstall);api.PUT("/servers/:id/runtime",a.reconfigure);api.POST("/servers/:id/power",a.power);api.POST("/servers/:id/command",a.command);api.POST("/servers/:id/stdin",a.stdin);api.GET("/servers/:id/stats",a.stats);api.GET("/servers/:id/logs",a.logs);api.GET("/servers/:id/logs/stream",a.streamLogs);api.GET("/servers/:id/files",a.listFiles);api.GET("/servers/:id/files/content",a.readFile);api.PUT("/servers/:id/files/content",a.writeFile);api.POST("/servers/:id/files/directory",a.makeDirectory);api.POST("/servers/:id/files/rename",a.renameFile);api.POST("/servers/:id/files/upload",a.uploadFile);api.GET("/servers/:id/files/download",a.downloadFile);api.POST("/servers/:id/files/archive",a.archiveFile);api.POST("/servers/:id/files/extract",a.extractFile);api.DELETE("/servers/:id/files",a.deleteFile);api.GET("/servers/:id/backups",a.listBackups);api.POST("/servers/:id/backups",a.backup);api.GET("/servers/:id/backups/:name",a.downloadBackup);api.POST("/servers/:id/backups/:name/restore",a.restoreBackup);api.DELETE("/servers/:id/backups/:name",a.deleteBackup);return r}
+type API struct { token string; docker *gpDocker.Manager; sftpStore *nodexaSFTP.CredentialStore }
+func New(token string,d *gpDocker.Manager, stores ...*nodexaSFTP.CredentialStore)*API{a:=&API{token:token,docker:d};if len(stores)>0{a.sftpStore=stores[0]};return a}
+func(a *API)Router()*gin.Engine{r:=gin.New();r.Use(gin.Recovery());r.GET("/health",func(c *gin.Context){c.JSON(200,gin.H{"ok":true,"service":"nodexa-agent"})});api:=r.Group("/api",a.auth);api.PUT("/servers/:id/sftp",a.setSFTP);api.DELETE("/servers/:id/sftp",a.deleteSFTP);api.POST("/servers",a.create);api.POST("/servers/:id/reinstall",a.reinstall);api.PUT("/servers/:id/runtime",a.reconfigure);api.POST("/servers/:id/power",a.power);api.POST("/servers/:id/command",a.command);api.POST("/servers/:id/stdin",a.stdin);api.GET("/servers/:id/stats",a.stats);api.GET("/servers/:id/logs",a.logs);api.GET("/servers/:id/logs/stream",a.streamLogs);api.GET("/servers/:id/files",a.listFiles);api.GET("/servers/:id/files/content",a.readFile);api.PUT("/servers/:id/files/content",a.writeFile);api.POST("/servers/:id/files/directory",a.makeDirectory);api.POST("/servers/:id/files/rename",a.renameFile);api.POST("/servers/:id/files/upload",a.uploadFile);api.GET("/servers/:id/files/download",a.downloadFile);api.POST("/servers/:id/files/archive",a.archiveFile);api.POST("/servers/:id/files/extract",a.extractFile);api.DELETE("/servers/:id/files",a.deleteFile);api.GET("/servers/:id/backups",a.listBackups);api.POST("/servers/:id/backups",a.backup);api.GET("/servers/:id/backups/:name",a.downloadBackup);api.POST("/servers/:id/backups/:name/restore",a.restoreBackup);api.DELETE("/servers/:id/backups/:name",a.deleteBackup);return r}
 func(a *API)auth(c *gin.Context){if c.GetHeader("Authorization")!="Bearer "+a.token{c.AbortWithStatusJSON(401,gin.H{"error":"unauthorized"});return};c.Next()}
+func(a *API)setSFTP(c *gin.Context){if a.sftpStore==nil{c.JSON(503,gin.H{"error":"SFTP credential store unavailable"});return};var q struct{Username string `json:"username"`;Password string `json:"password"`};if err:=c.ShouldBindJSON(&q);err!=nil{c.JSON(422,gin.H{"error":"invalid request"});return};if err:=a.sftpStore.Upsert(nodexaSFTP.Credential{Username:q.Username,Password:q.Password,ServerUUID:c.Param("id")});err!=nil{c.JSON(422,gin.H{"error":err.Error()});return};c.JSON(200,gin.H{"ok":true,"username":q.Username})}
+func(a *API)deleteSFTP(c *gin.Context){if a.sftpStore==nil{c.JSON(503,gin.H{"error":"SFTP credential store unavailable"});return};if err:=a.sftpStore.DeleteServer(c.Param("id"));err!=nil{c.JSON(500,gin.H{"error":err.Error()});return};c.JSON(200,gin.H{"ok":true})}
 func(a *API)create(c *gin.Context){var q server.CreateRequest;if err:=c.ShouldBindJSON(&q);err!=nil{c.JSON(422,gin.H{"error":"invalid request","detail":err.Error()});return};if err:=a.docker.Create(c,q);err!=nil{c.JSON(500,gin.H{"error":err.Error()});return};c.JSON(201,gin.H{"id":q.ID,"status":"created"})}
 func(a *API)reinstall(c *gin.Context){var q server.CreateRequest;if err:=c.ShouldBindJSON(&q);err!=nil{c.JSON(422,gin.H{"error":"invalid request","detail":err.Error()});return};q.ID=c.Param("id");if err:=a.docker.ReinstallWithProgress(c,q);err!=nil{c.JSON(500,gin.H{"error":err.Error()});return};c.JSON(200,gin.H{"id":q.ID,"status":"reinstalled"})}
 func(a *API)reconfigure(c *gin.Context){var q server.CreateRequest;if err:=c.ShouldBindJSON(&q);err!=nil{c.JSON(422,gin.H{"error":"invalid request","detail":err.Error()});return};q.ID=c.Param("id");if err:=a.docker.Reconfigure(c,q);err!=nil{c.JSON(500,gin.H{"error":err.Error()});return};c.JSON(200,gin.H{"id":q.ID,"status":"reconfigured"})}
@@ -41,5 +42,3 @@ func(a *API)backup(c *gin.Context){var q struct{Name string `json:"name"`};if er
 func(a *API)downloadBackup(c *gin.Context){path,err:=a.docker.BackupPath(c.Param("id"),c.Param("name"));if err!=nil{c.JSON(404,gin.H{"error":err.Error()});return};c.FileAttachment(path,filepath.Base(path))}
 func(a *API)restoreBackup(c *gin.Context){if err:=a.docker.RestoreBackup(c,c.Param("id"),c.Param("name"));err!=nil{c.JSON(500,gin.H{"error":err.Error()});return};c.JSON(200,gin.H{"ok":true,"status":"restored"})}
 func(a *API)deleteBackup(c *gin.Context){if err:=a.docker.DeleteBackup(c.Param("id"),c.Param("name"));err!=nil{c.JSON(500,gin.H{"error":err.Error()});return};c.JSON(200,gin.H{"ok":true})}
-var _=strconv.Itoa
-var _=strings.TrimSpace
