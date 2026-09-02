@@ -37,7 +37,11 @@ class ServerSftpController extends Controller
 
     private function username(Server $server, $user): string
     {
-        return sprintf('%s.%s', $server->uuid, $user->username ?: $user->id);
+        // Pterodactyl-style login: account-name.server-short-uuid
+        // Example: panda.e68e4160
+        $account = trim((string)($user->username ?: $user->id));
+        $shortUuid = substr((string)$server->uuid, 0, 8);
+        return sprintf('%s.%s', $account, $shortUuid);
     }
 
     private function authorizeServer(Request $request, Server $server): void
