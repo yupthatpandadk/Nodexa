@@ -79,6 +79,7 @@ fi
 bash "$SOURCE_ROOT/deploy/setup-updater.sh"
 if [[ -d "$PANEL_DIR" ]]; then
   bash "$SOURCE_ROOT/deploy/setup-scheduler.sh"
+  bash "$SOURCE_ROOT/deploy/setup-upload-limits.sh"
   bash "$SOURCE_ROOT/deploy/optimize-panel-runtime.sh"
   bash "$SOURCE_ROOT/deploy/setup-storefront.sh"
   bash "$SOURCE_ROOT/deploy/setup-storefront-sync.sh"
