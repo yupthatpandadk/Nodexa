@@ -24,10 +24,10 @@ bash deploy/optimize-panel-runtime.sh
 bash deploy/optimize-frontend-source.sh
 bash deploy/enable-managed-server-templates.sh
 bash deploy/enable-runtime-modules.sh
+bash deploy/fix-installer-ready-ui.sh
 bash deploy/optimize-frontend-delivery-source.sh
 (cd /var/www/nodexa/panel && npm run build)
 bash deploy/optimize-web-assets.sh
-bash deploy/setup-upload-limits.sh
 bash deploy/setup-scheduler.sh
 bash deploy/create-admin.sh
 
