@@ -65,14 +65,14 @@ Goal: implement the useful game-server management capabilities users expect from
 - [x] Agent health/error diagnostics foundation
 - [x] Real online/offline state in React (never hardcoded)
 - [x] Node detail page
-- [ ] Node resource usage/capacity
+- [x] Node resource usage/capacity
 - [x] Node allocations/IP aliases/port ranges
 - [x] Automatic allocation creation ranges
 - [ ] Node configuration YAML/view/copy workflow
 - [x] Token rotation workflow with status
 - [x] Node server list
 - [ ] Node maintenance/drain mode
-- [ ] Node heartbeat/version compatibility
+- [x] Node heartbeat/version compatibility
 - [ ] Node transfer queue
 
 ## Locations
@@ -162,7 +162,7 @@ Goal: implement the useful game-server management capabilities users expect from
 - [ ] Backup concurrency/locks
 - [ ] Transfer protocol between Agents
 - [ ] Install-script isolation and progress events
-- [ ] Metrics/heartbeat/version endpoint
+- [x] Metrics/heartbeat/version endpoint
 - [ ] Graceful Agent restart without losing managed state
 
 ## Nodexa-specific quality requirements
