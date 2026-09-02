@@ -35,7 +35,6 @@ Route::get('/admin/servers/{server}/startup',[AdminServerStartupController::clas
 Route::get('/nodes',[NodeController::class,'index']);Route::post('/nodes',[NodeController::class,'store']);Route::get('/nodes/{node}',[NodeController::class,'show']);Route::get('/nodes/{node}/config',[NodeController::class,'config']);Route::post('/nodes/{node}/rotate-token',[NodeController::class,'rotateToken']);Route::get('/nodes/{node}/allocations',[AdminAllocationController::class,'index']);Route::post('/nodes/{node}/allocations',[AdminAllocationController::class,'store']);Route::post('/nodes/{node}/allocations/range',[AdminAllocationController::class,'range']);Route::delete('/nodes/{node}/allocations/{allocation}',[AdminAllocationController::class,'destroy']);
 Route::get('/database-hosts',[DatabaseHostController::class,'index']);Route::post('/database-hosts',[DatabaseHostController::class,'store']);Route::delete('/database-hosts/{databaseHost}',[DatabaseHostController::class,'destroy']);
 
-// Canonical diagnostics API.
 Route::get('/system/issues',[SystemIssueController::class,'index']);
 Route::post('/system/issues/scan-all',[SystemIssueController::class,'scanAll']);
 Route::post('/system/issues/scan-system',[SystemIssueController::class,'scanSystem']);
@@ -43,7 +42,6 @@ Route::post('/system/issues/scan-nodes',[SystemIssueController::class,'scanNodes
 Route::post('/system/issues/{issue}/resolve',[SystemIssueController::class,'resolve']);
 Route::post('/system/issues/{issue}/reopen',[SystemIssueController::class,'reopen']);
 
-// Backwards-compatible aliases used by the standalone admin diagnostics page.
 Route::get('/system-errors',[SystemIssueController::class,'index']);
 Route::post('/system-errors/scan-all',[SystemIssueController::class,'scanAll']);
 Route::post('/system-errors/scan-system',[SystemIssueController::class,'scanSystem']);
@@ -51,6 +49,6 @@ Route::post('/system-errors/scan-nodes',[SystemIssueController::class,'scanNodes
 Route::post('/system-errors/{issue}/resolve',[SystemIssueController::class,'resolve']);
 Route::post('/system-errors/{issue}/reopen',[SystemIssueController::class,'reopen']);
 
-Route::get('/admin/update/check',[AdminUpdateController::class,'check']);Route::post('/admin/update/start',[AdminUpdateController::class,'run']);Route::post('/admin/update/run',[AdminUpdateController::class,'run']);Route::get('/admin/update/status',[AdminUpdateController::class,'status']);
+Route::get('/admin/update/check',[AdminUpdateController::class,'check']);Route::post('/admin/update/start',[AdminUpdateController::class,'start']);Route::post('/admin/update/run',[AdminUpdateController::class,'start']);Route::get('/admin/update/status',[AdminUpdateController::class,'status']);
 Route::get('/storefront-sites',[StorefrontSiteController::class,'index']);Route::post('/storefront-sites',[StorefrontSiteController::class,'store']);Route::put('/storefront-sites/{site}',[StorefrontSiteController::class,'update']);Route::delete('/storefront-sites/{site}',[StorefrontSiteController::class,'destroy']);Route::post('/storefront-sites/{site}/products',[StorefrontSiteController::class,'attachProduct']);Route::delete('/storefront-sites/{site}/products/{product}',[StorefrontSiteController::class,'detachProduct']);
 });
