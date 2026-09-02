@@ -7,21 +7,21 @@ Goal: implement the useful game-server management capabilities users expect from
 - [x] Console output, commands and power controls
 - [x] Runtime CPU/RAM/network statistics
 - [x] File Agent API: list/read/write/upload/download/mkdir/rename/archive/extract/delete
-- [ ] Replace Files placeholder with complete React file manager
+- [x] Replace Files placeholder with complete React file manager
 - [x] Database create/list/delete and isolated credentials
 - [ ] Complete credential reveal/rotation UI and database workspace polish
 - [x] Subuser backend and permissions
 - [ ] Complete permission editor for existing subusers
 - [x] Backup Agent API: list/create/download/restore/delete
-- [ ] Replace Backups placeholder with complete React backup manager
+- [x] Replace Backups placeholder with complete React backup manager
 - [x] Schedule backend foundation
 - [ ] Replace Schedules placeholder with complete React scheduler
-- [ ] Background scheduler worker with next-run calculation, task chains and online-only rules
-- [ ] Network/allocation management UI and API
+- [x] Background scheduler worker with next-run calculation, task chains and online-only rules
+- [x] Network/allocation management UI and API
 - [ ] Primary/additional allocation assignment
 - [ ] Startup variables visible to customers when permitted
 - [ ] Customer-editable egg variables with validation/rules
-- [ ] Server rename/reinstall controls in React settings
+- [x] Server rename/reinstall controls in React settings
 - [ ] Activity/audit log per server
 - [ ] WebSocket/SSE realtime console and stats
 - [ ] True stdin attachment instead of shell-exec command emulation
@@ -113,7 +113,7 @@ Goal: implement the useful game-server management capabilities users expect from
 - [ ] Checksums
 - [ ] S3-compatible backup storage
 - [ ] Restore safety/maintenance state
-- [ ] Scheduled backups
+- [x] Scheduled backups
 
 ## Mounts / storage
 

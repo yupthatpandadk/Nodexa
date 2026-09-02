@@ -57,7 +57,11 @@ class ScheduleController extends Controller
         $this->authorizeServer($request,$server,'schedule.execute');
         abort_unless($schedule->server_id === $server->id,404);
         $runner->run($schedule);
-        return ['ok'=>true,'ran_at'=>now()->toIso8601String(),'next_run_at'=>$schedule->fresh()->next_run_at?->toIso8601String()];
+        return response()->json([
+            'ok'=>true,
+            'queued_at'=>now()->toIso8601String(),
+            'next_run_at'=>$schedule->fresh()->next_run_at?->toIso8601String(),
+        ],202);
     }
 
     private function validateSchedule(Request $request): array
