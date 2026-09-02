@@ -11,7 +11,7 @@ Goal: implement the useful game-server management capabilities users expect from
 - [x] Database create/list/delete and isolated credentials
 - [ ] Complete credential reveal/rotation UI and database workspace polish
 - [x] Subuser backend and permissions
-- [ ] Complete permission editor for existing subusers
+- [x] Complete permission editor for existing subusers
 - [x] Backup Agent API: list/create/download/restore/delete
 - [x] Replace Backups placeholder with complete React backup manager
 - [x] Schedule backend foundation
