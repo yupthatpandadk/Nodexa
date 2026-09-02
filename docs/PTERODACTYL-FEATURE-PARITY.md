@@ -63,7 +63,7 @@ Goal: implement the useful game-server management capabilities users expect from
 
 - [x] Node model, create/config/token and Nodexa Agent installer
 - [x] Agent health/error diagnostics foundation
-- [ ] Real online/offline state in React (never hardcoded)
+- [x] Real online/offline state in React (never hardcoded)
 - [ ] Node detail page
 - [ ] Node resource usage/capacity
 - [ ] Node allocations/IP aliases/port ranges
