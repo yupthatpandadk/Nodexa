@@ -1,5 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { BackupsPage, FilesPage, SchedulesPage } from './RuntimeModules';
+import { NetworkPage, SettingsPage as ServerSettingsPage, StartupPage } from './ServerConfigurationModules';
 
 type User = { id: number; name: string; email: string; is_admin: boolean };
 type Server = { id: string; uuid: string; owner_id: number; server_number?: number; identifier?: string; name: string; status: string; memory_mb: number; disk_mb: number; cpu_limit: number; access_permissions?: string[] | string | null };
@@ -8,7 +10,7 @@ type Database = { id: number; name: string; username: string; host: string; port
 type Node = { id: number; name: string; fqdn: string; scheme: string; daemon_port: number; sftp_port: number; memory_mb: number; disk_mb: number; location?: string; servers_count?: number };
 type NodeConfig = { token: string; panel_url: string; listen: string; sftp_port: number; data: string; backups: string; install_command: string };
 type Subuser = { id: number; user_id: number; permissions: string[] | string | null; user: { id: number; name: string; email: string } };
-type Tab = 'console' | 'files' | 'databases' | 'schedules' | 'backups' | 'users' | 'settings';
+type Tab = 'console' | 'files' | 'databases' | 'schedules' | 'backups' | 'network' | 'startup' | 'users' | 'settings';
 type View = 'dashboard' | 'servers' | 'nodes';
 
 type IconName = 'grid' | 'server' | 'node' | 'terminal' | 'folder' | 'database' | 'calendar' | 'backup' | 'users' | 'settings' | 'menu' | 'bell' | 'cpu' | 'memory' | 'disk' | 'network' | 'play' | 'restart' | 'stop' | 'chevron' | 'plus' | 'search' | 'shield' | 'activity' | 'logout';
@@ -54,23 +56,29 @@ const has = (server: Server | null, permission: string) => {
 };
 
 const tabLabels: Record<Tab, string> = {
-  console: 'Konsol', files: 'Filer', databases: 'Databaser', schedules: 'Planlægninger', backups: 'Backups', users: 'Brugere', settings: 'Indstillinger',
+  console: 'Konsol', files: 'Filer', databases: 'Databaser', schedules: 'Planlægninger', backups: 'Backups', network: 'Netværk', startup: 'Startup', users: 'Brugere', settings: 'Indstillinger',
 };
 const tabIcons: Record<Tab, IconName> = {
-  console: 'terminal', files: 'folder', databases: 'database', schedules: 'calendar', backups: 'backup', users: 'users', settings: 'settings',
+  console: 'terminal', files: 'folder', databases: 'database', schedules: 'calendar', backups: 'backup', network: 'network', startup: 'play', users: 'users', settings: 'settings',
 };
 
 function tabsFor(server: Server | null, me: User | null): Tab[] {
   if (!server || !me) return [];
   const p = permissionsFor(server);
-  if (p.includes('*')) return ['console', 'files', 'databases', 'schedules', 'backups', 'users', 'settings'];
+  if (p.includes('*')) {
+    const full: Tab[] = ['console', 'files', 'databases', 'schedules', 'backups', 'network'];
+    if (me.is_admin) full.push('startup');
+    full.push('users', 'settings');
+    return full;
+  }
   const out: Tab[] = [];
   if (p.some(x => x.startsWith('console.') || x.startsWith('power.'))) out.push('console');
   if (p.some(x => x.startsWith('files.'))) out.push('files');
   if (p.some(x => x.startsWith('database.'))) out.push('databases');
   if (p.some(x => x.startsWith('schedule.'))) out.push('schedules');
   if (p.some(x => x.startsWith('backups.'))) out.push('backups');
-  if (p.includes('settings.read')) out.push('settings');
+  if (p.some(x => x.startsWith('allocation.'))) out.push('network');
+  if (p.some(x => x.startsWith('settings.')) || p.includes('files.sftp')) out.push('settings');
   return out;
 }
 
@@ -297,10 +305,12 @@ function ServerWorkspace(props: { me: User; server: Server; stats: Stats | null;
     {tab === 'console' && <ConsolePage stats={stats} server={server} logs={props.logs} cmd={props.cmd} setCmd={props.setCmd} send={props.send} canRead={has(server, 'console.read')} canCommand={has(server, 'console.command')} />}
     {tab === 'databases' && <DatabasePage server={server} databases={props.databases} dbName={props.dbName} setDbName={props.setDbName} createDatabase={props.createDatabase} openDatabase={props.openDatabase} deleteDatabase={props.deleteDatabase} password={props.password} clearPassword={props.clearPassword} pmaUrl={props.pmaUrl} closePma={props.closePma} canCreate={has(server, 'database.create')} canDelete={has(server, 'database.delete')} />}
     {tab === 'users' && (me.is_admin || server.owner_id === me.id) && <UsersPage users={props.users} add={props.addUser} update={props.updateUser} remove={props.removeUser} />}
-    {tab === 'files' && <ModulePlaceholder icon="folder" title="Filer" text="Filhåndtering bliver koblet direkte på Nodexa Agent med editor, upload, download og arkivfunktioner." />}
-    {tab === 'schedules' && <ModulePlaceholder icon="calendar" title="Planlægninger" text="Automatiser genstart, kommandoer og backups med en enkel visuel tidsplan." />}
-    {tab === 'backups' && <ModulePlaceholder icon="backup" title="Backups" text="Opret, lås, download og gendan backups direkte fra serverpanelet." />}
-    {tab === 'settings' && <SettingsPage server={server} />}
+    {tab === 'files' && <FilesPage server={server} canWrite={has(server, 'files.write')} />}
+    {tab === 'schedules' && <SchedulesPage server={server} canCreate={has(server, 'schedule.create')} canUpdate={has(server, 'schedule.update')} canDelete={has(server, 'schedule.delete')} canExecute={has(server, 'schedule.execute')} />}
+    {tab === 'backups' && <BackupsPage server={server} canCreate={has(server, 'backups.create')} canDownload={has(server, 'backups.download')} canRestore={has(server, 'backups.restore')} canDelete={has(server, 'backups.delete')} />}
+    {tab === 'network' && <NetworkPage server={server} canUpdate={has(server, 'allocation.update')} />}
+    {tab === 'startup' && me.is_admin && <StartupPage server={server} isAdmin />}
+    {tab === 'settings' && <ServerSettingsPage server={server} canUpdate={has(server, 'settings.update')} canReinstall={has(server, 'settings.reinstall')} canSftp={has(server, 'files.sftp')} />}
   </div>;
 }
 
@@ -323,10 +333,12 @@ function DatabasePage({ server, databases, dbName, setDbName, createDatabase, op
 
 const permissionGroups = [
   { title: 'Konsol & strøm', items: [['console.read','Se konsol'],['console.command','Send kommandoer'],['power.start','Start server'],['power.stop','Stop server'],['power.restart','Genstart server']] },
-  { title: 'Filer', items: [['files.read','Se filer'],['files.write','Rediger filer']] },
+  { title: 'Filer & SFTP', items: [['files.read','Se filer'],['files.write','Rediger filer'],['files.sftp','SFTP-adgang']] },
   { title: 'Databaser', items: [['database.read','Se databaser'],['database.create','Opret databaser'],['database.credentials','Se credentials'],['database.delete','Slet databaser']] },
-  { title: 'Planlægninger', items: [['schedule.read','Se planlægninger'],['schedule.create','Opret'],['schedule.update','Rediger'],['schedule.execute','Kør nu']] },
-  { title: 'Backups', items: [['backups.read','Se backups'],['backups.create','Opret backup'],['backups.download','Download'],['backups.restore','Gendan']] },
+  { title: 'Planlægninger', items: [['schedule.read','Se planlægninger'],['schedule.create','Opret'],['schedule.update','Rediger'],['schedule.execute','Kør nu'],['schedule.delete','Slet']] },
+  { title: 'Backups', items: [['backups.read','Se backups'],['backups.create','Opret backup'],['backups.download','Download'],['backups.restore','Gendan'],['backups.delete','Slet']] },
+  { title: 'Netværk', items: [['allocation.read','Se allocations'],['allocation.update','Rediger noter/primær']] },
+  { title: 'Indstillinger', items: [['settings.read','Se indstillinger'],['settings.update','Rediger servernavn'],['settings.reinstall','Geninstaller server']] },
 ];
 
 function UsersPage({ users, add, update, remove }: { users: Subuser[]; add: (e: string, p: string[]) => any; update: (u: Subuser, p: string[]) => any; remove: (u: Subuser) => any }) {
@@ -338,10 +350,6 @@ function UsersPage({ users, add, update, remove }: { users: Subuser[]; add: (e: 
   </div>;
 }
 
-function SettingsPage({ server }: { server: Server }) {
-  return <div className="module-stack"><section className="module-heading"><div><h2>Indstillinger</h2><p>Grundlæggende oplysninger for din server.</p></div></section><div className="settings-layout"><div className="panel-card settings-card"><div className="setting-block"><label>Servernavn</label><div className="readonly-input">{server.name}</div><small>Servernavn kan senere redigeres via den sikre settings-API.</small></div><div className="setting-block"><label>Server ID</label><div className="readonly-input mono">{server.identifier ?? server.id}</div></div><div className="setting-block"><label>Ressourcer</label><div className="settings-resources"><span>{fmtMb(server.memory_mb)} RAM</span><span>{fmtMb(server.disk_mb)} Disk</span><span>{server.cpu_limit || 0}% CPU</span></div></div></div><div className="panel-card info-card"><div className="info-icon"><Icon name="shield"/></div><h3>Beskyttede indstillinger</h3><p>Startup command, Docker image og environment-variabler kan kun ændres af en administrator.</p><div className="info-note">Det beskytter serveren mod utilsigtede ændringer.</div></div></div></div>;
-}
-
 function NodesPage({ nodes, showForm, setShowForm, form, setForm, createNode, configFor, config, closeConfig }: { nodes: Node[]; showForm: boolean; setShowForm: (v: boolean) => void; form: any; setForm: (v: any) => void; createNode: () => void; configFor: (n: Node) => void; config: NodeConfig | null; closeConfig: () => void }) {
   const [showConfigSecret, setShowConfigSecret] = useState(false);
   return <div className="page-stack"><section className="page-heading-row"><div><div className="eyebrow">ADMINISTRATION</div><h1>Nodes</h1><p>Administrer Nodexa Agent-noder og deres kapacitet.</p></div><button className="primary-btn" onClick={() => setShowForm(true)}><Icon name="plus"/> Opret Node</button></section><div className="node-grid">{nodes.map(node => <div className="panel-card node-card" key={node.id}><div className="node-top"><div className="node-icon"><Icon name="node"/></div><span className="online-badge"><span/> Online</span></div><h3>{node.name}</h3><p>{node.location ?? 'Ingen lokation'}</p><div className="node-host">{node.fqdn}:{node.daemon_port}</div><div className="node-stats"><div><span>RAM</span><strong>{fmtMb(node.memory_mb)}</strong></div><div><span>Disk</span><strong>{fmtMb(node.disk_mb)}</strong></div><div><span>Servere</span><strong>{node.servers_count ?? 0}</strong></div></div><button className="secondary-btn full" onClick={() => { setShowConfigSecret(false); configFor(node); }}>Konfiguration</button></div>)}{!nodes.length && <div className="panel-card node-empty"><div className="empty-icon"><Icon name="node"/></div><h3>Ingen Nodes endnu</h3><p>Opret din første Node og installer Nodexa Agent.</p><button className="primary-btn" onClick={() => setShowForm(true)}><Icon name="plus"/> Opret Node</button></div>}</div>
@@ -350,9 +358,6 @@ function NodesPage({ nodes, showForm, setShowForm, form, setForm, createNode, co
   </div>;
 }
 
-function ModulePlaceholder({ icon, title, text }: { icon: IconName; title: string; text: string }) {
-  return <div className="panel-card module-placeholder"><div className="placeholder-icon"><Icon name={icon} size={28}/></div><div className="eyebrow">NODEXA MODULE</div><h2>{title}</h2><p>{text}</p><span className="coming-pill">Under udvikling</span></div>;
-}
 function NavButton({ icon, label, active, badge, onClick }: { icon: IconName; label: string; active: boolean; badge?: number; onClick: () => void }) { return <button className={'nav-item ' + (active ? 'active' : '')} onClick={onClick}><Icon name={icon}/><span>{label}</span>{badge !== undefined && <b>{badge}</b>}</button>; }
 function StatCard({ icon, label, value, note, accent }: { icon: IconName; label: string; value: string; note: string; accent?: string }) { return <div className="panel-card stat-card"><div className={'stat-icon ' + (accent ?? '')}><Icon name={icon}/></div><div><span>{label}</span><strong>{value}</strong><small>{note}</small></div></div>; }
 function ResourceCard({ icon, label, value, sub, percent }: { icon: IconName; label: string; value: string; sub?: string; percent: number }) { return <div className="panel-card resource-card"><div className="resource-head"><div className="resource-icon"><Icon name={icon}/></div><span>{label}</span></div><div className="resource-value"><strong>{value}</strong>{sub && <small>{sub}</small>}</div><div className="progress-track"><span style={{width: `${Math.min(100, Math.max(0, percent))}%`}}/></div></div>; }

@@ -18,7 +18,6 @@ const fmtBytes = (bytes: number) => {
 };
 const joinPath = (base: string, name: string) => `${base === '/' ? '' : base}/${name}`.replace(/\/+/g, '/').replace(/^$/, '/');
 const parentPath = (path: string) => { const parts = path.split('/').filter(Boolean); parts.pop(); return '/' + parts.join('/'); };
-const basename = (path: string) => path.split('/').filter(Boolean).pop() || '';
 
 export function FilesPage({ server, canWrite = true }: { server: ServerLike; canWrite?: boolean }) {
   const [path, setPath] = useState('/');
@@ -46,30 +45,33 @@ export function FilesPage({ server, canWrite = true }: { server: ServerLike; can
     catch (e) { setError(apiError(e)); }
   };
   const save = async () => {
-    if (!editingPath) return;
+    if (!editingPath || !canWrite) return;
     setSaving(true); setError('');
     try { await axios.put(`/api/servers/${server.id}/file`, { path: editingPath, content }); setEditingPath(null); await load(path); }
     catch (e) { setError(apiError(e)); }
     finally { setSaving(false); }
   };
   const createFile = async () => {
+    if (!canWrite) return;
     const name = prompt('Filnavn, fx server.properties'); if (!name) return;
     setEditingPath(joinPath(path, name)); setContent('');
   };
   const createFolder = async () => {
+    if (!canWrite) return;
     const name = prompt('Navn på mappe'); if (!name) return;
     try { await axios.post(`/api/servers/${server.id}/directory`, { path: joinPath(path, name) }); await load(path); } catch (e) { setError(apiError(e)); }
   };
   const remove = async (item: FileItem) => {
-    if (!confirm(`Slet ${item.name}?`)) return;
+    if (!canWrite || !confirm(`Slet ${item.name}?`)) return;
     try { await axios.delete(`/api/servers/${server.id}/file`, { data: { path: joinPath(path, item.name) } }); await load(path); } catch (e) { setError(apiError(e)); }
   };
   const rename = async (item: FileItem) => {
+    if (!canWrite) return;
     const name = prompt('Nyt navn', item.name); if (!name || name === item.name) return;
     try { await axios.post(`/api/servers/${server.id}/file/rename`, { from: joinPath(path, item.name), to: joinPath(path, name) }); await load(path); } catch (e) { setError(apiError(e)); }
   };
   const upload = async (file?: File) => {
-    if (!file) return;
+    if (!canWrite || !file) return;
     const form = new FormData(); form.append('path', path); form.append('file', file);
     try { await axios.post(`/api/servers/${server.id}/upload`, form, { headers: { 'Content-Type': 'multipart/form-data' } }); await load(path); } catch (e) { setError(apiError(e)); }
   };
@@ -77,9 +79,11 @@ export function FilesPage({ server, canWrite = true }: { server: ServerLike; can
     try { const r = await axios.get(`/api/servers/${server.id}/download`, { params: { path: joinPath(path, item.name) }, responseType: 'blob' }); const url = URL.createObjectURL(r.data); const a = document.createElement('a'); a.href = url; a.download = item.name; a.click(); URL.revokeObjectURL(url); } catch (e) { setError(apiError(e)); }
   };
   const archive = async (item: FileItem) => {
+    if (!canWrite) return;
     try { await axios.post(`/api/servers/${server.id}/archive`, { path: joinPath(path, item.name) }); await load(path); } catch (e) { setError(apiError(e)); }
   };
   const extract = async (item: FileItem) => {
+    if (!canWrite) return;
     try { await axios.post(`/api/servers/${server.id}/extract`, { path: joinPath(path, item.name) }); await load(path); } catch (e) { setError(apiError(e)); }
   };
   const crumbs = useMemo(() => path.split('/').filter(Boolean), [path]);
@@ -89,9 +93,9 @@ export function FilesPage({ server, canWrite = true }: { server: ServerLike; can
     {error && <div className="nx-error">{error}</div>}
     <div className="nx-card nx-files">
       <div className="nx-filebar"><button disabled={path==='/' || loading} onClick={() => load(parentPath(path))}>←</button><button onClick={() => load('/')}>/</button>{crumbs.map((c,i) => <React.Fragment key={`${c}-${i}`}><span>/</span><button onClick={() => load('/'+crumbs.slice(0,i+1).join('/'))}>{c}</button></React.Fragment>)}<span className="nx-spacer"/>{loading && <small>Indlæser…</small>}<button onClick={() => load(path)}>↻</button></div>
-      <div className="nx-file-table"><div className="nx-file-row nx-file-header"><span>Navn</span><span>Størrelse</span><span>Ændret</span><span/></div>{items.map(item => <div className="nx-file-row" key={item.name}><button className="nx-file-name" onClick={() => openFile(item)}>{item.directory ? '📁' : '📄'} <strong>{item.name}</strong></button><span>{item.directory ? 'Mappe' : fmtBytes(item.size)}</span><span>{item.modified_at ? new Date(item.modified_at).toLocaleString('da-DK') : '—'}</span><div className="nx-row-actions">{!item.directory && <button onClick={() => download(item)}>Download</button>}<button onClick={() => rename(item)}>Omdøb</button>{item.directory && <button onClick={() => archive(item)}>Pak</button>}{!item.directory && /\.(tar\.gz|tgz)$/i.test(item.name) && <button onClick={() => extract(item)}>Udpak</button>}{canWrite && <button className="danger" onClick={() => remove(item)}>Slet</button>}</div></div>)}{!items.length && !loading && <div className="nx-empty">Mappen er tom.</div>}</div>
+      <div className="nx-file-table"><div className="nx-file-row nx-file-header"><span>Navn</span><span>Størrelse</span><span>Ændret</span><span/></div>{items.map(item => <div className="nx-file-row" key={item.name}><button className="nx-file-name" onClick={() => openFile(item)}>{item.directory ? '📁' : '📄'} <strong>{item.name}</strong></button><span>{item.directory ? 'Mappe' : fmtBytes(item.size)}</span><span>{item.modified_at ? new Date(item.modified_at).toLocaleString('da-DK') : '—'}</span><div className="nx-row-actions">{!item.directory && <button onClick={() => download(item)}>Download</button>}{canWrite && <button onClick={() => rename(item)}>Omdøb</button>}{canWrite && item.directory && <button onClick={() => archive(item)}>Pak</button>}{canWrite && !item.directory && /\.(tar\.gz|tgz)$/i.test(item.name) && <button onClick={() => extract(item)}>Udpak</button>}{canWrite && <button className="danger" onClick={() => remove(item)}>Slet</button>}</div></div>)}{!items.length && !loading && <div className="nx-empty">Mappen er tom.</div>}</div>
     </div>
-    {editingPath && <div className="nx-card nx-editor"><div className="nx-editor-head"><div><small>REDIGERER</small><strong>{editingPath}</strong></div><div className="nx-actions"><button onClick={() => setEditingPath(null)}>Luk</button>{canWrite && <button className="primary" disabled={saving} onClick={save}>{saving?'Gemmer…':'Gem'}</button>}</div></div><textarea value={content} readOnly={!canWrite} onChange={e => setContent(e.target.value)} spellCheck={false}/></div>}
+    {editingPath && <div className="nx-card nx-editor"><div className="nx-editor-head"><div><small>{canWrite ? 'REDIGERER' : 'VISER'}</small><strong>{editingPath}</strong></div><div className="nx-actions"><button onClick={() => setEditingPath(null)}>Luk</button>{canWrite && <button className="primary" disabled={saving} onClick={save}>{saving?'Gemmer…':'Gem'}</button>}</div></div><textarea value={content} readOnly={!canWrite} onChange={e => setContent(e.target.value)} spellCheck={false}/></div>}
   </div>;
 }
 
