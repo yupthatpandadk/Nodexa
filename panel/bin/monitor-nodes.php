@@ -41,13 +41,58 @@ foreach (Node::query()->orderBy('id')->get() as $node) {
             throw new RuntimeException('Health endpoint answered, but the response was not a valid Nodexa Agent health payload.');
         }
 
-        $node->update([
+        $update = [
             'health_status' => 'online',
             'health_latency_ms' => $latency,
             'health_last_checked_at' => $checkedAt,
             'health_last_seen_at' => $checkedAt,
             'health_message' => null,
-        ]);
+        ];
+
+        $agentVersion = trim((string) ($payload['version'] ?? ''));
+        if ($agentVersion !== '') {
+            $update['agent_version'] = mb_substr($agentVersion, 0, 64);
+        }
+
+        $apiVersion = isset($payload['api_version']) && is_numeric($payload['api_version'])
+            ? (int) $payload['api_version']
+            : null;
+        if ($apiVersion !== null) {
+            $update['agent_api_version'] = max(0, min(65535, $apiVersion));
+        }
+
+        $hostname = trim((string) ($payload['hostname'] ?? ''));
+        if ($hostname !== '') {
+            $update['agent_hostname'] = mb_substr($hostname, 0, 255);
+        }
+        if (!empty($payload['started_at']) && is_string($payload['started_at'])) {
+            $update['agent_started_at'] = $payload['started_at'];
+        }
+
+        $system = is_array($payload['system'] ?? null) ? $payload['system'] : null;
+        if ($system !== null) {
+            $integerMetrics = [
+                'memory_total_bytes' => 'host_memory_total_bytes',
+                'memory_available_bytes' => 'host_memory_available_bytes',
+                'disk_total_bytes' => 'host_disk_total_bytes',
+                'disk_free_bytes' => 'host_disk_free_bytes',
+                'cpu_count' => 'host_cpu_count',
+                'uptime_seconds' => 'host_uptime_seconds',
+            ];
+            foreach ($integerMetrics as $source => $target) {
+                if (isset($system[$source]) && is_numeric($system[$source])) {
+                    $update[$target] = max(0, (int) $system[$source]);
+                }
+            }
+            foreach (['load_1' => 'host_load_1', 'load_5' => 'host_load_5', 'load_15' => 'host_load_15'] as $source => $target) {
+                if (isset($system[$source]) && is_numeric($system[$source])) {
+                    $update[$target] = max(0, (float) $system[$source]);
+                }
+            }
+            $update['metrics_updated_at'] = $checkedAt;
+        }
+
+        $node->update($update);
 
         SystemIssue::where('source', 'node')
             ->where('node_id', $node->id)
@@ -56,7 +101,23 @@ foreach (Node::query()->orderBy('id')->get() as $node) {
             ->get()
             ->each(fn (SystemIssue $issue) => $issue->resolveIssue());
 
-        echo "[OK] Node {$node->name} {$latency}ms\n";
+        if ($apiVersion !== null && $apiVersion !== 1) {
+            SystemIssue::report('node', "Node {$node->name} bruger en inkompatibel Agent API", "Nodexa Panel forventer Agent API v1, men noden rapporterede v{$apiVersion}.", 'warning', 'node_agent_incompatible', $node->id, null, [
+                'agent_version' => $agentVersion ?: null,
+                'agent_api_version' => $apiVersion,
+                'expected_api_version' => 1,
+            ]);
+        } else {
+            SystemIssue::where('source', 'node')
+                ->where('node_id', $node->id)
+                ->where('type', 'node_agent_incompatible')
+                ->where('status', 'open')
+                ->get()
+                ->each(fn (SystemIssue $issue) => $issue->resolveIssue());
+        }
+
+        $versionText = $agentVersion !== '' ? " agent={$agentVersion}" : '';
+        echo "[OK] Node {$node->name} {$latency}ms{$versionText}\n";
         continue;
     } catch (Throwable $e) {
         $latency = (int) round((microtime(true) - $started) * 1000);
