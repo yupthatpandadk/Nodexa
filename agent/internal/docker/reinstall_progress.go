@@ -71,9 +71,15 @@ func (m *Manager) installerLogs(ctx context.Context, containerName, tail string)
 	return strings.TrimSpace(output.String()), nil
 }
 
+func installCompleted(stored string) bool {
+	return strings.Contains(stored, "Reinstall finished. Server is ready to start.") ||
+		strings.Contains(stored, "Managed template files are ready")
+}
+
 // InstallConsole returns the live/recent installer output while a server is
-// being provisioned or reinstalled. Once the actual game container is running,
-// normal container logs take over automatically.
+// being provisioned or reinstalled. Once installation has completed and the
+// actual game container exists, the installer console switches to a concise
+// ready state instead of looking like it is still running forever.
 func (m *Manager) InstallConsole(ctx context.Context, id, tail string) (string, bool, error) {
 	root, err := m.serverRoot(id)
 	if err != nil {
@@ -101,7 +107,13 @@ func (m *Manager) InstallConsole(ctx context.Context, id, tail string) (string, 
 
 	serverName := "nx-" + id
 	if inspect, inspectErr := m.cli.ContainerInspect(ctx, serverName); inspectErr == nil {
-		if !inspect.State.Running && stored != "" {
+		if inspect.State.Running {
+			return "", false, nil
+		}
+		if stored != "" {
+			if installCompleted(stored) {
+				return "Nodexa installation completed successfully.\nServer is ready to start. Press Start to launch it.", true, nil
+			}
 			return tailInstallText(stored, tail), true, nil
 		}
 		return "", false, nil
@@ -109,6 +121,9 @@ func (m *Manager) InstallConsole(ctx context.Context, id, tail string) (string, 
 		return "", false, inspectErr
 	}
 
+	// If no runtime container exists, keep showing the installer output. This is
+	// especially useful after a failed install because the exact error remains
+	// visible in the console until the user retries the installation.
 	if stored != "" {
 		return tailInstallText(stored, tail), true, nil
 	}
