@@ -90,7 +90,7 @@ func (a *API) power(c *gin.Context) {
 	id := c.Param("id")
 	var err error
 	switch q.Signal {
-	case "start": err = a.docker.Start(c, id)
+	case "start": err = a.docker.StartWithDiagnostics(c, id)
 	case "stop": err = a.docker.Stop(c, id)
 	case "restart": err = a.docker.Restart(c, id)
 	case "kill": err = a.docker.Kill(c, id)
