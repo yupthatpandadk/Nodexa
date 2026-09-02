@@ -17,6 +17,7 @@ import (
 )
 
 const installLogName = ".nodexa-install.log"
+const managedInstallerImage = "alpine:3.20"
 
 func appendInstallLog(root, message string) { message=strings.TrimRight(message,"\r\n"); if message==""{return}; file,err:=os.OpenFile(filepath.Join(root,installLogName),os.O_CREATE|os.O_APPEND|os.O_WRONLY,0640);if err!=nil{return};defer file.Close();_,_=fmt.Fprintln(file,message) }
 func resetInstallLog(root string){_=os.WriteFile(filepath.Join(root,installLogName),[]byte{},0640)}
@@ -41,14 +42,16 @@ func(m *Manager)ReinstallWithProgress(ctx context.Context,r server.CreateRequest
 	appendInstallLog(root,"[Nodexa Installer] Reinstall finished. Server is ready to start.");return nil
 }
 
-func installerError(exitCode int,captured string)error{detail:=tailInstallText(captured,"8");if detail==""{return fmt.Errorf("Minecraft installer exited with code %d",exitCode)};return fmt.Errorf("Minecraft installer exited with code %d: %s",exitCode,detail)}
+func installerError(exitCode int,captured string)error{detail:=tailInstallText(captured,"12");if detail==""{return fmt.Errorf("Minecraft installer exited with code %d",exitCode)};return fmt.Errorf("Minecraft installer exited with code %d: %s",exitCode,detail)}
 
 func(m *Manager)installTemplateWithProgress(ctx context.Context,r server.CreateRequest,root string)error{
 	template:=strings.ToLower(strings.TrimSpace(r.Template));if template!="minecraft"&&template!="minecraft-java"{return fmt.Errorf("unsupported installation template %q",r.Template)}
-	// Use the same /home/container mount as the runtime container. This avoids
-	// installer/runtime path drift and guarantees that the files visible in the
-	// panel are exactly the files the installer modifies.
+	// Installation is deliberately separated from the runtime image. Runtime Java
+	// images are optimized for running the game and may not contain curl, Python or
+	// CA certificates. A tiny dedicated installer image makes reinstalls deterministic.
+	if err:=m.ensureImage(ctx,managedInstallerImage);err!=nil{return fmt.Errorf("prepare managed installer image: %w",err)}
 	installScript:=`set -eu
+apk add --no-cache curl ca-certificates python3 >/dev/null
 cd /home/container
 VERSION="${MINECRAFT_VERSION:-1.21.8}"
 PORT="${SERVER_PORT:-25565}"
@@ -59,18 +62,10 @@ echo "[Nodexa Installer] [1/7] Preparing installation directory"
 echo "[Nodexa Installer] Template: Minecraft Java / Paper"
 echo "[Nodexa Installer] Minecraft version: ${VERSION}"
 echo "[Nodexa Installer] [2/7] Resolving latest Paper build"
-command -v curl >/dev/null 2>&1 || { echo "[Nodexa Installer] ERROR: runtime image does not provide curl"; exit 1; }
 META="$(curl -fsSL -A "$PAPER_UA" "$PAPER_API")"
-if command -v python3 >/dev/null 2>&1; then
- URL="$(printf '%s' "$META" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["downloads"]["server:default"]["url"])')"
-else
- # Pterodactyl-style Java runtime images do not always ship Python. The Paper
- # response contains the server jar URL, so use a POSIX-tool fallback instead.
- URL="$(printf '%s' "$META" | grep -oE 'https://[^"[:space:]]+\.jar' | head -n1 || true)"
-fi
+URL="$(printf '%s' "$META" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["downloads"]["server:default"]["url"])')"
 [ -n "$URL" ] || { echo "[Nodexa Installer] ERROR: Paper API did not return a server download URL"; exit 1; }
 echo "[Nodexa Installer] [3/7] Downloading Paper server"
-# Download atomically so a failed reinstall never destroys the working jar.
 curl -fL --retry 4 --retry-delay 2 -A "$PAPER_UA" "$URL" -o server.jar.nodexa-new
 [ -s server.jar.nodexa-new ] || { rm -f server.jar.nodexa-new; echo "[Nodexa Installer] ERROR: downloaded server jar is missing or empty"; exit 1; }
 mv -f server.jar.nodexa-new server.jar
@@ -78,7 +73,6 @@ echo "[Nodexa Installer] [4/7] Accepting Minecraft EULA"
 [ -f eula.txt ] || printf 'eula=true\n' > eula.txt
 if grep -q '^eula=' eula.txt; then sed -i 's/^eula=.*/eula=true/' eula.txt; else printf '\neula=true\n' >> eula.txt; fi
 echo "[Nodexa Installer] [5/7] Updating server.properties"
-# Preserve all user settings; only ensure the allocated runtime port is correct.
 if [ ! -f server.properties ]; then printf 'server-port=%s\nquery.port=%s\n' "$PORT" "$PORT" > server.properties
 else
  if grep -q '^server-port=' server.properties; then sed -i "s/^server-port=.*/server-port=${PORT}/" server.properties; else printf '\nserver-port=%s\n' "$PORT" >> server.properties; fi
@@ -90,7 +84,7 @@ echo "[Nodexa Installer] [7/7] Minecraft installation completed successfully"
 `
 	installerName:="nx-install-"+r.ID
 	if inspect,err:=m.cli.ContainerInspect(ctx,installerName);err==nil{if inspect.State.Running{t:=3;_=m.cli.ContainerStop(ctx,installerName,container.StopOptions{Timeout:&t})};_=m.cli.ContainerRemove(ctx,installerName,container.RemoveOptions{Force:true})}else if !errdefs.IsNotFound(err){return err}
-	cfg:=&container.Config{Image:r.Image,Cmd:[]string{"/bin/sh","-lc",installScript},Env:env(r.Environment),WorkingDir:"/home/container",AttachStdout:true,AttachStderr:true}
+	cfg:=&container.Config{Image:managedInstallerImage,Cmd:[]string{"/bin/sh","-lc",installScript},Env:env(r.Environment),WorkingDir:"/home/container",AttachStdout:true,AttachStderr:true}
 	host:=&container.HostConfig{Binds:[]string{fmt.Sprintf("%s:/home/container",root)}}
 	created,err:=m.cli.ContainerCreate(ctx,cfg,host,nil,nil,installerName);if err!=nil{return fmt.Errorf("create installer container: %w",err)}
 	if err:=m.cli.ContainerStart(ctx,created.ID,container.StartOptions{});err!=nil{return fmt.Errorf("start installer container: %w",err)}
