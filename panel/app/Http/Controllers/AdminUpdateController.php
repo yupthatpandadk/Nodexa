@@ -13,8 +13,11 @@ class AdminUpdateController extends Controller
     private const VERSION_FILE='/var/lib/nodexa/version.json';
     private const STATE_FILE='/var/lib/nodexa/update-state.json';
     private const LOG_FILE='/var/log/nodexa-update.log';
+    private const UPDATE_TRIGGER='/usr/local/sbin/nodexa-update-trigger';
+
     private function admin(Request $request):void{abort_unless((bool)$request->user()?->is_admin,403,'Administrator permission required.');}
     private function readJson(string $path):array{if(!is_readable($path))return[];$decoded=json_decode((string)file_get_contents($path),true);return is_array($decoded)?$decoded:[];}
+    private function executable(array $candidates):?string{foreach($candidates as $candidate){if(is_file($candidate)&&is_executable($candidate))return $candidate;}return null;}
     private function remote():array
     {
         $repo=config('nodexa.update_repository','yupthatpandadk/Nodexa');$branch=config('nodexa.update_branch','main');
@@ -34,19 +37,38 @@ class AdminUpdateController extends Controller
         $this->admin($request);$state=$this->readJson(self::STATE_FILE);abort_if(($state['status']??null)==='running',409,'En Nodexa-opdatering kører allerede.');
         try{$remote=$this->remote();$installed=$this->readJson(self::VERSION_FILE);if(!empty($installed['commit'])&&$installed['commit']===$remote['commit'])return response()->json(['message'=>'Nodexa er allerede opdateret.','available'=>false],409);}catch(Throwable $e){return response()->json(['message'=>'GitHub kunne ikke kontaktes: '.$e->getMessage()],503);}
 
-        // The updater installer writes the exact allowed command to sudoers.
-        // Resolve systemctl first and use that exact absolute path. Also resolve
-        // sudo rather than assuming /usr/bin/sudo on every supported distro.
-        $systemctl=trim((string)shell_exec('command -v systemctl 2>/dev/null'));
-        $sudo=trim((string)shell_exec('command -v sudo 2>/dev/null'));
-        if($systemctl===''||!is_executable($systemctl))return response()->json(['message'=>'systemctl blev ikke fundet på Nodexa-serveren.'],500);
-        if($sudo===''||!is_executable($sudo))return response()->json(['message'=>'sudo blev ikke fundet på Nodexa-serveren.'],500);
+        // Never use shell_exec/exec here. Those functions are commonly disabled in
+        // hardened PHP-FPM installations and previously caused an unhandled 500.
+        // setup-updater.sh installs this fixed helper and grants www-data exactly
+        // one sudo permission: executing this helper as root.
+        if(!is_file(self::UPDATE_TRIGGER)||!is_executable(self::UPDATE_TRIGGER)){
+            $message='Updater-triggeren mangler eller kan ikke køres. Kør Nodexa updater-setup én gang som root for at reparere systemd og sudoers.';
+            SystemIssue::report(source:'updater',title:'Nodexa updater-trigger mangler',message:$message,severity:'error',type:'update_trigger_missing');
+            return response()->json(['message'=>$message,'repair_required'=>true],500);
+        }
 
-        $process=new Process([$sudo,'-n',$systemctl,'--no-block','start','nodexa-update.service']);$process->setTimeout(10);$process->run();
+        $sudo=$this->executable(['/usr/bin/sudo','/bin/sudo']);
+        if($sudo===null){
+            $message='sudo blev ikke fundet på Nodexa-serveren. Installer sudo og kør updater-setup igen.';
+            SystemIssue::report(source:'updater',title:'sudo mangler til Nodexa updater',message:$message,severity:'error',type:'update_sudo_missing');
+            return response()->json(['message'=>$message,'repair_required'=>true],500);
+        }
+
+        try{
+            $process=new Process([$sudo,'-n',self::UPDATE_TRIGGER]);
+            $process->setTimeout(10);
+            $process->run();
+        }catch(Throwable $e){
+            $detail=trim($e->getMessage())?:'Updater-triggeren kunne ikke startes.';
+            SystemIssue::report(source:'updater',title:'Nodexa-opdatering kunne ikke startes',message:$detail,severity:'error',type:'update_start_failed');
+            return response()->json(['message'=>'Updater-triggeren fejlede: '.$detail,'repair_required'=>true],500);
+        }
+
         if(!$process->isSuccessful()){
             $detail=trim($process->getErrorOutput().' '.$process->getOutput());
-            SystemIssue::report(source:'updater',title:'Nodexa-opdatering kunne ikke startes',message:$detail,severity:'error',type:'update_start_failed');
-            return response()->json(['message'=>'Updater-servicen kunne ikke startes'.($detail!==''?': '.$detail:'. Kør setup-updater.sh igen for at reparere sudoers/systemd.')],500);
+            $message='Updater-servicen kunne ikke startes'.($detail!==''?': '.$detail:'. Kør updater-setup igen for at reparere sudoers/systemd.');
+            SystemIssue::report(source:'updater',title:'Nodexa-opdatering kunne ikke startes',message:$detail!==''?$detail:$message,severity:'error',type:'update_start_failed');
+            return response()->json(['message'=>$message,'repair_required'=>true],500);
         }
         return response()->json(['message'=>'Opdateringen er startet.','status'=>'running'],202);
     }

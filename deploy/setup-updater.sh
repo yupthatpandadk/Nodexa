@@ -10,6 +10,7 @@ VERSION="$(tr -d '[:space:]' < "$SOURCE_DIR/VERSION" 2>/dev/null || echo unknown
 apt-get install -y sudo curl python3 >/dev/null
 mkdir -p "$STATE_DIR"
 install -m 0755 "$SOURCE_DIR/deploy/nodexa-update-runner.sh" /usr/local/sbin/nodexa-update-runner
+install -m 0755 "$SOURCE_DIR/deploy/nodexa-update-trigger.sh" /usr/local/sbin/nodexa-update-trigger
 cat > /etc/systemd/system/nodexa-update.service <<'UNIT'
 [Unit]
 Description=Nodexa Platform Updater
@@ -26,10 +27,10 @@ IOSchedulingPriority=6
 [Install]
 WantedBy=multi-user.target
 UNIT
-SYSTEMCTL="$(command -v systemctl)"
-cat > /etc/sudoers.d/nodexa-updater <<EOF
-# Nodexa Panel may only start the dedicated updater service.
-www-data ALL=(root) NOPASSWD: ${SYSTEMCTL} --no-block start nodexa-update.service
+cat > /etc/sudoers.d/nodexa-updater <<'EOF'
+# Nodexa Panel may only execute the dedicated updater trigger.
+# The trigger itself starts exactly nodexa-update.service as root.
+www-data ALL=(root) NOPASSWD: /usr/local/sbin/nodexa-update-trigger
 EOF
 chmod 0440 /etc/sudoers.d/nodexa-updater
 visudo -cf /etc/sudoers.d/nodexa-updater >/dev/null
