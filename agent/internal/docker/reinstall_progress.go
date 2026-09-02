@@ -3,9 +3,7 @@ package docker
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -26,11 +24,10 @@ func tailInstallText(text,tail string)string{count,err:=strconv.Atoi(tail);if er
 func(m *Manager)installerLogs(ctx context.Context,containerName,tail string)(string,error){reader,err:=m.cli.ContainerLogs(ctx,containerName,container.LogsOptions{ShowStdout:true,ShowStderr:true,Timestamps:false,Tail:tail});if err!=nil{return "",err};defer reader.Close();var output bytes.Buffer;if _,err:=stdcopy.StdCopy(&output,&output,reader);err!=nil{return "",err};return strings.TrimSpace(output.String()),nil}
 func installCompleted(stored string)bool{return strings.Contains(stored,"Reinstall finished. Server is ready to start.")||strings.Contains(stored,"Managed template files are ready")}
 
-// InstallConsole only owns the console while an installer is actually running,
-// or while the runtime container has never been started. Once Docker reports
-// that the runtime has started at least once, even if it has since exited, the
-// normal Docker console must be used so startup/crash output is never hidden by
-// the old "ready to start" installer message.
+// InstallConsole owns the console only during installation or before the first
+// runtime start. Docker exposes StartedAt as an RFC3339 string, so a non-empty,
+// non-zero timestamp means the runtime has already been attempted and its real
+// logs (including crash output) must be shown instead of stale installer text.
 func(m *Manager)InstallConsole(ctx context.Context,id,tail string)(string,bool,error){
 	root,err:=m.serverRoot(id);if err!=nil{return "",false,err}
 	stored:="";if body,readErr:=os.ReadFile(filepath.Join(root,installLogName));readErr==nil{stored=strings.TrimSpace(string(body))}
@@ -42,9 +39,8 @@ func(m *Manager)InstallConsole(ctx context.Context,id,tail string)(string,bool,e
 	serverName:="nx-"+id
 	if inspect,inspectErr:=m.cli.ContainerInspect(ctx,serverName);inspectErr==nil{
 		if inspect.State.Running{return "",false,nil}
-		// StartedAt is non-zero after the first start attempt. From that point on,
-		// expose runtime logs (including immediate crashes) instead of installer text.
-		if !inspect.State.StartedAt.IsZero(){return "",false,nil}
+		startedAt:=strings.TrimSpace(inspect.State.StartedAt)
+		if startedAt!=""&&startedAt!="0001-01-01T00:00:00Z"&&startedAt!="0001-01-01T00:00:00.000000000Z"{return "",false,nil}
 		if stored!=""{if installCompleted(stored){return "Nodexa installation completed successfully.\nServer is ready to start. Press Start to launch it.",true,nil};return tailInstallText(stored,tail),true,nil}
 		return "",false,nil
 	}else if !errdefs.IsNotFound(inspectErr){return "",false,inspectErr}
