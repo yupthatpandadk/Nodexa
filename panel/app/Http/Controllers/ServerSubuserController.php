@@ -15,7 +15,8 @@ class ServerSubuserController extends Controller
         'backups.read','backups.create','backups.download','backups.restore','backups.delete',
         'database.read','database.create','database.credentials','database.delete',
         'schedule.read','schedule.create','schedule.update','schedule.delete','schedule.execute',
-        'settings.read','settings.update',
+        'allocation.read','allocation.update',
+        'settings.read','settings.update','settings.reinstall',
     ];
 
     private function manage(Request $request, Server $server): void
