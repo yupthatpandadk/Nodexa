@@ -24,10 +24,6 @@ func tailInstallText(text,tail string)string{count,err:=strconv.Atoi(tail);if er
 func(m *Manager)installerLogs(ctx context.Context,containerName,tail string)(string,error){reader,err:=m.cli.ContainerLogs(ctx,containerName,container.LogsOptions{ShowStdout:true,ShowStderr:true,Timestamps:false,Tail:tail});if err!=nil{return "",err};defer reader.Close();var output bytes.Buffer;if _,err:=stdcopy.StdCopy(&output,&output,reader);err!=nil{return "",err};return strings.TrimSpace(output.String()),nil}
 func installCompleted(stored string)bool{return strings.Contains(stored,"Reinstall finished. Server is ready to start.")||strings.Contains(stored,"Managed template files are ready")}
 
-// InstallConsole owns the console only during installation or before the first
-// runtime start. Docker exposes StartedAt as an RFC3339 string, so a non-empty,
-// non-zero timestamp means the runtime has already been attempted and its real
-// logs (including crash output) must be shown instead of stale installer text.
 func(m *Manager)InstallConsole(ctx context.Context,id,tail string)(string,bool,error){
 	root,err:=m.serverRoot(id);if err!=nil{return "",false,err}
 	stored:="";if body,readErr:=os.ReadFile(filepath.Join(root,installLogName));readErr==nil{stored=strings.TrimSpace(string(body))}
@@ -35,7 +31,6 @@ func(m *Manager)InstallConsole(ctx context.Context,id,tail string)(string,bool,e
 	if inspect,inspectErr:=m.cli.ContainerInspect(ctx,installerName);inspectErr==nil{
 		if inspect.State.Running{live,logsErr:=m.installerLogs(ctx,installerName,tail);if logsErr!=nil{return "",true,logsErr};combined:=strings.TrimSpace(strings.TrimSpace(stored)+"\n"+strings.TrimSpace(live));return tailInstallText(combined,tail),true,nil}
 	}else if !errdefs.IsNotFound(inspectErr){return "",false,inspectErr}
-
 	serverName:="nx-"+id
 	if inspect,inspectErr:=m.cli.ContainerInspect(ctx,serverName);inspectErr==nil{
 		if inspect.State.Running{return "",false,nil}
@@ -45,6 +40,19 @@ func(m *Manager)InstallConsole(ctx context.Context,id,tail string)(string,bool,e
 		return "",false,nil
 	}else if !errdefs.IsNotFound(inspectErr){return "",false,inspectErr}
 	if stored!=""{return tailInstallText(stored,tail),true,nil};return "",false,nil
+}
+
+// ReinstallWithProgress is the API-facing reinstall entry point. Keep the
+// method separate from Reinstall so the HTTP API remains stable while the
+// installer progress implementation evolves.
+func(m *Manager)ReinstallWithProgress(ctx context.Context,r server.CreateRequest)error{
+	root,err:=m.serverRoot(r.ID);if err!=nil{return err}
+	resetInstallLog(root)
+	appendInstallLog(root,"container@nodexa~ Server marked as installing...")
+	appendInstallLog(root,"[Nodexa Installer] Reinstall started")
+	if err:=m.Reinstall(ctx,r);err!=nil{appendInstallLog(root,"[Nodexa Installer] REINSTALL FAILED: "+err.Error());return err}
+	appendInstallLog(root,"[Nodexa Installer] Reinstall finished. Server is ready to start.")
+	return nil
 }
 
 func installerError(exitCode int,captured string)error{detail:=tailInstallText(captured,"8");if detail==""{return fmt.Errorf("Minecraft installer exited with code %d",exitCode)};return fmt.Errorf("Minecraft installer exited with code %d: %s",exitCode,detail)}
