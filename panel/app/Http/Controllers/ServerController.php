@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Server;
 use App\Services\DaemonClient;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -69,6 +70,20 @@ class ServerController extends Controller
 
         $data['environment'] = $environment;
         return $data;
+    }
+
+    private function reinstallWithConnectionRetry(DaemonClient $daemon, Server $server): array
+    {
+        $last = null;
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            try {
+                return $daemon->reinstall($server);
+            } catch (ConnectionException $e) {
+                $last = $e;
+                if ($attempt < 3) usleep(400000 * $attempt);
+            }
+        }
+        throw $last ?? new \RuntimeException('Nodexa Agent kunne ikke kontaktes under geninstallationen.');
     }
 
     public function index(Request $request)
@@ -146,7 +161,7 @@ class ServerController extends Controller
         $server->save();
 
         try {
-            $result = $daemon->reinstall($server->load('node'));
+            $result = $this->reinstallWithConnectionRetry($daemon, $server->load('node'));
             $server->update(['status' => 'offline']);
             return response()->json([
                 'message' => 'Serveren er geninstalleret. Template/Egg-filerne er gendannet, mens brugerdata er bevaret.',

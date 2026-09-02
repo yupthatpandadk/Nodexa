@@ -20,8 +20,17 @@ old="""  useEffect(() => {
 new="""  useEffect(() => {
     if (!selected || tab !== 'console' || !me || !has(selected, 'console.read')) return;
     let cancelled = false;
+    let logPoll: ReturnType<typeof setInterval> | null = null;
     const controller = new AbortController();
     const statsTick = () => axios.get(`/api/servers/${selected.id}/stats`).then(r => !cancelled && setStats(r.data)).catch(() => {});
+    const pollLogs = () => axios.get(`/api/servers/${selected.id}/logs?tail=150`).then(r => {
+      if (!cancelled) setLogs(typeof r.data === 'string' ? r.data : JSON.stringify(r.data ?? '', null, 2));
+    }).catch(() => {});
+    const startLogPoll = () => {
+      if (cancelled || logPoll) return;
+      pollLogs();
+      logPoll = setInterval(pollLogs, 2000);
+    };
     statsTick();
     const timer = setInterval(statsTick, 3000);
     setLogs('');
@@ -33,16 +42,22 @@ new="""  useEffect(() => {
         if (!response.ok || !response.body) throw new Error(`Console stream HTTP ${response.status}`);
         const reader = response.body.getReader(); const decoder = new TextDecoder();
         while (!cancelled) {
-          const { value, done } = await reader.read(); if (done) break;
+          const { value, done } = await reader.read();
+          if (done) { startLogPoll(); break; }
           const chunk = decoder.decode(value, { stream: true });
           if (chunk) setLogs(previous => (previous + chunk).slice(-300000));
         }
       })
-      .catch(() => { if (!cancelled) axios.get(`/api/servers/${selected.id}/logs?tail=150`).then(r => setLogs(typeof r.data === 'string' ? r.data : JSON.stringify(r.data ?? '', null, 2))).catch(() => {}); });
-    return () => { cancelled = true; controller.abort(); clearInterval(timer); };
+      .catch(() => startLogPoll());
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearInterval(timer);
+      if (logPoll) clearInterval(logPoll);
+    };
   }, [selected, tab, me]);"""
 if old not in text:
     print('[Nodexa] Realtime console transform already applied or source changed.')
 else:
-    text=text.replace(old,new,1);p.write_text(text);print('[Nodexa] Realtime console frontend enabled.')
+    text=text.replace(old,new,1);p.write_text(text);print('[Nodexa] Realtime console frontend enabled with installer polling fallback.')
 PY
