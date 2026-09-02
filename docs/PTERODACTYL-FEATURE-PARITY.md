@@ -64,13 +64,13 @@ Goal: implement the useful game-server management capabilities users expect from
 - [x] Node model, create/config/token and Nodexa Agent installer
 - [x] Agent health/error diagnostics foundation
 - [x] Real online/offline state in React (never hardcoded)
-- [ ] Node detail page
+- [x] Node detail page
 - [ ] Node resource usage/capacity
-- [ ] Node allocations/IP aliases/port ranges
-- [ ] Automatic allocation creation ranges
+- [x] Node allocations/IP aliases/port ranges
+- [x] Automatic allocation creation ranges
 - [ ] Node configuration YAML/view/copy workflow
-- [ ] Token rotation workflow with status
-- [ ] Node server list
+- [x] Token rotation workflow with status
+- [x] Node server list
 - [ ] Node maintenance/drain mode
 - [ ] Node heartbeat/version compatibility
 - [ ] Node transfer queue
