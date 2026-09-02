@@ -18,7 +18,7 @@ Goal: implement the useful game-server management capabilities users expect from
 - [x] Replace Schedules placeholder with complete React scheduler
 - [x] Background scheduler worker with next-run calculation, task chains and online-only rules
 - [x] Network/allocation management UI and API
-- [ ] Primary/additional allocation assignment
+- [x] Primary/additional allocation assignment
 - [ ] Startup variables visible to customers when permitted
 - [ ] Customer-editable egg variables with validation/rules
 - [x] Server rename/reinstall controls in React settings

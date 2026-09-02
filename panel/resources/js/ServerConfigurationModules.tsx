@@ -2,18 +2,38 @@ import React,{useEffect,useState} from 'react';
 import axios from 'axios';
 import './server-configuration-modules.css';
 
-type ServerLike={id:string;uuid:string;name:string;identifier?:string;status?:string};
-type Allocation={id:number;ip:string;ip_alias?:string|null;port:number;notes?:string|null;is_primary:boolean};
+type ServerLike={id:string;uuid:string;name:string;identifier?:string;status?:string;node_id?:number};
+type Allocation={id:number;node_id?:number;server_id?:string|null;ip:string;alias?:string|null;port:number;notes?:string|null;is_primary:boolean;server?:{id:string;name:string;identifier?:string}|null};
 const err=(e:any)=>e?.response?.data?.message||e?.response?.data?.error||e?.message||'Handlingen fejlede.';
+const allocationAddress=(a:Allocation)=>`${a.alias||a.ip}:${a.port}`;
 
 export function NetworkPage({server,canUpdate=true}:{server:ServerLike;canUpdate?:boolean}){
-  const[items,setItems]=useState<Allocation[]>([]),[error,setError]=useState('');
-  const load=async()=>{try{setError('');const r=await axios.get(`/api/servers/${server.id}/allocations`);setItems(Array.isArray(r.data)?r.data:[])}catch(e){setError(err(e))}};
-  useEffect(()=>{load()},[server.id]);
+  const[items,setItems]=useState<Allocation[]>([]),[pool,setPool]=useState<Allocation[]>([]),[error,setError]=useState(''),[adminManage,setAdminManage]=useState(false),[busyId,setBusyId]=useState<number|null>(null),[selectedId,setSelectedId]=useState('');
+  const load=async()=>{
+    setError('');
+    try{
+      const r=await axios.get(`/api/servers/${server.id}/allocations`);
+      setItems(Array.isArray(r.data)?r.data:[]);
+    }catch(e){setError(err(e));return}
+    if(!server.node_id){setAdminManage(false);setPool([]);return}
+    try{
+      const r=await axios.get(`/api/nodes/${server.node_id}/allocations`);
+      const all=Array.isArray(r.data)?r.data:[];
+      const available=all.filter((a:Allocation)=>!a.server_id);
+      setPool(available);setAdminManage(true);
+      setSelectedId(current=>current&&available.some((a:Allocation)=>String(a.id)===current)?current:(available[0]?String(available[0].id):''));
+    }catch(e:any){
+      if(e?.response?.status===403){setAdminManage(false);setPool([]);setSelectedId('');return}
+      setAdminManage(false);setPool([]);setSelectedId('');setError(err(e));
+    }
+  };
+  useEffect(()=>{load()},[server.id,server.node_id]);
   const primary=items.find(x=>x.is_primary);
-  const makePrimary=async(a:Allocation)=>{if(!canUpdate)return;try{await axios.post(`/api/servers/${server.id}/allocations/${a.id}/primary`);await load()}catch(e){setError(err(e))}};
-  const note=async(a:Allocation)=>{if(!canUpdate)return;const notes=prompt('Noter til allocation',a.notes||'');if(notes===null)return;try{await axios.put(`/api/servers/${server.id}/allocations/${a.id}`,{notes});await load()}catch(e){setError(err(e))}};
-  return <div className="nx-config-stack"><header className="nx-config-head"><div><h2>Netværk</h2><p>IP-adresser og porte som serveren kan lytte på.</p></div></header>{error&&<div className="nx-config-error">{error}</div>}{primary&&<div className="nx-primary-allocation"><small>PRIMÆR ALLOCATION</small><strong>{primary.ip_alias||primary.ip}:{primary.port}</strong></div>}<div className="nx-config-card">{items.map(a=><div className="nx-allocation-row" key={a.id}><strong>{a.ip_alias||a.ip}</strong><code>{a.port}</code><span>{a.notes||'—'}</span><span>{a.is_primary?'Primær':'Ekstra'}</span><div>{canUpdate&&<><button onClick={()=>note(a)}>Noter</button>{!a.is_primary&&<button onClick={()=>makePrimary(a)}>Gør primær</button>}</>}</div></div>)}{!items.length&&!error&&<div className="nx-config-empty">Serveren har ingen allocations tilknyttet endnu.</div>}</div></div>
+  const makePrimary=async(a:Allocation)=>{if(!canUpdate)return;setBusyId(a.id);setError('');try{await axios.post(`/api/servers/${server.id}/allocations/${a.id}/primary`);await load()}catch(e){setError(err(e))}finally{setBusyId(null)}};
+  const note=async(a:Allocation)=>{if(!canUpdate)return;const notes=prompt('Noter til allocation',a.notes||'');if(notes===null)return;setBusyId(a.id);setError('');try{await axios.put(`/api/servers/${server.id}/allocations/${a.id}`,{notes});await load()}catch(e){setError(err(e))}finally{setBusyId(null)}};
+  const assign=async()=>{const id=Number(selectedId);if(!adminManage||!id)return;setBusyId(id);setError('');try{await axios.post(`/api/servers/${server.id}/allocations`,{allocation_id:id});await load()}catch(e){setError(err(e))}finally{setBusyId(null)}};
+  const unassign=async(a:Allocation)=>{if(!adminManage||a.is_primary||!confirm(`Fjern ${allocationAddress(a)} fra ${server.name}?`))return;setBusyId(a.id);setError('');try{await axios.delete(`/api/servers/${server.id}/allocations/${a.id}`);await load()}catch(e){setError(err(e))}finally{setBusyId(null)}};
+  return <div className="nx-config-stack"><header className="nx-config-head"><div><h2>Netværk</h2><p>IP-adresser og porte som serveren kan lytte på.</p></div></header>{error&&<div className="nx-config-error">{error}</div>}{primary&&<div className="nx-primary-allocation"><small>PRIMÆR ALLOCATION</small><strong>{allocationAddress(primary)}</strong><span>{primary.notes||'Ingen noter'}</span></div>}{adminManage&&<div className="nx-config-card nx-allocation-admin"><div><small>ADMINISTRATION</small><h3>Tildel ekstra allocation</h3><p>Vælg en ledig IP/port fra serverens Node. Nodexa synkroniserer containerens netværksbindinger efter tildelingen.</p></div><div className="nx-allocation-assign"><select value={selectedId} onChange={e=>setSelectedId(e.target.value)} disabled={!pool.length||busyId!==null}>{pool.map(a=><option value={a.id} key={a.id}>{allocationAddress(a)}</option>)}</select><button className="primary" onClick={assign} disabled={!selectedId||busyId!==null}>{busyId!==null?'Arbejder…':'Tildel'}</button></div>{!pool.length&&<span className="nx-pool-empty">Ingen ledige allocations på denne Node.</span>}</div>}<div className="nx-config-card">{items.map(a=><div className="nx-allocation-row" key={a.id}><strong>{a.alias||a.ip}</strong><code>{a.port}</code><span>{a.notes||'—'}</span><span>{a.is_primary?'Primær':'Ekstra'}</span><div>{canUpdate&&<button disabled={busyId!==null} onClick={()=>note(a)}>Noter</button>}{canUpdate&&!a.is_primary&&<button disabled={busyId!==null} onClick={()=>makePrimary(a)}>Gør primær</button>}{adminManage&&!a.is_primary&&<button className="danger" disabled={busyId!==null} onClick={()=>unassign(a)}>Fjern</button>}</div></div>)}{!items.length&&!error&&<div className="nx-config-empty">Serveren har ingen allocations tilknyttet endnu.</div>}</div></div>
 }
 
 export function StartupPage({server,isAdmin=false}:{server:ServerLike;isAdmin?:boolean}){
