@@ -21,6 +21,38 @@ class NodeController extends Controller
         return Node::withCount('servers')->paginate(50);
     }
 
+    public function show(Request $request, Node $node)
+    {
+        $this->admin($request);
+        $node->load([
+            'servers' => fn ($query) => $query->select(['id','node_id','name','identifier','status','memory_mb','disk_mb','cpu_limit'])->orderBy('server_number'),
+            'allocations' => fn ($query) => $query->with('server:id,name,identifier')->orderBy('ip')->orderBy('port'),
+        ]);
+
+        $memoryAllocated = (int) $node->servers->sum('memory_mb');
+        $diskAllocated = (int) $node->servers->sum('disk_mb');
+        $allocationTotal = $node->allocations->count();
+        $allocationAssigned = $node->allocations->whereNotNull('server_id')->count();
+
+        return response()->json([
+            'node' => $node,
+            'capacity' => [
+                'memory_mb' => (int) $node->memory_mb,
+                'memory_allocated_mb' => $memoryAllocated,
+                'memory_free_mb' => max(0, (int) $node->memory_mb - $memoryAllocated),
+                'disk_mb' => (int) $node->disk_mb,
+                'disk_allocated_mb' => $diskAllocated,
+                'disk_free_mb' => max(0, (int) $node->disk_mb - $diskAllocated),
+                'servers' => $node->servers->count(),
+                'allocations_total' => $allocationTotal,
+                'allocations_assigned' => $allocationAssigned,
+                'allocations_free' => max(0, $allocationTotal - $allocationAssigned),
+            ],
+            'servers' => $node->servers->values(),
+            'allocations' => $node->allocations->values(),
+        ]);
+    }
+
     public function store(Request $request)
     {
         $this->admin($request);
