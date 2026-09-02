@@ -8,7 +8,8 @@ from pathlib import Path
 import sys,re
 p=Path(sys.argv[1]); text=p.read_text()
 imp="import { NetworkPage, StartupPage, SettingsPage as ServerSettingsPage } from './ServerConfigurationModules';\n"
-if imp not in text:text=text.replace("import axios from 'axios';\n","import axios from 'axios';\n"+imp,1)
+if not re.search(r"^import\s+\{[^\n]*\}\s+from\s+['\"]\./ServerConfigurationModules['\"];?\s*$", text, re.M):
+    text=text.replace("import axios from 'axios';\n","import axios from 'axios';\n"+imp,1)
 text=text.replace("type Tab = 'console' | 'files' | 'databases' | 'schedules' | 'backups' | 'users' | 'settings';","type Tab = 'console' | 'files' | 'databases' | 'schedules' | 'backups' | 'network' | 'startup' | 'users' | 'settings';")
 text=text.replace("backups: 'Backups', users: 'Brugere', settings: 'Indstillinger',","backups: 'Backups', network: 'Netværk', startup: 'Startup', users: 'Brugere', settings: 'Indstillinger',")
 text=text.replace("backups: 'backup', users: 'users', settings: 'settings',","backups: 'backup', network: 'network', startup: 'activity', users: 'users', settings: 'settings',")
