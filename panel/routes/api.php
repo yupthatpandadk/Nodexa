@@ -7,6 +7,8 @@ use App\Http\Controllers\ServerController;
 use App\Http\Controllers\ServerRuntimeController;
 use App\Http\Controllers\ServerDatabaseController;
 use App\Http\Controllers\ServerSubuserController;
+use App\Http\Controllers\ServerAllocationController;
+use App\Http\Controllers\AdminAllocationController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\NodeController;
 use App\Http\Controllers\DatabaseHostController;
@@ -49,6 +51,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/servers/{server}/backups/{name}/restore', [ServerRuntimeController::class, 'restoreBackup']);
     Route::delete('/servers/{server}/backups/{name}', [ServerRuntimeController::class, 'deleteBackup']);
 
+    Route::get('/servers/{server}/allocations', [ServerAllocationController::class, 'index']);
+    Route::post('/servers/{server}/allocations', [ServerAllocationController::class, 'store']);
+    Route::put('/servers/{server}/allocations/{allocation}', [ServerAllocationController::class, 'update']);
+    Route::post('/servers/{server}/allocations/{allocation}/primary', [ServerAllocationController::class, 'primary']);
+    Route::delete('/servers/{server}/allocations/{allocation}', [ServerAllocationController::class, 'destroy']);
+
     Route::get('/servers/{server}/databases', [ServerDatabaseController::class, 'index']);
     Route::post('/servers/{server}/databases', [ServerDatabaseController::class, 'store']);
     Route::get('/servers/{server}/databases/{database}/credentials', [ServerDatabaseController::class, 'credentials']);
@@ -73,6 +81,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/nodes', [NodeController::class, 'store']);
     Route::get('/nodes/{node}/configuration', [NodeController::class, 'configuration']);
     Route::post('/nodes/{node}/rotate-token', [NodeController::class, 'rotateToken']);
+    Route::get('/nodes/{node}/allocations', [AdminAllocationController::class, 'index']);
+    Route::post('/nodes/{node}/allocations', [AdminAllocationController::class, 'store']);
+    Route::post('/nodes/{node}/allocations/range', [AdminAllocationController::class, 'range']);
+    Route::delete('/nodes/{node}/allocations/{allocation}', [AdminAllocationController::class, 'destroy']);
 
     Route::get('/database-hosts', [DatabaseHostController::class, 'index']);
     Route::post('/database-hosts', [DatabaseHostController::class, 'store']);
