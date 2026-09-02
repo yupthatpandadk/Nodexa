@@ -17,7 +17,7 @@ class ServerSftpController extends Controller
         $user = $request->user();
         return response()->json([
             'host' => $server->node->fqdn,
-            'port' => 2022,
+            'port' => $server->node->sftp_port,
             'username' => $this->username($server, $user),
             'password' => 'Use your Nodexa account password',
         ]);
