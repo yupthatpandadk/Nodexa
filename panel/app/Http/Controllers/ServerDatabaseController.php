@@ -49,6 +49,19 @@ class ServerDatabaseController extends Controller
         return ['name'=>$database->name,'username'=>$database->username,'password'=>$database->plainPassword(),'host'=>$database->databaseHost?->host??$database->host,'port'=>$database->databaseHost?->port??$database->port];
     }
 
+    public function rotateCredentials(Request $request, Server $server, ServerDatabase $database, DatabaseProvisioner $provisioner)
+    {
+        $this->authorizeServer($request,$server,'database.credentials');
+        abort_unless($database->server_id===$server->id,404);
+        $host=$database->databaseHost;
+        abort_unless($host,409,'Database host is missing.');
+        $password=Str::password(length:32,letters:true,numbers:true,symbols:true,spaces:false);
+        $provisioner->rotatePassword($host,$database->username,$password);
+        $database->password=$password;
+        $database->save();
+        return ['name'=>$database->name,'username'=>$database->username,'password'=>$password,'host'=>$host->host,'port'=>$host->port];
+    }
+
     public function openPhpMyAdmin(Request $request, Server $server, ServerDatabase $database)
     {
         $this->authorizeServer($request,$server,'database.read'); abort_unless($database->server_id===$server->id,404);
