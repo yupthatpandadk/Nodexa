@@ -3,7 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Schedule;
 use App\Models\Server;
-use App\Services\DaemonClient;
+use App\Services\ScheduleRunner;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -23,25 +23,27 @@ class ScheduleController extends Controller
         return $server->schedules()->with('tasks')->orderBy('name')->get();
     }
 
-    public function store(Request $request, Server $server) {
+    public function store(Request $request, Server $server, ScheduleRunner $runner) {
         $this->authorizeServer($request,$server,'schedule.create');
         $data = $this->validateSchedule($request);
-        $schedule = DB::transaction(function() use ($server,$data) {
+        $schedule = DB::transaction(function() use ($server,$data,$runner) {
             $tasks = $data['tasks']; unset($data['tasks']);
             $schedule = $server->schedules()->create($data);
             foreach ($tasks as $i=>$task) $schedule->tasks()->create($task + ['sequence'=>$i+1]);
+            $schedule->update(['next_run_at'=>$runner->nextRun($schedule)]);
             return $schedule;
         });
         return response()->json($schedule->load('tasks'),201);
     }
 
-    public function update(Request $request, Server $server, Schedule $schedule) {
+    public function update(Request $request, Server $server, Schedule $schedule, ScheduleRunner $runner) {
         $this->authorizeServer($request,$server,'schedule.update');
         abort_unless($schedule->server_id === $server->id,404);
         $data = $this->validateSchedule($request);
-        DB::transaction(function() use ($schedule,$data) {
+        DB::transaction(function() use ($schedule,$data,$runner) {
             $tasks=$data['tasks']; unset($data['tasks']); $schedule->update($data); $schedule->tasks()->delete();
             foreach($tasks as $i=>$task) $schedule->tasks()->create($task + ['sequence'=>$i+1]);
+            $schedule->update(['next_run_at'=>$runner->nextRun($schedule->fresh())]);
         });
         return $schedule->fresh()->load('tasks');
     }
@@ -51,22 +53,11 @@ class ScheduleController extends Controller
         abort_unless($schedule->server_id === $server->id,404); $schedule->delete(); return response()->noContent();
     }
 
-    public function run(Request $request, Server $server, Schedule $schedule, DaemonClient $daemon) {
+    public function run(Request $request, Server $server, Schedule $schedule, ScheduleRunner $runner) {
         $this->authorizeServer($request,$server,'schedule.execute');
         abort_unless($schedule->server_id === $server->id,404);
-        foreach($schedule->tasks as $task) {
-            if ($task->time_offset > 0) sleep(min($task->time_offset,30));
-            try {
-                match($task->action) {
-                    'command' => $daemon->command($server->load('node'), (string)$task->payload),
-                    'power' => $daemon->power($server->load('node'), (string)$task->payload),
-                    'backup' => $daemon->backup($server->load('node'), $task->payload ?: ('Scheduled backup '.now()->format('Y-m-d H:i'))),
-                    default => null,
-                };
-            } catch (\Throwable $e) { if (!$task->continue_on_failure) throw $e; }
-        }
-        $schedule->update(['last_run_at'=>now()]);
-        return ['ok'=>true,'ran_at'=>now()->toIso8601String()];
+        $runner->run($schedule);
+        return ['ok'=>true,'ran_at'=>now()->toIso8601String(),'next_run_at'=>$schedule->fresh()->next_run_at?->toIso8601String()];
     }
 
     private function validateSchedule(Request $request): array
