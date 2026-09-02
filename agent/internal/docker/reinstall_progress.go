@@ -28,39 +28,28 @@ func(m *Manager)InstallConsole(ctx context.Context,id,tail string)(string,bool,e
 	root,err:=m.serverRoot(id);if err!=nil{return "",false,err}
 	stored:="";if body,readErr:=os.ReadFile(filepath.Join(root,installLogName));readErr==nil{stored=strings.TrimSpace(string(body))}
 	installerName:="nx-install-"+id
-	if inspect,inspectErr:=m.cli.ContainerInspect(ctx,installerName);inspectErr==nil{
-		if inspect.State.Running{live,logsErr:=m.installerLogs(ctx,installerName,tail);if logsErr!=nil{return "",true,logsErr};combined:=strings.TrimSpace(strings.TrimSpace(stored)+"\n"+strings.TrimSpace(live));return tailInstallText(combined,tail),true,nil}
-	}else if !errdefs.IsNotFound(inspectErr){return "",false,inspectErr}
+	if inspect,inspectErr:=m.cli.ContainerInspect(ctx,installerName);inspectErr==nil{if inspect.State.Running{live,logsErr:=m.installerLogs(ctx,installerName,tail);if logsErr!=nil{return "",true,logsErr};combined:=strings.TrimSpace(strings.TrimSpace(stored)+"\n"+strings.TrimSpace(live));return tailInstallText(combined,tail),true,nil}}else if !errdefs.IsNotFound(inspectErr){return "",false,inspectErr}
 	serverName:="nx-"+id
-	if inspect,inspectErr:=m.cli.ContainerInspect(ctx,serverName);inspectErr==nil{
-		if inspect.State.Running{return "",false,nil}
-		startedAt:=strings.TrimSpace(inspect.State.StartedAt)
-		if startedAt!=""&&startedAt!="0001-01-01T00:00:00Z"&&startedAt!="0001-01-01T00:00:00.000000000Z"{return "",false,nil}
-		if stored!=""{if installCompleted(stored){return "Nodexa installation completed successfully.\nServer is ready to start. Press Start to launch it.",true,nil};return tailInstallText(stored,tail),true,nil}
-		return "",false,nil
-	}else if !errdefs.IsNotFound(inspectErr){return "",false,inspectErr}
+	if inspect,inspectErr:=m.cli.ContainerInspect(ctx,serverName);inspectErr==nil{if inspect.State.Running{return "",false,nil};startedAt:=strings.TrimSpace(inspect.State.StartedAt);if startedAt!=""&&startedAt!="0001-01-01T00:00:00Z"&&startedAt!="0001-01-01T00:00:00.000000000Z"{return "",false,nil};if stored!=""{if installCompleted(stored){return "Nodexa installation completed successfully.\nServer is ready to start. Press Start to launch it.",true,nil};return tailInstallText(stored,tail),true,nil};return "",false,nil}else if !errdefs.IsNotFound(inspectErr){return "",false,inspectErr}
 	if stored!=""{return tailInstallText(stored,tail),true,nil};return "",false,nil
 }
 
-// ReinstallWithProgress is the API-facing reinstall entry point. Keep the
-// method separate from Reinstall so the HTTP API remains stable while the
-// installer progress implementation evolves.
 func(m *Manager)ReinstallWithProgress(ctx context.Context,r server.CreateRequest)error{
-	root,err:=m.serverRoot(r.ID);if err!=nil{return err}
-	resetInstallLog(root)
-	appendInstallLog(root,"container@nodexa~ Server marked as installing...")
-	appendInstallLog(root,"[Nodexa Installer] Reinstall started")
+	root,err:=m.serverRoot(r.ID);if err!=nil{return err};if err:=os.MkdirAll(root,0750);err!=nil{return err}
+	resetInstallLog(root);appendInstallLog(root,"container@nodexa~ Server marked as installing...");appendInstallLog(root,"[Nodexa Installer] Reinstall started")
 	if err:=m.Reinstall(ctx,r);err!=nil{appendInstallLog(root,"[Nodexa Installer] REINSTALL FAILED: "+err.Error());return err}
-	appendInstallLog(root,"[Nodexa Installer] Reinstall finished. Server is ready to start.")
-	return nil
+	appendInstallLog(root,"[Nodexa Installer] Reinstall finished. Server is ready to start.");return nil
 }
 
 func installerError(exitCode int,captured string)error{detail:=tailInstallText(captured,"8");if detail==""{return fmt.Errorf("Minecraft installer exited with code %d",exitCode)};return fmt.Errorf("Minecraft installer exited with code %d: %s",exitCode,detail)}
 
 func(m *Manager)installTemplateWithProgress(ctx context.Context,r server.CreateRequest,root string)error{
 	template:=strings.ToLower(strings.TrimSpace(r.Template));if template!="minecraft"&&template!="minecraft-java"{return fmt.Errorf("unsupported installation template %q",r.Template)}
+	// Use the same /home/container mount as the runtime container. This avoids
+	// installer/runtime path drift and guarantees that the files visible in the
+	// panel are exactly the files the installer modifies.
 	installScript:=`set -eu
-cd /mnt/server
+cd /home/container
 VERSION="${MINECRAFT_VERSION:-1.21.8}"
 PORT="${SERVER_PORT:-25565}"
 PAPER_UA="Nodexa/0.13.7 (https://github.com/yupthatpandadk/Nodexa)"
@@ -74,16 +63,19 @@ META="$(curl -fsSL -A "$PAPER_UA" "$PAPER_API")"
 URL="$(printf '%s' "$META" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["downloads"]["server:default"]["url"])')"
 [ -n "$URL" ] || { echo "[Nodexa Installer] ERROR: Paper API did not return a server download URL"; exit 1; }
 echo "[Nodexa Installer] [3/7] Downloading Paper server"
-curl -fL --retry 4 --retry-delay 2 -A "$PAPER_UA" "$URL" -o server.jar
-[ -s server.jar ] || { echo "[Nodexa Installer] ERROR: server.jar is missing or empty"; exit 1; }
+# Download atomically so a failed reinstall never destroys the working jar.
+curl -fL --retry 4 --retry-delay 2 -A "$PAPER_UA" "$URL" -o server.jar.nodexa-new
+[ -s server.jar.nodexa-new ] || { rm -f server.jar.nodexa-new; echo "[Nodexa Installer] ERROR: downloaded server jar is missing or empty"; exit 1; }
+mv -f server.jar.nodexa-new server.jar
 echo "[Nodexa Installer] [4/7] Accepting Minecraft EULA"
-printf 'eula=true\n' > eula.txt
-echo "[Nodexa Installer] [5/7] Writing server.properties"
-if [ ! -f server.properties ]; then
-  printf 'server-port=%s\nquery.port=%s\n' "$PORT" "$PORT" > server.properties
+[ -f eula.txt ] || printf 'eula=true\n' > eula.txt
+if grep -q '^eula=' eula.txt; then sed -i 's/^eula=.*/eula=true/' eula.txt; else printf '\neula=true\n' >> eula.txt; fi
+echo "[Nodexa Installer] [5/7] Updating server.properties"
+# Preserve all user settings; only ensure the allocated runtime port is correct.
+if [ ! -f server.properties ]; then printf 'server-port=%s\nquery.port=%s\n' "$PORT" "$PORT" > server.properties
 else
-  if grep -q '^server-port=' server.properties; then sed -i "s/^server-port=.*/server-port=${PORT}/" server.properties; else printf '\nserver-port=%s\n' "$PORT" >> server.properties; fi
-  if grep -q '^query.port=' server.properties; then sed -i "s/^query.port=.*/query.port=${PORT}/" server.properties; else printf 'query.port=%s\n' "$PORT" >> server.properties; fi
+ if grep -q '^server-port=' server.properties; then sed -i "s/^server-port=.*/server-port=${PORT}/" server.properties; else printf '\nserver-port=%s\n' "$PORT" >> server.properties; fi
+ if grep -q '^query.port=' server.properties; then sed -i "s/^query.port=.*/query.port=${PORT}/" server.properties; else printf 'query.port=%s\n' "$PORT" >> server.properties; fi
 fi
 echo "[Nodexa Installer] [6/7] Verifying installation files"
 ls -lh server.jar eula.txt server.properties
@@ -91,15 +83,13 @@ echo "[Nodexa Installer] [7/7] Minecraft installation completed successfully"
 `
 	installerName:="nx-install-"+r.ID
 	if inspect,err:=m.cli.ContainerInspect(ctx,installerName);err==nil{if inspect.State.Running{t:=3;_=m.cli.ContainerStop(ctx,installerName,container.StopOptions{Timeout:&t})};_=m.cli.ContainerRemove(ctx,installerName,container.RemoveOptions{Force:true})}else if !errdefs.IsNotFound(err){return err}
-	cfg:=&container.Config{Image:r.Image,Cmd:[]string{"/bin/sh","-lc",installScript},Env:env(r.Environment),WorkingDir:"/mnt/server",AttachStdout:true,AttachStderr:true}
-	host:=&container.HostConfig{Binds:[]string{fmt.Sprintf("%s:/mnt/server",root)}}
+	cfg:=&container.Config{Image:r.Image,Cmd:[]string{"/bin/sh","-lc",installScript},Env:env(r.Environment),WorkingDir:"/home/container",AttachStdout:true,AttachStderr:true}
+	host:=&container.HostConfig{Binds:[]string{fmt.Sprintf("%s:/home/container",root)}}
 	created,err:=m.cli.ContainerCreate(ctx,cfg,host,nil,nil,installerName);if err!=nil{return fmt.Errorf("create installer container: %w",err)}
 	if err:=m.cli.ContainerStart(ctx,created.ID,container.StartOptions{});err!=nil{return fmt.Errorf("start installer container: %w",err)}
-	waitCh,errCh:=m.cli.ContainerWait(ctx,created.ID,container.WaitConditionNotRunning)
-	var exitCode int
+	waitCh,errCh:=m.cli.ContainerWait(ctx,created.ID,container.WaitConditionNotRunning);var exitCode int
 	select{case result:=<-waitCh:exitCode=int(result.StatusCode);case waitErr:=<-errCh:if waitErr!=nil{return waitErr};case <-ctx.Done():return ctx.Err()}
 	captured,logErr:=m.installerLogs(ctx,installerName,"2000");if logErr==nil&&captured!=""{for _,line:=range strings.Split(captured,"\n"){appendInstallLog(root,line)}}
 	if exitCode!=0{return installerError(exitCode,captured)}
-	if err:=os.WriteFile(filepath.Join(root,".nodexa-installed"),[]byte(time.Now().UTC().Format(time.RFC3339)+"\n"),0640);err!=nil{return err}
-	return nil
+	if err:=os.WriteFile(filepath.Join(root,".nodexa-installed"),[]byte(time.Now().UTC().Format(time.RFC3339)+"\n"),0640);err!=nil{return err};return nil
 }
