@@ -34,6 +34,7 @@ if [[ -d "$PANEL_DIR" ]]; then
   bash "$SOURCE_ROOT/deploy/enable-managed-server-templates.sh"
   bash "$SOURCE_ROOT/deploy/enable-runtime-modules.sh"
   bash "$SOURCE_ROOT/deploy/fix-installer-ready-ui.sh"
+  bash "$SOURCE_ROOT/deploy/enable-power-feedback.sh"
   bash "$SOURCE_ROOT/deploy/optimize-frontend-delivery-source.sh"
   npm install
   npm run build
