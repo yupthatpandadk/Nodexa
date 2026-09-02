@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\StorefrontSite;
+use App\Services\ScheduleRunner;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Schema;
 
 Artisan::command('nodexa:storefront-domains {--plain}', function () {
@@ -21,3 +23,14 @@ Artisan::command('nodexa:storefront-domains {--plain}', function () {
 
     return 0;
 })->purpose('List active Nodexa multisite storefront domains.');
+
+Artisan::command('nodexa:schedules:run {--limit=50}', function (ScheduleRunner $runner) {
+    $count = $runner->runDue(max(1, min(500, (int)$this->option('limit'))));
+    $this->info("Processed {$count} due Nodexa schedule(s).");
+    return 0;
+})->purpose('Run due Nodexa game-server schedules.');
+
+Schedule::command('nodexa:schedules:run --limit=100')
+    ->everyMinute()
+    ->withoutOverlapping(10)
+    ->runInBackground();
