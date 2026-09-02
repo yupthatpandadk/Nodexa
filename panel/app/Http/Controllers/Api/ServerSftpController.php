@@ -44,10 +44,10 @@ class ServerSftpController extends Controller
     private function authorizeSftp(Request $request, Server $server): void
     {
         $user = $request->user();
-        if ((bool)$user->is_admin || (int)$server->owner_id === (int)$user->id || (int)$server->user_id === (int)$user->id) return;
+        if ((bool)$user->is_admin || (int)$server->owner_id === (int)$user->id) return;
         $subuser = $server->subusers()->where('user_id', $user->id)->first();
         abort_unless($subuser, 403);
         $permissions = is_array($subuser->permissions) ? $subuser->permissions : [];
-        abort_unless(in_array('files.read', $permissions, true) || in_array('files.write', $permissions, true), 403, 'SFTP requires file access permission.');
+        abort_unless(in_array('files.sftp', $permissions, true), 403, 'Du har ikke SFTP-adgang til denne server.');
     }
 }
