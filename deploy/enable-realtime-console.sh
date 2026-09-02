@@ -26,7 +26,9 @@ new="""  useEffect(() => {
     const timer = setInterval(statsTick, 3000);
     setLogs('');
     const token = localStorage.getItem(TOKEN_KEY);
-    fetch(`/api/servers/${selected.id}/logs/stream?tail=150`, { headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: controller.signal })
+    const headers = new Headers();
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    fetch(`/api/servers/${selected.id}/logs/stream?tail=150`, { headers, signal: controller.signal })
       .then(async response => {
         if (!response.ok || !response.body) throw new Error(`Console stream HTTP ${response.status}`);
         const reader = response.body.getReader(); const decoder = new TextDecoder();
