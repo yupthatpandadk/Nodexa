@@ -39,8 +39,22 @@ class AdminUpdateController extends Controller
     {
         $this->admin($request);$state=$this->readJson(self::STATE_FILE);abort_if(($state['status']??null)==='running',409,'En Nodexa-opdatering kører allerede.');
         try{$remote=$this->remote();$installed=$this->readJson(self::VERSION_FILE);if(!empty($installed['commit'])&&$installed['commit']===$remote['commit'])return response()->json(['message'=>'Nodexa er allerede opdateret.','available'=>false],409);}catch(Throwable $e){return response()->json(['message'=>'GitHub kunne ikke kontaktes: '.$e->getMessage()],503);}
-        $systemctl=is_executable('/usr/bin/systemctl')?'/usr/bin/systemctl':'/bin/systemctl';$process=new Process(['/usr/bin/sudo','-n',$systemctl,'--no-block','start','nodexa-update.service']);$process->setTimeout(10);$process->run();
-        if(!$process->isSuccessful()){SystemIssue::report(source:'updater',title:'Nodexa-opdatering kunne ikke startes',message:trim($process->getErrorOutput().' '.$process->getOutput()),severity:'error',type:'update_start_failed');return response()->json(['message'=>'Updater-servicen kunne ikke startes. Kør installeren igen for at installere updater-komponenten.'],500);}
+
+        // Keep this invocation byte-for-byte compatible with the sudoers rule
+        // installed by deploy/setup-updater.sh. Some distributions resolve
+        // systemctl to /usr/bin/systemctl while the old controller hard-coded a
+        // fallback path independently, causing sudo to reject the request and
+        // the UI to show only "Server Error".
+        $systemctl='/usr/bin/systemctl';
+        if(!is_executable($systemctl)){$resolved=trim((string)shell_exec('command -v systemctl 2>/dev/null'));if($resolved!=='')$systemctl=$resolved;}
+        if(!is_executable($systemctl))return response()->json(['message'=>'systemctl blev ikke fundet på Nodexa-serveren.'],500);
+
+        $process=new Process(['/usr/bin/sudo','-n',$systemctl,'--no-block','start','nodexa-update.service']);$process->setTimeout(10);$process->run();
+        if(!$process->isSuccessful()){
+            $detail=trim($process->getErrorOutput().' '.$process->getOutput());
+            SystemIssue::report(source:'updater',title:'Nodexa-opdatering kunne ikke startes',message:$detail,severity:'error',type:'update_start_failed');
+            return response()->json(['message'=>'Updater-servicen kunne ikke startes. '.($detail!==''?$detail:'Kontroller nodexa-update.service og sudoers-reglen.')],500);
+        }
         return response()->json(['message'=>'Opdateringen er startet.','status'=>'running'],202);
     }
 }
