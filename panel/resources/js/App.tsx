@@ -7,6 +7,7 @@ type User = { id: number; name: string; email: string; is_admin: boolean };
 type Server = { id: string; uuid: string; owner_id: number; server_number?: number; identifier?: string; name: string; status: string; memory_mb: number; disk_mb: number; cpu_limit: number; access_permissions?: string[] | string | null };
 type Stats = { state: string; cpu_percent: number; memory_bytes: number; memory_limit: number; network_rx_bytes: number; network_tx_bytes: number };
 type Database = { id: number; name: string; username: string; host: string; port: number; created_at: string };
+type DatabaseCredentials = { name: string; username: string; password: string; host: string; port: number };
 type Node = { id: number; name: string; fqdn: string; scheme: string; daemon_port: number; sftp_port: number; memory_mb: number; disk_mb: number; location?: string; servers_count?: number; health_status?: string; health_latency_ms?: number | null; health_last_checked_at?: string | null; health_last_seen_at?: string | null; health_message?: string | null };
 type NodeConfig = { token: string; panel_url: string; listen: string; sftp_port: number; data: string; backups: string; install_command: string };
 type Subuser = { id: number; user_id: number; permissions: string[] | string | null; user: { id: number; name: string; email: string } };
@@ -308,7 +309,7 @@ function ServerWorkspace(props: { me: User; server: Server; stats: Stats | null;
     </section>
     <div className="workspace-tabs">{tabs.map(t => <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}><Icon name={tabIcons[t]} size={17}/><span>{tabLabels[t]}</span></button>)}</div>
     {tab === 'console' && <ConsolePage stats={stats} server={server} logs={props.logs} cmd={props.cmd} setCmd={props.setCmd} send={props.send} canRead={has(server, 'console.read')} canCommand={has(server, 'console.command')} />}
-    {tab === 'databases' && <DatabasePage server={server} databases={props.databases} dbName={props.dbName} setDbName={props.setDbName} createDatabase={props.createDatabase} openDatabase={props.openDatabase} deleteDatabase={props.deleteDatabase} password={props.password} clearPassword={props.clearPassword} pmaUrl={props.pmaUrl} closePma={props.closePma} canCreate={has(server, 'database.create')} canDelete={has(server, 'database.delete')} />}
+    {tab === 'databases' && <DatabasePage server={server} databases={props.databases} dbName={props.dbName} setDbName={props.setDbName} createDatabase={props.createDatabase} openDatabase={props.openDatabase} deleteDatabase={props.deleteDatabase} password={props.password} clearPassword={props.clearPassword} pmaUrl={props.pmaUrl} closePma={props.closePma} canCreate={has(server, 'database.create')} canCredentials={has(server, 'database.credentials')} canDelete={has(server, 'database.delete')} />}
     {tab === 'users' && (me.is_admin || server.owner_id === me.id) && <UsersPage users={props.users} add={props.addUser} update={props.updateUser} remove={props.removeUser} />}
     {tab === 'files' && <FilesPage server={server} canWrite={has(server, 'files.write')} />}
     {tab === 'schedules' && <SchedulesPage server={server} canCreate={has(server, 'schedule.create')} canUpdate={has(server, 'schedule.update')} canDelete={has(server, 'schedule.delete')} canExecute={has(server, 'schedule.execute')} />}
@@ -327,19 +328,43 @@ function ConsolePage({ stats, server, logs, cmd, setCmd, send, canRead, canComma
   </div>;
 }
 
-function DatabasePage({ server, databases, dbName, setDbName, createDatabase, openDatabase, deleteDatabase, password, clearPassword, pmaUrl, closePma, canCreate, canDelete }: { server: Server; databases: Database[]; dbName: string; setDbName: (v: string) => void; createDatabase: () => void; openDatabase: (d: Database) => void; deleteDatabase: (d: Database) => void; password: string | null; clearPassword: () => void; pmaUrl: string | null; closePma: () => void; canCreate: boolean; canDelete: boolean }) {
+function DatabasePage({ server, databases, dbName, setDbName, createDatabase, openDatabase, deleteDatabase, password, clearPassword, pmaUrl, closePma, canCreate, canCredentials, canDelete }: { server: Server; databases: Database[]; dbName: string; setDbName: (v: string) => void; createDatabase: () => void; openDatabase: (d: Database) => void; deleteDatabase: (d: Database) => void; password: string | null; clearPassword: () => void; pmaUrl: string | null; closePma: () => void; canCreate: boolean; canCredentials: boolean; canDelete: boolean }) {
   const [showPassword, setShowPassword] = useState(false);
+  const [credentialsDb, setCredentialsDb] = useState<Database | null>(null);
+  const [credentials, setCredentials] = useState<DatabaseCredentials | null>(null);
+  const [credentialsVisible, setCredentialsVisible] = useState(false);
+  const [credentialsBusy, setCredentialsBusy] = useState(false);
+  const [credentialsError, setCredentialsError] = useState('');
+  const closeCredentials = () => {
+    if (credentialsBusy) return;
+    setCredentialsDb(null); setCredentials(null); setCredentialsVisible(false); setCredentialsError('');
+  };
+  const openCredentials = async (db: Database) => {
+    if (!canCredentials) return;
+    setCredentialsDb(db); setCredentials(null); setCredentialsVisible(false); setCredentialsError(''); setCredentialsBusy(true);
+    try { const r = await axios.get(`/api/servers/${server.id}/databases/${db.id}/credentials`); setCredentials(r.data as DatabaseCredentials); }
+    catch (e: any) { setCredentialsError(e?.response?.data?.message ?? 'Kunne ikke hente database-credentials.'); }
+    finally { setCredentialsBusy(false); }
+  };
+  const rotateCredentials = async () => {
+    if (!canCredentials || !credentialsDb || !confirm(`Rotér password til ${credentialsDb.name}? Eksisterende apps mister forbindelsen, indtil de bruger det nye password.`)) return;
+    setCredentialsBusy(true); setCredentialsError(''); setCredentialsVisible(false);
+    try { const r = await axios.post(`/api/servers/${server.id}/databases/${credentialsDb.id}/rotate`); setCredentials(r.data as DatabaseCredentials); }
+    catch (e: any) { setCredentialsError(e?.response?.data?.message ?? 'Kunne ikke rotere database-password.'); }
+    finally { setCredentialsBusy(false); }
+  };
   if (pmaUrl) return <div className="db-workspace"><div className="db-workspace-bar"><div><button className="back-link" onClick={closePma}>‹ Tilbage</button><strong>Database workspace</strong><small>{server.identifier} · sikker session</small></div></div><iframe title="Nodexa Database Workspace" src={pmaUrl}/></div>;
   return <div className="module-stack"><section className="module-heading"><div><h2>Databaser</h2><p>Opret og administrer isolerede databaser til {server.name}.</p></div>{canCreate && <div className="db-create"><span>{server.identifier}_</span><input value={dbName} onChange={e => setDbName(e.target.value.replace(/[^A-Za-z0-9_-]/g, ''))} placeholder="database"/><button className="primary-btn" onClick={createDatabase}><Icon name="plus"/> Opret</button></div>}</section>
     {password && <div className="secret-banner"><div><div className="secret-icon"><Icon name="shield"/></div><div><strong>Database oprettet</strong><p>Gem adgangskoden et sikkert sted. Den skjules automatisk.</p><code>{showPassword ? password : '••••••••••••••••••••••••••••••••'}</code></div></div><div className="secret-actions"><button onClick={() => setShowPassword(v => !v)}>{showPassword ? 'Skjul' : 'Vis'}</button><button onClick={() => { setShowPassword(false); clearPassword(); }}>Luk</button></div></div>}
-    <div className="panel-card table-card"><table><thead><tr><th>Database</th><th>Brugernavn</th><th>Host</th><th>Oprettet</th><th/></tr></thead><tbody>{databases.map(db => <tr key={db.id}><td><div className="table-title"><span className="mini-icon"><Icon name="database" size={15}/></span><strong>{db.name}</strong></div></td><td><code>{db.username}</code></td><td>{db.host}:{db.port}</td><td>{db.created_at ? new Date(db.created_at).toLocaleDateString('da-DK') : '—'}</td><td className="row-actions"><button className="secondary-btn small" onClick={() => openDatabase(db)}>Åbn</button>{canDelete && <button className="danger-link" onClick={() => deleteDatabase(db)}>Slet</button>}</td></tr>)}{!databases.length && <tr><td colSpan={5}><div className="table-empty"><div className="empty-icon"><Icon name="database"/></div><strong>Ingen databaser endnu</strong><span>Opret din første database ovenfor.</span></div></td></tr>}</tbody></table></div>
+    <div className="panel-card table-card"><table><thead><tr><th>Database</th><th>Brugernavn</th><th>Host</th><th>Oprettet</th><th/></tr></thead><tbody>{databases.map(db => <tr key={db.id}><td><div className="table-title"><span className="mini-icon"><Icon name="database" size={15}/></span><strong>{db.name}</strong></div></td><td><code>{db.username}</code></td><td>{db.host}:{db.port}</td><td>{db.created_at ? new Date(db.created_at).toLocaleDateString('da-DK') : '—'}</td><td className="row-actions"><button className="secondary-btn small" onClick={() => openDatabase(db)}>Åbn</button>{canCredentials && <button className="secondary-btn small" onClick={() => openCredentials(db)}>Credentials</button>}{canDelete && <button className="danger-link" onClick={() => deleteDatabase(db)}>Slet</button>}</td></tr>)}{!databases.length && <tr><td colSpan={5}><div className="table-empty"><div className="empty-icon"><Icon name="database"/></div><strong>Ingen databaser endnu</strong><span>Opret din første database ovenfor.</span></div></td></tr>}</tbody></table></div>
+    {credentialsDb && <div className="modal"><div className="modal-card db-credentials-modal"><div className="modal-title"><div><div className="eyebrow">DATABASE ACCESS</div><h2>Database credentials</h2><p>{credentialsDb.name}</p></div><button className="close-btn" disabled={credentialsBusy} onClick={closeCredentials}>×</button></div>{credentialsError && <div className="auth-error">{credentialsError}</div>}{credentialsBusy && !credentials && <div className="db-credential-loading">Henter credentials…</div>}{credentials && <><div className="db-credential-list"><div><span>Database</span><code>{credentials.name}</code></div><div><span>Brugernavn</span><code>{credentials.username}</code></div><div><span>Host</span><code>{credentials.host}:{credentials.port}</code></div><div><span>Password</span><code className="db-credential-password">{credentialsVisible ? credentials.password : '••••••••••••••••••••••••••••••••'}</code></div></div><div className="db-credential-warning"><Icon name="shield" size={17}/><span>Rotation ændrer password på database-hosten med det samme. Opdater dine apps efter rotation.</span></div></>}<div className="modal-actions db-credential-actions"><button className="secondary-btn" disabled={credentialsBusy || !credentials} onClick={() => setCredentialsVisible(v => !v)}>{credentialsVisible ? 'Skjul password' : 'Vis password'}</button><button className="danger-link db-rotate-btn" disabled={credentialsBusy || !credentials} onClick={rotateCredentials}>{credentialsBusy ? 'Roterer…' : 'Rotér password'}</button><button className="primary-btn" disabled={credentialsBusy} onClick={closeCredentials}>Luk</button></div></div></div>}
   </div>;
 }
 
 const permissionGroups = [
   { title: 'Konsol & strøm', items: [['console.read','Se konsol'],['console.command','Send kommandoer'],['power.start','Start server'],['power.stop','Stop server'],['power.restart','Genstart server']] },
   { title: 'Filer & SFTP', items: [['files.read','Se filer'],['files.write','Rediger filer'],['files.sftp','SFTP-adgang']] },
-  { title: 'Databaser', items: [['database.read','Se databaser'],['database.create','Opret databaser'],['database.credentials','Se credentials'],['database.delete','Slet databaser']] },
+  { title: 'Databaser', items: [['database.read','Se databaser'],['database.create','Opret databaser'],['database.credentials','Se/rotér credentials'],['database.delete','Slet databaser']] },
   { title: 'Planlægninger', items: [['schedule.read','Se planlægninger'],['schedule.create','Opret'],['schedule.update','Rediger'],['schedule.execute','Kør nu'],['schedule.delete','Slet']] },
   { title: 'Backups', items: [['backups.read','Se backups'],['backups.create','Opret backup'],['backups.download','Download'],['backups.restore','Gendan'],['backups.delete','Slet']] },
   { title: 'Netværk', items: [['allocation.read','Se allocations'],['allocation.update','Rediger noter/primær']] },
