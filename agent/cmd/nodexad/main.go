@@ -16,16 +16,10 @@ func main() {
 	if err != nil { log.Fatal(err) }
 
 	resolver := nodexaSFTP.NewFileResolver(c.SFTPCredentials)
-	sftpServer := &nodexaSFTP.Server{
-		Listen: c.SFTPListen,
-		DataRoot: c.DataRoot,
-		HostKeyPath: c.SFTPHostKey,
-		Resolver: resolver,
-	}
-	go func() {
-		if err := sftpServer.Run(); err != nil { log.Fatalf("Nodexa SFTP stopped: %v", err) }
-	}()
+	store := &nodexaSFTP.CredentialStore{Path: c.SFTPCredentials}
+	sftpServer := &nodexaSFTP.Server{Listen:c.SFTPListen,DataRoot:c.DataRoot,HostKeyPath:c.SFTPHostKey,Resolver:resolver}
+	go func() { if err := sftpServer.Run(); err != nil { log.Fatalf("Nodexa SFTP stopped: %v", err) } }()
 
 	log.Printf("Nodexa Agent listening on %s", c.Listen)
-	log.Fatal(api.New(c.Token, d).Router().Run(c.Listen))
+	log.Fatal(api.New(c.Token, d, store).Router().Run(c.Listen))
 }
