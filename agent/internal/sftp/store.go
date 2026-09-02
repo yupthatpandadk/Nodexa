@@ -16,7 +16,7 @@ func (s *CredentialStore) Upsert(c Credential) error {
     list, err := s.read(); if err != nil { return err }
     replaced := false
     for i := range list {
-        if list[i].Username == c.Username || list[i].ServerUUID == c.ServerUUID { list[i] = c; replaced = true; break }
+        if list[i].Username == c.Username { list[i] = c; replaced = true; break }
     }
     if !replaced { list = append(list, c) }
     return s.write(list)
