@@ -52,15 +52,22 @@ func(m *Manager)installTemplateWithProgress(ctx context.Context,r server.CreateR
 cd /home/container
 VERSION="${MINECRAFT_VERSION:-1.21.8}"
 PORT="${SERVER_PORT:-25565}"
-PAPER_UA="Nodexa/0.13.7 (https://github.com/yupthatpandadk/Nodexa)"
+PAPER_UA="Nodexa-Agent (https://github.com/yupthatpandadk/Nodexa)"
 PAPER_API="https://fill.papermc.io/v3/projects/paper/versions/${VERSION}/builds/latest"
 echo "container@nodexa~ Server marked as installing..."
 echo "[Nodexa Installer] [1/7] Preparing installation directory"
 echo "[Nodexa Installer] Template: Minecraft Java / Paper"
 echo "[Nodexa Installer] Minecraft version: ${VERSION}"
 echo "[Nodexa Installer] [2/7] Resolving latest Paper build"
+command -v curl >/dev/null 2>&1 || { echo "[Nodexa Installer] ERROR: runtime image does not provide curl"; exit 1; }
 META="$(curl -fsSL -A "$PAPER_UA" "$PAPER_API")"
-URL="$(printf '%s' "$META" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["downloads"]["server:default"]["url"])')"
+if command -v python3 >/dev/null 2>&1; then
+ URL="$(printf '%s' "$META" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["downloads"]["server:default"]["url"])')"
+else
+ # Pterodactyl-style Java runtime images do not always ship Python. The Paper
+ # response contains the server jar URL, so use a POSIX-tool fallback instead.
+ URL="$(printf '%s' "$META" | grep -oE 'https://[^"[:space:]]+\.jar' | head -n1 || true)"
+fi
 [ -n "$URL" ] || { echo "[Nodexa Installer] ERROR: Paper API did not return a server download URL"; exit 1; }
 echo "[Nodexa Installer] [3/7] Downloading Paper server"
 # Download atomically so a failed reinstall never destroys the working jar.

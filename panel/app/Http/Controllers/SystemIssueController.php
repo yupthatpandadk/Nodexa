@@ -82,6 +82,13 @@ class SystemIssueController extends Controller
         return $issue->fresh();
     }
 
+    public function reopen(Request $request, SystemIssue $issue)
+    {
+        $this->admin($request);
+        $issue->update(['status'=>'open','resolved_at'=>null,'last_seen_at'=>now()]);
+        return $issue->fresh();
+    }
+
     public function clientError(Request $request)
     {
         $data = $request->validate(['message'=>'required|string|max:4000','source'=>'nullable|string|max:500','line'=>'nullable|integer','column'=>'nullable|integer','stack'=>'nullable|string|max:12000','url'=>'nullable|string|max:2000']);
