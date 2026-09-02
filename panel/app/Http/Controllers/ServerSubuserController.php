@@ -11,7 +11,7 @@ class ServerSubuserController extends Controller
 {
     private const ALLOWED = [
         'console.read','console.command','power.start','power.stop','power.restart',
-        'files.read','files.write',
+        'files.read','files.write','files.sftp',
         'backups.read','backups.create','backups.download','backups.restore','backups.delete',
         'database.read','database.create','database.credentials','database.delete',
         'schedule.read','schedule.create','schedule.update','schedule.delete','schedule.execute',
