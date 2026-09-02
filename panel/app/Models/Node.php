@@ -17,4 +17,5 @@ class Node extends Model
 
     public function servers() { return $this->hasMany(Server::class); }
     public function databaseHosts() { return $this->hasMany(DatabaseHost::class); }
+    public function allocations() { return $this->hasMany(Allocation::class); }
 }
