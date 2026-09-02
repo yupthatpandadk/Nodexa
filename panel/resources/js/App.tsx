@@ -347,11 +347,32 @@ const permissionGroups = [
 ];
 
 function UsersPage({ users, add, update, remove }: { users: Subuser[]; add: (e: string, p: string[]) => any; update: (u: Subuser, p: string[]) => any; remove: (u: Subuser) => any }) {
-  const [showInvite, setShowInvite] = useState(false); const [email, setEmail] = useState(''); const [permissions, setPermissions] = useState<string[]>(['console.read']); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  const [showInvite, setShowInvite] = useState(false);
+  const [email, setEmail] = useState('');
+  const [permissions, setPermissions] = useState<string[]>(['console.read']);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [editing, setEditing] = useState<Subuser | null>(null);
+  const [editPermissions, setEditPermissions] = useState<string[]>([]);
+  const [editBusy, setEditBusy] = useState(false);
+  const [editError, setEditError] = useState('');
   const toggle = (p: string) => setPermissions(v => v.includes(p) ? v.filter(x => x !== p) : [...v, p]);
+  const toggleEdit = (p: string) => setEditPermissions(v => v.includes(p) ? v.filter(x => x !== p) : [...v, p]);
+  const openEditor = (entry: Subuser) => {
+    setEditing(entry);
+    setEditPermissions(toStringArray(entry.permissions));
+    setEditError('');
+  };
+  const closeEditor = () => {
+    if (editBusy) return;
+    setEditing(null);
+    setEditPermissions([]);
+    setEditError('');
+  };
   return <div className="module-stack"><section className="module-heading"><div><h2>Brugere</h2><p>Giv andre eksisterende Nodexa-brugere adgang til denne server.</p></div><button className="primary-btn" onClick={() => setShowInvite(true)}><Icon name="plus"/> Inviter bruger</button></section>
-    <div className="panel-card user-list"><div className="owner-row"><div className="user-identity"><div className="avatar owner-avatar">E</div><div><strong>Serverejer</strong><span>Fuld adgang til serveren</span></div></div><span className="role-badge">Ejer</span><div className="permission-summary"><Icon name="shield" size={15}/> Alle rettigheder</div></div>{users.map(entry => { const p = toStringArray(entry.permissions); return <div className="user-row" key={entry.id}><div className="user-identity"><div className="avatar">{initials(entry.user.name)}</div><div><strong>{entry.user.name}</strong><span>{entry.user.email}</span></div></div><span className="role-badge secondary">Bruger</span><div className="permission-summary">{p.length} rettigheder</div><button className="danger-link" onClick={() => confirm(`Fjern ${entry.user.email}?`) && remove(entry)}>Fjern</button></div>; })}{!users.length && <div className="subtle-empty">Ingen ekstra brugere har adgang til serveren endnu.</div>}</div>
+    <div className="panel-card user-list"><div className="owner-row"><div className="user-identity"><div className="avatar owner-avatar">E</div><div><strong>Serverejer</strong><span>Fuld adgang til serveren</span></div></div><span className="role-badge">Ejer</span><div className="permission-summary"><Icon name="shield" size={15}/> Alle rettigheder</div></div>{users.map(entry => { const p = toStringArray(entry.permissions); return <div className="user-row" key={entry.id}><div className="user-identity"><div className="avatar">{initials(entry.user.name)}</div><div><strong>{entry.user.name}</strong><span>{entry.user.email}</span></div></div><span className="role-badge secondary">Bruger</span><div className="permission-summary">{p.length} rettigheder</div><div className="row-actions subuser-actions"><button className="secondary-btn small" onClick={() => openEditor(entry)}>Rediger</button><button className="danger-link" onClick={() => confirm(`Fjern ${entry.user.email}?`) && remove(entry)}>Fjern</button></div></div>; })}{!users.length && <div className="subtle-empty">Ingen ekstra brugere har adgang til serveren endnu.</div>}</div>
     {showInvite && <div className="modal"><div className="modal-card invite-modal"><div className="modal-title"><div><div className="eyebrow">SERVER ACCESS</div><h2>Inviter bruger</h2><p>Brugeren skal allerede have en Nodexa-konto.</p></div><button className="close-btn" onClick={() => setShowInvite(false)}>×</button></div><label className="field-label">E-mailadresse<input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="ven@eksempel.dk"/></label><div className="permissions-grid">{permissionGroups.map(group => <div className="permission-group" key={group.title}><strong>{group.title}</strong>{group.items.map(([key,label]) => <label key={key}><input type="checkbox" checked={permissions.includes(key)} onChange={() => toggle(key)}/><span>{label}</span></label>)}</div>)}</div>{error && <div className="auth-error">{error}</div>}<div className="modal-actions"><button className="secondary-btn" onClick={() => setShowInvite(false)}>Annuller</button><button className="primary-btn" disabled={busy || !email.trim()} onClick={() => { setBusy(true); setError(''); Promise.resolve(add(email.trim(), permissions)).then(() => { setEmail(''); setShowInvite(false); }).catch(e => setError(e?.response?.data?.message ?? 'Kunne ikke invitere brugeren.')).finally(() => setBusy(false)); }}>{busy ? 'Tilføjer…' : 'Giv adgang'}</button></div></div></div>}
+    {editing && <div className="modal"><div className="modal-card invite-modal"><div className="modal-title"><div><div className="eyebrow">SERVER ACCESS</div><h2>Rediger rettigheder</h2><p>{editing.user.name} · {editing.user.email}</p></div><button className="close-btn" disabled={editBusy} onClick={closeEditor}>×</button></div><div className="permissions-grid">{permissionGroups.map(group => <div className="permission-group" key={group.title}><strong>{group.title}</strong>{group.items.map(([key,label]) => <label key={key}><input type="checkbox" checked={editPermissions.includes(key)} disabled={editBusy} onChange={() => toggleEdit(key)}/><span>{label}</span></label>)}</div>)}</div>{editError && <div className="auth-error">{editError}</div>}<div className="modal-actions"><button className="secondary-btn" disabled={editBusy} onClick={closeEditor}>Annuller</button><button className="primary-btn" disabled={editBusy || editPermissions.length === 0} onClick={() => { setEditBusy(true); setEditError(''); Promise.resolve(update(editing, editPermissions)).then(() => { setEditing(null); setEditPermissions([]); }).catch(e => setEditError(e?.response?.data?.message ?? 'Kunne ikke gemme rettighederne.')).finally(() => setEditBusy(false)); }}>{editBusy ? 'Gemmer…' : 'Gem rettigheder'}</button></div></div></div>}
   </div>;
 }
 
