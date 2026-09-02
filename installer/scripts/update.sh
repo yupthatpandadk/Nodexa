@@ -33,6 +33,7 @@ if [[ -d "$PANEL_DIR" ]]; then
   bash "$SOURCE_ROOT/deploy/optimize-frontend-source.sh"
   bash "$SOURCE_ROOT/deploy/enable-managed-server-templates.sh"
   bash "$SOURCE_ROOT/deploy/enable-runtime-modules.sh"
+  bash "$SOURCE_ROOT/deploy/fix-installer-ready-ui.sh"
   bash "$SOURCE_ROOT/deploy/optimize-frontend-delivery-source.sh"
   npm install
   npm run build
@@ -82,7 +83,6 @@ if [[ -d "$PANEL_DIR" ]]; then
   bash "$SOURCE_ROOT/deploy/setup-storefront-sync.sh"
   bash "$SOURCE_ROOT/deploy/optimize-web-assets.sh"
 fi
-bash "$SOURCE_ROOT/deploy/setup-upload-limits.sh"
 systemctl restart nodexa-queue 2>/dev/null || true
 systemctl restart nodexa-monitor.timer 2>/dev/null || true
 nginx -t
