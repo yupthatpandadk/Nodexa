@@ -3,13 +3,21 @@ package config
 import "os"
 
 type Config struct {
-	Listen   string
-	Token    string
-	DataRoot string
+	Listen     string
+	Token      string
+	DataRoot   string
+	SFTPListen string
+	SFTPHostKey string
 }
 
 func Load() Config {
-	c := Config{Listen: ":8080", Token: os.Getenv("NODEXA_TOKEN"), DataRoot: "/var/lib/nodexa/servers"}
+	c := Config{
+		Listen: ":8080",
+		Token: os.Getenv("NODEXA_TOKEN"),
+		DataRoot: "/var/lib/nodexa/servers",
+		SFTPListen: ":2022",
+		SFTPHostKey: "/var/lib/nodexa/sftp_host_ed25519",
+	}
 	if v := os.Getenv("NODEXA_LISTEN"); v != "" {
 		c.Listen = v
 	} else if v := os.Getenv("NODEXA_ADDR"); v != "" {
@@ -17,6 +25,12 @@ func Load() Config {
 	}
 	if v := os.Getenv("NODEXA_DATA"); v != "" {
 		c.DataRoot = v
+	}
+	if v := os.Getenv("NODEXA_SFTP_LISTEN"); v != "" {
+		c.SFTPListen = v
+	}
+	if v := os.Getenv("NODEXA_SFTP_HOST_KEY"); v != "" {
+		c.SFTPHostKey = v
 	}
 	return c
 }
