@@ -29,6 +29,7 @@ bash deploy/enable-power-feedback.sh
 bash deploy/optimize-frontend-delivery-source.sh
 (cd /var/www/nodexa/panel && npm run build)
 bash deploy/optimize-web-assets.sh
+bash deploy/setup-upload-limits.sh
 bash deploy/setup-scheduler.sh
 bash deploy/create-admin.sh
 
