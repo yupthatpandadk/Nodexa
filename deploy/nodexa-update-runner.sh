@@ -42,7 +42,11 @@ write_state "running" "Nodexa opdateres fra GitHub..."
 
   TMP_INSTALL="$(mktemp)"
   curl -fsSL --retry 4 --retry-delay 2 "${RAW_BASE}/install.sh" -o "$TMP_INSTALL"
-  NODEXA_UPDATE_REPOSITORY="$REPO" NODEXA_UPDATE_BRANCH="$BRANCH" NODEXA_BRANCH="$BRANCH" bash "$TMP_INSTALL" update
+  NODEXA_NONINTERACTIVE=1 \
+  NODEXA_UPDATE_REPOSITORY="$REPO" \
+  NODEXA_UPDATE_BRANCH="$BRANCH" \
+  NODEXA_BRANCH="$BRANCH" \
+    bash "$TMP_INSTALL" update </dev/null
   rm -f "$TMP_INSTALL"
 
   echo "[Nodexa Update] Completed $(now)"
