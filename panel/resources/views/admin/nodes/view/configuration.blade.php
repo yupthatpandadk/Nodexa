@@ -38,7 +38,7 @@
                 <pre class="no-margin">{{ $node->getYamlConfiguration() }}</pre>
             </div>
             <div class="box-footer">
-                <p class="no-margin">Nodexa Agent runtime settings are created automatically by Auto-Deploy and stored in <code>/etc/nodexa.env</code> on the Node. You do not need to create <code>/etc/pterodactyl/config.yml</code> manually.</p>
+                <p class="no-margin">Nodexa Agent uses a Wings-compatible engine so all console, files, backups, SFTP and power controls remain compatible. Auto-Deploy stores the protocol configuration at <code>/etc/pterodactyl/config.yml</code> and exposes the Nodexa alias <code>/etc/nodexa/config.yml</code>.</p>
             </div>
         </div>
     </div>
@@ -109,7 +109,7 @@
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
             }).done(function (data) {
                 var token = String(data.token || '');
-                var command = "curl -fsSL https://raw.githubusercontent.com/yupthatpandadk/Nodexa/pterodactyl-core/install.sh -o /tmp/nodexa-install.sh && NODEXA_BRANCH=pterodactyl-core NODEXA_AGENT_TOKEN='" + token + "' NODEXA_PANEL_URL='{{ config('app.url') }}' bash /tmp/nodexa-install.sh node";
+                var command = "curl -fsSL https://raw.githubusercontent.com/yupthatpandadk/Nodexa/pterodactyl-core/install.sh -o /tmp/nodexa-install.sh && NODEXA_BRANCH=pterodactyl-core NODEXA_AGENT_TOKEN='" + token + "' NODEXA_PANEL_URL='{{ config('app.url') }}' NODEXA_NODE_ID='" + data.node + "' NODEXA_AGENT_FQDN='{{ $node->fqdn }}' NODEXA_AGENT_PORT='{{ $node->daemonListen }}' NODEXA_SFTP_PORT='{{ $node->daemonSFTP }}' bash /tmp/nodexa-install.sh node";
 
                 var html = '' +
                     '<div style="text-align:left;margin-top:8px;">' +
@@ -117,9 +117,9 @@
                         '<textarea id="nodexaNodeToken" readonly rows="2" spellcheck="false" style="width:100%;resize:none;box-sizing:border-box;padding:10px 12px;border:1px solid #bcc6ce;border-radius:6px;background:#18222d;color:#e9fff6;font-family:monospace;font-size:13px;line-height:1.45;word-break:break-all;">' + escapeHtml(token) + '</textarea>' +
                         '<button type="button" id="copyNodexaNodeToken" class="btn btn-primary" style="width:100%;margin-top:8px;"><i class="fa fa-copy"></i> Copy token</button>' +
                         '<p style="margin:18px 0 6px;font-weight:600;color:#53606d;">Nodexa Agent auto-deploy command</p>' +
-                        '<textarea id="nodexaNodeCommand" readonly rows="6" spellcheck="false" style="width:100%;resize:vertical;box-sizing:border-box;padding:10px 12px;border:1px solid #bcc6ce;border-radius:6px;background:#18222d;color:#e9fff6;font-family:monospace;font-size:12px;line-height:1.5;overflow:auto;">' + escapeHtml(command) + '</textarea>' +
+                        '<textarea id="nodexaNodeCommand" readonly rows="7" spellcheck="false" style="width:100%;resize:vertical;box-sizing:border-box;padding:10px 12px;border:1px solid #bcc6ce;border-radius:6px;background:#18222d;color:#e9fff6;font-family:monospace;font-size:12px;line-height:1.5;overflow:auto;">' + escapeHtml(command) + '</textarea>' +
                         '<button type="button" id="copyNodexaNodeCommand" class="btn btn-primary" style="width:100%;margin-top:8px;"><i class="fa fa-terminal"></i> Copy full command</button>' +
-                        '<p style="margin-top:12px;margin-bottom:0;font-size:11px;color:#82909c;"><i class="fa fa-shield"></i> Run this command as root on the Node server. Nodexa will create <code>/etc/nodexa.env</code> automatically.</p>' +
+                        '<p style="margin-top:12px;margin-bottom:0;font-size:11px;color:#82909c;"><i class="fa fa-shield"></i> Run this command as root on the Node server. The installer configures the Wings-compatible Nodexa Agent automatically.</p>' +
                     '</div>';
 
                 swal({
