@@ -19,6 +19,7 @@ import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
 import { useLocation } from 'react-router';
 import ConflictStateRenderer from '@/components/server/ConflictStateRenderer';
 import PermissionRoute from '@/components/elements/PermissionRoute';
+import ServerSidebar from '@/components/server/ServerSidebar';
 import routes from '@/routers/routes';
 
 export default () => {
@@ -62,67 +63,71 @@ export default () => {
         };
     }, [match.params.id]);
 
+    if (!uuid || !id) {
+        return (
+            <React.Fragment key={'server-router-loading'}>
+                <NavigationBar />
+                {error ? <ServerError message={error} /> : <Spinner size={'large'} centered />}
+            </React.Fragment>
+        );
+    }
+
     return (
-        <React.Fragment key={'server-router'}>
-            <NavigationBar />
-            {!uuid || !id ? (
-                error ? (
-                    <ServerError message={error} />
-                ) : (
-                    <Spinner size={'large'} centered />
-                )
-            ) : (
-                <>
-                    <CSSTransition timeout={150} classNames={'fade'} appear in>
-                        <SubNavigation>
-                            <div>
-                                {routes.server
-                                    .filter((route) => !!route.name)
-                                    .map((route) =>
-                                        route.permission ? (
-                                            <Can key={route.path} action={route.permission} matchAny>
-                                                <NavLink to={to(route.path, true)} exact={route.exact}>
-                                                    {route.name}
-                                                </NavLink>
-                                            </Can>
-                                        ) : (
-                                            <NavLink key={route.path} to={to(route.path, true)} exact={route.exact}>
+        <div className={'min-h-screen lg:flex bg-[#050b0a]'}>
+            <ServerSidebar baseUrl={match.url} rootAdmin={rootAdmin} internalId={serverId} />
+            <main className={'min-w-0 flex-1'}>
+                <div className={'lg:hidden'}>
+                    <NavigationBar />
+                </div>
+                <CSSTransition timeout={150} classNames={'fade'} appear in>
+                    <SubNavigation>
+                        <div>
+                            {routes.server
+                                .filter((route) => !!route.name)
+                                .map((route) =>
+                                    route.permission ? (
+                                        <Can key={route.path} action={route.permission} matchAny>
+                                            <NavLink to={to(route.path, true)} exact={route.exact}>
                                                 {route.name}
                                             </NavLink>
-                                        )
-                                    )}
-                                {rootAdmin && (
-                                    // eslint-disable-next-line react/jsx-no-target-blank
-                                    <a href={`/admin/servers/view/${serverId}`} target={'_blank'}>
-                                        <FontAwesomeIcon icon={faExternalLinkAlt} />
-                                    </a>
+                                        </Can>
+                                    ) : (
+                                        <NavLink key={route.path} to={to(route.path, true)} exact={route.exact}>
+                                            {route.name}
+                                        </NavLink>
+                                    )
                                 )}
-                            </div>
-                        </SubNavigation>
-                    </CSSTransition>
-                    <InstallListener />
-                    <TransferListener />
-                    <WebsocketHandler />
-                    {inConflictState && (!rootAdmin || (rootAdmin && !location.pathname.endsWith(`/server/${id}`))) ? (
-                        <ConflictStateRenderer />
-                    ) : (
-                        <ErrorBoundary>
-                            <TransitionRouter>
-                                <Switch location={location}>
-                                    {routes.server.map(({ path, permission, component: Component }) => (
-                                        <PermissionRoute key={path} permission={permission} path={to(path)} exact>
-                                            <Spinner.Suspense>
-                                                <Component />
-                                            </Spinner.Suspense>
-                                        </PermissionRoute>
-                                    ))}
-                                    <Route path={'*'} component={NotFound} />
-                                </Switch>
-                            </TransitionRouter>
-                        </ErrorBoundary>
-                    )}
-                </>
-            )}
-        </React.Fragment>
+                            {rootAdmin && (
+                                // eslint-disable-next-line react/jsx-no-target-blank
+                                <a href={`/admin/servers/view/${serverId}`} target={'_blank'}>
+                                    <FontAwesomeIcon icon={faExternalLinkAlt} />
+                                </a>
+                            )}
+                        </div>
+                    </SubNavigation>
+                </CSSTransition>
+                <InstallListener />
+                <TransferListener />
+                <WebsocketHandler />
+                {inConflictState && (!rootAdmin || (rootAdmin && !location.pathname.endsWith(`/server/${id}`))) ? (
+                    <ConflictStateRenderer />
+                ) : (
+                    <ErrorBoundary>
+                        <TransitionRouter>
+                            <Switch location={location}>
+                                {routes.server.map(({ path, permission, component: Component }) => (
+                                    <PermissionRoute key={path} permission={permission} path={to(path)} exact>
+                                        <Spinner.Suspense>
+                                            <Component />
+                                        </Spinner.Suspense>
+                                    </PermissionRoute>
+                                ))}
+                                <Route path={'*'} component={NotFound} />
+                            </Switch>
+                        </TransitionRouter>
+                    </ErrorBoundary>
+                )}
+            </main>
+        </div>
     );
 };
