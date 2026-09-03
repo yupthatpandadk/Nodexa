@@ -4,14 +4,14 @@ set -Eeuo pipefail
 [[ $EUID -eq 0 ]] || { echo "[Nodexa] setup-updater.sh must run as root." >&2; exit 1; }
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO="${NODEXA_UPDATE_REPOSITORY:-yupthatpandadk/Nodexa}"
-BRANCH="${NODEXA_UPDATE_BRANCH:-main}"
+BRANCH="${NODEXA_UPDATE_BRANCH:-${NODEXA_BRANCH:-pterodactyl-core}}"
 STATE_DIR="/var/lib/nodexa"
 VERSION="$(tr -d '[:space:]' < "$SOURCE_DIR/VERSION" 2>/dev/null || echo unknown)"
 apt-get install -y sudo curl python3 >/dev/null
 mkdir -p "$STATE_DIR"
 install -m 0755 "$SOURCE_DIR/deploy/nodexa-update-runner.sh" /usr/local/sbin/nodexa-update-runner
 install -m 0755 "$SOURCE_DIR/deploy/nodexa-update-trigger.sh" /usr/local/sbin/nodexa-update-trigger
-cat > /etc/systemd/system/nodexa-update.service <<'UNIT'
+cat > /etc/systemd/system/nodexa-update.service <<UNIT
 [Unit]
 Description=Nodexa Platform Updater
 After=network-online.target mariadb.service redis-server.service
@@ -20,6 +20,8 @@ Wants=network-online.target
 Type=simple
 User=root
 Group=root
+Environment=NODEXA_UPDATE_REPOSITORY=${REPO}
+Environment=NODEXA_UPDATE_BRANCH=${BRANCH}
 ExecStart=/usr/local/sbin/nodexa-update-runner
 Nice=5
 IOSchedulingClass=best-effort
@@ -56,4 +58,4 @@ if [[ ! -f "$STATE_DIR/update-state.json" ]]; then
 fi
 touch /var/log/nodexa-update.log
 chmod 0644 /var/log/nodexa-update.log
-echo "[Nodexa] Panel updater installed for version ${VERSION}${INSTALLED_SHA:+ @ ${INSTALLED_SHA:0:8}}."
+echo "[Nodexa] Panel updater installed for version ${VERSION}${INSTALLED_SHA:+ @ ${INSTALLED_SHA:0:8}} from ${REPO}:${BRANCH}."
