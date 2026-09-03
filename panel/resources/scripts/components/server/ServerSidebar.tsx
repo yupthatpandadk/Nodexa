@@ -1,0 +1,138 @@
+import React from 'react';
+import { Link, NavLink } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+    faArchive,
+    faCogs,
+    faDatabase,
+    faFileAlt,
+    faHistory,
+    faHome,
+    faNetworkWired,
+    faPlayCircle,
+    faServer,
+    faSlidersH,
+    faTerminal,
+    faUsers,
+} from '@fortawesome/free-solid-svg-icons';
+import Can from '@/components/elements/Can';
+import { ServerContext } from '@/state/server';
+import routes from '@/routers/routes';
+
+interface Props {
+    baseUrl: string;
+    rootAdmin: boolean;
+    internalId?: number;
+}
+
+const iconForPath = (path: string) => {
+    switch (path) {
+        case '/':
+            return faTerminal;
+        case '/files':
+            return faFileAlt;
+        case '/databases':
+            return faDatabase;
+        case '/schedules':
+            return faHistory;
+        case '/users':
+            return faUsers;
+        case '/backups':
+            return faArchive;
+        case '/network':
+            return faNetworkWired;
+        case '/startup':
+            return faPlayCircle;
+        case '/settings':
+            return faSlidersH;
+        case '/activity':
+            return faHistory;
+        default:
+            return faServer;
+    }
+};
+
+const routeUrl = (baseUrl: string, path: string) =>
+    path === '/' ? baseUrl : `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+
+export default ({ baseUrl, rootAdmin, internalId }: Props) => {
+    const name = ServerContext.useStoreState((state) => state.server.data!.name);
+    const status = ServerContext.useStoreState((state) => state.status.value);
+
+    return (
+        <aside className={'hidden lg:flex lg:w-[232px] xl:w-[248px] lg:flex-col lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen border-r border-green-900/40 bg-[#07100f]'}>
+            <div className={'px-5 pt-5 pb-4 border-b border-green-900/30'}>
+                <Link to={'/'} className={'flex items-center gap-3 no-underline'}>
+                    <span className={'flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-300 to-green-500 text-[#06100d] font-black text-lg shadow-lg'}>
+                        N
+                    </span>
+                    <span>
+                        <span className={'block text-gray-50 font-bold text-lg leading-none'}>Nodexa</span>
+                        <span className={'block text-green-400/70 text-[9px] tracking-[0.18em] font-semibold mt-1'}>GAME SERVER CLOUD</span>
+                    </span>
+                </Link>
+            </div>
+
+            <div className={'px-4 pt-5'}>
+                <p className={'px-2 mb-2 text-[10px] uppercase tracking-[0.16em] text-gray-500 font-semibold'}>Overview</p>
+                <Link to={'/'} className={'flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:text-gray-50 hover:bg-green-500/10 no-underline transition-colors'}>
+                    <FontAwesomeIcon icon={faHome} className={'w-4 text-gray-500'} />
+                    <span>Dashboard</span>
+                </Link>
+            </div>
+
+            <div className={'px-4 pt-5 min-h-0 overflow-y-auto'}>
+                <p className={'px-2 mb-2 text-[10px] uppercase tracking-[0.16em] text-gray-500 font-semibold'}>Server</p>
+                <div className={'mb-3 rounded-xl border border-green-900/40 bg-green-500/5 px-3 py-3'}>
+                    <div className={'flex items-center justify-between gap-2'}>
+                        <span className={'truncate text-sm font-semibold text-gray-100'}>{name}</span>
+                        <span className={`h-2 w-2 rounded-full ${status === 'running' ? 'bg-green-400' : status === 'offline' ? 'bg-red-400' : 'bg-yellow-400'}`} />
+                    </div>
+                    <p className={'mt-1 text-[11px] text-gray-500 capitalize'}>{status || 'Connecting'}</p>
+                </div>
+
+                <nav className={'space-y-1'}>
+                    {routes.server
+                        .filter((route) => !!route.name)
+                        .map((route) => {
+                            const item = (
+                                <NavLink
+                                    to={routeUrl(baseUrl, route.path)}
+                                    exact={route.exact}
+                                    activeClassName={'!text-green-300 !bg-green-500/10 !border-green-500/30'}
+                                    className={'flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent text-gray-400 hover:text-gray-100 hover:bg-white/5 no-underline transition-all'}
+                                >
+                                    <FontAwesomeIcon icon={iconForPath(route.path)} className={'w-4 text-gray-500'} />
+                                    <span>{route.name}</span>
+                                </NavLink>
+                            );
+
+                            return route.permission ? (
+                                <Can key={route.path} action={route.permission} matchAny>
+                                    {item}
+                                </Can>
+                            ) : (
+                                <React.Fragment key={route.path}>{item}</React.Fragment>
+                            );
+                        })}
+                </nav>
+            </div>
+
+            <div className={'mt-auto px-4 py-5 border-t border-green-900/30 space-y-1'}>
+                {rootAdmin && internalId && (
+                    <a
+                        href={`/admin/servers/view/${internalId}`}
+                        className={'flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-green-300 hover:bg-green-500/10 no-underline transition-colors'}
+                    >
+                        <FontAwesomeIcon icon={faCogs} className={'w-4'} />
+                        <span>Server Admin</span>
+                    </a>
+                )}
+                <Link to={'/account'} className={'flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-gray-100 hover:bg-white/5 no-underline transition-colors'}>
+                    <FontAwesomeIcon icon={faUsers} className={'w-4'} />
+                    <span>Account</span>
+                </Link>
+            </div>
+        </aside>
+    );
+};
