@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import classNames from 'classnames';
 import { Button } from '@/components/elements/button/index';
 import Can from '@/components/elements/Can';
 import { ServerContext } from '@/state/server';
 import { PowerAction } from '@/components/server/console/ServerConsoleContainer';
 import { Dialog } from '@/components/elements/dialog';
+import styles from './style.module.css';
 
 interface PowerButtonProps {
     className?: string;
@@ -50,7 +52,7 @@ export default ({ className }: PowerButtonProps) => {
             </Dialog.Confirm>
             <Can action={'control.start'}>
                 <Button
-                    className={'flex-1'}
+                    className={classNames('flex-1', styles.power_start)}
                     disabled={status !== 'offline'}
                     onClick={onButtonClick.bind(this, 'start')}
                 >
@@ -58,13 +60,17 @@ export default ({ className }: PowerButtonProps) => {
                 </Button>
             </Can>
             <Can action={'control.restart'}>
-                <Button.Text className={'flex-1'} disabled={!status} onClick={onButtonClick.bind(this, 'restart')}>
+                <Button.Text
+                    className={classNames('flex-1', styles.power_restart)}
+                    disabled={!status}
+                    onClick={onButtonClick.bind(this, 'restart')}
+                >
                     Restart
                 </Button.Text>
             </Can>
             <Can action={'control.stop'}>
                 <Button.Danger
-                    className={'flex-1'}
+                    className={classNames('flex-1', styles.power_stop)}
                     disabled={status === 'offline'}
                     onClick={onButtonClick.bind(this, killable ? 'kill' : 'stop')}
                 >
