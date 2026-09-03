@@ -12,7 +12,12 @@ return [
     |
     */
 
-    'default' => env('QUEUE_CONNECTION', env('QUEUE_DRIVER', 'redis')),
+    // Laravel 12 starts with sqlite + database queues. During Nodexa's initial
+    // bootstrap there are no queue tables yet, so use the synchronous driver
+    // until the production MySQL/Redis .env has been written.
+    'default' => env('DB_CONNECTION') === 'sqlite' && env('QUEUE_CONNECTION') === 'database'
+        ? 'sync'
+        : env('QUEUE_CONNECTION', env('QUEUE_DRIVER', 'redis')),
 
     /*
     |--------------------------------------------------------------------------
