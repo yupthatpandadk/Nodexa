@@ -14,7 +14,14 @@ return [
     |
     */
 
-    'default' => env('CACHE_STORE', env('CACHE_DRIVER', 'redis')),
+    // A fresh Laravel 12 skeleton ships with DB_CONNECTION=sqlite and
+    // CACHE_STORE=database. Nodexa overlays its configuration before the
+    // production .env is written, so package discovery would otherwise try
+    // to query a non-existent SQLite cache table. Use the file cache only
+    // during that bootstrap state; normal Nodexa installs use Redis.
+    'default' => env('DB_CONNECTION') === 'sqlite' && env('CACHE_STORE') === 'database'
+        ? 'file'
+        : env('CACHE_STORE', env('CACHE_DRIVER', 'redis')),
 
     /*
     |--------------------------------------------------------------------------
