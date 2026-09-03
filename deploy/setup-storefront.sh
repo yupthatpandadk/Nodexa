@@ -26,9 +26,24 @@ if [[ -n "$STORE_DOMAIN" && "$STORE_DOMAIN" != "$PANEL_DOMAIN" ]] && valid_domai
  printf '\nNODEXA_STOREFRONT_DOMAIN=%s\n' "$STORE_DOMAIN" >> "$ENV_FILE"
 fi
 
+# PHP-FPM runs as www-data. Keep .env readable and all Laravel writable paths
+# owned by that same account before any Artisan process boots. This prevents a
+# root-run storefront sync from recreating root-owned compiled caches and
+# leaving the panel on HTTP 500 after an update.
+chown root:www-data "$ENV_FILE"
+chmod 0640 "$ENV_FILE"
+mkdir -p \
+ "$PANEL_DIR/storage/framework/cache/data" \
+ "$PANEL_DIR/storage/framework/sessions" \
+ "$PANEL_DIR/storage/framework/views" \
+ "$PANEL_DIR/storage/logs" \
+ "$PANEL_DIR/bootstrap/cache"
+chown -R www-data:www-data "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache"
+chmod -R 775 "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache"
+
 cd "$PANEL_DIR"
 # After migration, the database is the source of truth for multisite domains.
-DB_DOMAINS="$(php artisan nodexa:storefront-domains --plain 2>/dev/null | tail -n1 || true)"
+DB_DOMAINS="$(sudo -u www-data php artisan nodexa:storefront-domains --plain 2>/dev/null | tail -n1 || true)"
 DOMAINS=()
 add_domain(){
  local d; d="$(normalize_domain "$1")"
@@ -60,10 +75,17 @@ PY
  systemctl reload nginx
 fi
 
-php artisan optimize:clear >/dev/null 2>&1 || true
-php artisan config:cache >/dev/null 2>&1 || true
-php artisan route:cache >/dev/null 2>&1 || true
-php artisan view:cache >/dev/null 2>&1 || true
+# IMPORTANT: never run these commands as root. The compiled Laravel cache is
+# consumed by PHP-FPM/www-data and root-owned cache files are what caused the
+# Update Center to leave the panel on HTTP 500.
+rm -f "$PANEL_DIR/bootstrap/cache/config.php"
+sudo -u www-data php artisan optimize:clear >/dev/null 2>&1 || true
+sudo -u www-data php artisan config:cache >/dev/null 2>&1 || true
+sudo -u www-data php artisan route:cache >/dev/null 2>&1 || true
+sudo -u www-data php artisan view:cache >/dev/null 2>&1 || true
+chown -R www-data:www-data "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache"
+find "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache" -type d -exec chmod 775 {} + 2>/dev/null || true
+find "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache" -type f -exec chmod 664 {} + 2>/dev/null || true
 
 if ((${#DOMAINS[@]})); then
  log "Multisite storefront routing active for: ${DOMAINS[*]}"
