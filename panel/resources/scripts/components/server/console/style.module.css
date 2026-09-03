@@ -1,63 +1,277 @@
+.server_hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid rgba(74, 222, 128, 0.14);
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(11, 27, 24, 0.96), rgba(8, 16, 22, 0.96));
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+}
+
+.server_identity {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 0.9rem;
+}
+
+.server_icon {
+    display: flex;
+    width: 3.6rem;
+    height: 3.6rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(74, 222, 128, 0.25);
+    border-radius: 14px;
+    color: #69f0ae;
+    background: linear-gradient(145deg, rgba(34, 197, 94, 0.14), rgba(15, 23, 42, 0.75));
+    box-shadow: inset 0 0 28px rgba(74, 222, 128, 0.04), 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+.status_pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.28rem 0.6rem;
+    border: 1px solid rgba(74, 222, 128, 0.18);
+    border-radius: 999px;
+    color: #86efac;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: rgba(34, 197, 94, 0.09);
+}
+
+.status_dot {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 999px;
+    background: currentColor;
+    box-shadow: 0 0 12px currentColor;
+}
+
+.console_panel {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba(74, 222, 128, 0.13);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(8, 18, 23, 0.98), rgba(5, 10, 15, 0.98));
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.2);
+}
+
+.console_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 3.25rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.live_indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #86efac;
+    font-size: 0.78rem;
+}
+
+.details_grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    align-content: start;
+}
+
 .stat_block {
-    @apply flex items-center rounded shadow-lg relative;
-    @apply col-span-3 md:col-span-2 lg:col-span-6;
-    @apply px-3 py-2 md:p-3 lg:p-4;
+    display: flex;
+    position: relative;
+    min-width: 0;
+    min-height: 5.2rem;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.85rem;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.09);
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(16, 29, 33, 0.96), rgba(10, 19, 26, 0.96));
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+    transition: border-color 150ms ease, transform 150ms ease, background 150ms ease;
+}
 
-    & > .status_bar {
-        @apply w-1 h-full absolute left-0 top-0 rounded-l sm:hidden;
-    }
+.stat_block:hover {
+    transform: translateY(-1px);
+    border-color: rgba(74, 222, 128, 0.18);
+    background: linear-gradient(145deg, rgba(18, 35, 35, 0.98), rgba(10, 21, 27, 0.98));
+}
 
-    & > .icon {
-        @apply hidden flex-shrink-0 items-center justify-center rounded-lg shadow-md w-12 h-12;
-        @apply transition-colors duration-500;
-        @apply sm:flex sm:mr-4;
+.stat_block > .status_bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    opacity: 0.75;
+}
 
-        & > svg {
-            @apply w-6 h-6 m-auto;
-        }
-    }
+.stat_block > .icon {
+    display: flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(148, 163, 184, 0.09);
+    border-radius: 11px;
+    color: #9fb2ac;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.stat_block > .icon > svg {
+    width: 1.15rem;
+    height: 1.15rem;
 }
 
 .terminal {
-    @apply flex flex-col w-full;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+}
 
-    & .overflows_container {
-        @apply -ml-4 sm:ml-0;
-        width: calc(100% + 2rem);
+.terminal .overflows_container {
+    width: 100%;
+}
 
-        @screen sm {
-            @apply w-full;
-        }
-    }
+.terminal > .container {
+    min-height: 28rem;
+    flex: 1;
+    padding: 0.85rem 0.9rem;
+    border-radius: 0;
+    background: radial-gradient(circle at 20% 0%, rgba(22, 101, 52, 0.06), transparent 30%), #03070b;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.78rem;
+}
 
-    & > .container {
-        @apply rounded-t p-1 sm:p-2 bg-black min-h-[16rem] flex-1 font-mono text-sm;
+.terminal > .container #terminal {
+    height: 100%;
+}
 
-        & #terminal {
-            @apply h-full;
+.terminal > .container #terminal::-webkit-scrollbar-track {
+    width: 7px;
+    background: transparent;
+}
 
-            &::-webkit-scrollbar-track {
-                @apply w-2;
-            }
+.terminal > .container #terminal::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(74, 222, 128, 0.55);
+}
 
-            &::-webkit-scrollbar-thumb {
-                @apply bg-gray-900;
-            }
-        }
-    }
+.terminal .command_icon {
+    display: flex;
+    position: absolute;
+    z-index: 10;
+    top: 0;
+    left: 0;
+    height: 100%;
+    align-items: center;
+    padding: 0 0.9rem;
+    color: #65e9a7;
+    user-select: none;
+}
 
-    & .command_icon {
-        @apply flex items-center top-0 left-0 absolute z-10 select-none h-full px-3 transition-colors duration-100;
-    }
+.terminal .command_input {
+    width: 100%;
+    padding: 0.9rem 3rem 0.9rem 2.8rem;
+    border: 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+    outline: none;
+    color: #e7f8f0;
+    background: linear-gradient(180deg, rgba(13, 23, 32, 0.98), rgba(9, 17, 24, 0.98));
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8rem;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
 
-    & .command_input {
-        @apply relative bg-gray-900 px-2 text-gray-100 pl-10 pr-4 py-2 w-full font-mono text-sm sm:rounded-b;
-        @apply focus:ring-0 outline-none focus-visible:outline-none;
-        @apply border-0 border-b-2 border-transparent transition-colors duration-100;
-        @apply active:border-cyan-500 focus:border-cyan-500;
-    }
+.terminal .command_input:focus {
+    border-top-color: rgba(74, 222, 128, 0.32);
+    box-shadow: inset 0 1px rgba(74, 222, 128, 0.08);
 }
 
 .chart_container {
-    @apply bg-gray-600 rounded shadow-lg pt-2 border-b-4 border-gray-700 relative;
+    position: relative;
+    overflow: hidden;
+    padding-top: 0.35rem;
+    border: 1px solid rgba(148, 163, 184, 0.09);
+    border-radius: 15px;
+    background: linear-gradient(145deg, rgba(14, 27, 31, 0.98), rgba(8, 16, 24, 0.98));
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.16);
+}
+
+.power_start,
+.power_restart,
+.power_stop {
+    min-height: 2.65rem !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+}
+
+.power_start {
+    border: 1px solid rgba(74, 222, 128, 0.28) !important;
+    color: #dcfce7 !important;
+    background: linear-gradient(180deg, rgba(22, 163, 74, 0.72), rgba(21, 128, 61, 0.72)) !important;
+}
+
+.power_restart {
+    border: 1px solid rgba(129, 140, 248, 0.25) !important;
+    color: #e0e7ff !important;
+    background: linear-gradient(180deg, rgba(79, 70, 229, 0.36), rgba(49, 46, 129, 0.42)) !important;
+}
+
+.power_stop {
+    border: 1px solid rgba(248, 113, 113, 0.28) !important;
+    color: #fee2e2 !important;
+    background: linear-gradient(180deg, rgba(220, 38, 38, 0.72), rgba(153, 27, 27, 0.78)) !important;
+}
+
+@media (max-width: 1023px) {
+    .terminal > .container {
+        min-height: 22rem;
+    }
+}
+
+@media (max-width: 639px) {
+    .server_hero {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 0.9rem;
+    }
+
+    .server_icon {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    .details_grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+    }
+
+    .stat_block {
+        min-height: 4.5rem;
+        padding: 0.7rem;
+    }
+
+    .stat_block > .icon {
+        display: none;
+    }
+
+    .terminal > .container {
+        min-height: 20rem;
+        padding: 0.6rem;
+    }
 }
