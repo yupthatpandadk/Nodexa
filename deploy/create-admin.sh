@@ -39,12 +39,19 @@ fi
 [[ ${#ADMIN_PASSWORD} -ge 12 ]] || { echo "Administrator password must be at least 12 characters." >&2; exit 1; }
 
 cd "$PANEL_DIR"
-NODEXA_ADMIN_EMAIL="$ADMIN_EMAIL" \
-NODEXA_ADMIN_USERNAME="$ADMIN_USERNAME" \
-NODEXA_ADMIN_FIRST_NAME="$ADMIN_FIRST_NAME" \
-NODEXA_ADMIN_LAST_NAME="$ADMIN_LAST_NAME" \
-NODEXA_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
-php bin/create-admin.php
+[[ -f artisan ]] || { echo "Pterodactyl/Nodexa artisan entrypoint is missing: ${PANEL_DIR}/artisan" >&2; exit 1; }
+
+# Nodexa is based on Pterodactyl and should use its maintained user creation
+# service/CLI rather than a separate bin/create-admin.php helper. This keeps
+# administrator creation compatible with upstream schema/model changes.
+echo "[Nodexa] Creating administrator through Pterodactyl user service..."
+php artisan p:user:make \
+  --email="$ADMIN_EMAIL" \
+  --username="$ADMIN_USERNAME" \
+  --name-first="$ADMIN_FIRST_NAME" \
+  --name-last="$ADMIN_LAST_NAME" \
+  --password="$ADMIN_PASSWORD" \
+  --admin=1
 
 PANEL_URL="$(sed -n 's/^APP_URL=//p' .env 2>/dev/null | tail -n1)"
 PANEL_URL="${PANEL_URL:-check your Nodexa domain}"
@@ -58,6 +65,9 @@ Email: ${ADMIN_EMAIL}
 Password: chosen by administrator during installation (not stored here)
 EOF
 chmod 600 /root/nodexa-admin.txt
+
+# Do not retain the password in exported shell state longer than necessary.
+unset ADMIN_PASSWORD NODEXA_ADMIN_PASSWORD 2>/dev/null || true
 
 echo "[Nodexa] Administrator created: ${ADMIN_EMAIL} (${ADMIN_USERNAME})"
 echo "[Nodexa] Account information saved to /root/nodexa-admin.txt; your password is not stored in plaintext."
