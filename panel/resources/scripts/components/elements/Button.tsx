@@ -12,14 +12,26 @@ interface Props {
 
 const ButtonStyle = styled.button<Omit<Props, 'isLoading'>>`
     ${tw`relative inline-block rounded p-2 uppercase tracking-wide text-sm transition-all duration-150 border`};
+    border-radius: 12px;
+    font-weight: 650;
 
     ${(props) =>
         ((!props.isSecondary && !props.color) || props.color === 'primary') &&
         css<Props>`
-            ${(props) => !props.isSecondary && tw`bg-primary-500 border-primary-600 border text-primary-50`};
+            ${(props) =>
+                !props.isSecondary &&
+                css`
+                    border-color: rgba(34, 197, 135, 0.78);
+                    color: #062018;
+                    background: linear-gradient(135deg, #67efb8, #2bdc98);
+                    box-shadow: 0 10px 28px rgba(43, 220, 152, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+                `};
 
             &:hover:not(:disabled) {
-                ${tw`bg-primary-600 border-primary-700`};
+                transform: translateY(-1px);
+                border-color: rgba(86, 245, 183, 0.92);
+                background: linear-gradient(135deg, #76f5c2, #38e3a2);
+                box-shadow: 0 14px 34px rgba(43, 220, 152, 0.23);
             }
         `};
 
@@ -77,12 +89,22 @@ const ButtonStyle = styled.button<Omit<Props, 'isLoading'>>`
     ${(props) =>
         props.isSecondary &&
         css<Props>`
-            ${tw`border-neutral-600 bg-transparent text-neutral-200`};
+            border-color: rgba(137, 166, 156, 0.25);
+            background: rgba(10, 24, 20, 0.5);
+            color: #d9eee6;
 
             &:hover:not(:disabled) {
-                ${tw`border-neutral-500 text-neutral-100`};
+                border-color: rgba(73, 238, 169, 0.24);
+                color: #effff8;
+                background: rgba(66, 233, 166, 0.07);
                 ${(props) => props.color === 'red' && tw`bg-red-500 border-red-600 text-red-50`};
-                ${(props) => props.color === 'primary' && tw`bg-primary-500 border-primary-600 text-primary-50`};
+                ${(props) =>
+                    props.color === 'primary' &&
+                    css`
+                        border-color: rgba(73, 238, 169, 0.3);
+                        color: #dffff2;
+                        background: rgba(66, 233, 166, 0.1);
+                    `};
                 ${(props) => props.color === 'green' && tw`bg-green-500 border-green-600 text-green-50`};
             }
         `};
