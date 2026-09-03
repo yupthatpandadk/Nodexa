@@ -17,17 +17,22 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'redis'),
+    // Laravel 12's initial .env uses sqlite + database sessions. Before Nodexa
+    // writes its production MySQL/Redis values, fall back to files so artisan
+    // bootstrap commands never require an SQLite database or sessions table.
+    'driver' => env('DB_CONNECTION') === 'sqlite' && env('SESSION_DRIVER') === 'database'
+        ? 'file'
+        : env('SESSION_DRIVER', 'redis'),
 
     /*
     |--------------------------------------------------------------------------
     | Session Lifetime
     |--------------------------------------------------------------------------
     |
-    | Here you may specify the number of minutes that you wish the session
-    | to be allowed to remain idle before it expires. If you want them
-    | to expire immediately when the browser is closed then you may
-    | indicate that via the expire_on_close configuration option.
+    | Here you may specify the number of minutes that you wish the session to
+    | be allowed to remain idle before it expires. If you want them to expire
+    | immediately when the browser is closed then you may indicate that via
+    | the expire_on_close configuration option.
     |
     */
 
@@ -54,8 +59,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | When utilizing the "file" session driver, the session files are placed
-    | on disk. The default storage location is defined here; however, you
-    | are free to provide another location where they should be stored.
+    | on disk. The default storage location is defined here; however, you are
+    | free to provide another location where they should be stored.
     |
     */
 
@@ -80,8 +85,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | When using the "database" session driver, you may specify the table to
-    | be used to store sessions. Of course, a sensible default is defined
-    | for you; however, you're welcome to change this to another table.
+    | be used to store sessions. Of course, a sensible default is defined for
+    | you; however, you're welcome to change this value as required.
     |
     */
 
@@ -121,8 +126,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may change the name of the session cookie that is created by
-    | the framework. Typically, you should not need to change this value
-    | since doing so does not grant a meaningful security improvement.
+    | the framework. Typically, you should not need to change this value since
+    | doing so does not grant a meaningful security improvement.
     |
     */
 
@@ -136,9 +141,8 @@ return [
     | Session Cookie Path
     |--------------------------------------------------------------------------
     |
-    | The session cookie path determines the path for which the cookie will
-    | be regarded as available. Typically, this will be the root path of
-    | your application, but you're free to change this when necessary.
+    | The session cookie path determines the path for which the cookie is
+    | available. Typically, this will be the root path of your application.
     |
     */
 
@@ -149,9 +153,9 @@ return [
     | Session Cookie Domain
     |--------------------------------------------------------------------------
     |
-    | This value determines the domain and subdomains the session cookie is
-    | available to. By default, the cookie will be available to the root
-    | domain and all subdomains. Typically, this shouldn't be changed.
+    | This value determines the domain and subdomains the cookie is available
+    | to. By default, the cookie will be available to the root domain and all
+    | subdomains. Typically, this shouldn't be changed.
     |
     */
 
@@ -163,8 +167,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | By setting this option to true, session cookies will only be sent back
-    | to the server if the browser has a HTTPS connection. This will keep
-    | the cookie from being sent to you when it can't be done securely.
+    | to the server if the browser has a HTTPS connection.
     |
     */
 
@@ -176,8 +179,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Setting this value to true will prevent JavaScript from accessing the
-    | value of the cookie and the cookie will only be accessible through
-    | the HTTP protocol. It's unlikely you should disable this option.
+    | value and the cookie will only be accessible through HTTP.
     |
     */
 
@@ -188,13 +190,8 @@ return [
     | Same-Site Cookies
     |--------------------------------------------------------------------------
     |
-    | This option determines how your cookies behave when cross-site requests
-    | take place, and can be used to mitigate CSRF attacks. By default, we
-    | will set this value to "lax" to permit secure cross-site requests.
-    |
-    | See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value
-    |
-    | Supported: "lax", "strict", "none", null
+    | This option determines how cookies behave when cross-site requests take
+    | place and can be used to mitigate CSRF attacks.
     |
     */
 
@@ -206,8 +203,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Setting this value to true will tie the cookie to the top-level site for
-    | a cross-site context. Partitioned cookies are accepted by the browser
-    | when flagged "secure" and the Same-Site attribute is set to "none".
+    | a cross-site context.
     |
     */
 
