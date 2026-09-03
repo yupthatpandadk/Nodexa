@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-VERSION="0.14.9"
+VERSION="0.14.10"
 REPO="${NODEXA_REPOSITORY:-yupthatpandadk/Nodexa}"
 BRANCH="${NODEXA_BRANCH:-main}"
 URL="${NODEXA_SOURCE_URL:-https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip}"
@@ -42,6 +42,31 @@ wait_for_apt() {
   fi
 }
 
+wait_for_network() {
+  local waited=0 max_wait="${NODEXA_NETWORK_WAIT_SECONDS:-300}"
+  while true; do
+    if getent ahostsv4 github.com >/dev/null 2>&1 && getent ahostsv4 raw.githubusercontent.com >/dev/null 2>&1; then
+      return 0
+    fi
+    if (( waited == 0 )); then
+      echo "[Nodexa] DNS/network is not ready yet. Waiting for GitHub name resolution..."
+    fi
+    if (( waited >= max_wait )); then
+      echo "[Nodexa] Timed out after ${max_wait}s waiting for DNS/network." >&2
+      echo "[Nodexa] Check: resolvectl status" >&2
+      echo "[Nodexa] Check: getent hosts raw.githubusercontent.com" >&2
+      exit 1
+    fi
+    sleep 5
+    waited=$((waited + 5))
+  done
+}
+
+curl_retry() {
+  local tries="${NODEXA_CURL_RETRIES:-8}"
+  curl --fail --location --retry "$tries" --retry-delay 3 --retry-all-errors --connect-timeout 15 "$@"
+}
+
 apt_install() {
   wait_for_apt
   apt-get update -y
@@ -65,7 +90,9 @@ command -v unzip >/dev/null 2>&1 || apt_install unzip
 command -v curl >/dev/null 2>&1 || { echo "[Nodexa] curl installation failed." >&2; exit 1; }
 command -v unzip >/dev/null 2>&1 || { echo "[Nodexa] unzip installation failed." >&2; exit 1; }
 
-NODEXA_SOURCE_COMMIT="$(curl -fsSL -H 'Accept: application/vnd.github+json' -H 'User-Agent: Nodexa-Installer' "https://api.github.com/repos/${REPO}/commits/${BRANCH}" 2>/dev/null | sed -n 's/.*"sha"[[:space:]]*:[[:space:]]*"\([0-9a-fA-F]\{40\}\)".*/\1/p' | head -n1 | tr 'A-F' 'a-f' || true)"
+wait_for_network
+
+NODEXA_SOURCE_COMMIT="$(curl_retry -sS -H 'Accept: application/vnd.github+json' -H 'User-Agent: Nodexa-Installer' "https://api.github.com/repos/${REPO}/commits/${BRANCH}" 2>/dev/null | sed -n 's/.*"sha"[[:space:]]*:[[:space:]]*"\([0-9a-fA-F]\{40\}\)".*/\1/p' | head -n1 | tr 'A-F' 'a-f' || true)"
 export NODEXA_SOURCE_COMMIT
 export NODEXA_UPDATE_REPOSITORY="$REPO"
 export NODEXA_UPDATE_BRANCH="$BRANCH"
@@ -77,7 +104,7 @@ else
   echo "[Nodexa] Source commit could not be resolved yet; updater will retry before Agent build."
 fi
 
-curl -fL "$URL" -o "$TMP/nodexa.zip"
+curl_retry "$URL" -o "$TMP/nodexa.zip"
 unzip -q "$TMP/nodexa.zip" -d "$TMP/src"
 MENU="$(find "$TMP/src" -type f -path '*/installer/local-menu.sh' | head -n1)"
 [[ -n "$MENU" ]] || { echo "[Nodexa] Invalid source archive." >&2; exit 1; }
