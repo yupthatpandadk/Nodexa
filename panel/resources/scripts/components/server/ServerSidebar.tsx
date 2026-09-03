@@ -22,7 +22,7 @@ import routes from '@/routers/routes';
 interface Props {
     baseUrl: string;
     rootAdmin: boolean;
-    internalId?: number;
+    internalId?: string | number;
 }
 
 const iconForPath = (path: string) => {
@@ -99,7 +99,7 @@ export default ({ baseUrl, rootAdmin, internalId }: Props) => {
                                 <NavLink
                                     to={routeUrl(baseUrl, route.path)}
                                     exact={route.exact}
-                                    activeClassName={'!text-green-300 !bg-green-500/10 !border-green-500/30'}
+                                    activeClassName={'text-green-300 bg-green-500/10 border-green-500/30'}
                                     className={'flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent text-gray-400 hover:text-gray-100 hover:bg-white/5 no-underline transition-all'}
                                 >
                                     <FontAwesomeIcon icon={iconForPath(route.path)} className={'w-4 text-gray-500'} />
