@@ -108,9 +108,9 @@ mkdir -p "$INSTALL_DIR"
 TMP_LARAVEL="$(mktemp -d)"
 trap 'rm -rf "$TMP_LARAVEL"' EXIT
 
-# Laravel 11 no longer receives security fixes and current Composer versions
-# refuse its vulnerable framework releases. Build fresh Nodexa installs on the
-# supported Laravel 12 skeleton instead.
+# Build the base application without Composer scripts. Some package-discovery
+# hooks boot Laravel and require APP_KEY, so those hooks must run only after
+# .env exists and a key has been generated.
 composer create-project laravel/laravel:^12.0 "$TMP_LARAVEL/panel" --no-interaction --prefer-dist --no-scripts
 rm -rf "$PANEL_DIR"
 mkdir -p "$PANEL_DIR"
@@ -119,10 +119,20 @@ cp -a "$SOURCE_DIR/panel/." "$PANEL_DIR/"
 
 cd "$PANEL_DIR"
 rm -f composer.lock
-composer update --no-dev --optimize-autoloader --no-interaction --prefer-dist
+log "Installing PHP dependencies without Laravel scripts..."
+composer update --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
 
+# Create the environment and encryption key before any Composer hook or
+# artisan command that boots the application.
+[[ -f .env.example ]] || fail "Missing .env.example in panel source."
 cp .env.example .env
+log "Generating Laravel application key..."
 php artisan key:generate --force
+
+# Now it is safe to run package discovery that Composer would normally invoke
+# during post-autoload-dump.
+log "Discovering Laravel packages..."
+php artisan package:discover --ansi
 
 APP_URL="http://${DOMAIN/_/localhost}"
 REDIS_PASSWORD_ENV="null"
