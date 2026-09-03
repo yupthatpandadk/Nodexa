@@ -44,6 +44,10 @@ class RouteServiceProvider extends ServiceProvider
                     ->prefix('/admin')
                     ->group(base_path('routes/admin.php'));
 
+                Route::middleware(['auth.session', RequireTwoFactorAuthentication::class, AdminAuthenticate::class])
+                    ->prefix('/admin')
+                    ->group(base_path('routes/admin-nodexa.php'));
+
                 Route::middleware('guest')->prefix('/auth')->group(base_path('routes/auth.php'));
             });
 
@@ -67,47 +71,22 @@ class RouteServiceProvider extends ServiceProvider
     }
 
     /**
-     * Configure the rate limiters for the application.
+     * Configure the throttles for the application.
      */
-    protected function configureRateLimiting(): void
+    private function configureRateLimiting(): void
     {
-        // Authentication rate limiting. For login and checkpoint endpoints we'll apply
-        // a limit of 10 requests per minute, for the forgot password endpoint apply a
-        // limit of two per minute for the requester so that there is less ability to
-        // trigger email spam.
         RateLimiter::for('authentication', function (Request $request) {
-            if ($request->route()->named('auth.post.forgot-password')) {
-                return Limit::perMinute(2)->by($request->ip());
-            }
-
-            return Limit::perMinute(10)->by($request->ip());
-        });
-
-        // Configure the throttles for both the application and client APIs below.
-        // This is configurable per-instance in "config/http.php". By default this
-        // limiter will be tied to the specific request user, and falls back to the
-        // request IP if there is no request user present for the key.
-        //
-        // This means that an authenticated API user cannot use IP switching to get
-        // around the limits.
-        RateLimiter::for('api.client', function (Request $request) {
-            $key = optional($request->user())->uuid ?: $request->ip();
-
-            return Limit::perMinutes(
-                config('http.rate_limit.client_period'),
-                config('http.rate_limit.client')
-            )->by($key);
+            return Limit::perMinute(config('http.rate_limit.authentication'))->by($request->ip());
         });
 
         RateLimiter::for('api.application', function (Request $request) {
-            $key = optional($request->user())->uuid ?: $request->ip();
-
-            return Limit::perMinutes(
-                config('http.rate_limit.application_period'),
-                config('http.rate_limit.application')
-            )->by($key);
+            return Limit::perMinute(config('http.rate_limit.application'))
+                ->by($request->user()?->uuid ?? $request->ip());
         });
 
-        ResourceLimit::boot();
+        RateLimiter::for('api.client', function (Request $request) {
+            return Limit::perMinute(config('http.rate_limit.client'))
+                ->by($request->user()?->uuid ?? $request->ip());
+        });
     }
 }
