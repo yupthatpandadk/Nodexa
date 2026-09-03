@@ -18,7 +18,73 @@ if [[ -d "$PANEL_DIR" ]]; then
  chmod 755 /var/www /var/www/nodexa "$PANEL_DIR" "$PANEL_DIR/public" 2>/dev/null || true;find "$PANEL_DIR/public" -type d -exec chmod 755 {} + 2>/dev/null || true;find "$PANEL_DIR/public" -type f -exec chmod 644 {} + 2>/dev/null || true;chown -R www-data:www-data storage bootstrap/cache;chmod -R 775 storage bootstrap/cache
  while read -r svc;do [[ -n "$svc" ]]&&systemctl restart "$svc" 2>/dev/null||true;done < <(systemctl list-unit-files --type=service --no-legend 'php*-fpm.service' 2>/dev/null|awk '{print $1}')
 fi
-if [[ -d "$AGENT_DIR" ]]; then log "Updating Nodexa Agent files...";rsync -a --delete "$SOURCE_ROOT/agent/" "$AGENT_DIR/";cd "$AGENT_DIR";go mod tidy;go build -trimpath -ldflags='-s -w' -o /usr/local/bin/nodexad ./cmd/nodexad;AGENT_TOKEN="";if [[ -f /etc/nodexa.env ]];then AGENT_TOKEN="$(sed -n 's/^NODEXA_TOKEN=//p' /etc/nodexa.env|tail -n1)";AGENT_TOKEN="${AGENT_TOKEN%\"}";AGENT_TOKEN="${AGENT_TOKEN#\"}";AGENT_TOKEN="${AGENT_TOKEN%\'}";AGENT_TOKEN="${AGENT_TOKEN#\'}";fi;if [[ -n "$AGENT_TOKEN" ]];then log "Restarting configured Nodexa Agent...";systemctl enable nodexa-agent >/dev/null 2>&1||true;systemctl restart nodexa-agent;else log "Agent is not configured on this host; leaving nodexa-agent stopped.";systemctl disable --now nodexa-agent >/dev/null 2>&1||true;fi;fi
+
+AGENT_INSTALLED=0
+if [[ -d "$AGENT_DIR" || -x /usr/local/bin/nodexad || -f /etc/systemd/system/nodexa-agent.service || -f /etc/nodexa.env ]]; then AGENT_INSTALLED=1; fi
+if systemctl list-unit-files nodexa-agent.service --no-legend 2>/dev/null | grep -q '^nodexa-agent.service'; then AGENT_INSTALLED=1; fi
+if [[ "$AGENT_INSTALLED" == "1" ]]; then
+ log "Updating installed Nodexa Agent..."
+ install -d "$AGENT_DIR" /var/lib/nodexa
+ rsync -a --delete "$SOURCE_ROOT/agent/" "$AGENT_DIR/"
+ cd "$AGENT_DIR"
+ GO_BIN="$(command -v go || true)"
+ [[ -x /usr/local/bin/go ]] && GO_BIN=/usr/local/bin/go
+ [[ -n "$GO_BIN" ]] || fail "Nodexa Agent is installed but Go is unavailable; cannot rebuild Agent."
+ "$GO_BIN" mod tidy
+ "$GO_BIN" build -trimpath -ldflags='-s -w' -o /usr/local/bin/nodexad ./cmd/nodexad
+ chmod 0755 /usr/local/bin/nodexad
+ AGENT_VERSION="$(tr -d '\r\n' < "$AGENT_DIR/VERSION" 2>/dev/null || echo unknown)"
+ BUILD_COMMIT="${NODEXA_SOURCE_COMMIT:-unknown}"
+ BUILD_SHORT="${BUILD_COMMIT:0:8}"
+ [[ -n "$BUILD_SHORT" ]] || BUILD_SHORT=unknown
+ RUNTIME_VERSION="${AGENT_VERSION}+${BUILD_SHORT}"
+ printf '%s\n' "$RUNTIME_VERSION" > /var/lib/nodexa/agent-version
+
+ AGENT_TOKEN=""
+ if [[ -f /etc/nodexa.env ]]; then
+  AGENT_TOKEN="$(sed -n 's/^NODEXA_TOKEN=//p' /etc/nodexa.env|tail -n1)"
+  AGENT_TOKEN="${AGENT_TOKEN%\"}";AGENT_TOKEN="${AGENT_TOKEN#\"}";AGENT_TOKEN="${AGENT_TOKEN%\'}";AGENT_TOKEN="${AGENT_TOKEN#\'}"
+  if grep -q '^NODEXA_AGENT_VERSION=' /etc/nodexa.env; then
+   sed -i "s/^NODEXA_AGENT_VERSION=.*/NODEXA_AGENT_VERSION=${RUNTIME_VERSION}/" /etc/nodexa.env
+  else
+   printf '\nNODEXA_AGENT_VERSION=%s\n' "$RUNTIME_VERSION" >> /etc/nodexa.env
+  fi
+ fi
+
+ if [[ -n "$AGENT_TOKEN" ]]; then
+  log "Normalizing Nodexa Agent systemd service..."
+  cat >/etc/systemd/system/nodexa-agent.service <<'UNIT'
+[Unit]
+Description=Nodexa Agent
+After=network-online.target docker.service
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/nodexa.env
+ExecStart=/usr/local/bin/nodexad
+Restart=always
+RestartSec=3
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+  systemctl daemon-reload
+  systemctl enable nodexa-agent >/dev/null 2>&1||true
+  systemctl restart nodexa-agent
+  sleep 1
+  systemctl is-active --quiet nodexa-agent || fail "Updated Nodexa Agent did not stay active. Check journalctl -u nodexa-agent -n 100 --no-pager"
+  RUNNING_EXEC="$(systemctl show -p ExecStart --value nodexa-agent 2>/dev/null || true)"
+  [[ "$RUNNING_EXEC" == *"/usr/local/bin/nodexad"* ]] || fail "nodexa-agent is not running /usr/local/bin/nodexad after update: ${RUNNING_EXEC:-unknown ExecStart}"
+  log "Nodexa Agent updated to ${RUNTIME_VERSION} and restarted from /usr/local/bin/nodexad."
+ else
+  log "Agent files/binary were updated, but this host has no configured NODEXA_TOKEN; leaving nodexa-agent stopped."
+  systemctl disable --now nodexa-agent >/dev/null 2>&1||true
+ fi
+fi
+
 if [[ -f /etc/nginx/sites-available/nodexa-agent ]];then python3 - /etc/nginx/sites-available/nodexa-agent <<'PY'
 from pathlib import Path
 import re,sys
