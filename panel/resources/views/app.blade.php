@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', config('app.locale', 'en')) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Nodexa</title>
+    <title>{{ config('app.name', 'Nodexa') }}</title>
     @viteReactRefresh
     @vite(['resources/js/main.tsx'])
     <style>
@@ -24,7 +24,7 @@
 <div id="nodexa-boot-fallback">
     <div class="box">
         <div class="nodexa-spinner"></div>
-        <h1 data-nodexa-title>Nodexa indlæses…</h1>
+        <h1 data-nodexa-title>{{ config('app.name', 'Nodexa') }} indlæses…</h1>
         <p data-nodexa-description>Kontrolpanelet starter. Det tager normalt kun et øjeblik.</p>
         <code data-nodexa-error>Frontend bundle blev ikke indlæst eller React startede ikke inden for tidsgrænsen.</code>
         <button type="button" onclick="location.reload()">Genindlæs</button>
@@ -70,6 +70,9 @@
   let updateAvailable=false;
   const add=()=>{
    const nav=document.querySelector('aside nav'); if(!nav)return false;
+   if(!document.getElementById('nodexa-control-panel-link')){
+    const p=document.createElement('button'); p.id='nodexa-control-panel-link'; p.textContent='Kontrolpanel'; p.onclick=()=>location.href='/admin/settings'; nav.appendChild(p);
+   }
    if(!document.getElementById('nodexa-create-server-link')){
     const c=document.createElement('button'); c.id='nodexa-create-server-link'; c.textContent='Opret server'; c.onclick=()=>location.href='/admin/servers/create'; nav.appendChild(c);
    }

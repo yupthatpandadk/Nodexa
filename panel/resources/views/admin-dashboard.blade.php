@@ -32,6 +32,7 @@
   <div class="heading"><div><h1>Admin Panel</h1><p>Administrer hosting-platformen, Nodes, servere og storefronts fra ét sted.</p></div><a class="btn" href="/">Kundeportal</a></div>
   <div class="notice"><div><b>Administratoradgang aktiv</b><br><span>Du er logget ind med en konto, der har administratorrettigheder.</span></div><span id="adminEmail"></span></div>
   <div class="grid">
+    <a class="card" href="/admin/settings"><div class="icon">⚙</div><strong>Kontrolpanel</strong><p>Konfigurer panelnavn, URL, virksomhed, support, timezone og standardsprog centralt.</p><span>Åbn →</span></a>
     <a class="card" href="/admin/servers/create"><div class="icon">▣</div><strong>Opret server</strong><p>Provisionér en ny game server på en Nodexa Node og vælg ejer og ressourcer.</p><span>Åbn →</span></a>
     <a class="card" href="/admin/nodes/setup"><div class="icon">◇</div><strong>Node Setup</strong><p>Opret og konfigurer nye Nodes, Agent, HTTPS, firewall og database-host.</p><span>Åbn →</span></a>
     <a class="card" href="/admin/database-hosts"><div class="icon">◫</div><strong>Database Hosts</strong><p>Administrer MariaDB/MySQL hosts, credentials og forbindelsestest.</p><span>Åbn →</span></a>
