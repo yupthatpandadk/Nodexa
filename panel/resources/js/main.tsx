@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import axios from 'axios';
 import App from './App';
-import './server-address';
 import './styles.css';
 import './permissions.css';
 import './phpmyadmin.css';
@@ -72,6 +71,81 @@ function normalizeUser(value: any) {
     first_name: firstName,
     last_name: lastName,
     is_admin: Boolean(value.is_admin),
+  };
+}
+
+function responseArray(value: any): any[] {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.items)) return value.items;
+  if (value?.data && typeof value.data === 'object') return responseArray(value.data);
+  return [];
+}
+
+function installServerAddressIndicator(root: HTMLElement) {
+  let timer = 0;
+  let requestKey = '';
+
+  const sync = async () => {
+    const hero = root.querySelector<HTMLElement>('.server-hero');
+    const statusLine = hero?.querySelector<HTMLElement>('.status-line');
+    const identifier = hero?.querySelector<HTMLElement>('.server-meta span')?.textContent?.trim() ?? '';
+    const serverName = hero?.querySelector<HTMLElement>('h1')?.textContent?.trim() ?? '';
+    if (!hero || !statusLine || !identifier || identifier === 'SERVER') return;
+
+    const existing = statusLine.querySelector<HTMLElement>('[data-nodexa-server-address="value"]');
+    if (existing?.dataset.identifier === identifier) return;
+
+    const key = `${identifier}:${serverName}`;
+    if (requestKey === key) return;
+    requestKey = key;
+
+    try {
+      const serverResponse = await axios.get('/api/servers');
+      const servers = responseArray(serverResponse.data);
+      const normalizedIdentifier = identifier.toLowerCase();
+      const server = servers.find((item: any) => String(item?.identifier ?? '').toLowerCase() === normalizedIdentifier)
+        ?? servers.find((item: any) => String(item?.name ?? '') === serverName);
+      if (!server?.id) return;
+
+      const allocationResponse = await axios.get(`/api/servers/${server.id}/allocations`);
+      const allocations = responseArray(allocationResponse.data);
+      const primary = allocations.find((item: any) => Boolean(item?.is_primary)) ?? allocations[0];
+      if (!primary?.ip || !primary?.port) return;
+
+      statusLine.querySelectorAll('[data-nodexa-server-address]').forEach(node => node.remove());
+
+      const separator = document.createElement('span');
+      separator.textContent = '·';
+      separator.dataset.nodexaServerAddress = 'separator';
+
+      const address = document.createElement('span');
+      address.dataset.nodexaServerAddress = 'value';
+      address.dataset.identifier = identifier;
+      address.title = 'Primær serveradresse';
+      address.textContent = `IP ${primary.ip}:${primary.port}`;
+      address.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+
+      statusLine.append(separator, address);
+    } catch {
+      // Users without allocation.read keep the normal status line.
+    } finally {
+      requestKey = '';
+    }
+  };
+
+  const schedule = () => {
+    if (timer) window.clearTimeout(timer);
+    timer = window.setTimeout(sync, 80);
+  };
+
+  const observer = new MutationObserver(schedule);
+  observer.observe(root, { subtree: true, childList: true, characterData: true });
+  schedule();
+
+  return () => {
+    observer.disconnect();
+    if (timer) window.clearTimeout(timer);
   };
 }
 
@@ -201,6 +275,7 @@ function NodexaRoot() {
     };
     const consoleObserver = new MutationObserver(syncConsoleScroll);
     const appRoot = document.getElementById('app');
+    const removeServerAddressIndicator = appRoot ? installServerAddressIndicator(appRoot) : () => {};
     if (appRoot) {
       consoleObserver.observe(appRoot, { subtree: true, childList: true, characterData: true });
       syncConsoleScroll();
@@ -232,6 +307,7 @@ function NodexaRoot() {
     return () => {
       window.clearTimeout(watchdog);
       consoleObserver.disconnect();
+      removeServerAddressIndicator();
       if (scrollFrame) window.cancelAnimationFrame(scrollFrame);
     };
   }, []);
