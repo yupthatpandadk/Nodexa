@@ -45,16 +45,16 @@ const options: ChartOptions<'line'> = {
             type: 'linear',
             grid: {
                 display: true,
-                color: theme('colors.gray.700'),
+                color: 'rgba(148, 163, 184, 0.08)',
                 drawBorder: false,
             },
             ticks: {
                 display: true,
                 count: 3,
-                color: theme('colors.gray.200'),
+                color: '#71817c',
                 font: {
                     family: theme('fontFamily.sans'),
-                    size: 11,
+                    size: 10,
                     weight: '400',
                 },
             },
@@ -65,7 +65,8 @@ const options: ChartOptions<'line'> = {
             radius: 0,
         },
         line: {
-            tension: 0.15,
+            tension: 0.28,
+            borderWidth: 2,
         },
     },
 };
@@ -91,8 +92,8 @@ function getEmptyData(label: string, sets = 1, callback?: ChartDatasetCallback |
                         fill: true,
                         label,
                         data: Array(20).fill(-5),
-                        borderColor: theme('colors.cyan.400'),
-                        backgroundColor: hexToRgba(theme('colors.cyan.700'), 0.5),
+                        borderColor: '#3ee798',
+                        backgroundColor: 'rgba(34, 197, 94, 0.12)',
                     },
                     index
                 )
