@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import axios from 'axios';
 import App from './App';
+import './server-address';
 import './styles.css';
 import './permissions.css';
 import './phpmyadmin.css';
