@@ -179,6 +179,32 @@ function NodexaRoot() {
     window.__NODEXA_BOOTED__ = true;
     window.dispatchEvent(new Event('nodexa:booted'));
 
+    // Keep the live console pinned to the newest output. React updates the
+    // existing <pre> node every time fresh logs arrive, so watch the app DOM
+    // and only scroll when the console text has actually changed.
+    let lastConsoleText = '';
+    let scrollFrame = 0;
+    const syncConsoleScroll = () => {
+      const consoleOutput = document.querySelector<HTMLElement>('.console-panel pre');
+      if (!consoleOutput) {
+        lastConsoleText = '';
+        return;
+      }
+      const nextText = consoleOutput.textContent ?? '';
+      if (nextText === lastConsoleText) return;
+      lastConsoleText = nextText;
+      if (scrollFrame) window.cancelAnimationFrame(scrollFrame);
+      scrollFrame = window.requestAnimationFrame(() => {
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+      });
+    };
+    const consoleObserver = new MutationObserver(syncConsoleScroll);
+    const appRoot = document.getElementById('app');
+    if (appRoot) {
+      consoleObserver.observe(appRoot, { subtree: true, childList: true, characterData: true });
+      syncConsoleScroll();
+    }
+
     // Last-resort watchdog for stale cached bundles or unusual browser/network
     // behaviour. Never leave a permanent splash screen. If App still displays
     // its loading shell after 7 seconds, remove the stale bearer token once and
@@ -202,7 +228,11 @@ function NodexaRoot() {
       loading.innerHTML = '<div class="loading-logo"><div class="brand-mark large">N</div><strong>NOD<span>EXA</span></strong></div><div style="max-width:420px;text-align:center;color:#9aa4b5;line-height:1.55;padding:16px">Panelets API svarer ikke. Genindlæs siden eller kontrollér PHP/Nginx under Admin → Fejl.</div><button onclick="location.reload()" style="padding:10px 14px;border:0;border-radius:9px;background:#745cff;color:white;font-weight:700">Genindlæs</button>';
     }, 7000);
 
-    return () => window.clearTimeout(watchdog);
+    return () => {
+      window.clearTimeout(watchdog);
+      consoleObserver.disconnect();
+      if (scrollFrame) window.cancelAnimationFrame(scrollFrame);
+    };
   }, []);
 
   return (
