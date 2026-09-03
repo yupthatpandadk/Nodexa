@@ -2,7 +2,7 @@ name: Nodexa CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, pterodactyl-core]
   pull_request:
 
 jobs:
