@@ -1,29 +1,36 @@
 import styled from 'styled-components/macro';
-import tw, { theme } from 'twin.macro';
+import tw from 'twin.macro';
 
 const SubNavigation = styled.div`
-    ${tw`w-full bg-neutral-700 shadow overflow-x-auto`};
+    ${tw`w-full overflow-x-auto`};
+    border-bottom: 1px solid rgba(74, 222, 128, 0.12);
+    background: rgba(7, 16, 15, 0.92);
+    backdrop-filter: blur(16px);
 
     & > div {
-        ${tw`flex items-center text-sm mx-auto px-2`};
-        max-width: 1200px;
+        ${tw`flex items-center text-sm mx-auto px-3`};
+        max-width: 1560px;
 
         & > a,
         & > div {
-            ${tw`inline-block py-3 px-4 text-neutral-300 no-underline whitespace-nowrap transition-all duration-150`};
+            ${tw`inline-block py-4 px-4 no-underline whitespace-nowrap transition-all duration-150`};
+            color: #81928d;
+            border-bottom: 2px solid transparent;
 
             &:not(:first-of-type) {
-                ${tw`ml-2`};
+                ${tw`ml-1`};
             }
 
             &:hover {
-                ${tw`text-neutral-100`};
+                color: #eefcf5;
+                background: rgba(74, 222, 128, 0.035);
             }
 
             &:active,
             &.active {
-                ${tw`text-neutral-100`};
-                box-shadow: inset 0 -2px ${theme`colors.cyan.600`.toString()};
+                color: #69f0ae;
+                border-bottom-color: #37df93;
+                background: linear-gradient(180deg, rgba(55, 223, 147, 0.025), rgba(55, 223, 147, 0.075));
             }
         }
     }
