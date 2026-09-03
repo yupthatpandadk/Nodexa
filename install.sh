@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-VERSION="0.14.15"
+VERSION="0.14.17"
 REPO="${NODEXA_REPOSITORY:-yupthatpandadk/Nodexa}"
 BRANCH="${NODEXA_BRANCH:-main}"
 URL="${NODEXA_SOURCE_URL:-https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip}"
@@ -128,7 +128,10 @@ unzip -q "$TMP/nodexa.zip" -d "$TMP/src"
 MENU="$(find "$TMP/src" -type f -path '*/installer/local-menu.sh' | head -n1)"
 [[ -n "$MENU" ]] || { echo "[Nodexa] Invalid source archive." >&2; exit 1; }
 
-if [[ -r /dev/tty ]]; then
+# Interactive Termius/SSH installs should read answers directly from the real TTY.
+# systemd/web updater runs have no controlling terminal, even though /dev/tty may
+# exist as a device node. Never attempt to open it in non-interactive update mode.
+if [[ "${NODEXA_NONINTERACTIVE:-0}" != "1" && -t 0 && -r /dev/tty ]]; then
   exec bash "$MENU" "$@" </dev/tty
 fi
 
