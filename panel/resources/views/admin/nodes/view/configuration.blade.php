@@ -49,12 +49,13 @@
             </div>
             <div class="box-body">
                 <p class="text-muted small">
-                    Use the button below to generate a custom deployment command that can be used to configure
-                    wings on the target server with a single command.
+                    Generate a configuration token and copy either the token itself or the complete Wings setup command with one click.
                 </p>
             </div>
             <div class="box-footer">
-                <button type="button" id="configTokenBtn" class="btn btn-sm btn-default" style="width:100%;">Generate Token</button>
+                <button type="button" id="configTokenBtn" class="btn btn-sm btn-success" style="width:100%;">
+                    <i class="fa fa-key"></i> Generate Configuration Token
+                </button>
             </div>
         </div>
     </div>
@@ -64,25 +65,93 @@
 @section('footer-scripts')
     @parent
     <script>
-    $('#configTokenBtn').on('click', function (event) {
-        $.ajax({
-            method: 'POST',
-            url: '{{ route('admin.nodes.view.configuration.token', $node->id) }}',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-        }).done(function (data) {
-            swal({
-                type: 'success',
-                title: 'Token created.',
-                text: '<p>To auto-configure your node run the following command:<br /><small><pre>cd /etc/pterodactyl && sudo wings configure --panel-url {{ config('app.url') }} --token ' + data.token + ' --node ' + data.node + '{{ config('app.debug') ? ' --allow-insecure' : '' }}</pre></small></p>',
-                html: true
-            })
-        }).fail(function () {
-            swal({
-                title: 'Error',
-                text: 'Something went wrong creating your token.',
-                type: 'error'
+    (function () {
+        function escapeHtml(value) {
+            return $('<div/>').text(value == null ? '' : String(value)).html();
+        }
+
+        function fallbackCopy(element) {
+            element.focus();
+            element.select();
+            if (element.setSelectionRange) {
+                element.setSelectionRange(0, element.value.length);
+            }
+            return document.execCommand('copy');
+        }
+
+        function copyValue(element, button) {
+            var value = element.value;
+            var original = button.html();
+
+            function copied() {
+                button.removeClass('btn-default btn-primary').addClass('btn-success').html('<i class="fa fa-check"></i> Copied');
+                setTimeout(function () {
+                    button.removeClass('btn-success').addClass('btn-primary').html(original);
+                }, 1800);
+            }
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(value).then(copied).catch(function () {
+                    if (fallbackCopy(element)) copied();
+                });
+            } else if (fallbackCopy(element)) {
+                copied();
+            }
+        }
+
+        $('#configTokenBtn').on('click', function () {
+            var button = $(this);
+            button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Generating...');
+
+            $.ajax({
+                method: 'POST',
+                url: '{{ route('admin.nodes.view.configuration.token', $node->id) }}',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            }).done(function (data) {
+                var token = String(data.token || '');
+                var command = 'cd /etc/pterodactyl && sudo wings configure --panel-url {{ config('app.url') }} --token ' + token + ' --node ' + data.node + '{{ config('app.debug') ? ' --allow-insecure' : '' }}';
+
+                var html = '' +
+                    '<div style="text-align:left;margin-top:8px;">' +
+                        '<p style="margin-bottom:6px;font-weight:600;color:#53606d;">Configuration token</p>' +
+                        '<textarea id="nodexaNodeToken" readonly rows="2" spellcheck="false" style="width:100%;resize:none;box-sizing:border-box;padding:10px 12px;border:1px solid #bcc6ce;border-radius:6px;background:#18222d;color:#e9fff6;font-family:monospace;font-size:13px;line-height:1.45;word-break:break-all;">' + escapeHtml(token) + '</textarea>' +
+                        '<button type="button" id="copyNodexaNodeToken" class="btn btn-primary" style="width:100%;margin-top:8px;"><i class="fa fa-copy"></i> Copy token</button>' +
+                        '<p style="margin:18px 0 6px;font-weight:600;color:#53606d;">Auto-deploy command</p>' +
+                        '<textarea id="nodexaNodeCommand" readonly rows="5" spellcheck="false" style="width:100%;resize:vertical;box-sizing:border-box;padding:10px 12px;border:1px solid #bcc6ce;border-radius:6px;background:#18222d;color:#e9fff6;font-family:monospace;font-size:12px;line-height:1.5;overflow:auto;">' + escapeHtml(command) + '</textarea>' +
+                        '<button type="button" id="copyNodexaNodeCommand" class="btn btn-primary" style="width:100%;margin-top:8px;"><i class="fa fa-terminal"></i> Copy full command</button>' +
+                        '<p style="margin-top:12px;margin-bottom:0;font-size:11px;color:#82909c;"><i class="fa fa-shield"></i> Keep this token private. Generate a new token if it is exposed.</p>' +
+                    '</div>';
+
+                swal({
+                    type: 'success',
+                    title: 'Configuration token created',
+                    text: html,
+                    html: true,
+                    confirmButtonText: 'Done'
+                });
+
+                $('#nodexaNodeToken, #nodexaNodeCommand').on('click', function () {
+                    this.focus();
+                    this.select();
+                });
+
+                $('#copyNodexaNodeToken').on('click', function () {
+                    copyValue(document.getElementById('nodexaNodeToken'), $(this));
+                });
+
+                $('#copyNodexaNodeCommand').on('click', function () {
+                    copyValue(document.getElementById('nodexaNodeCommand'), $(this));
+                });
+            }).fail(function () {
+                swal({
+                    title: 'Error',
+                    text: 'Something went wrong creating your token.',
+                    type: 'error'
+                });
+            }).always(function () {
+                button.prop('disabled', false).html('<i class="fa fa-key"></i> Generate Configuration Token');
             });
         });
-    });
+    })();
     </script>
 @endsection
