@@ -71,22 +71,32 @@ class RouteServiceProvider extends ServiceProvider
     }
 
     /**
-     * Configure the throttles for the application.
+     * Configure the rate limiters for the application.
      */
-    private function configureRateLimiting(): void
+    protected function configureRateLimiting(): void
     {
         RateLimiter::for('authentication', function (Request $request) {
-            return Limit::perMinute(config('http.rate_limit.authentication'))->by($request->ip());
-        });
+            $key = $request->input('user') ?: $request->ip();
 
-        RateLimiter::for('api.application', function (Request $request) {
-            return Limit::perMinute(config('http.rate_limit.application'))
-                ->by($request->user()?->uuid ?? $request->ip());
+            return Limit::perMinute(config('http.rate_limit.authentication'))->by($key);
         });
 
         RateLimiter::for('api.client', function (Request $request) {
-            return Limit::perMinute(config('http.rate_limit.client'))
-                ->by($request->user()?->uuid ?? $request->ip());
+            $key = optional($request->user())->uuid ?: $request->ip();
+            return Limit::perMinutes(
+                config('http.rate_limit.client_period'),
+                config('http.rate_limit.client')
+            )->by($key);
         });
+
+        RateLimiter::for('api.application', function (Request $request) {
+            $key = optional($request->user())->uuid ?: $request->ip();
+            return Limit::perMinutes(
+                config('http.rate_limit.application_period'),
+                config('http.rate_limit.application')
+            )->by($key);
+        });
+
+        ResourceLimit::boot();
     }
 }
