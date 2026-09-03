@@ -8,9 +8,9 @@ die(){ echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
 
 case "${1:-}" in
  panel) exec bash "$ROOT/installer/scripts/panel.sh" ;;
- node|agent) exec bash "$ROOT/installer/scripts/node.sh" ;;
+ node|agent) exec bash "$ROOT/installer/scripts/node-wings.sh" ;;
  both) exec bash "$ROOT/installer/scripts/both.sh" ;;
- status) systemctl --no-pager --full status nodexa-agent nodexa-queue nodexa-scheduler.timer nodexa-monitor.timer nginx 2>/dev/null || true; exit 0 ;;
+ status) systemctl --no-pager --full status nodexa-agent wings nodexa-queue nodexa-scheduler.timer nodexa-monitor.timer nginx 2>/dev/null || true; exit 0 ;;
  update) exec bash "$ROOT/installer/scripts/update.sh" ;;
  uninstall) exec bash "$ROOT/installer/scripts/uninstall.sh" ;;
  '') ;;
@@ -40,9 +40,9 @@ menu(){
  read -rp "Select [0-6]: " c
  case "$c" in
   1) bash "$ROOT/installer/scripts/panel.sh" ;;
-  2) bash "$ROOT/installer/scripts/node.sh" ;;
+  2) bash "$ROOT/installer/scripts/node-wings.sh" ;;
   3) bash "$ROOT/installer/scripts/both.sh" ;;
-  4) systemctl --no-pager --full status nodexa-agent nodexa-queue nodexa-scheduler.timer nodexa-monitor.timer nginx 2>/dev/null || true ;;
+  4) systemctl --no-pager --full status nodexa-agent wings nodexa-queue nodexa-scheduler.timer nodexa-monitor.timer nginx 2>/dev/null || true ;;
   5) bash "$ROOT/installer/scripts/update.sh" ;;
   6) bash "$ROOT/installer/scripts/uninstall.sh" ;;
   0) exit 0 ;;
