@@ -218,3 +218,25 @@
         color: #bcecff !important;
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var menu = document.querySelector('.sidebar-menu');
+        if (!menu || document.getElementById('nodexa-updates-menu-item')) return;
+
+        var item = document.createElement('li');
+        item.id = 'nodexa-updates-menu-item';
+        item.className = @json(request()->routeIs('admin.updates*') ? 'active' : '');
+        item.innerHTML = '<a href="' + @json(route('admin.updates')) + '"><i class="fa fa-cloud-download"></i> <span>Opdateringer</span></a>';
+
+        var managementHeader = Array.prototype.find.call(menu.querySelectorAll('li.header'), function (header) {
+            return header.textContent.trim().toUpperCase() === 'MANAGEMENT';
+        });
+
+        if (managementHeader) {
+            menu.insertBefore(item, managementHeader);
+        } else {
+            menu.appendChild(item);
+        }
+    });
+</script>
