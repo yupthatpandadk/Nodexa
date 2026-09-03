@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-VERSION="0.14.4"
+VERSION="0.14.5"
 REPO="${NODEXA_REPOSITORY:-yupthatpandadk/Nodexa}"
 BRANCH="${NODEXA_BRANCH:-main}"
 URL="${NODEXA_SOURCE_URL:-https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip}"
@@ -40,14 +40,10 @@ unzip -q "$TMP/nodexa.zip" -d "$TMP/src"
 MENU="$(find "$TMP/src" -type f -path '*/installer/local-menu.sh' | head -n1)"
 [[ -n "$MENU" ]] || { echo "[Nodexa] Invalid source archive." >&2; exit 1; }
 
-# When this bootstrap is executed using `curl ... | bash`, stdin belongs to the
-# curl pipe. Reattach stdin to the user's terminal whenever a terminal exists.
-# This is required both for the menu and for command modes such as `both`,
-# because those modes still run the interactive setup wizard.
+# `curl ... | bash` uses the curl pipe as stdin. Attach every interactive mode
+# (menu, panel, agent and both) to the controlling SSH terminal when available.
 if [[ -r /dev/tty ]]; then
   exec bash "$MENU" "$@" </dev/tty
 fi
 
-# Non-interactive environments can still use command modes when all required
-# NODEXA_* values are supplied through environment variables.
 exec bash "$MENU" "$@"
