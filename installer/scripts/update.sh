@@ -8,6 +8,15 @@ log "Updating Nodexa..."
 apt-get install -y rsync curl sudo composer >/dev/null
 export COMPOSER_ALLOW_SUPERUSER=1
 repair_laravel_skeleton(){ local tmp;tmp="$(mktemp -d)";log "Repairing Laravel runtime files...";composer create-project laravel/laravel:^12.0 "$tmp/panel" --no-interaction --prefer-dist --no-scripts >/dev/null;rsync -a --exclude='.env' --exclude='storage/' --exclude='bootstrap/cache/' --exclude='vendor/' --exclude='node_modules/' --exclude='public/build/' "$tmp/panel/" "$PANEL_DIR/";rm -rf "$tmp";}
+resolve_source_commit(){
+ local candidate="${NODEXA_SOURCE_COMMIT:-}" repo branch
+ if [[ "$candidate" =~ ^[0-9a-fA-F]{40}$ ]]; then printf '%s' "${candidate,,}"; return 0; fi
+ repo="${NODEXA_UPDATE_REPOSITORY:-${NODEXA_REPOSITORY:-yupthatpandadk/Nodexa}}"
+ branch="${NODEXA_UPDATE_BRANCH:-${NODEXA_BRANCH:-main}}"
+ candidate="$(curl -fsSL -H 'Accept: application/vnd.github+json' -H 'User-Agent: Nodexa-Updater' "https://api.github.com/repos/${repo}/commits/${branch}" 2>/dev/null | grep -oE '"sha"[[:space:]]*:[[:space:]]*"[0-9a-fA-F]{40}"' | head -n1 | cut -d'"' -f4 | tr 'A-F' 'a-f' || true)"
+ if [[ "$candidate" =~ ^[0-9a-f]{40}$ ]]; then printf '%s' "$candidate"; return 0; fi
+ printf '%s' unknown
+}
 if [[ -d "$PANEL_DIR" ]]; then
  if [[ ! -f "$PANEL_DIR/public/index.php" || ! -f "$PANEL_DIR/artisan" || ! -f "$PANEL_DIR/bootstrap/app.php" ]]; then repair_laravel_skeleton; fi
  log "Updating panel files without touching local configuration or data..."
@@ -31,13 +40,14 @@ if [[ "$AGENT_INSTALLED" == "1" ]]; then
  [[ -x /usr/local/bin/go ]] && GO_BIN=/usr/local/bin/go
  [[ -n "$GO_BIN" ]] || fail "Nodexa Agent is installed but Go is unavailable; cannot rebuild Agent."
  "$GO_BIN" mod tidy
- "$GO_BIN" build -trimpath -ldflags='-s -w' -o /usr/local/bin/nodexad ./cmd/nodexad
- chmod 0755 /usr/local/bin/nodexad
  AGENT_VERSION="$(tr -d '\r\n' < "$AGENT_DIR/VERSION" 2>/dev/null || echo unknown)"
- BUILD_COMMIT="${NODEXA_SOURCE_COMMIT:-unknown}"
+ BUILD_COMMIT="$(resolve_source_commit)"
  BUILD_SHORT="${BUILD_COMMIT:0:8}"
  [[ -n "$BUILD_SHORT" ]] || BUILD_SHORT=unknown
  RUNTIME_VERSION="${AGENT_VERSION}+${BUILD_SHORT}"
+ LDFLAGS="-s -w -X nodexa/agent/internal/health.BuildVersion=${AGENT_VERSION} -X nodexa/agent/internal/health.BuildCommit=${BUILD_COMMIT}"
+ "$GO_BIN" build -trimpath -ldflags="$LDFLAGS" -o /usr/local/bin/nodexad ./cmd/nodexad
+ chmod 0755 /usr/local/bin/nodexad
  printf '%s\n' "$RUNTIME_VERSION" > /var/lib/nodexa/agent-version
 
  AGENT_TOKEN=""
@@ -78,7 +88,11 @@ UNIT
   systemctl is-active --quiet nodexa-agent || fail "Updated Nodexa Agent did not stay active. Check journalctl -u nodexa-agent -n 100 --no-pager"
   RUNNING_EXEC="$(systemctl show -p ExecStart --value nodexa-agent 2>/dev/null || true)"
   [[ "$RUNNING_EXEC" == *"/usr/local/bin/nodexad"* ]] || fail "nodexa-agent is not running /usr/local/bin/nodexad after update: ${RUNNING_EXEC:-unknown ExecStart}"
-  log "Nodexa Agent updated to ${RUNTIME_VERSION} and restarted from /usr/local/bin/nodexad."
+  if [[ "$BUILD_COMMIT" == "unknown" ]]; then
+   log "Nodexa Agent updated to ${RUNTIME_VERSION}; GitHub commit could not be resolved, but build metadata is embedded in the binary."
+  else
+   log "Nodexa Agent updated to ${RUNTIME_VERSION} and restarted from /usr/local/bin/nodexad."
+  fi
  else
   log "Agent files/binary were updated, but this host has no configured NODEXA_TOKEN; leaving nodexa-agent stopped."
   systemctl disable --now nodexa-agent >/dev/null 2>&1||true

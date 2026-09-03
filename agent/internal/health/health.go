@@ -15,6 +15,13 @@ import (
 
 var startedAt = time.Now().UTC()
 
+// BuildVersion and BuildCommit are populated with Go -ldflags by the Nodexa
+// installer/updater. Keeping the metadata inside the binary means /health can
+// identify the code that is actually running even if an old environment file
+// is left behind on a Node.
+var BuildVersion string
+var BuildCommit string
+
 type SystemMetrics struct {
 	MemoryTotalBytes     uint64  `json:"memory_total_bytes"`
 	MemoryAvailableBytes uint64  `json:"memory_available_bytes"`
@@ -30,15 +37,16 @@ type SystemMetrics struct {
 }
 
 type Payload struct {
-	OK         bool          `json:"ok"`
-	Service    string        `json:"service"`
-	APIVersion int           `json:"api_version"`
-	Version    string        `json:"version"`
-	Hostname   string        `json:"hostname"`
-	StartedAt  time.Time     `json:"started_at"`
-	CheckedAt  time.Time     `json:"checked_at"`
-	System     SystemMetrics `json:"system"`
-	Warnings   []string      `json:"warnings,omitempty"`
+	OK          bool          `json:"ok"`
+	Service     string        `json:"service"`
+	APIVersion  int           `json:"api_version"`
+	Version     string        `json:"version"`
+	BuildCommit string        `json:"build_commit"`
+	Hostname    string        `json:"hostname"`
+	StartedAt   time.Time     `json:"started_at"`
+	CheckedAt   time.Time     `json:"checked_at"`
+	System      SystemMetrics `json:"system"`
+	Warnings    []string      `json:"warnings,omitempty"`
 }
 
 func Handler(dataRoot string) http.HandlerFunc {
@@ -79,13 +87,14 @@ func Collect(dataRoot string) Payload {
 	}
 
 	return Payload{
-		OK:         true,
-		Service:    "nodexa-agent",
-		APIVersion: 1,
-		Version:    version(),
-		Hostname:   hostname,
-		StartedAt:  startedAt,
-		CheckedAt:  time.Now().UTC(),
+		OK:          true,
+		Service:     "nodexa-agent",
+		APIVersion:  1,
+		Version:     version(),
+		BuildCommit: buildCommit(),
+		Hostname:    hostname,
+		StartedAt:   startedAt,
+		CheckedAt:   time.Now().UTC(),
 		System: SystemMetrics{
 			MemoryTotalBytes:     memoryTotal,
 			MemoryAvailableBytes: memoryAvailable,
@@ -104,6 +113,13 @@ func Collect(dataRoot string) Payload {
 }
 
 func version() string {
+	if value := strings.TrimSpace(BuildVersion); value != "" {
+		commit := buildCommit()
+		if commit != "unknown" {
+			return value + "+" + commit[:8]
+		}
+		return value
+	}
 	if value := strings.TrimSpace(os.Getenv("NODEXA_AGENT_VERSION")); value != "" {
 		return value
 	}
@@ -113,6 +129,19 @@ func version() string {
 				return value
 			}
 		}
+	}
+	return "unknown"
+}
+
+func buildCommit() string {
+	value := strings.ToLower(strings.TrimSpace(BuildCommit))
+	if len(value) == 40 {
+		for _, ch := range value {
+			if (ch < '0' || ch > '9') && (ch < 'a' || ch > 'f') {
+				return "unknown"
+			}
+		}
+		return value
 	}
 	return "unknown"
 }
