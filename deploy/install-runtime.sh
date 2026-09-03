@@ -122,15 +122,22 @@ rm -f composer.lock
 log "Installing PHP dependencies without Laravel scripts..."
 composer update --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
 
-# Create the environment and encryption key before any Composer hook or
-# artisan command that boots the application.
+# Create .env and put a valid APP_KEY in it without booting Laravel. Calling
+# `php artisan key:generate` is not safe here because custom providers or a
+# stale cached config can resolve the encrypter before that command runs.
 [[ -f .env.example ]] || fail "Missing .env.example in panel source."
 cp .env.example .env
-log "Generating Laravel application key..."
-php artisan key:generate --force
+rm -f bootstrap/cache/*.php 2>/dev/null || true
+APP_KEY_VALUE="base64:$(openssl rand -base64 32 | tr -d '\r\n')"
+if grep -q '^APP_KEY=' .env; then
+  sed -i "s|^APP_KEY=.*|APP_KEY=${APP_KEY_VALUE}|" .env
+else
+  printf '\nAPP_KEY=%s\n' "$APP_KEY_VALUE" >> .env
+fi
+export APP_KEY="$APP_KEY_VALUE"
+log "Laravel application key created before framework bootstrap."
 
-# Now it is safe to run package discovery that Composer would normally invoke
-# during post-autoload-dump.
+# Only now is it safe to boot Artisan and rebuild package/cache manifests.
 log "Discovering Laravel packages..."
 php artisan package:discover --ansi
 
