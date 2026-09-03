@@ -16,6 +16,7 @@ import StatBlock from '@/components/server/console/StatBlock';
 import useWebsocketEvent from '@/plugins/useWebsocketEvent';
 import classNames from 'classnames';
 import { capitalize } from '@/lib/strings';
+import styles from './style.module.css';
 
 type Stats = Record<'memory' | 'cpu' | 'disk' | 'uptime' | 'rx' | 'tx', number>;
 
@@ -35,7 +36,7 @@ const getBackgroundColor = (value: number, max: number | null): string | undefin
 const Limit = ({ limit, children }: { limit: string | null; children: React.ReactNode }) => (
     <>
         {children}
-        <span className={'ml-1 text-gray-300 text-[70%] select-none'}>/ {limit || <>&infin;</>}</span>
+        <span className={'ml-1 text-gray-400 text-[70%] select-none'}>/ {limit || <>&infin;</>}</span>
     </>
 );
 
@@ -71,26 +72,26 @@ const ServerDetailsBlock = ({ className }: { className?: string }) => {
     }, [instance, connected]);
 
     useWebsocketEvent(SocketEvent.STATS, (data) => {
-        let stats: any = {};
+        let values: any = {};
         try {
-            stats = JSON.parse(data);
+            values = JSON.parse(data);
         } catch (e) {
             return;
         }
 
         setStats({
-            memory: stats.memory_bytes,
-            cpu: stats.cpu_absolute,
-            disk: stats.disk_bytes,
-            tx: stats.network.tx_bytes,
-            rx: stats.network.rx_bytes,
-            uptime: stats.uptime || 0,
+            memory: values.memory_bytes,
+            cpu: values.cpu_absolute,
+            disk: values.disk_bytes,
+            tx: values.network.tx_bytes,
+            rx: values.network.rx_bytes,
+            uptime: values.uptime || 0,
         });
     });
 
     return (
-        <div className={classNames('grid grid-cols-6 gap-2 md:gap-4', className)}>
-            <StatBlock icon={faWifi} title={'Address'} copyOnClick={allocation}>
+        <div className={classNames(styles.details_grid, className)}>
+            <StatBlock icon={faWifi} title={'Address'} copyOnClick={allocation} className={'col-span-2'}>
                 {allocation}
             </StatBlock>
             <StatBlock
@@ -127,10 +128,10 @@ const ServerDetailsBlock = ({ className }: { className?: string }) => {
             <StatBlock icon={faHdd} title={'Disk'} color={getBackgroundColor(stats.disk / 1024, limits.disk * 1024)}>
                 <Limit limit={textLimits.disk}>{bytesToString(stats.disk)}</Limit>
             </StatBlock>
-            <StatBlock icon={faCloudDownloadAlt} title={'Network (Inbound)'}>
+            <StatBlock icon={faCloudDownloadAlt} title={'Network Inbound'}>
                 {status === 'offline' ? <span className={'text-gray-400'}>Offline</span> : bytesToString(stats.rx)}
             </StatBlock>
-            <StatBlock icon={faCloudUploadAlt} title={'Network (Outbound)'}>
+            <StatBlock icon={faCloudUploadAlt} title={'Network Outbound'}>
                 {status === 'offline' ? <span className={'text-gray-400'}>Offline</span> : bytesToString(stats.tx)}
             </StatBlock>
         </div>
