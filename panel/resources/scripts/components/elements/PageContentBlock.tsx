@@ -12,9 +12,7 @@ export interface PageContentBlockProps {
 
 const PageContentBlock: React.FC<PageContentBlockProps> = ({ title, showFlashKey, className, children }) => {
     useEffect(() => {
-        if (title) {
-            document.title = title;
-        }
+        document.title = title ? `${title} • Nodexa` : 'Nodexa';
     }, [title]);
 
     return (
@@ -24,17 +22,19 @@ const PageContentBlock: React.FC<PageContentBlockProps> = ({ title, showFlashKey
                     {showFlashKey && <FlashMessageRender byKey={showFlashKey} css={tw`mb-4`} />}
                     {children}
                 </ContentContainer>
-                <ContentContainer css={tw`mb-4`}>
+                <ContentContainer css={tw`mb-5`}>
                     <p css={tw`text-center text-neutral-500 text-xs`}>
+                        <span css={tw`text-neutral-400 font-medium`}>Nodexa</span>
+                        {' · Powered by '}
                         <a
                             rel={'noopener nofollow noreferrer'}
                             href={'https://pterodactyl.io'}
                             target={'_blank'}
-                            css={tw`no-underline text-neutral-500 hover:text-neutral-300`}
+                            css={tw`no-underline text-neutral-500 hover:text-green-300`}
                         >
                             Pterodactyl&reg;
                         </a>
-                        &nbsp;&copy; 2015 - {new Date().getFullYear()}
+                        {' · '}{new Date().getFullYear()}
                     </p>
                 </ContentContainer>
             </>
