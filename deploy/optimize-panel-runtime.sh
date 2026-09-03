@@ -17,6 +17,20 @@ set_env(){
  printf '%s=%s\n' "$key" "$value" >> "$ENV_FILE"
 }
 
+ensure_app_key(){
+ [[ -f "$ENV_FILE" ]] || return 1
+ local current
+ current="$(sed -n 's/^APP_KEY=//p' "$ENV_FILE" | tail -n1 | tr -d '\r' || true)"
+ if [[ -z "$current" || "$current" == "null" || "$current" == '""' ]]; then
+  current="base64:$(openssl rand -base64 32 | tr -d '\r\n')"
+  sed -i '/^APP_KEY=/d' "$ENV_FILE"
+  printf '\nAPP_KEY=%s\n' "$current" >> "$ENV_FILE"
+  log "Recovered missing Laravel APP_KEY before runtime optimization."
+ fi
+ chown root:www-data "$ENV_FILE"
+ chmod 0640 "$ENV_FILE"
+}
+
 repair_nginx_site(){
  local file="$1"
  [[ -f "$file" ]] || return 0
@@ -26,11 +40,8 @@ import re, sys
 p = Path(sys.argv[1])
 text = p.read_text()
 
-# Remove every Nodexa FastCGI timeout directive regardless of indentation or
-# whether an older updater placed more than one on the same line/context.
 text = re.sub(r'fastcgi_(?:connect|send|read)_timeout\s+[^;]+;\s*', '', text)
 
-# Re-add one canonical timeout set after every FastCGI pass in this site file.
 def add_timeouts(match):
     indent = match.group('indent')
     return (
@@ -47,7 +58,6 @@ text = re.sub(
     flags=re.M,
 )
 
-# Keep formatting stable after removing inline duplicates.
 text = re.sub(r'[ \t]+\n', '\n', text)
 text = re.sub(r'\n{3,}', '\n\n', text)
 p.write_text(text)
@@ -58,37 +68,42 @@ PY
 
 log "Optimizing panel request path..."
 
-# Authentication uses Sanctum bearer tokens, so normal panel page requests do
-# not need Redis-backed HTTP sessions. Keeping sessions/cache on local disk
-# prevents a stopped, busy or misconfigured Redis service from delaying the
-# HTML shell and leaving browsers on a blank/loading page.
+# Ensure the web user can read the environment before any Artisan command is
+# executed. Never rotate an existing APP_KEY; only recover a genuinely missing
+# key so encrypted application data remains valid across updates.
+ensure_app_key
+
 set_env SESSION_DRIVER file
 set_env CACHE_STORE file
+chown root:www-data "$ENV_FILE"
+chmod 0640 "$ENV_FILE"
 
-# Redis remains available for asynchronous queues, where a temporary Redis
-# problem must never block the initial panel HTML response.
 systemctl enable --now redis-server >/dev/null 2>&1 || true
 
 mkdir -p \
  "$PANEL_DIR/storage/framework/sessions" \
  "$PANEL_DIR/storage/framework/views" \
  "$PANEL_DIR/storage/framework/cache/data" \
+ "$PANEL_DIR/storage/logs" \
  "$PANEL_DIR/bootstrap/cache"
 chown -R www-data:www-data "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache"
 chmod -R 775 "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache"
 
 cd "$PANEL_DIR"
-php artisan optimize:clear >/dev/null 2>&1 || true
-php artisan config:cache >/dev/null 2>&1 || true
-php artisan route:cache >/dev/null 2>&1 || true
-php artisan view:cache >/dev/null 2>&1 || true
+# A stale root-created config cache can contain an empty APP_KEY. Remove only
+# the compiled config before booting Laravel, then rebuild all runtime caches as
+# the same user PHP-FPM runs under.
+rm -f bootstrap/cache/config.php
+sudo -u www-data php artisan optimize:clear >/dev/null
+sudo -u www-data php artisan config:cache >/dev/null
+sudo -u www-data php artisan route:cache >/dev/null 2>&1 || true
+sudo -u www-data php artisan view:cache >/dev/null 2>&1 || true
 
-# Normal browser bootstrap requests have their own short client timeout. Some
-# administrator operations, especially first-time server provisioning, may need
-# up to three minutes while a Node pulls a Docker image. Repair BOTH the
-# sites-available source and the active sites-enabled file: older installs could
-# have sites-enabled/nodexa as a copied file instead of a symlink, which is why
-# repairing only sites-available did not clear duplicate directives.
+# Re-assert ownership because Laravel may create new cache/view files above.
+chown -R www-data:www-data "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache"
+find "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache" -type d -exec chmod 775 {} + 2>/dev/null || true
+find "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache" -type f -exec chmod 664 {} + 2>/dev/null || true
+
 repair_nginx_site "$NGINX_AVAILABLE"
 
 if [[ -e "$NGINX_ENABLED" || -L "$NGINX_ENABLED" ]]; then
@@ -108,7 +123,6 @@ if [[ -f "$NGINX_AVAILABLE" || -f "$NGINX_ENABLED" ]]; then
  systemctl reload nginx
 fi
 
-# Flush PHP-FPM/OPcache after changing session/cache configuration.
 while read -r svc; do
  [[ -n "$svc" ]] && systemctl restart "$svc" >/dev/null 2>&1 || true
 done < <(systemctl list-unit-files --type=service --no-legend 'php*-fpm.service' 2>/dev/null | awk '{print $1}')
