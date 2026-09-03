@@ -49,9 +49,6 @@ func installerError(exitCode int,captured string)error{detail:=tailInstallText(c
 
 func(m *Manager)installTemplateWithProgress(ctx context.Context,r server.CreateRequest,root string)error{
 	template:=strings.ToLower(strings.TrimSpace(r.Template));if template!="minecraft"&&template!="minecraft-java"{return fmt.Errorf("unsupported installation template %q",r.Template)}
-	// Installation is deliberately separated from the runtime image. Runtime Java
-	// images are optimized for running the game and may not contain curl, Python or
-	// CA certificates. A tiny dedicated installer image makes reinstalls deterministic.
 	if err:=m.ensureImage(ctx,managedInstallerImage);err!=nil{return fmt.Errorf("prepare managed installer image: %w",err)}
 	absoluteRoot,err:=filepath.Abs(root);if err!=nil{return fmt.Errorf("resolve server data path: %w",err)}
 	info,err:=os.Stat(absoluteRoot);if err!=nil{return fmt.Errorf("inspect server data path: %w",err)};if !info.IsDir(){return fmt.Errorf("server data path is not a directory: %s",absoluteRoot)}
@@ -65,20 +62,27 @@ fi
 cd /mnt/server
 VERSION="${MINECRAFT_VERSION:-1.21.8}"
 PORT="${SERVER_PORT:-25565}"
+JARFILE="${SERVER_JARFILE:-server.jar}"
+BUILD="${BUILD_NUMBER:-latest}"
+if [ "$(basename "$JARFILE")" != "$JARFILE" ]; then echo "[Nodexa Installer] ERROR: SERVER_JARFILE must be a filename, not a path"; exit 64; fi
+case "$JARFILE" in *.jar|*.JAR) ;; *) echo "[Nodexa Installer] ERROR: SERVER_JARFILE must end with .jar"; exit 64;; esac
+case "$BUILD" in latest|LATEST) PAPER_API="https://fill.papermc.io/v3/projects/paper/versions/${VERSION}/builds/latest" ;; *[!0-9]*|'') echo "[Nodexa Installer] ERROR: BUILD_NUMBER must be latest or a numeric Paper build"; exit 64 ;; *) PAPER_API="https://fill.papermc.io/v3/projects/paper/versions/${VERSION}/builds/${BUILD}" ;; esac
 PAPER_UA="Nodexa-Agent (https://github.com/yupthatpandadk/Nodexa)"
-PAPER_API="https://fill.papermc.io/v3/projects/paper/versions/${VERSION}/builds/latest"
 echo "container@nodexa~ Server marked as installing..."
 echo "[Nodexa Installer] [1/7] Preparing installation directory"
 echo "[Nodexa Installer] Template: Minecraft Java / Paper"
 echo "[Nodexa Installer] Minecraft version: ${VERSION}"
-echo "[Nodexa Installer] [2/7] Resolving latest Paper build"
+echo "[Nodexa Installer] Paper build: ${BUILD}"
+echo "[Nodexa Installer] Server JAR: ${JARFILE}"
+echo "[Nodexa Installer] [2/7] Resolving Paper build"
 META="$(curl -fsSL --connect-timeout 10 --retry 4 --retry-all-errors --retry-delay 2 -A "$PAPER_UA" "$PAPER_API")"
 URL="$(printf '%s' "$META" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["downloads"]["server:default"]["url"])')"
 [ -n "$URL" ] || { echo "[Nodexa Installer] ERROR: Paper API did not return a server download URL"; exit 1; }
 echo "[Nodexa Installer] [3/7] Downloading Paper server"
-curl -fL --connect-timeout 10 --retry 4 --retry-all-errors --retry-delay 2 -A "$PAPER_UA" "$URL" -o server.jar.nodexa-new
-[ -s server.jar.nodexa-new ] || { rm -f server.jar.nodexa-new; echo "[Nodexa Installer] ERROR: downloaded server jar is missing or empty"; exit 1; }
-mv -f server.jar.nodexa-new server.jar
+TMPFILE="${JARFILE}.nodexa-new"
+curl -fL --connect-timeout 10 --retry 4 --retry-all-errors --retry-delay 2 -A "$PAPER_UA" "$URL" -o "$TMPFILE"
+[ -s "$TMPFILE" ] || { rm -f "$TMPFILE"; echo "[Nodexa Installer] ERROR: downloaded server jar is missing or empty"; exit 1; }
+mv -f "$TMPFILE" "$JARFILE"
 echo "[Nodexa Installer] [4/7] Accepting Minecraft EULA"
 [ -f eula.txt ] || printf 'eula=true\n' > eula.txt
 if grep -q '^eula=' eula.txt; then sed -i 's/^eula=.*/eula=true/' eula.txt; else printf '\neula=true\n' >> eula.txt; fi
@@ -89,7 +93,7 @@ else
  if grep -q '^query.port=' server.properties; then sed -i "s/^query.port=.*/query.port=${PORT}/" server.properties; else printf 'query.port=%s\n' "$PORT" >> server.properties; fi
 fi
 echo "[Nodexa Installer] [6/7] Verifying installation files"
-ls -lh server.jar eula.txt server.properties
+ls -lh "$JARFILE" eula.txt server.properties
 echo "[Nodexa Installer] [7/7] Minecraft installation completed successfully"
 `
 	installerName:="nx-install-"+r.ID
@@ -105,6 +109,7 @@ echo "[Nodexa Installer] [7/7] Minecraft installation completed successfully"
 	if exitCode!=0{return installerError(exitCode,captured)}
 	markerPath:=filepath.Join(absoluteRoot,".nodexa-installed")
 	if err:=os.WriteFile(markerPath,[]byte(time.Now().UTC().Format(time.RFC3339)+"\n"),0640);err!=nil{return err}
-	if err:=m.validateManagedRuntime(r.ID,template);err!=nil{_=os.Remove(markerPath);return fmt.Errorf("verify managed Minecraft runtime files: %w",err)}
+	jarName:=strings.TrimSpace(r.Environment["SERVER_JARFILE"]);if jarName==""{jarName="server.jar"}
+	if err:=m.validateManagedRuntimeNamed(r.ID,template,jarName);err!=nil{_=os.Remove(markerPath);return fmt.Errorf("verify managed Minecraft runtime files: %w",err)}
 	return nil
 }

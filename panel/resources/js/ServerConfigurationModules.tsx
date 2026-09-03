@@ -4,7 +4,10 @@ import './server-configuration-modules.css';
 
 type ServerLike={id:string;uuid:string;name:string;identifier?:string;status?:string;node_id?:number};
 type Allocation={id:number;node_id?:number;server_id?:string|null;ip:string;alias?:string|null;port:number;notes?:string|null;is_primary:boolean;server?:{id:string;name:string;identifier?:string}|null};
-const err=(e:any)=>{const data=e?.response?.data;if(data?.error&&data?.message)return `${data.message} ${data.error}`;return data?.error||data?.message||e?.message||'Handlingen fejlede.'};
+type StartupImage={label:string;value:string};
+type StartupVariable={key:string;name:string;description?:string;default?:string;value:string;user_viewable?:boolean;user_editable?:boolean};
+type StartupData={id:string;identifier?:string;name:string;startup:string;docker_image:string;docker_images:StartupImage[];environment:Record<string,string>;variables:StartupVariable[];template?:{slug:string;name:string;startup_template?:string|null}};
+const err=(e:any)=>{const data=e?.response?.data;if(data?.error&&data?.message)return `${data.message} ${data.error}`;if(data?.errors){const first=Object.values(data.errors).flat()[0];if(first)return String(first)}return data?.error||data?.message||e?.message||'Handlingen fejlede.'};
 const allocationAddress=(a:Allocation)=>`${a.alias||a.ip}:${a.port}`;
 
 export function NetworkPage({server,canUpdate=true}:{server:ServerLike;canUpdate?:boolean}){
@@ -37,13 +40,36 @@ export function NetworkPage({server,canUpdate=true}:{server:ServerLike;canUpdate
 }
 
 export function StartupPage({server,isAdmin=false}:{server:ServerLike;isAdmin?:boolean}){
-  const[data,setData]=useState<any>(null),[error,setError]=useState(''),[saving,setSaving]=useState(false),[envText,setEnvText]=useState('{}');
-  const load=async()=>{try{setError('');const r=await axios.get(`/api/admin/servers/${server.id}/startup`);setData(r.data);setEnvText(JSON.stringify(r.data.environment||{},null,2))}catch(e){setError(err(e))}};
+  const[data,setData]=useState<StartupData|null>(null),[error,setError]=useState(''),[message,setMessage]=useState(''),[saving,setSaving]=useState(false);
+  const load=async()=>{try{setError('');const r=await axios.get(`/api/admin/servers/${server.id}/startup`);setData(r.data)}catch(e){setError(err(e))}};
   useEffect(()=>{if(isAdmin)load()},[server.id,isAdmin]);
-  const save=async()=>{if(!data||!isAdmin)return;setSaving(true);setError('');try{const environment=JSON.parse(envText||'{}');const r=await axios.put(`/api/admin/servers/${server.id}/startup`,{startup:data.startup,docker_image:data.docker_image,environment});setData(r.data);setEnvText(JSON.stringify(r.data.environment||environment,null,2))}catch(e){setError(err(e))}finally{setSaving(false)}};
+  const setVariable=(key:string,value:string)=>setData(current=>current?{...current,variables:current.variables.map(v=>v.key===key?{...v,value}:v),environment:{...current.environment,[key]:value}}:current);
+  const save=async()=>{
+    if(!data||!isAdmin)return;
+    setSaving(true);setError('');setMessage('');
+    try{
+      const environment={...(data.environment||{})};
+      data.variables.forEach(variable=>{environment[variable.key]=variable.value});
+      const startup=data.template?.startup_template||data.startup;
+      const r=await axios.put(`/api/admin/servers/${server.id}/startup`,{startup,docker_image:data.docker_image,environment});
+      setData(r.data);setMessage('Startup-konfigurationen er gemt og runtime-containeren er synkroniseret.');
+    }catch(e){setError(err(e))}finally{setSaving(false)}
+  };
   if(!isAdmin)return <div className="nx-config-card nx-config-empty">Startup-konfiguration kan kun ændres af en administrator.</div>;
   if(!data&&!error)return <div className="nx-config-card nx-config-empty">Indlæser startup…</div>;
-  return <div className="nx-config-stack"><header className="nx-config-head"><div><h2>Startup</h2><p>Administrer container image, startup command og miljøvariabler.</p></div><button onClick={save} disabled={saving||!data}>{saving?'Gemmer…':'Gem'}</button></header>{error&&<div className="nx-config-error">{error}</div>}{data&&<div className="nx-config-card nx-config-form"><label>STARTUP COMMAND<textarea value={data.startup||''} onChange={e=>setData({...data,startup:e.target.value})}/></label><label>DOCKER IMAGE<input value={data.docker_image||''} onChange={e=>setData({...data,docker_image:e.target.value})}/></label><label>MILJØVARIABLER<textarea value={envText} onChange={e=>setEnvText(e.target.value)}/></label></div>}</div>
+  return <div className="nx-config-stack">
+    <header className="nx-config-head"><div><h2>Startup</h2><p>Administrer startup command, Docker-image og template-variabler.</p></div><button className="primary" onClick={save} disabled={saving||!data}>{saving?'Gemmer…':'Gem ændringer'}</button></header>
+    {error&&<div className="nx-config-error">{error}</div>}{message&&<div className="nx-config-success">{message}</div>}
+    {data&&<>
+      <div className="nx-template-banner"><div><small>TEMPLATE</small><strong>{data.template?.name||'Custom'}</strong></div><span>{data.template?.slug||'custom'}</span></div>
+      <div className="nx-startup-grid">
+        <section className="nx-config-card nx-startup-panel"><div className="nx-startup-title">STARTUP COMMAND</div><textarea readOnly={Boolean(data.template?.startup_template)} value={data.template?.startup_template||data.startup||''} onChange={e=>setData({...data,startup:e.target.value})}/>{data.template?.startup_template&&<p>Kommandoen styres af serverens template. Variablerne nedenfor indsættes automatisk ved runtime.</p>}</section>
+        <section className="nx-config-card nx-startup-panel"><div className="nx-startup-title">DOCKER IMAGE</div>{data.docker_images?.length?<select value={data.docker_image||''} onChange={e=>setData({...data,docker_image:e.target.value})}>{data.docker_images.map(image=><option key={image.value} value={image.value}>{image.label}</option>)}</select>:<input value={data.docker_image||''} onChange={e=>setData({...data,docker_image:e.target.value})}/>}<p>Vælg Java/runtime-image for denne server. Nodexa genskaber runtime-containeren uden at slette serverfilerne.</p></section>
+      </div>
+      <div className="nx-startup-section-head"><h3>Variables</h3><span>{data.variables.length} template-variabler</span></div>
+      {data.variables.length?<div className="nx-variable-grid">{data.variables.filter(v=>v.user_viewable!==false).map(variable=><label className="nx-config-card nx-variable-card" key={variable.key}><span>{variable.name.toUpperCase()}</span><input disabled={variable.user_editable===false||saving} value={variable.value??''} onChange={e=>setVariable(variable.key,e.target.value)}/><small>{variable.description||variable.key}</small><code>{variable.key}</code></label>)}</div>:<div className="nx-config-card nx-config-empty">Denne template har endnu ingen definerede startup-variabler.</div>}
+    </>}
+  </div>
 }
 
 export function SettingsPage({server,canUpdate=true,canReinstall=true,canSftp=true}:{server:ServerLike;canUpdate?:boolean;canReinstall?:boolean;canSftp?:boolean}){
