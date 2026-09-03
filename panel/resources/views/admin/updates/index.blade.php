@@ -118,13 +118,8 @@
         (function () {
             var statusUrl = @json(route('admin.updates.status'));
             var initialStatus = @json($state['status'] ?? 'idle');
+            var observedRunning = initialStatus === 'running';
             var finishedReloaded = false;
-
-            function escapeHtml(value) {
-                return String(value || '').replace(/[&<>'"]/g, function (char) {
-                    return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char];
-                });
-            }
 
             function poll() {
                 fetch(statusUrl, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'})
@@ -145,15 +140,22 @@
                         if (time) time.textContent = state.updated_at || 'Ingen status endnu';
 
                         if (state.status === 'running') {
+                            observedRunning = true;
                             if (badge) { badge.className = 'label label-warning'; badge.textContent = 'OPDATERER'; }
                             if (button) button.disabled = true;
-                        } else if (state.status === 'failed') {
+                            return;
+                        }
+
+                        if (state.status === 'failed' && observedRunning) {
                             if (badge) { badge.className = 'label label-danger'; badge.textContent = 'FEJLET'; }
                             if (!finishedReloaded) {
                                 finishedReloaded = true;
                                 setTimeout(function () { window.location.reload(); }, 1800);
                             }
-                        } else if (state.status === 'success' && initialStatus === 'running') {
+                            return;
+                        }
+
+                        if (state.status === 'success' && observedRunning) {
                             if (badge) { badge.className = 'label label-success'; badge.textContent = 'FÆRDIG'; }
                             if (!finishedReloaded) {
                                 finishedReloaded = true;
@@ -164,10 +166,11 @@
                     .catch(function () {});
             }
 
-            if (initialStatus === 'running') {
-                setInterval(poll, 2500);
-                poll();
-            }
+            // Poll continuously while this page is open. This intentionally starts even
+            // when the initial state is idle so a just-triggered systemd update cannot be
+            // missed during the redirect back to the page.
+            setInterval(poll, 2500);
+            poll();
         })();
     </script>
 @endsection
