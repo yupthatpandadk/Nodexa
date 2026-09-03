@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-VERSION="0.14.19"
+VERSION="0.14.20"
 REPO="${NODEXA_REPOSITORY:-yupthatpandadk/Nodexa}"
 BRANCH="${NODEXA_BRANCH:-main}"
 URL="${NODEXA_SOURCE_URL:-https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip}"
@@ -23,8 +23,6 @@ APT_LOCK_FILES=(
 
 apt_lock_owners() {
   command -v fuser >/dev/null 2>&1 || return 0
-  # Do not use fuser's exit status as the lock decision. We only consider the
-  # package manager busy when fuser actually returns one or more numeric PIDs.
   fuser "${APT_LOCK_FILES[@]}" 2>/dev/null | tr -cs '0-9' ' ' | xargs 2>/dev/null || true
 }
 
@@ -128,9 +126,6 @@ unzip -q "$TMP/nodexa.zip" -d "$TMP/src"
 MENU="$(find "$TMP/src" -type f -path '*/installer/local-menu.sh' | head -n1)"
 [[ -n "$MENU" ]] || { echo "[Nodexa] Invalid source archive." >&2; exit 1; }
 
-# Interactive Termius/SSH installs should read answers directly from the real TTY.
-# systemd/web updater runs have no controlling terminal, even though /dev/tty may
-# exist as a device node. Never attempt to open it in non-interactive update mode.
 if [[ "${NODEXA_NONINTERACTIVE:-0}" != "1" && -t 0 && -r /dev/tty ]]; then
   exec bash "$MENU" "$@" </dev/tty
 fi
