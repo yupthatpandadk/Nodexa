@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-VERSION="0.14.11"
+VERSION="0.14.12"
 REPO="${NODEXA_REPOSITORY:-yupthatpandadk/Nodexa}"
 BRANCH="${NODEXA_BRANCH:-main}"
 URL="${NODEXA_SOURCE_URL:-https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip}"
@@ -14,31 +14,41 @@ fi
 
 export DEBIAN_FRONTEND=noninteractive
 
+# Only treat apt/dpkg as busy when one of the real package-manager lock files
+# is actively held. Process-name checks can be fooled by zombie/stale apt
+# processes and caused fresh VPS installations to wait until timeout forever.
 apt_is_busy() {
-  pgrep -x apt >/dev/null 2>&1 || \
-  pgrep -x apt-get >/dev/null 2>&1 || \
-  pgrep -x dpkg >/dev/null 2>&1 || \
-  pgrep -f 'unattended-upgrade' >/dev/null 2>&1 || \
-  { command -v fuser >/dev/null 2>&1 && fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock >/dev/null 2>&1; }
+  if command -v fuser >/dev/null 2>&1; then
+    fuser /var/lib/dpkg/lock-frontend \
+          /var/lib/dpkg/lock \
+          /var/lib/apt/lists/lock \
+          /var/cache/apt/archives/lock >/dev/null 2>&1
+    return $?
+  fi
+
+  # If fuser is unavailable, let apt itself handle locking. Do not guess from
+  # process names because stale/zombie processes do not necessarily own locks.
+  return 1
 }
 
 wait_for_apt() {
   local waited=0 max_wait="${NODEXA_APT_WAIT_SECONDS:-600}"
   while apt_is_busy; do
     if (( waited == 0 )); then
-      echo "[Nodexa] Ubuntu package manager is busy (common just after a fresh VPS install)."
-      echo "[Nodexa] Waiting for apt/cloud-init to finish; lock files will NOT be deleted..."
+      echo "[Nodexa] Ubuntu package manager currently owns an apt/dpkg lock."
+      echo "[Nodexa] Waiting for the real package-manager lock to be released..."
     fi
     if (( waited >= max_wait )); then
-      echo "[Nodexa] Timed out after ${max_wait}s waiting for apt/dpkg." >&2
-      echo "[Nodexa] Check: ps aux | grep -E 'apt|dpkg|unattended'" >&2
+      echo "[Nodexa] Timed out after ${max_wait}s waiting for an apt/dpkg lock." >&2
+      echo "[Nodexa] Check lock owners with:" >&2
+      echo "[Nodexa] fuser -v /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock" >&2
       exit 1
     fi
     sleep 5
     waited=$((waited + 5))
   done
   if (( waited > 0 )); then
-    echo "[Nodexa] Package manager is available after ${waited}s."
+    echo "[Nodexa] Package-manager lock released after ${waited}s."
   fi
 }
 
@@ -69,9 +79,9 @@ curl_retry() {
 
 apt_install() {
   wait_for_apt
-  apt-get update -y
+  apt-get -o DPkg::Lock::Timeout=600 update -y
   wait_for_apt
-  apt-get install -y "$@"
+  apt-get -o DPkg::Lock::Timeout=600 install -y "$@"
 }
 
 echo "[Nodexa] Checking package-manager state..."
@@ -80,7 +90,8 @@ if command -v dpkg >/dev/null 2>&1; then
   dpkg --configure -a || {
     echo "[Nodexa] dpkg configuration needs repair; attempting dependency recovery..."
     wait_for_apt
-    apt-get -f install -y
+    apt-get -o DPkg::Lock::Timeout=600 -f install -y
+    wait_for_apt
     dpkg --configure -a
   }
 fi
