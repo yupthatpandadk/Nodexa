@@ -21,25 +21,25 @@ import 'xterm/css/xterm.css';
 import styles from './style.module.css';
 
 const theme = {
-    background: th`colors.black`.toString(),
+    background: '#03070b',
     cursor: 'transparent',
-    black: th`colors.black`.toString(),
-    red: '#E54B4B',
-    green: '#9ECE58',
-    yellow: '#FAED70',
-    blue: '#396FE2',
-    magenta: '#BB80B3',
-    cyan: '#2DDAFD',
-    white: '#d0d0d0',
-    brightBlack: 'rgba(255, 255, 255, 0.2)',
-    brightRed: '#FF5370',
-    brightGreen: '#C3E88D',
-    brightYellow: '#FFCB6B',
-    brightBlue: '#82AAFF',
-    brightMagenta: '#C792EA',
-    brightCyan: '#89DDFF',
+    black: '#03070b',
+    red: '#F87171',
+    green: '#4ADE80',
+    yellow: '#FACC15',
+    blue: '#60A5FA',
+    magenta: '#C084FC',
+    cyan: '#22D3EE',
+    white: '#d8e3df',
+    brightBlack: 'rgba(255, 255, 255, 0.24)',
+    brightRed: '#FB7185',
+    brightGreen: '#86EFAC',
+    brightYellow: '#FDE047',
+    brightBlue: '#93C5FD',
+    brightMagenta: '#D8B4FE',
+    brightCyan: '#67E8F9',
     brightWhite: '#ffffff',
-    selection: '#FAF089',
+    selection: 'rgba(74, 222, 128, 0.26)',
 };
 
 const terminalProps: ITerminalOptions = {
@@ -53,7 +53,7 @@ const terminalProps: ITerminalOptions = {
 };
 
 export default () => {
-    const TERMINAL_PRELUDE = '\u001b[1m\u001b[33mcontainer@pterodactyl~ \u001b[0m';
+    const TERMINAL_PRELUDE = '\u001b[1m\u001b[32mnodexa@server~ \u001b[0m';
     const ref = useRef<HTMLDivElement>(null);
     const terminal = useMemo(() => new Terminal({ ...terminalProps }), []);
     const fitAddon = new FitAddon();
@@ -68,7 +68,6 @@ export default () => {
     const isTransferring = ServerContext.useStoreState((state) => state.server.data!.isTransferring);
     const [history, setHistory] = usePersistedState<string[]>(`${serverId}:command_history`, []);
     const [historyIndex, setHistoryIndex] = useState(-1);
-    // SearchBarAddon has hardcoded z-index: 999 :(
     const zIndex = `
     .xterm-search-bar__addon {
         z-index: 10;
@@ -79,7 +78,6 @@ export default () => {
 
     const handleTransferStatus = (status: string) => {
         switch (status) {
-            // Sent by either the source or target node if a failure occurs.
             case 'failure':
                 terminal.writeln(TERMINAL_PRELUDE + 'Transfer has failed.\u001b[0m');
                 return;
@@ -100,9 +98,6 @@ export default () => {
 
             setHistoryIndex(newIndex);
             e.currentTarget.value = history![newIndex] || '';
-
-            // By default up arrow will also bring the cursor to the start of the line,
-            // so we'll preventDefault to keep it at the end.
             e.preventDefault();
         }
 
@@ -133,14 +128,11 @@ export default () => {
             terminal.loadAddon(scrollDownHelperAddon);
 
             terminal.open(ref.current);
-
-            // Activate Unicode 11 for proper emoji and special character width handling
             terminal.unicode.activeVersion = '11';
 
             fitAddon.fit();
             searchBar.addNewStyle(zIndex);
 
-            // Add support for capturing keys
             terminal.attachCustomKeyEventHandler((e: KeyboardEvent) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
                     document.execCommand('copy');
@@ -178,7 +170,6 @@ export default () => {
         };
 
         if (connected && instance) {
-            // Do not clear the console if the server is being transferred.
             if (!isTransferring) {
                 terminal.clear();
             }
@@ -222,7 +213,7 @@ export default () => {
                     />
                     <div
                         className={classNames(
-                            'text-gray-100 peer-focus:text-gray-50 peer-focus:animate-pulse',
+                            'text-gray-100 peer-focus:text-green-300 peer-focus:animate-pulse',
                             styles.command_icon
                         )}
                     >
