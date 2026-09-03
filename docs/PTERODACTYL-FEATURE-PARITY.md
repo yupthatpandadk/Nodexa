@@ -125,7 +125,7 @@ Goal: implement the useful game-server management capabilities users expect from
 ## Admin platform
 
 - [ ] Admin dashboard with actual fleet metrics
-- [ ] Settings: company/panel URL/timezone/locale
+- [x] Settings: company/panel URL/timezone/locale
 - [ ] Mail configuration + test mail
 - [ ] Captcha/security configuration
 - [ ] Rate-limit/security settings
