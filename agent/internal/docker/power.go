@@ -17,6 +17,50 @@ func isManagedMinecraftTemplate(template string) bool {
 	return template == "minecraft" || template == "minecraft-java"
 }
 
+func runtimeReferencesServerJar(cfg *container.Config) bool {
+	if cfg == nil {
+		return false
+	}
+	parts := make([]string, 0, len(cfg.Entrypoint)+len(cfg.Cmd))
+	for _, value := range cfg.Entrypoint {
+		parts = append(parts, value)
+	}
+	parts = append(parts, cfg.Cmd...)
+	return strings.Contains(strings.ToLower(strings.Join(parts, " ")), "server.jar")
+}
+
+func (m *Manager) validateServerJar(id string) error {
+	root, err := m.serverRoot(id)
+	if err != nil {
+		return err
+	}
+	jarPath := filepath.Join(root, "server.jar")
+	info, err := os.Stat(jarPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("server.jar is missing; run Geninstaller server before starting")
+		}
+		return fmt.Errorf("inspect server.jar: %w", err)
+	}
+	if !info.Mode().IsRegular() || info.Size() < 1024 {
+		return fmt.Errorf("server.jar is empty or not a regular file; run Geninstaller server again")
+	}
+
+	f, err := os.Open(jarPath)
+	if err != nil {
+		return fmt.Errorf("open server.jar: %w", err)
+	}
+	defer f.Close()
+	header := make([]byte, 2)
+	if _, err := io.ReadFull(f, header); err != nil {
+		return fmt.Errorf("read server.jar header: %w", err)
+	}
+	if header[0] != 'P' || header[1] != 'K' {
+		return fmt.Errorf("server.jar is not a valid JAR/ZIP file; run Geninstaller server again")
+	}
+	return nil
+}
+
 // validateManagedRuntime prevents a managed Minecraft runtime from booting
 // after an interrupted/failed installation. A stale Docker container may still
 // exist after an old install failure, but it must never be allowed to start if
@@ -37,30 +81,8 @@ func (m *Manager) validateManagedRuntime(id, template string) error {
 		}
 		return fmt.Errorf("inspect Minecraft installation marker: %w", err)
 	}
-
-	jarPath := filepath.Join(root, "server.jar")
-	info, err := os.Stat(jarPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("managed Minecraft installation is incomplete: server.jar is missing; run Geninstaller server before starting")
-		}
-		return fmt.Errorf("inspect server.jar: %w", err)
-	}
-	if !info.Mode().IsRegular() || info.Size() < 1024 {
-		return fmt.Errorf("managed Minecraft installation is invalid: server.jar is empty or not a regular file; run Geninstaller server again")
-	}
-
-	f, err := os.Open(jarPath)
-	if err != nil {
-		return fmt.Errorf("open server.jar: %w", err)
-	}
-	defer f.Close()
-	header := make([]byte, 2)
-	if _, err := io.ReadFull(f, header); err != nil {
-		return fmt.Errorf("read server.jar header: %w", err)
-	}
-	if header[0] != 'P' || header[1] != 'K' {
-		return fmt.Errorf("managed Minecraft installation is invalid: server.jar is not a valid JAR/ZIP file; run Geninstaller server again")
+	if err := m.validateServerJar(id); err != nil {
+		return fmt.Errorf("managed Minecraft installation is incomplete: %w", err)
 	}
 	return nil
 }
@@ -122,8 +144,10 @@ func (m *Manager) immediateExitLogs(ctx context.Context, id string) string {
 }
 
 // StartWithDiagnostics validates and repairs managed-template files before boot
-// and verifies that the game process did not immediately crash. This turns a
-// silent Start-button failure into the actual installation/Docker/game error.
+// and verifies that the game process did not immediately crash. It also protects
+// legacy containers that predate Nodexa's template label: if the configured
+// startup command references server.jar, the JAR is validated regardless of
+// label state.
 func (m *Manager) StartWithDiagnostics(ctx context.Context, id string) error {
 	before, err := m.cli.ContainerInspect(ctx, "nx-"+id)
 	if err != nil {
@@ -133,8 +157,14 @@ func (m *Manager) StartWithDiagnostics(ctx context.Context, id string) error {
 	if before.Config != nil && before.Config.Labels != nil {
 		template = before.Config.Labels["nodexa.template"]
 	}
-	if err := m.validateManagedRuntime(id, template); err != nil {
-		return err
+	if isManagedMinecraftTemplate(template) {
+		if err := m.validateManagedRuntime(id, template); err != nil {
+			return err
+		}
+	} else if runtimeReferencesServerJar(before.Config) {
+		if err := m.validateServerJar(id); err != nil {
+			return fmt.Errorf("runtime startup references server.jar, but the server files are incomplete: %w", err)
+		}
 	}
 	if err := m.PrepareRuntimePermissions(id); err != nil {
 		return fmt.Errorf("prepare server files: %w", err)
@@ -162,4 +192,18 @@ func (m *Manager) StartWithDiagnostics(ctx context.Context, id string) error {
 		return fmt.Errorf("server exited immediately after start (state=%s, exit_code=%d)", inspect.State.Status, inspect.State.ExitCode)
 	}
 	return fmt.Errorf("server exited immediately after start (exit_code=%d): %s", inspect.State.ExitCode, logs)
+}
+
+func (m *Manager) RestartWithDiagnostics(ctx context.Context, id string) error {
+	inspect, err := m.cli.ContainerInspect(ctx, "nx-"+id)
+	if err != nil {
+		return fmt.Errorf("inspect server before restart: %w", err)
+	}
+	if inspect.State != nil && inspect.State.Running {
+		timeout := 10
+		if err := m.cli.ContainerStop(ctx, "nx-"+id, container.StopOptions{Timeout: &timeout}); err != nil {
+			return fmt.Errorf("stop server before restart: %w", err)
+		}
+	}
+	return m.StartWithDiagnostics(ctx, id)
 }
