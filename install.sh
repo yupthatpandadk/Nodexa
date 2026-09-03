@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-VERSION="0.14.12"
+VERSION="0.14.13"
 REPO="${NODEXA_REPOSITORY:-yupthatpandadk/Nodexa}"
 BRANCH="${NODEXA_BRANCH:-main}"
 URL="${NODEXA_SOURCE_URL:-https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip}"
@@ -14,42 +14,49 @@ fi
 
 export DEBIAN_FRONTEND=noninteractive
 
-# Only treat apt/dpkg as busy when one of the real package-manager lock files
-# is actively held. Process-name checks can be fooled by zombie/stale apt
-# processes and caused fresh VPS installations to wait until timeout forever.
-apt_is_busy() {
-  if command -v fuser >/dev/null 2>&1; then
-    fuser /var/lib/dpkg/lock-frontend \
-          /var/lib/dpkg/lock \
-          /var/lib/apt/lists/lock \
-          /var/cache/apt/archives/lock >/dev/null 2>&1
-    return $?
-  fi
+APT_LOCK_FILES=(
+  /var/lib/dpkg/lock-frontend
+  /var/lib/dpkg/lock
+  /var/lib/apt/lists/lock
+  /var/cache/apt/archives/lock
+)
 
-  # If fuser is unavailable, let apt itself handle locking. Do not guess from
-  # process names because stale/zombie processes do not necessarily own locks.
-  return 1
+apt_lock_owners() {
+  command -v fuser >/dev/null 2>&1 || return 0
+  # Do not use fuser's exit status as the lock decision. We only consider the
+  # package manager busy when fuser actually returns one or more numeric PIDs.
+  fuser "${APT_LOCK_FILES[@]}" 2>/dev/null | tr -cs '0-9' ' ' | xargs 2>/dev/null || true
+}
+
+apt_is_busy() {
+  local owners
+  owners="$(apt_lock_owners)"
+  [[ -n "${owners//[[:space:]]/}" ]]
 }
 
 wait_for_apt() {
-  local waited=0 max_wait="${NODEXA_APT_WAIT_SECONDS:-600}"
-  while apt_is_busy; do
+  local waited=0 max_wait="${NODEXA_APT_WAIT_SECONDS:-600}" owners
+  while true; do
+    owners="$(apt_lock_owners)"
+    if [[ -z "${owners//[[:space:]]/}" ]]; then
+      if (( waited > 0 )); then
+        echo "[Nodexa] Package-manager lock released after ${waited}s."
+      fi
+      return 0
+    fi
+
     if (( waited == 0 )); then
-      echo "[Nodexa] Ubuntu package manager currently owns an apt/dpkg lock."
+      echo "[Nodexa] Active apt/dpkg lock owner PID(s): ${owners}"
       echo "[Nodexa] Waiting for the real package-manager lock to be released..."
     fi
     if (( waited >= max_wait )); then
-      echo "[Nodexa] Timed out after ${max_wait}s waiting for an apt/dpkg lock." >&2
-      echo "[Nodexa] Check lock owners with:" >&2
-      echo "[Nodexa] fuser -v /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock" >&2
+      echo "[Nodexa] Timed out after ${max_wait}s waiting for apt/dpkg PID(s): ${owners}" >&2
+      echo "[Nodexa] Inspect with: ps -fp ${owners}" >&2
       exit 1
     fi
     sleep 5
     waited=$((waited + 5))
   done
-  if (( waited > 0 )); then
-    echo "[Nodexa] Package-manager lock released after ${waited}s."
-  fi
 }
 
 wait_for_network() {
@@ -84,16 +91,17 @@ apt_install() {
   apt-get -o DPkg::Lock::Timeout=600 install -y "$@"
 }
 
+echo "[Nodexa] Bootstrap version ${VERSION}"
 echo "[Nodexa] Checking package-manager state..."
 wait_for_apt
 if command -v dpkg >/dev/null 2>&1; then
-  dpkg --configure -a || {
+  if ! dpkg --configure -a; then
     echo "[Nodexa] dpkg configuration needs repair; attempting dependency recovery..."
     wait_for_apt
     apt-get -o DPkg::Lock::Timeout=600 -f install -y
     wait_for_apt
     dpkg --configure -a
-  }
+  fi
 fi
 
 command -v curl >/dev/null 2>&1 || apt_install curl ca-certificates
@@ -120,8 +128,6 @@ unzip -q "$TMP/nodexa.zip" -d "$TMP/src"
 MENU="$(find "$TMP/src" -type f -path '*/installer/local-menu.sh' | head -n1)"
 [[ -n "$MENU" ]] || { echo "[Nodexa] Invalid source archive." >&2; exit 1; }
 
-# `curl ... | bash` uses the curl pipe as stdin. Attach every interactive mode
-# (menu, panel, agent and both) to the controlling SSH terminal when available.
 if [[ -r /dev/tty ]]; then
   exec bash "$MENU" "$@" </dev/tty
 fi
