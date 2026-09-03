@@ -12,6 +12,59 @@ import (
 	"github.com/docker/docker/api/types/container"
 )
 
+func isManagedMinecraftTemplate(template string) bool {
+	template = strings.ToLower(strings.TrimSpace(template))
+	return template == "minecraft" || template == "minecraft-java"
+}
+
+// validateManagedRuntime prevents a managed Minecraft runtime from booting
+// after an interrupted/failed installation. A stale Docker container may still
+// exist after an old install failure, but it must never be allowed to start if
+// the managed files are incomplete.
+func (m *Manager) validateManagedRuntime(id, template string) error {
+	if !isManagedMinecraftTemplate(template) {
+		return nil
+	}
+	root, err := m.serverRoot(id)
+	if err != nil {
+		return err
+	}
+
+	marker := filepath.Join(root, ".nodexa-installed")
+	if _, err := os.Stat(marker); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("managed Minecraft installation is incomplete: installation marker is missing; run Geninstaller server before starting")
+		}
+		return fmt.Errorf("inspect Minecraft installation marker: %w", err)
+	}
+
+	jarPath := filepath.Join(root, "server.jar")
+	info, err := os.Stat(jarPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("managed Minecraft installation is incomplete: server.jar is missing; run Geninstaller server before starting")
+		}
+		return fmt.Errorf("inspect server.jar: %w", err)
+	}
+	if !info.Mode().IsRegular() || info.Size() < 1024 {
+		return fmt.Errorf("managed Minecraft installation is invalid: server.jar is empty or not a regular file; run Geninstaller server again")
+	}
+
+	f, err := os.Open(jarPath)
+	if err != nil {
+		return fmt.Errorf("open server.jar: %w", err)
+	}
+	defer f.Close()
+	header := make([]byte, 2)
+	if _, err := io.ReadFull(f, header); err != nil {
+		return fmt.Errorf("read server.jar header: %w", err)
+	}
+	if header[0] != 'P' || header[1] != 'K' {
+		return fmt.Errorf("managed Minecraft installation is invalid: server.jar is not a valid JAR/ZIP file; run Geninstaller server again")
+	}
+	return nil
+}
+
 // PrepareRuntimePermissions repairs the ownership of files created by a
 // managed-template installer. The installer intentionally runs as root, while
 // Pterodactyl-compatible Yolks run the game process as uid/gid 1000. Without
@@ -68,11 +121,21 @@ func (m *Manager) immediateExitLogs(ctx context.Context, id string) string {
 	return strings.TrimSpace(string(body))
 }
 
-// StartWithDiagnostics repairs managed-template permissions before boot and
-// verifies that the game process did not immediately crash. This turns a
-// silent Start-button failure into the actual Docker/game error shown by the
-// Panel console.
+// StartWithDiagnostics validates and repairs managed-template files before boot
+// and verifies that the game process did not immediately crash. This turns a
+// silent Start-button failure into the actual installation/Docker/game error.
 func (m *Manager) StartWithDiagnostics(ctx context.Context, id string) error {
+	before, err := m.cli.ContainerInspect(ctx, "nx-"+id)
+	if err != nil {
+		return fmt.Errorf("inspect server before start: %w", err)
+	}
+	template := ""
+	if before.Config != nil && before.Config.Labels != nil {
+		template = before.Config.Labels["nodexa.template"]
+	}
+	if err := m.validateManagedRuntime(id, template); err != nil {
+		return err
+	}
 	if err := m.PrepareRuntimePermissions(id); err != nil {
 		return fmt.Errorf("prepare server files: %w", err)
 	}

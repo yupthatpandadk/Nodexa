@@ -103,5 +103,8 @@ echo "[Nodexa Installer] [7/7] Minecraft installation completed successfully"
 	captured,logErr:=m.installerLogs(ctx,installerName,"2000");if logErr==nil&&captured!=""{for _,line:=range strings.Split(captured,"\n"){appendInstallLog(absoluteRoot,line)}}
 	_=m.cli.ContainerRemove(ctx,installerName,container.RemoveOptions{Force:true})
 	if exitCode!=0{return installerError(exitCode,captured)}
-	if err:=os.WriteFile(filepath.Join(absoluteRoot,".nodexa-installed"),[]byte(time.Now().UTC().Format(time.RFC3339)+"\n"),0640);err!=nil{return err};return nil
+	markerPath:=filepath.Join(absoluteRoot,".nodexa-installed")
+	if err:=os.WriteFile(markerPath,[]byte(time.Now().UTC().Format(time.RFC3339)+"\n"),0640);err!=nil{return err}
+	if err:=m.validateManagedRuntime(r.ID,template);err!=nil{_=os.Remove(markerPath);return fmt.Errorf("verify managed Minecraft runtime files: %w",err)}
+	return nil
 }
