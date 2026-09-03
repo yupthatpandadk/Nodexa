@@ -27,6 +27,21 @@ resolve_source_commit(){
  printf '%s' unknown
 }
 
+ensure_panel_app_key(){
+ local env_file="$PANEL_DIR/.env" current
+ [[ -f "$env_file" ]] || fail "Panel .env is missing; refusing to update without local configuration."
+ current="$(sed -n 's/^APP_KEY=//p' "$env_file" | tail -n1 | tr -d '\r' || true)"
+ if [[ -z "$current" || "$current" == "null" || "$current" == '""' ]]; then
+  current="base64:$(openssl rand -base64 32 | tr -d '\r\n')"
+  sed -i '/^APP_KEY=/d' "$env_file"
+  printf '\nAPP_KEY=%s\n' "$current" >> "$env_file"
+  log "Recovered missing Laravel APP_KEY before update."
+ fi
+ chown root:www-data "$env_file"
+ chmod 0640 "$env_file"
+ rm -f "$PANEL_DIR/bootstrap/cache/config.php"
+}
+
 if [[ -d "$PANEL_DIR" ]]; then
  if [[ ! -f "$PANEL_DIR/public/index.php" || ! -f "$PANEL_DIR/artisan" || ! -f "$PANEL_DIR/bootstrap/app.php" ]]; then
   repair_laravel_skeleton
@@ -36,10 +51,10 @@ if [[ -d "$PANEL_DIR" ]]; then
  rsync -a --exclude='.env' --exclude='storage/' --exclude='bootstrap/cache/' --exclude='vendor/' --exclude='node_modules/' --exclude='public/build/' "$SOURCE_ROOT/panel/" "$PANEL_DIR/"
  cd "$PANEL_DIR"
 
- # Keep Laravel writable paths owned by the web user before any Artisan process boots.
  install -d -o www-data -g www-data storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
  chown -R www-data:www-data storage bootstrap/cache
  chmod -R 775 storage bootstrap/cache
+ ensure_panel_app_key
 
  # composer.lock from the Nodexa source is authoritative. Never delete it or perform a
  # floating composer update from the web updater: that can install a newer Laravel tree
