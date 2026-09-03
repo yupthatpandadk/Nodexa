@@ -75,14 +75,28 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function configureRateLimiting(): void
     {
+        // Authentication rate limiting. For login and checkpoint endpoints we'll apply
+        // a limit of 10 requests per minute, for the forgot password endpoint apply a
+        // limit of two per minute for the requester so that there is less ability to
+        // trigger email spam.
         RateLimiter::for('authentication', function (Request $request) {
-            $key = $request->input('user') ?: $request->ip();
+            if ($request->route()->named('auth.post.forgot-password')) {
+                return Limit::perMinute(2)->by($request->ip());
+            }
 
-            return Limit::perMinute(config('http.rate_limit.authentication'))->by($key);
+            return Limit::perMinute(10)->by($request->ip());
         });
 
+        // Configure the throttles for both the application and client APIs below.
+        // This is configurable per-instance in "config/http.php". By default this
+        // limiter will be tied to the specific request user, and falls back to the
+        // request IP if there is no request user present for the key.
+        //
+        // This means that an authenticated API user cannot use IP switching to get
+        // around the limits.
         RateLimiter::for('api.client', function (Request $request) {
             $key = optional($request->user())->uuid ?: $request->ip();
+
             return Limit::perMinutes(
                 config('http.rate_limit.client_period'),
                 config('http.rate_limit.client')
@@ -91,6 +105,7 @@ class RouteServiceProvider extends ServiceProvider
 
         RateLimiter::for('api.application', function (Request $request) {
             $key = optional($request->user())->uuid ?: $request->ip();
+
             return Limit::perMinutes(
                 config('http.rate_limit.application_period'),
                 config('http.rate_limit.application')
