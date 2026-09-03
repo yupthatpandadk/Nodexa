@@ -32,18 +32,46 @@ valid_domain(){
  [[ "$1" =~ ^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$ ]]
 }
 
+# Installer bootstrap is commonly started with `curl ... | bash`, which means
+# normal stdin is the curl pipe rather than the SSH terminal. Always prefer the
+# controlling terminal for interactive questions. Most importantly, never hide
+# EOF with `|| true`, since that previously caused validation loops to spam
+# forever when stdin was unavailable.
+prompt_read(){
+ local prompt="$1" var_name="$2" value=""
+ if [[ -r /dev/tty ]]; then
+  IFS= read -r -p "$prompt" value </dev/tty || fail "Could not read input from /dev/tty. Reconnect your SSH session and try again."
+ elif [[ -t 0 ]]; then
+  IFS= read -r -p "$prompt" value || fail "Could not read terminal input."
+ else
+  fail "Interactive input is unavailable. Run the installer from an SSH terminal instead of a non-interactive pipe."
+ fi
+ printf -v "$var_name" '%s' "$value"
+}
+
+prompt_secret(){
+ local prompt="$1" var_name="$2" value=""
+ if [[ -r /dev/tty ]]; then
+  IFS= read -r -s -p "$prompt" value </dev/tty || fail "Could not read secure input from /dev/tty. Reconnect your SSH session and try again."
+  printf '\n' >/dev/tty
+ elif [[ -t 0 ]]; then
+  IFS= read -r -s -p "$prompt" value || fail "Could not read secure terminal input."
+  echo
+ else
+  fail "Interactive input is unavailable. Run the installer from an SSH terminal."
+ fi
+ printf -v "$var_name" '%s' "$value"
+}
+
 ask_yes_no(){
- local prompt="$1" default_value="${2:-y}" answer
- read -rp "$prompt" answer || true
+ local prompt="$1" default_value="${2:-y}" answer=""
+ prompt_read "$prompt" answer
  answer="${answer:-$default_value}"
  case "$answer" in y|Y|yes|YES|Yes) return 0;; *) return 1;; esac
 }
 
 ask_secret(){
- local prompt="$1" var_name="$2" value
- read -srp "$prompt" value || true
- echo
- printf -v "$var_name" '%s' "$value"
+ prompt_secret "$1" "$2"
 }
 
 setup_wizard(){
@@ -68,13 +96,13 @@ setup_wizard(){
  NODEXA_DB_HOST="${NODEXA_DB_HOST:-127.0.0.1}"
  NODEXA_DB_PORT="${NODEXA_DB_PORT:-3306}"
  if [[ -z "${NODEXA_DB_NAME:-}" ]]; then
-  read -rp "Database name [nodexa]: " NODEXA_DB_NAME || true
+  prompt_read "Database name [nodexa]: " NODEXA_DB_NAME
  fi
  NODEXA_DB_NAME="${NODEXA_DB_NAME:-nodexa}"
  [[ "$NODEXA_DB_NAME" =~ ^[A-Za-z0-9_-]{1,64}$ ]] || fail "Database name may only contain letters, numbers, underscore and dash."
 
  if [[ -z "${NODEXA_DB_USER:-}" ]]; then
-  read -rp "Database username [nodexa]: " NODEXA_DB_USER || true
+  prompt_read "Database username [nodexa]: " NODEXA_DB_USER
  fi
  NODEXA_DB_USER="${NODEXA_DB_USER:-nodexa}"
  [[ "$NODEXA_DB_USER" =~ ^[A-Za-z0-9_-]{1,32}$ ]] || fail "Database username may only contain letters, numbers, underscore and dash."
@@ -95,7 +123,7 @@ setup_wizard(){
  echo "################################################################"
 
  if [[ -z "${NODEXA_TIMEZONE:-}" ]]; then
-  read -rp "Select timezone [Europe/Copenhagen]: " NODEXA_TIMEZONE || true
+  prompt_read "Select timezone [Europe/Copenhagen]: " NODEXA_TIMEZONE
  fi
  NODEXA_TIMEZONE="${NODEXA_TIMEZONE:-Europe/Copenhagen}"
  [[ -e "/usr/share/zoneinfo/$NODEXA_TIMEZONE" ]] || fail "Unknown timezone: $NODEXA_TIMEZONE"
@@ -103,7 +131,7 @@ setup_wizard(){
 
  if [[ -z "${NODEXA_CONTACT_EMAIL:-}" ]]; then
   while true; do
-   read -rp "Email used for Nodexa and Let's Encrypt: " NODEXA_CONTACT_EMAIL || true
+   prompt_read "Email used for Nodexa and Let's Encrypt: " NODEXA_CONTACT_EMAIL
    [[ "$NODEXA_CONTACT_EMAIL" == *@*.* ]] && break
    echo "Please enter a valid email address."
   done
@@ -119,14 +147,14 @@ setup_wizard(){
  echo ""
 
  if [[ -z "${NODEXA_ADMIN_EMAIL:-}" ]]; then
-  read -rp "Email address for the initial admin account [${NODEXA_CONTACT_EMAIL}]: " NODEXA_ADMIN_EMAIL || true
+  prompt_read "Email address for the initial admin account [${NODEXA_CONTACT_EMAIL}]: " NODEXA_ADMIN_EMAIL
  fi
  NODEXA_ADMIN_EMAIL="${NODEXA_ADMIN_EMAIL:-$NODEXA_CONTACT_EMAIL}"
  [[ "$NODEXA_ADMIN_EMAIL" == *@*.* ]] || fail "Invalid administrator email."
 
  if [[ -z "${NODEXA_ADMIN_USERNAME:-}" ]]; then
   while true; do
-   read -rp "Username for the initial admin account: " NODEXA_ADMIN_USERNAME || true
+   prompt_read "Username for the initial admin account: " NODEXA_ADMIN_USERNAME
    [[ "$NODEXA_ADMIN_USERNAME" =~ ^[A-Za-z0-9._-]{3,64}$ ]] && break
    echo "Use 3-64 letters, numbers, dot, underscore or dash."
   done
@@ -134,12 +162,12 @@ setup_wizard(){
 
  if [[ -z "${NODEXA_ADMIN_FIRST_NAME:-}" ]]; then
   while [[ -z "${NODEXA_ADMIN_FIRST_NAME:-}" ]]; do
-   read -rp "First name for the initial admin account: " NODEXA_ADMIN_FIRST_NAME || true
+   prompt_read "First name for the initial admin account: " NODEXA_ADMIN_FIRST_NAME
   done
  fi
  if [[ -z "${NODEXA_ADMIN_LAST_NAME:-}" ]]; then
   while [[ -z "${NODEXA_ADMIN_LAST_NAME:-}" ]]; do
-   read -rp "Last name for the initial admin account: " NODEXA_ADMIN_LAST_NAME || true
+   prompt_read "Last name for the initial admin account: " NODEXA_ADMIN_LAST_NAME
   done
  fi
 
@@ -167,7 +195,7 @@ setup_wizard(){
  echo "################################################################"
 
  if [[ -z "${NODEXA_DOMAIN:-}" ]]; then
-  read -rp "Set the FQDN of this panel (panel.example.com, blank for IP): " NODEXA_DOMAIN || true
+  prompt_read "Set the FQDN of this panel (panel.example.com, blank for IP): " NODEXA_DOMAIN
  fi
  NODEXA_DOMAIN="$(normalize_domain "${NODEXA_DOMAIN:-}")"
  NODEXA_DOMAIN="${NODEXA_DOMAIN:-_}"
@@ -227,7 +255,7 @@ setup_wizard(){
  echo "Updates:           Admin → Opdateringer"
  echo ""
 
- if [[ "${NODEXA_SKIP_CONFIRM:-0}" != "1" && -t 0 ]]; then
+ if [[ "${NODEXA_SKIP_CONFIRM:-0}" != "1" && ( -r /dev/tty || -t 0 ) ]]; then
   if ! ask_yes_no "Start installation with these settings? [Y/n]: " y; then
    echo "Installation cancelled."
    exit 0
