@@ -16,6 +16,7 @@ use App\Http\Controllers\DatabaseHostController;
 use App\Http\Controllers\AdminServerStartupController;
 use App\Http\Controllers\SystemIssueController;
 use App\Http\Controllers\AdminUpdateController;
+use App\Http\Controllers\AdminPanelSettingsController;
 use App\Http\Controllers\StorefrontSiteController;
 use App\Http\Controllers\Api\ServerSftpController;
 
@@ -32,6 +33,7 @@ Route::get('/servers/{server}/databases',[ServerDatabaseController::class,'index
 Route::get('/servers/{server}/schedules',[ScheduleController::class,'index']);Route::post('/servers/{server}/schedules',[ScheduleController::class,'store']);Route::put('/servers/{server}/schedules/{schedule}',[ScheduleController::class,'update']);Route::post('/servers/{server}/schedules/{schedule}/run',[ScheduleController::class,'run']);Route::delete('/servers/{server}/schedules/{schedule}',[ScheduleController::class,'destroy']);
 Route::get('/servers/{server}/users',[ServerSubuserController::class,'index']);Route::post('/servers/{server}/users',[ServerSubuserController::class,'store']);Route::put('/servers/{server}/users/{subuser}',[ServerSubuserController::class,'update']);Route::delete('/servers/{server}/users/{subuser}',[ServerSubuserController::class,'destroy']);
 Route::get('/admin/servers/{server}/startup',[AdminServerStartupController::class,'show']);Route::put('/admin/servers/{server}/startup',[AdminServerStartupController::class,'update']);
+Route::get('/admin/settings',[AdminPanelSettingsController::class,'show']);Route::put('/admin/settings',[AdminPanelSettingsController::class,'update']);
 Route::get('/nodes',[NodeController::class,'index']);Route::post('/nodes',[NodeController::class,'store']);Route::get('/nodes/{node}',[NodeController::class,'show']);Route::get('/nodes/{node}/config',[NodeController::class,'config']);Route::post('/nodes/{node}/rotate-token',[NodeController::class,'rotateToken']);Route::get('/nodes/{node}/allocations',[AdminAllocationController::class,'index']);Route::post('/nodes/{node}/allocations',[AdminAllocationController::class,'store']);Route::post('/nodes/{node}/allocations/range',[AdminAllocationController::class,'range']);Route::delete('/nodes/{node}/allocations/{allocation}',[AdminAllocationController::class,'destroy']);
 Route::get('/database-hosts',[DatabaseHostController::class,'index']);Route::post('/database-hosts',[DatabaseHostController::class,'store']);Route::delete('/database-hosts/{databaseHost}',[DatabaseHostController::class,'destroy']);
 
