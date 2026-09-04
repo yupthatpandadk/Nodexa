@@ -42,15 +42,16 @@ if needle in text and 'admin.diagnostics' not in text:
 PY
 fi
 
-# Apply the Nodexa Admin visual refinement. This keeps the existing AdminLTE
-# structure and functionality, but loads the modern theme-aware stylesheet.
-if [[ -x "$SOURCE_DIR/deploy/setup-admin-design.sh" ]]; then
+# Apply the Nodexa Admin visual refinement. Files created through GitHub's
+# Contents API are not guaranteed to carry an executable bit, so invoke them
+# explicitly through bash whenever they exist.
+if [[ -f "$SOURCE_DIR/deploy/setup-admin-design.sh" ]]; then
     NODEXA_PANEL_DIR="$PANEL_DIR" bash "$SOURCE_DIR/deploy/setup-admin-design.sh"
 fi
 
 # Install/repair the optional addon framework after the core admin layout is in
 # place. The addon setup is idempotent and also republishes trusted static assets.
-if [[ -x "$SOURCE_DIR/deploy/setup-addons.sh" ]]; then
+if [[ -f "$SOURCE_DIR/deploy/setup-addons.sh" ]]; then
     NODEXA_PANEL_DIR="$PANEL_DIR" bash "$SOURCE_DIR/deploy/setup-addons.sh"
 fi
 
