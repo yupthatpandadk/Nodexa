@@ -61,8 +61,12 @@ export default ({ baseUrl, rootAdmin, internalId }: Props) => {
 
     return (
         <aside
-            className={'hidden lg:flex lg:w-[232px] xl:w-[248px] lg:flex-col lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen border-r bg-[#07100f]'}
-            style={{ borderColor: 'var(--nodexa-border)' }}
+            className={'hidden lg:flex lg:w-[232px] xl:w-[248px] lg:flex-col lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen border-r'}
+            style={{
+                borderColor: 'var(--nodexa-border)',
+                background: 'linear-gradient(180deg, var(--nodexa-surface), var(--nodexa-bg))',
+                boxShadow: '8px 0 36px rgba(var(--nodexa-accent-rgb), 0.025)',
+            }}
         >
             <div className={'px-5 pt-5 pb-4 border-b'} style={{ borderColor: 'var(--nodexa-border)' }}>
                 <Link to={'/'} className={'flex items-center gap-3 no-underline'}>
@@ -103,7 +107,10 @@ export default ({ baseUrl, rootAdmin, internalId }: Props) => {
                 <p className={'px-2 mb-2 text-[10px] uppercase tracking-[0.16em] text-gray-500 font-semibold'}>Server</p>
                 <div
                     className={'mb-3 rounded-xl border px-3 py-3'}
-                    style={{ borderColor: 'var(--nodexa-border)', background: 'rgba(var(--nodexa-accent-rgb), 0.045)' }}
+                    style={{
+                        borderColor: 'var(--nodexa-border)',
+                        background: 'linear-gradient(145deg, var(--nodexa-surface-2), var(--nodexa-surface))',
+                    }}
                 >
                     <div className={'flex items-center justify-between gap-2'}>
                         <span className={'truncate text-sm font-semibold text-gray-100'}>{name}</span>
