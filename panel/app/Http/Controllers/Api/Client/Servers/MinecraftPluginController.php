@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Pterodactyl\Facades\Activity;
 use Pterodactyl\Models\Permission;
 use Pterodactyl\Models\Server;
+use Pterodactyl\Services\Nodexa\AddonManager;
 use Pterodactyl\Repositories\Wings\DaemonFileRepository;
 use Pterodactyl\Http\Controllers\Api\Client\ClientApiController;
 
@@ -23,8 +24,10 @@ class MinecraftPluginController extends ClientApiController
         'velocity', 'waterfall', 'bungeecord',
     ];
 
-    public function __construct(private DaemonFileRepository $files)
-    {
+    public function __construct(
+        private DaemonFileRepository $files,
+        private AddonManager $addons,
+    ) {
         parent::__construct();
     }
 
@@ -273,7 +276,7 @@ class MinecraftPluginController extends ClientApiController
     {
         return Http::baseUrl(self::MODRINTH_BASE)
             ->acceptJson()
-            ->withHeaders(['User-Agent' => 'Nodexa/0.14.44 (https://github.com/yupthatpandadk/Nodexa)'])
+            ->withHeaders(['User-Agent' => 'Nodexa/0.14.45 (https://github.com/yupthatpandadk/Nodexa)'])
             ->connectTimeout(5)
             ->timeout(15)
             ->retry(2, 250);
@@ -281,6 +284,10 @@ class MinecraftPluginController extends ClientApiController
 
     private function guard(Request $request, Server $server): void
     {
+        if (!isset($this->addons->enabled()['minecraft-plugin-manager'])) {
+            abort(404, 'Minecraft Plugin Manager addon er ikke installeret eller aktiveret.');
+        }
+
         if (!$request->user()?->can(Permission::ACTION_FILE_CREATE, $server)) {
             abort(403, 'Du har ikke tilladelse til at installere plugins på denne server.');
         }
