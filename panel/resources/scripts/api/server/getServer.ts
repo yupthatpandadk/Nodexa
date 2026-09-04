@@ -22,14 +22,9 @@ export interface Server {
      * @deprecated this is the "uuid_short" which will be removed in 2.0, prefer use of "identifier"
      */
     id: string | Identifier<'serv'>;
-    identifier: Identifier<'serv'>; // Set from "server_identifier" and should be used moving forward to reference a server.
+    identifier: Identifier<'serv'>;
     internalId: number | string;
-    /**
-     * Exists only to maintain support in cases where the short-uuid is necessary for server reference
-     * and cannot be easily replaced with "identifier".
-     *
-     * @deprecated
-     */
+    /** @deprecated */
     __deprecatedUuidShort: string;
     uuid: string;
     name: string;
@@ -42,6 +37,8 @@ export interface Server {
     };
     invocation: string;
     dockerImage: string;
+    eggName: string;
+    eggIcon: string | null;
     description: string;
     limits: {
         memory: number;
@@ -75,6 +72,8 @@ export const rawDataToServerObject = ({ attributes: data }: FractalResponseData)
     status: data.status,
     invocation: data.invocation,
     dockerImage: data.docker_image,
+    eggName: data.egg_name || 'Game Server',
+    eggIcon: data.egg_icon || null,
     sftpDetails: {
         ip: data.sftp_details.ip,
         port: data.sftp_details.port,
