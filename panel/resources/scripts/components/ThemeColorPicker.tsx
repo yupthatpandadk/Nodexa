@@ -18,6 +18,27 @@ const PRESETS = [
     { name: 'Rød', color: '#ef4444' },
 ];
 
+const Trigger = styled.button`
+    display: inline-flex;
+    min-width: 2.7rem;
+    height: 2.7rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.8rem;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    color: var(--nodexa-muted);
+    background: transparent;
+    cursor: pointer;
+    transition: all 150ms ease;
+
+    &:hover {
+        color: #fff;
+        border-color: var(--nodexa-border-strong);
+        background: var(--nodexa-accent-soft);
+    }
+`;
+
 const Overlay = styled.div`
     position: fixed;
     inset: 0;
@@ -278,9 +299,9 @@ export default () => {
 
     return (
         <>
-            <button type={'button'} aria-label={'Vælg farve'} onClick={() => setOpen(true)}>
+            <Trigger type={'button'} aria-label={'Vælg farve'} onClick={() => setOpen(true)}>
                 <FontAwesomeIcon icon={faPalette} />
-            </button>
+            </Trigger>
             {open &&
                 createPortal(
                     <Overlay onMouseDown={(event) => event.currentTarget === event.target && setOpen(false)}>
