@@ -56,9 +56,6 @@ if [[ -d "$PANEL_DIR" ]]; then
  chmod -R 775 storage bootstrap/cache
  ensure_panel_app_key
 
- # composer.lock from the Nodexa source is authoritative. Never delete it or perform a
- # floating composer update from the web updater: that can install a newer Laravel tree
- # than the Nodexa revision was tested against.
  log "Installing locked PHP dependencies..."
  composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
  sudo -u www-data php artisan package:discover --ansi
@@ -94,60 +91,42 @@ if [[ -d "$PANEL_DIR" ]]; then
  done < <(systemctl list-unit-files --type=service --no-legend 'php*-fpm.service' 2>/dev/null | awk '{print $1}')
 fi
 
-# Nodexa nodes now use the protocol-compatible Wings engine. If a Wings config
-# already exists, never rebuild or re-enable the legacy custom Go daemon during an update.
+# A normal Nodexa Panel update must never reconfigure, replace, stop, or restart
+# a healthy Wings installation. Node configuration is panel-issued state and is
+# intentionally preserved across panel updates.
 WINGS_CONFIG="/etc/pterodactyl/config.yml"
 if [[ -s "$WINGS_CONFIG" ]]; then
- log "Updating Nodexa Agent Wings engine..."
- apt-get install -y ca-certificates curl >/dev/null
- ARCH="$(dpkg --print-architecture)"
- case "$ARCH" in
-  amd64) WINGS_ARCH="amd64" ;;
-  arm64) WINGS_ARCH="arm64" ;;
-  *) fail "Unsupported Wings architecture: $ARCH" ;;
- esac
-
- tmp_wings="$(mktemp)"
- curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
-  "https://github.com/pterodactyl/wings/releases/latest/download/wings_linux_${WINGS_ARCH}" \
-  -o "$tmp_wings"
- install -m 0755 "$tmp_wings" /usr/local/bin/wings
- rm -f "$tmp_wings"
-
+ log "Existing Nodexa Agent/Wings detected; preserving Node configuration and binary."
  install -d /etc/nodexa
  ln -sfn "$WINGS_CONFIG" /etc/nodexa/config.yml
- systemctl stop nodexa-agent.service 2>/dev/null || true
 
- cat >/etc/systemd/system/nodexa-agent.service <<'UNIT'
-[Unit]
-Description=Nodexa Agent (Wings Engine)
-After=network-online.target docker.service
-Requires=docker.service
-Wants=network-online.target
+ # Preserve the currently installed service definition. Only repair the alias
+ # when the Nodexa service exists, and only attempt recovery if the daemon is
+ # already offline. Never fail a Panel update merely because a remote/local Node
+ # is unavailable.
+ if [[ -f /etc/systemd/system/nodexa-agent.service ]]; then
+  ln -sfn /etc/systemd/system/nodexa-agent.service /etc/systemd/system/wings.service
+  systemctl daemon-reload
+ fi
 
-[Service]
-User=root
-WorkingDirectory=/etc/nodexa
-LimitNOFILE=4096
-PIDFile=/var/run/wings/daemon.pid
-ExecStart=/usr/local/bin/wings --config /etc/nodexa/config.yml
-Restart=on-failure
-RestartSec=5s
+ if systemctl is-active --quiet nodexa-agent.service 2>/dev/null || systemctl is-active --quiet wings.service 2>/dev/null; then
+  log "Nodexa Agent/Wings is healthy; leaving it running untouched."
+ else
+  log "Nodexa Agent/Wings is currently offline; attempting a non-destructive start..."
+  systemctl reset-failed nodexa-agent.service wings.service 2>/dev/null || true
+  if systemctl cat nodexa-agent.service >/dev/null 2>&1; then
+   systemctl start nodexa-agent.service 2>/dev/null || true
+  elif systemctl cat wings.service >/dev/null 2>&1; then
+   systemctl start wings.service 2>/dev/null || true
+  fi
 
-[Install]
-WantedBy=multi-user.target
-UNIT
-
- ln -sfn /etc/systemd/system/nodexa-agent.service /etc/systemd/system/wings.service
- systemctl daemon-reload
- systemctl enable nodexa-agent.service >/dev/null 2>&1 || true
- systemctl restart nodexa-agent.service
- sleep 2
- systemctl is-active --quiet nodexa-agent.service || {
-  journalctl -u nodexa-agent.service -n 80 --no-pager || true
-  fail "Updated Nodexa Agent Wings engine did not stay active."
- }
- log "Nodexa Agent Wings engine updated and restarted."
+  sleep 2
+  if systemctl is-active --quiet nodexa-agent.service 2>/dev/null || systemctl is-active --quiet wings.service 2>/dev/null; then
+   log "Nodexa Agent/Wings recovered successfully without changing its configuration."
+  else
+   log "WARNING: Nodexa Agent/Wings is still offline. Panel update will continue; use Admin -> Nodes -> Configuration only if the Node configuration itself needs repair."
+  fi
+ fi
 elif [[ -x /usr/local/bin/nodexad || -f /etc/nodexa.env ]]; then
  log "Legacy Nodexa Go agent detected without a Wings configuration. Leaving it unchanged. Generate a fresh Node Auto-Deploy command in Admin -> Nodes -> Configuration to migrate this node safely."
 fi
@@ -180,4 +159,4 @@ systemctl restart nodexa-queue 2>/dev/null || true
 systemctl restart nodexa-monitor.timer 2>/dev/null || true
 nginx -t
 systemctl reload nginx
-log "Update complete. Local .env, storage and server data were preserved."
+log "Update complete. Local .env, storage, Node configuration and server data were preserved."
