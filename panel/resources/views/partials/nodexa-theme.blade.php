@@ -1,3 +1,13 @@
+@php
+    $nodexaIdentityData = [];
+    $nodexaIdentityFile = '/var/lib/nodexa/version.json';
+    if (is_readable($nodexaIdentityFile)) {
+        $decodedIdentity = json_decode((string) file_get_contents($nodexaIdentityFile), true);
+        $nodexaIdentityData = is_array($decodedIdentity) ? $decodedIdentity : [];
+    }
+    $nodexaInstalledVersion = (string) ($nodexaIdentityData['version'] ?? 'unknown');
+@endphp
+
 <script id="nodexa-global-theme-bootstrap">
     (function () {
         var KEY = 'nodexa_theme_accent';
@@ -80,7 +90,7 @@
             root.style.setProperty('--nodexa-text', '#edf7f5');
             root.style.setProperty('--nodexa-muted', '#8ba09c');
 
-            /* Aliases used by the legacy Pterodactyl/AdminLTE area. */
+            /* Aliases used by the legacy admin area. */
             root.style.setProperty('--nodexa-admin-bg', background);
             root.style.setProperty('--nodexa-admin-surface', surface);
             root.style.setProperty('--nodexa-admin-surface-2', surface2);
@@ -121,6 +131,47 @@
         });
     })();
 </script>
+
+<script id="nodexa-system-identity">
+    (function () {
+        var version = @json($nodexaInstalledVersion);
+        window.NodexaSystem = Object.assign({}, window.NodexaSystem || {}, { version: version });
+
+        function applyIdentity() {
+            var footer = document.querySelector('.main-footer');
+            if (footer) {
+                var oldBrand = footer.querySelector('a[href*="pterodactyl"]');
+                if (oldBrand) {
+                    var brand = document.createElement('span');
+                    brand.textContent = 'Nodexa Software';
+                    brand.className = oldBrand.className;
+                    oldBrand.replaceWith(brand);
+                }
+
+                var right = footer.querySelector('.pull-right');
+                if (right) {
+                    right.innerHTML = '<strong><i class="fa fa-fw fa-code-fork"></i></strong> Nodexa v' + version;
+                }
+            }
+
+            document.querySelectorAll('a[href*="pterodactyl.io"]').forEach(function (link) {
+                if (/pterodactyl/i.test(link.textContent || '')) {
+                    var replacement = document.createElement('span');
+                    replacement.textContent = 'Nodexa Software';
+                    replacement.className = link.className;
+                    link.replaceWith(replacement);
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyIdentity, { once: true });
+        } else {
+            applyIdentity();
+        }
+    })();
+</script>
+
 <style id="nodexa-global-theme-base">
     :root {
         --nodexa-accent: #42e9a6;
