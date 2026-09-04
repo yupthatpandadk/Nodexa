@@ -39,7 +39,7 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware('web')->group(function () {
                 // Public, cacheable, server-rendered Nodexa storefront. Keep these routes
                 // outside the authenticated panel group so visitors can browse before login.
-                Route::group(base_path('routes/storefront.php'));
+                Route::group([], base_path('routes/storefront.php'));
 
                 Route::middleware(['auth.session', RequireTwoFactorAuthentication::class])
                     ->group(base_path('routes/base.php'));
