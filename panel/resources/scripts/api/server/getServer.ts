@@ -49,6 +49,9 @@ export interface Server {
         threads: string;
     };
     eggFeatures: string[];
+    addons: {
+        minecraftPluginManager: boolean;
+    };
     featureLimits: {
         databases: number;
         allocations: number;
@@ -74,6 +77,9 @@ export const rawDataToServerObject = ({ attributes: data }: FractalResponseData)
     dockerImage: data.docker_image,
     eggName: data.egg_name || 'Game Server',
     eggIcon: data.egg_icon || null,
+    addons: {
+        minecraftPluginManager: Boolean(data.nodexa_addons?.minecraft_plugin_manager),
+    },
     sftpDetails: {
         ip: data.sftp_details.ip,
         port: data.sftp_details.port,
