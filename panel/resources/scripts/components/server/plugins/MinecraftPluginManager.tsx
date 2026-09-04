@@ -19,7 +19,7 @@ const loaderFromEgg = (egg: string): string => {
     return 'paper';
 };
 
-const detectMinecraftVersion = (variables: Array<{ envVariable: string; serverValue: string }>): string => {
+const detectMinecraftVersion = (variables: Array<{ envVariable: string; serverValue: string | null }>): string => {
     const priority = ['MINECRAFT_VERSION', 'MC_VERSION', 'SERVER_VERSION', 'VERSION'];
     for (const key of priority) {
         const variable = variables.find((item) => item.envVariable.toUpperCase() === key);
