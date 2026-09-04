@@ -106,8 +106,8 @@ export default ({ className }: WithClassname) => {
                 <Fade appear in={visible.value} timeout={75} key={'upload_modal_mask'} unmountOnExit>
                     <ModalMask
                         onClick={() => (visible.value = false)}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
+                        onDragOver={(e: React.DragEvent<HTMLDivElement>) => e.preventDefault()}
+                        onDrop={(e: React.DragEvent<HTMLDivElement>) => {
                             e.preventDefault();
                             e.stopPropagation();
 
@@ -136,7 +136,7 @@ export default ({ className }: WithClassname) => {
                 type={'file'}
                 ref={fileUploadInput}
                 css={tw`hidden`}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     if (!e.currentTarget.files) return;
 
                     onFileSubmission(e.currentTarget.files);
