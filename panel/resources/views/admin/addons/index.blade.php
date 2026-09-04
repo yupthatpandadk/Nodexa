@@ -106,7 +106,7 @@
                                 <button class="btn btn-primary btn-block" type="submit"><i class="fa fa-refresh"></i> Opdatér</button>
                             </form>
                         @endif
-                        <form method="POST" action="{{ route('admin.addons.uninstall', $addon['id']) }}" onsubmit="return confirm('Afillstallér {{ addslashes($addon['name']) }}?');">
+                        <form method="POST" action="{{ route('admin.addons.uninstall', $addon['id']) }}" onsubmit='return confirm(@json("Afinstallér {$addon['name']}?"));'>
                             @csrf
                             @method('DELETE')
                             <button class="btn btn-danger" type="submit" title="Afinstallér"><i class="fa fa-trash"></i></button>
