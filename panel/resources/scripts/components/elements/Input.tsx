@@ -15,8 +15,8 @@ const light = css<Props>`
     }
 
     &:focus {
-        border-color: #38dca0;
-        box-shadow: 0 0 0 3px rgba(56, 220, 160, 0.12);
+        border-color: var(--nodexa-accent);
+        box-shadow: 0 0 0 3px rgba(var(--nodexa-accent-rgb), 0.12);
     }
 
     &:disabled {
@@ -27,9 +27,9 @@ const light = css<Props>`
 
 const checkboxStyle = css<Props>`
     ${tw`cursor-pointer appearance-none inline-block align-middle select-none flex-shrink-0 w-4 h-4 border rounded-sm`};
-    color: #42e9a6;
-    border-color: rgba(130, 163, 151, 0.55);
-    background: #183028;
+    color: var(--nodexa-accent);
+    border-color: var(--nodexa-border-strong);
+    background: var(--nodexa-surface-2);
     color-adjust: exact;
     background-origin: border-box;
     transition: all 75ms linear, box-shadow 25ms linear;
@@ -43,8 +43,8 @@ const checkboxStyle = css<Props>`
 
     &:focus {
         outline: none;
-        border-color: rgba(66, 233, 166, 0.72);
-        box-shadow: 0 0 0 2px rgba(66, 233, 166, 0.16);
+        border-color: var(--nodexa-accent);
+        box-shadow: 0 0 0 2px rgba(var(--nodexa-accent-rgb), 0.16);
     }
 `;
 
@@ -52,13 +52,13 @@ const inputStyle = css<Props>`
     resize: none;
     ${tw`appearance-none outline-none w-full min-w-0`};
     ${tw`p-3 text-sm transition-all duration-150 shadow-none focus:ring-0`};
-    border: 1px solid rgba(123, 158, 145, 0.25);
+    border: 1px solid var(--nodexa-border);
     border-radius: 12px;
     color: #eafbf5;
-    background: rgba(13, 31, 26, 0.82);
+    background: linear-gradient(145deg, var(--nodexa-surface-2), var(--nodexa-surface));
 
     &:hover:not(:disabled) {
-        border-color: rgba(73, 238, 169, 0.2);
+        border-color: var(--nodexa-border-strong);
     }
 
     & + .input-help {
@@ -72,8 +72,8 @@ const inputStyle = css<Props>`
     }
 
     &:not(:disabled):not(:read-only):focus {
-        border-color: rgba(66, 233, 166, 0.72);
-        box-shadow: 0 0 0 3px rgba(66, 233, 166, 0.11);
+        border-color: var(--nodexa-accent);
+        box-shadow: 0 0 0 3px rgba(var(--nodexa-accent-rgb), 0.11);
         ${(props) => props.hasError && tw`border-red-300 ring-red-200`};
     }
 
