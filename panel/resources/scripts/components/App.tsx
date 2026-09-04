@@ -12,6 +12,7 @@ import { history } from '@/components/history';
 import { setupInterceptors } from '@/api/interceptors';
 import AuthenticatedRoute from '@/components/elements/AuthenticatedRoute';
 import { ServerContext } from '@/state/server';
+import { loadNodexaAccent } from '@/components/ThemeColorPicker';
 import '@/assets/tailwind.css';
 import Spinner from '@/components/elements/Spinner';
 
@@ -36,6 +37,7 @@ interface ExtendedWindow extends Window {
 }
 
 setupInterceptors(history);
+loadNodexaAccent();
 
 const App = () => {
     const { PterodactylUser, SiteConfiguration } = window as ExtendedWindow;
