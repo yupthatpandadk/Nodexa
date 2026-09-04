@@ -21,17 +21,21 @@ const ButtonStyle = styled.button<Omit<Props, 'isLoading'>>`
             ${(props) =>
                 !props.isSecondary &&
                 css`
-                    border-color: rgba(34, 197, 135, 0.78);
-                    color: #062018;
-                    background: linear-gradient(135deg, #67efb8, #2bdc98);
-                    box-shadow: 0 10px 28px rgba(43, 220, 152, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+                    border-color: var(--nodexa-border-strong);
+                    color: #06100e;
+                    background: linear-gradient(135deg, var(--nodexa-accent-2), var(--nodexa-accent));
+                    box-shadow: 0 10px 28px rgba(var(--nodexa-accent-rgb), 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.28);
                 `};
 
             &:hover:not(:disabled) {
                 transform: translateY(-1px);
-                border-color: rgba(86, 245, 183, 0.92);
-                background: linear-gradient(135deg, #76f5c2, #38e3a2);
-                box-shadow: 0 14px 34px rgba(43, 220, 152, 0.23);
+                border-color: var(--nodexa-accent-2);
+                background: linear-gradient(
+                    135deg,
+                    color-mix(in srgb, var(--nodexa-accent-2) 88%, white 12%),
+                    color-mix(in srgb, var(--nodexa-accent) 88%, white 12%)
+                );
+                box-shadow: 0 14px 34px rgba(var(--nodexa-accent-rgb), 0.25);
             }
         `};
 
@@ -89,21 +93,21 @@ const ButtonStyle = styled.button<Omit<Props, 'isLoading'>>`
     ${(props) =>
         props.isSecondary &&
         css<Props>`
-            border-color: rgba(137, 166, 156, 0.25);
-            background: rgba(10, 24, 20, 0.5);
+            border-color: var(--nodexa-border);
+            background: var(--nodexa-surface);
             color: #d9eee6;
 
             &:hover:not(:disabled) {
-                border-color: rgba(73, 238, 169, 0.24);
+                border-color: var(--nodexa-border-strong);
                 color: #effff8;
-                background: rgba(66, 233, 166, 0.07);
+                background: var(--nodexa-accent-soft);
                 ${(props) => props.color === 'red' && tw`bg-red-500 border-red-600 text-red-50`};
                 ${(props) =>
                     props.color === 'primary' &&
                     css`
-                        border-color: rgba(73, 238, 169, 0.3);
-                        color: #dffff2;
-                        background: rgba(66, 233, 166, 0.1);
+                        border-color: var(--nodexa-border-strong);
+                        color: #effff8;
+                        background: var(--nodexa-accent-soft);
                     `};
                 ${(props) => props.color === 'green' && tw`bg-green-500 border-green-600 text-green-50`};
             }
