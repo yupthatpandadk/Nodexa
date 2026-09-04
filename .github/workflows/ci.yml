@@ -60,9 +60,15 @@ jobs:
           rm -f composer.lock
           echo "Nodexa runtime composer constraint:"
           grep -A8 '"require"' composer.json
-          composer update --no-interaction --prefer-dist
+          composer update --no-interaction --prefer-dist --no-scripts
           cp .env.example .env
-          php artisan key:generate --force
+          APP_KEY_VALUE="base64:$(openssl rand -base64 32 | tr -d '\r\n')"
+          if grep -q '^APP_KEY=' .env; then
+            sed -i "s|^APP_KEY=.*|APP_KEY=${APP_KEY_VALUE}|" .env
+          else
+            printf '\nAPP_KEY=%s\n' "$APP_KEY_VALUE" >> .env
+          fi
+          composer run-script post-autoload-dump
           touch database/database.sqlite
       - name: Run migrations and framework boot checks
         working-directory: /tmp/nodexa-panel
