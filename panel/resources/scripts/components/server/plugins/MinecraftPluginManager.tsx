@@ -43,6 +43,7 @@ export default () => {
     const detectedVersion = useMemo(() => detectMinecraftVersion(server.variables || []), [server.variables]);
 
     const [query, setQuery] = useState('');
+    const [activeQuery, setActiveQuery] = useState('');
     const [loader, setLoader] = useState(detectedLoader);
     const [gameVersion, setGameVersion] = useState(detectedVersion);
     const [results, setResults] = useState<MinecraftPluginSearchResult[]>([]);
@@ -64,25 +65,39 @@ export default () => {
         }
     };
 
-    useEffect(() => {
-        if (isMinecraft) loadInstalled();
-    }, [server.id, isMinecraft]);
-
-    const search = async (event?: FormEvent) => {
-        event?.preventDefault();
+    const loadPlugins = async (searchQuery: string) => {
+        const normalizedQuery = searchQuery.trim();
         setLoading(true);
         setError(null);
         setMessage(null);
         try {
-            const response = await searchMinecraftPlugins(server.id, query, gameVersion, loader);
+            const response = await searchMinecraftPlugins(server.id, normalizedQuery, gameVersion, loader);
             setResults(response.results);
-            if (response.results.length === 0) setMessage('Ingen kompatible plugins blev fundet med de valgte filtre.');
+            setActiveQuery(normalizedQuery);
+            if (response.results.length === 0) {
+                setMessage(
+                    normalizedQuery
+                        ? 'Ingen kompatible plugins blev fundet med de valgte filtre.'
+                        : 'Der blev ikke fundet populære plugins med de valgte filtre.'
+                );
+            }
         } catch (e) {
             setError(httpErrorToHuman(e));
         } finally {
             setLoading(false);
         }
     };
+
+    const search = async (event?: FormEvent) => {
+        event?.preventDefault();
+        await loadPlugins(query);
+    };
+
+    useEffect(() => {
+        if (!isMinecraft) return;
+        loadInstalled();
+        loadPlugins('');
+    }, [server.id, isMinecraft]);
 
     const install = async (plugin: MinecraftPluginSearchResult) => {
         setWorkingProject(plugin.projectId);
@@ -140,7 +155,7 @@ export default () => {
                             </div>
                             <h1 className={'mt-1 text-2xl font-bold text-gray-50'}>Find og installér Minecraft plugins</h1>
                             <p className={'mt-2 max-w-3xl text-sm text-gray-400'}>
-                                Søg i Modrinth-kataloget. Nodexa vælger en kompatibel JAR og installerer den automatisk i <code>/plugins</code> via Wings.
+                                Se populære plugins med det samme eller søg i Modrinth-kataloget. Nodexa vælger en kompatibel JAR og installerer den automatisk i <code>/plugins</code> via Wings.
                             </p>
                         </div>
                         <div className={'rounded-xl border px-4 py-3 text-sm'} style={{ borderColor: 'var(--nodexa-border)', background: 'rgba(var(--nodexa-accent-rgb), .045)' }}>
@@ -270,10 +285,19 @@ export default () => {
                     )}
                 </section>
 
+                {loading && results.length === 0 && (
+                    <section className={'rounded-2xl border border-dashed p-6 text-center text-sm text-gray-400'} style={{ borderColor: 'var(--nodexa-border)', background: 'var(--nodexa-surface)' }}>
+                        Henter populære kompatible plugins…
+                    </section>
+                )}
+
                 {results.length > 0 && (
                     <section>
                         <div className={'mb-3 flex items-center justify-between'}>
-                            <h2 className={'text-lg font-semibold text-gray-100'}>Resultater</h2>
+                            <div>
+                                <h2 className={'text-lg font-semibold text-gray-100'}>{activeQuery ? 'Søgeresultater' : 'Populære plugins'}</h2>
+                                {!activeQuery && <p className={'mt-1 text-xs text-gray-500'}>Populære plugins, der matcher din servers loader og Minecraft-version.</p>}
+                            </div>
                             <span className={'text-xs text-gray-500'}>{results.length} vist</span>
                         </div>
                         <div className={'grid gap-4 md:grid-cols-2 xl:grid-cols-3'}>
