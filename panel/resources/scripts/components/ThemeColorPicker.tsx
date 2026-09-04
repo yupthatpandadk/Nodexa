@@ -19,23 +19,53 @@ const PRESETS = [
 ];
 
 const Trigger = styled.button`
+    position: fixed;
+    z-index: 9998;
+    top: 48%;
+    right: 0;
     display: inline-flex;
-    min-width: 2.7rem;
-    height: 2.7rem;
+    min-width: 3.15rem;
+    min-height: 3rem;
     align-items: center;
     justify-content: center;
-    padding: 0 0.8rem;
-    border: 1px solid transparent;
-    border-radius: 12px;
-    color: var(--nodexa-muted);
-    background: transparent;
+    gap: 0.5rem;
+    padding: 0 0.75rem 0 0.85rem;
+    transform: translateY(-50%);
+    border: 1px solid var(--nodexa-border-strong);
+    border-right: 0;
+    border-radius: 14px 0 0 14px;
+    color: #f2fff9;
+    background: linear-gradient(145deg, rgba(13, 31, 27, 0.97), rgba(7, 16, 14, 0.98));
+    box-shadow: -10px 12px 34px rgba(0, 0, 0, 0.28), 0 0 24px rgba(var(--nodexa-accent-rgb), 0.08);
+    backdrop-filter: blur(16px);
     cursor: pointer;
-    transition: all 150ms ease;
+    transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease, color 150ms ease;
+
+    svg {
+        color: var(--nodexa-accent);
+    }
+
+    span {
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+    }
 
     &:hover {
-        color: #fff;
-        border-color: var(--nodexa-border-strong);
-        background: var(--nodexa-accent-soft);
+        border-color: var(--nodexa-accent);
+        background: linear-gradient(145deg, rgba(var(--nodexa-accent-rgb), 0.14), rgba(7, 16, 14, 0.98));
+        box-shadow: -12px 14px 38px rgba(0, 0, 0, 0.32), 0 0 26px rgba(var(--nodexa-accent-rgb), 0.15);
+    }
+
+    @media (max-width: 639px) {
+        min-width: 2.8rem;
+        width: 2.8rem;
+        height: 2.8rem;
+        padding: 0;
+
+        span {
+            display: none;
+        }
     }
 `;
 
@@ -44,39 +74,57 @@ const Overlay = styled.div`
     inset: 0;
     z-index: 10000;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    background: rgba(2, 8, 7, 0.72);
-    backdrop-filter: blur(8px);
+    align-items: stretch;
+    justify-content: flex-end;
+    background: rgba(2, 8, 7, 0.58);
+    backdrop-filter: blur(5px);
 `;
 
 const Panel = styled.div`
-    width: min(28rem, 100%);
-    overflow: hidden;
-    border: 1px solid var(--nodexa-border-strong);
-    border-radius: 18px;
+    width: min(27rem, calc(100vw - 2rem));
+    height: 100%;
+    overflow-y: auto;
+    border-left: 1px solid var(--nodexa-border-strong);
     color: var(--nodexa-text);
-    background: linear-gradient(180deg, rgba(16, 33, 29, 0.99), rgba(7, 16, 14, 0.99));
-    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48), 0 0 40px rgba(var(--nodexa-accent-rgb), 0.08);
+    background:
+        radial-gradient(circle at 90% 5%, rgba(var(--nodexa-accent-rgb), 0.1), transparent 16rem),
+        linear-gradient(180deg, rgba(14, 30, 26, 0.995), rgba(6, 14, 12, 0.995));
+    box-shadow: -28px 0 80px rgba(0, 0, 0, 0.48), -4px 0 28px rgba(var(--nodexa-accent-rgb), 0.06);
+    animation: nodexa-theme-drawer-in 180ms ease-out;
+
+    @keyframes nodexa-theme-drawer-in {
+        from {
+            transform: translateX(100%);
+            opacity: 0.7;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
 `;
 
 const Header = styled.div`
+    position: sticky;
+    z-index: 2;
+    top: 0;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1.15rem 1.2rem;
+    padding: 1.35rem 1.25rem 1.05rem;
     border-bottom: 1px solid var(--nodexa-border);
+    background: rgba(8, 20, 17, 0.92);
+    backdrop-filter: blur(18px);
 
     h2 {
         margin: 0;
-        font-size: 1.05rem;
-        font-weight: 700;
+        font-size: 1.08rem;
+        font-weight: 800;
     }
 
     p {
-        margin: 0.25rem 0 0;
+        margin: 0.3rem 0 0;
         color: var(--nodexa-muted);
         font-size: 0.78rem;
     }
@@ -84,13 +132,13 @@ const Header = styled.div`
 
 const Close = styled.button`
     display: inline-flex;
-    width: 2.2rem;
-    height: 2.2rem;
+    width: 2.35rem;
+    height: 2.35rem;
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
     border: 1px solid var(--nodexa-border);
-    border-radius: 10px;
+    border-radius: 11px;
     color: var(--nodexa-muted);
     background: rgba(255, 255, 255, 0.035);
     cursor: pointer;
@@ -103,27 +151,39 @@ const Close = styled.button`
 `;
 
 const Body = styled.div`
-    padding: 1.2rem;
+    padding: 1.2rem 1.25rem;
+`;
+
+const SectionTitle = styled.div`
+    margin-bottom: 0.75rem;
+
+    strong {
+        display: block;
+        color: #eefbf6;
+        font-size: 0.78rem;
+    }
+
+    span {
+        display: block;
+        margin-top: 0.2rem;
+        color: var(--nodexa-muted);
+        font-size: 0.68rem;
+    }
 `;
 
 const Presets = styled.div`
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.65rem;
-
-    @media (max-width: 480px) {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
 `;
 
 const Swatch = styled.button<{ $color: string; $active: boolean }>`
     display: flex;
-    min-height: 4.3rem;
-    flex-direction: column;
+    min-height: 4.1rem;
     align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
-    padding: 0.55rem;
+    justify-content: flex-start;
+    gap: 0.7rem;
+    padding: 0.7rem;
     border: 1px solid ${({ $active }) => ($active ? 'var(--nodexa-accent)' : 'rgba(148, 163, 184, 0.12)')};
     border-radius: 12px;
     color: ${({ $active }) => ($active ? '#fff' : 'var(--nodexa-muted)')};
@@ -138,8 +198,9 @@ const Swatch = styled.button<{ $color: string; $active: boolean }>`
     }
 
     > span:first-child {
-        width: 1.45rem;
-        height: 1.45rem;
+        width: 1.55rem;
+        height: 1.55rem;
+        flex: 0 0 auto;
         border: 2px solid rgba(255, 255, 255, 0.35);
         border-radius: 999px;
         background: ${({ $color }) => $color};
@@ -147,8 +208,8 @@ const Swatch = styled.button<{ $color: string; $active: boolean }>`
     }
 
     > span:last-child {
-        font-size: 0.68rem;
-        font-weight: 700;
+        font-size: 0.72rem;
+        font-weight: 750;
     }
 `;
 
@@ -157,8 +218,8 @@ const CustomRow = styled.div`
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-top: 1rem;
-    padding: 0.85rem;
+    margin-top: 1.15rem;
+    padding: 0.9rem;
     border: 1px solid rgba(148, 163, 184, 0.1);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.025);
@@ -178,8 +239,8 @@ const CustomRow = styled.div`
     }
 
     input[type='color'] {
-        width: 3.2rem;
-        height: 2.4rem;
+        width: 3.4rem;
+        height: 2.55rem;
         padding: 0.15rem;
         overflow: hidden;
         border: 1px solid var(--nodexa-border-strong);
@@ -194,7 +255,8 @@ const Footer = styled.div`
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.9rem 1.2rem 1.1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
     border-top: 1px solid rgba(148, 163, 184, 0.08);
 
     span {
@@ -299,8 +361,9 @@ export default () => {
 
     return (
         <>
-            <Trigger type={'button'} aria-label={'Vælg farve'} onClick={() => setOpen(true)}>
+            <Trigger type={'button'} aria-label={'Åbn temaindstillinger'} onClick={() => setOpen(true)}>
                 <FontAwesomeIcon icon={faPalette} />
+                <span>Tema</span>
             </Trigger>
             {open &&
                 createPortal(
@@ -309,17 +372,21 @@ export default () => {
                             event.currentTarget === event.target && setOpen(false)
                         }
                     >
-                        <Panel role={'dialog'} aria-modal={'true'} aria-label={'Vælg Nodexa farve'}>
+                        <Panel role={'dialog'} aria-modal={'true'} aria-label={'Tema og farver'}>
                             <Header>
                                 <div>
-                                    <h2>Udseende</h2>
-                                    <p>Vælg accentfarven på dit Nodexa-panel.</p>
+                                    <h2>Tema & farver</h2>
+                                    <p>Tilpas accentfarven på dit Nodexa-panel.</p>
                                 </div>
                                 <Close type={'button'} aria-label={'Luk'} onClick={() => setOpen(false)}>
                                     <FontAwesomeIcon icon={faTimes} />
                                 </Close>
                             </Header>
                             <Body>
+                                <SectionTitle>
+                                    <strong>Accentfarve</strong>
+                                    <span>Ændringer vises med det samme på hele hjemmesiden.</span>
+                                </SectionTitle>
                                 <Presets>
                                     {PRESETS.map((preset) => (
                                         <Swatch
@@ -343,16 +410,16 @@ export default () => {
                                         id={'nodexa-custom-accent'}
                                         type={'color'}
                                         value={accent}
-                                        onChange={(event) => choose(event.currentTarget.value)}
+                                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => choose(event.currentTarget.value)}
                                     />
                                 </CustomRow>
+                                <Footer>
+                                    <span>Gemmes automatisk på denne enhed.</span>
+                                    <Reset type={'button'} onClick={reset}>
+                                        <FontAwesomeIcon icon={faUndo} /> Standard
+                                    </Reset>
+                                </Footer>
                             </Body>
-                            <Footer>
-                                <span>Gemmes automatisk på denne enhed.</span>
-                                <Reset type={'button'} onClick={reset}>
-                                    <FontAwesomeIcon icon={faUndo} /> Standard
-                                </Reset>
-                            </Footer>
                         </Panel>
                     </Overlay>,
                     document.body
