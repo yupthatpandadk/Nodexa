@@ -51,7 +51,7 @@
         </div>
     </div>
 </form>
-<form action="{{ route('admin.nests.egg.view', $egg->id) }}" method="POST">
+<form action="{{ route('admin.nests.egg.view', $egg->id) }}" method="POST" enctype="multipart/form-data">
     <div class="row">
         <div class="col-xs-12">
             <div class="box">
@@ -108,6 +108,32 @@
                                 <label for="pDescription" class="control-label">Description</label>
                                 <textarea id="pDescription" name="description" class="form-control" rows="8">{{ $egg->description }}</textarea>
                                 <p class="text-muted small">A description of this Egg that will be displayed throughout the Panel as needed.</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="pGameLogo" class="control-label">Game Logo</label>
+                                @if($egg->icon_path)
+                                    <div style="margin-bottom: 10px;">
+                                        <img
+                                            src="{{ asset('storage/' . $egg->icon_path) }}"
+                                            alt="{{ $egg->name }} logo"
+                                            style="width:72px;height:72px;object-fit:contain;border-radius:12px;border:1px solid var(--nodexa-border);background:var(--nodexa-surface-2);padding:8px;"
+                                        />
+                                    </div>
+                                @endif
+                                <input
+                                    type="file"
+                                    id="pGameLogo"
+                                    name="icon"
+                                    class="form-control"
+                                    accept="image/png,image/jpeg,image/webp"
+                                />
+                                <p class="text-muted small">Shown automatically on every server using this Egg. PNG, JPG or WebP, max 2 MB. A square transparent logo works best.</p>
+                                @if($egg->icon_path)
+                                    <div class="checkbox checkbox-danger no-margin-bottom">
+                                        <input id="pRemoveGameLogo" name="remove_icon" type="checkbox" value="1" />
+                                        <label for="pRemoveGameLogo">Remove current game logo</label>
+                                    </div>
+                                @endif
                             </div>
                             <div class="form-group">
                                 <label for="pStartup" class="control-label">Startup Command <span class="field-required"></span></label>
