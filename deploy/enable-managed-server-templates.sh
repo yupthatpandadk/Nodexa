@@ -72,4 +72,9 @@ p.write_text(text)
 PY
 fi
 
+RUNTIME_OPT="$(cd "$(dirname "$0")" && pwd)/optimize-minecraft-runtime.sh"
+if [[ -f "$RUNTIME_OPT" ]]; then
+  NODEXA_PANEL_DIR="$PANEL_DIR" bash "$RUNTIME_OPT"
+fi
+
 echo "[Nodexa] Managed server template UI enabled with live reinstall console."
