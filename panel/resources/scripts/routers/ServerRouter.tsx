@@ -31,6 +31,8 @@ export default () => {
 
     const id = ServerContext.useStoreState((state) => state.server.data?.id);
     const uuid = ServerContext.useStoreState((state) => state.server.data?.uuid);
+    const eggName = ServerContext.useStoreState((state) => state.server.data?.eggName || '');
+    const isMinecraft = /minecraft|paper|purpur|spigot|bukkit|folia|velocity|waterfall|bungee/i.test(eggName);
     const inConflictState = ServerContext.useStoreState((state) => state.server.inConflictState);
     const serverId = ServerContext.useStoreState((state) => state.server.data?.internalId);
     const getServer = ServerContext.useStoreActions((actions) => actions.server.getServer);
@@ -89,7 +91,7 @@ export default () => {
                     <SubNavigation>
                         <div>
                             {routes.server
-                                .filter((route) => !!route.name)
+                                .filter((route) => !!route.name && (!route.minecraftOnly || isMinecraft))
                                 .map((route) =>
                                     route.permission ? (
                                         <Can key={route.path} action={route.permission} matchAny>
@@ -104,7 +106,6 @@ export default () => {
                                     )
                                 )}
                             {rootAdmin && (
-                                // eslint-disable-next-line react/jsx-no-target-blank
                                 <a href={`/admin/servers/view/${serverId}`} target={'_blank'}>
                                     <FontAwesomeIcon icon={faExternalLinkAlt} />
                                 </a>
