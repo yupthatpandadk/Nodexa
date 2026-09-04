@@ -42,8 +42,14 @@ if needle in text and 'admin.diagnostics' not in text:
 PY
 fi
 
-# The updater may have cached Blade views before this sidebar patch ran.
-# Clear only compiled views so the new menu appears immediately without
+# Apply the Nodexa Admin visual refinement. This keeps the existing AdminLTE
+# structure and functionality, but loads the modern theme-aware stylesheet.
+if [[ -x "$SOURCE_DIR/deploy/setup-admin-design.sh" ]]; then
+    NODEXA_PANEL_DIR="$PANEL_DIR" bash "$SOURCE_DIR/deploy/setup-admin-design.sh"
+fi
+
+# The updater may have cached Blade views before this sidebar/design patch ran.
+# Clear only compiled views so the new menu/design appears immediately without
 # touching sessions, config or user data.
 if [[ -f "$PANEL_DIR/artisan" ]]; then
     cd "$PANEL_DIR"
