@@ -17,7 +17,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import Can from '@/components/elements/Can';
 import { ServerContext } from '@/state/server';
-import ThemeColorPicker from '@/components/ThemeColorPicker';
 import routes from '@/routers/routes';
 
 interface Props {
@@ -141,10 +140,6 @@ export default ({ baseUrl, rootAdmin, internalId }: Props) => {
             </div>
 
             <div className={'mt-auto px-4 py-5 border-t space-y-1'} style={{ borderColor: 'var(--nodexa-border)' }}>
-                <div className={'flex items-center gap-2 px-1 py-1 text-gray-400'}>
-                    <ThemeColorPicker />
-                    <span className={'text-sm'}>Farve</span>
-                </div>
                 {rootAdmin && internalId && (
                     <a
                         href={`/admin/servers/view/${internalId}`}
