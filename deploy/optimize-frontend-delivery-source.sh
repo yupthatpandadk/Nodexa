@@ -83,4 +83,9 @@ p.write_text(text)
 PY
 fi
 
+THEME_SYNC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/sync-admin-theme.sh"
+if [[ -f "$THEME_SYNC" ]]; then
+    NODEXA_PANEL_DIR="$PANEL_DIR" bash "$THEME_SYNC"
+fi
+
 echo "[Nodexa] Critical frontend path trimmed; admin enrichment deferred without blocking UI interactions."
