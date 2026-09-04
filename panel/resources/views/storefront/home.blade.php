@@ -79,7 +79,7 @@
             <p>Vælg den servertype og de ressourcer der passer til dit setup. Tilgængelighed og endelig pris afhænger af den konkrete Nodexa-hostingkonfiguration.</p>
             <div class="nx-hero-actions">
                 <a class="nx-btn nx-btn-primary" href="{{ route('storefront.pricing') }}">Se planer →</a>
-                @auth<a class="nx-btn nx-btn-ghost" href="{{ route('index') }}">Åbn mit panel</a>@else<a class="nx-btn nx-btn-ghost" href="{{ route('auth.login') }}">Log ind</a>@endauth
+                @auth<a class="nx-btn nx-btn-ghost" href="{{ route('index') }}">Åbn mit panel</a>@else<a class="nx-btn nx-btn-ghost" href="{{ route('auth.register') }}">Opret konto</a>@endauth
             </div>
         </div>
     </div>
