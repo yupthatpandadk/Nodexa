@@ -3,14 +3,23 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Addon Lifecycle Hooks
+    | Nodexa Addon Catalog
     |--------------------------------------------------------------------------
     |
-    | When enabled, the Panel executes the hook scripts that addons place under
-    | "addons/<name>/hooks/<event>" during lifecycle events such as post-install
-    | (see the p:environment:addons:run-hooks command). These scripts run with
-    | the privileges of the invoking process — often root during an upgrade — so
-    | only enable this if you trust every installed addon.
+    | Addons are discovered from local manifest folders. The web UI can only
+    | install packages that are already present in this trusted catalog path;
+    | it does not accept arbitrary PHP uploads or shell commands.
+    |
+    */
+    'catalog_path' => env('NODEXA_ADDON_CATALOG', base_path('addons')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Legacy lifecycle hooks
+    |--------------------------------------------------------------------------
+    |
+    | Kept disabled by default. Legacy hook scripts can execute with elevated
+    | privileges during upgrades and should only ever be enabled deliberately.
     |
     */
     'hooks_enabled' => env('ADDONS_HOOKS_ENABLED', false),
