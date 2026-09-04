@@ -9,7 +9,7 @@
         if (typeof value !== 'string' || !/pterodactyl/i.test(value)) return value;
 
         return value
-            .replace(/Pterodactyl Software/gi, 'Nodexa')
+            .replace(/Pterodactyl Software/gi, 'Nodexa Software')
             .replace(/Powered by\s+Pterodactyl(?:®|&reg;)?/gi, 'Nodexa')
             .replace(/Pterodactyl(?:®|&reg;)?/gi, 'Nodexa');
     };
