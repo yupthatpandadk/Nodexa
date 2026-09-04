@@ -9,6 +9,7 @@ use League\Fractal\Resource\Item;
 use Pterodactyl\Models\Allocation;
 use Pterodactyl\Models\Permission;
 use Illuminate\Container\Container;
+use Illuminate\Support\Facades\Storage;
 use Pterodactyl\Models\EggVariable;
 use League\Fractal\Resource\Collection;
 use League\Fractal\Resource\NullResource;
@@ -25,10 +26,6 @@ class ServerTransformer extends BaseClientTransformer
         return Server::RESOURCE_NAME;
     }
 
-    /**
-     * Transform a server model into a representation that can be returned
-     * to a client.
-     */
     public function transform(Server $server): array
     {
         /** @var StartupCommandService $service */
@@ -42,9 +39,6 @@ class ServerTransformer extends BaseClientTransformer
                 ? $server->identifier
                 : $server->uuidShort,
             '__deprecated_uuid_short' => $server->uuidShort,
-            // In Pterodactyl 2.0 we'll be replacing `identifier` above with the actual
-            // "identifier" used internally. This is a completely different value compared
-            // to the current however, and would be quite a breaking change to URLs.
             'server_identifier' => $server->identifier,
             'internal_id' => $server->id,
             'uuid' => $server->uuid,
@@ -67,6 +61,8 @@ class ServerTransformer extends BaseClientTransformer
             ],
             'invocation' => $service->handle($server, !$user->can(Permission::ACTION_STARTUP_READ, $server)),
             'docker_image' => $server->image,
+            'egg_name' => $server->egg->name,
+            'egg_icon' => $server->egg->icon_path ? Storage::disk('public')->url($server->egg->icon_path) : null,
             'egg_features' => $server->egg->inherit_features,
             'feature_limits' => [
                 'databases' => $server->database_limit,
@@ -74,32 +70,18 @@ class ServerTransformer extends BaseClientTransformer
                 'backups' => $server->backup_limit,
             ],
             'status' => $server->status,
-            // This field is deprecated, please use "status".
             'is_suspended' => $server->isSuspended(),
-            // This field is deprecated, please use "status".
             'is_installing' => !$server->isInstalled(),
             'is_transferring' => !is_null($server->transfer),
             'skip_scripts' => $server->skip_scripts,
         ];
     }
 
-    /**
-     * Returns the allocations associated with this server.
-     *
-     * @throws \Pterodactyl\Exceptions\Transformer\InvalidTransformerLevelException
-     */
     public function includeAllocations(Server $server): Collection
     {
         $transformer = $this->makeTransformer(AllocationTransformer::class);
 
         $user = $this->request->user();
-        // While we include this permission, we do need to actually handle it slightly different here
-        // for the purpose of keeping things functionally working. If the user doesn't have read permissions
-        // for the allocations we'll only return the primary server allocation, and any notes associated
-        // with it will be hidden.
-        //
-        // This allows us to avoid too much permission regression, without also hiding information that
-        // is generally needed for the frontend to make sense when browsing or searching results.
         if (!$user->can(Permission::ACTION_ALLOCATION_READ, $server)) {
             $primary = clone $server->allocation;
             $primary->notes = null;
@@ -110,9 +92,6 @@ class ServerTransformer extends BaseClientTransformer
         return $this->collection($server->allocations, $transformer, Allocation::RESOURCE_NAME);
     }
 
-    /**
-     * @throws \Pterodactyl\Exceptions\Transformer\InvalidTransformerLevelException
-     */
     public function includeVariables(Server $server): Collection|NullResource
     {
         if (!$this->request->user()->can(Permission::ACTION_STARTUP_READ, $server)) {
@@ -126,21 +105,11 @@ class ServerTransformer extends BaseClientTransformer
         );
     }
 
-    /**
-     * Returns the egg associated with this server.
-     *
-     * @throws \Pterodactyl\Exceptions\Transformer\InvalidTransformerLevelException
-     */
     public function includeEgg(Server $server): Item
     {
         return $this->item($server->egg, $this->makeTransformer(EggTransformer::class), Egg::RESOURCE_NAME);
     }
 
-    /**
-     * Returns the subusers associated with this server.
-     *
-     * @throws \Pterodactyl\Exceptions\Transformer\InvalidTransformerLevelException
-     */
     public function includeSubusers(Server $server): Collection|NullResource
     {
         if (!$this->request->user()->can(Permission::ACTION_USER_READ, $server)) {
