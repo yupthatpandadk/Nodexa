@@ -61,6 +61,9 @@ const routeUrl = (baseUrl: string, path: string) =>
 export default ({ baseUrl, rootAdmin, internalId }: Props) => {
     const name = ServerContext.useStoreState((state) => state.server.data!.name);
     const eggName = ServerContext.useStoreState((state) => state.server.data!.eggName || '');
+    const minecraftPluginManager = ServerContext.useStoreState(
+        (state) => state.server.data!.addons.minecraftPluginManager
+    );
     const status = ServerContext.useStoreState((state) => state.status.value);
     const isMinecraft = /minecraft|paper|purpur|spigot|bukkit|folia|velocity|waterfall|bungee/i.test(eggName);
 
@@ -126,7 +129,12 @@ export default ({ baseUrl, rootAdmin, internalId }: Props) => {
 
                 <nav className={'space-y-1'}>
                     {routes.server
-                        .filter((route) => !!route.name && (!route.minecraftOnly || isMinecraft))
+                        .filter(
+                            (route) =>
+                                !!route.name &&
+                                (!route.minecraftOnly || isMinecraft) &&
+                                (!route.addon || (route.addon === 'minecraftPluginManager' && minecraftPluginManager))
+                        )
                         .map((route) => {
                             const item = (
                                 <NavLink
