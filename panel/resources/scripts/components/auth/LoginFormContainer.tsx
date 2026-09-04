@@ -7,6 +7,7 @@ import tw from 'twin.macro';
 
 type Props = React.DetailedHTMLProps<React.FormHTMLAttributes<HTMLFormElement>, HTMLFormElement> & {
     title?: string;
+    subtitle?: string;
 };
 
 const Container = styled.div`
@@ -151,7 +152,7 @@ const FormSubtitle = styled.p`
     line-height: 1.5;
 `;
 
-export default forwardRef<HTMLFormElement, Props>(({ title, ...props }, ref) => (
+export default forwardRef<HTMLFormElement, Props>(({ title, subtitle, ...props }, ref) => (
     <Container>
         <FlashMessageRender css={tw`mb-3 px-1`} />
         <Form {...props} ref={ref}>
@@ -167,8 +168,8 @@ export default forwardRef<HTMLFormElement, Props>(({ title, ...props }, ref) => 
                     </Status>
                 </BrandPanel>
                 <FormPanel>
-                    <FormTitle>{title || 'Velkommen tilbage'}</FormTitle>
-                    <FormSubtitle>Log ind på din Nodexa-konto for at fortsætte.</FormSubtitle>
+                    <FormTitle>{title || 'Nodexa'}</FormTitle>
+                    <FormSubtitle>{subtitle || 'Administrér din Nodexa-konto sikkert.'}</FormSubtitle>
                     {props.children}
                 </FormPanel>
             </AuthCard>
