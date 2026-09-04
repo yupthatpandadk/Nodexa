@@ -79,6 +79,19 @@ export default createGlobalStyle`
         transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
     }
 
+    .nodexa-sidebar-link:hover,
+    .nodexa-sidebar-action:hover {
+        color: #f4fff9 !important;
+        border-color: var(--nodexa-border) !important;
+        background: var(--nodexa-accent-soft) !important;
+    }
+
+    .nodexa-sidebar-active {
+        color: var(--nodexa-accent) !important;
+        border-color: var(--nodexa-border-strong) !important;
+        background: var(--nodexa-accent-soft) !important;
+    }
+
     ::selection {
         color: #ffffff;
         background: rgba(var(--nodexa-accent-rgb), 0.3);
