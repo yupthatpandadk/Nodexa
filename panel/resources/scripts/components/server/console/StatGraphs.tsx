@@ -5,9 +5,15 @@ import useWebsocketEvent from '@/plugins/useWebsocketEvent';
 import { Line } from 'react-chartjs-2';
 import { useChart, useChartTickLabel } from '@/components/server/console/chart';
 import { bytesToString } from '@/lib/formatters';
+import { hexToRgba } from '@/lib/helpers';
 import { CloudDownloadIcon, CloudUploadIcon } from '@heroicons/react/solid';
 import ChartBlock from '@/components/server/console/ChartBlock';
 import Tooltip from '@/components/elements/tooltip/Tooltip';
+
+const getThemeColor = (name: string, fallback: string): string => {
+    if (typeof document === 'undefined') return fallback;
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+};
 
 export default () => {
     const status = ServerContext.useStoreState((state) => state.status.value);
@@ -30,11 +36,14 @@ export default () => {
             },
         },
         callback(opts, index) {
+            const color = !index
+                ? getThemeColor('--nodexa-accent', '#42e9a6')
+                : getThemeColor('--nodexa-accent-2', '#68edb8');
             return {
                 ...opts,
                 label: !index ? 'Network In' : 'Network Out',
-                borderColor: !index ? '#3ee798' : '#38bdf8',
-                backgroundColor: !index ? 'rgba(34, 197, 94, 0.10)' : 'rgba(14, 165, 233, 0.08)',
+                borderColor: color,
+                backgroundColor: hexToRgba(color, !index ? 0.12 : 0.075),
             };
         },
     });
@@ -77,10 +86,10 @@ export default () => {
                 legend={
                     <>
                         <Tooltip arrow content={'Inbound'}>
-                            <CloudDownloadIcon className={'mr-2 w-4 h-4 text-green-400'} />
+                            <CloudDownloadIcon className={'mr-2 w-4 h-4'} style={{ color: 'var(--nodexa-accent)' }} />
                         </Tooltip>
                         <Tooltip arrow content={'Outbound'}>
-                            <CloudUploadIcon className={'w-4 h-4 text-cyan-400'} />
+                            <CloudUploadIcon className={'w-4 h-4'} style={{ color: 'var(--nodexa-accent-2)' }} />
                         </Tooltip>
                     </>
                 }
