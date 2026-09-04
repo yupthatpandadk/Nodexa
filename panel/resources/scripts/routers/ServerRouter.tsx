@@ -73,7 +73,13 @@ export default () => {
     }
 
     return (
-        <div className={'min-h-screen lg:flex bg-[#050b0a]'}>
+        <div
+            className={'min-h-screen lg:flex'}
+            style={{
+                background:
+                    'radial-gradient(circle at 80% 0%, rgba(var(--nodexa-accent-rgb), 0.045), transparent 32rem), var(--nodexa-bg)',
+            }}
+        >
             <ServerSidebar baseUrl={match.url} rootAdmin={rootAdmin} internalId={serverId} />
             <main className={'min-w-0 flex-1'}>
                 <div className={'lg:hidden'}>
