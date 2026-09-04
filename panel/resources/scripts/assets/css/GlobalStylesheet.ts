@@ -17,10 +17,12 @@ export default createGlobalStyle`
         --nodexa-bg: #050d0b;
         --nodexa-surface: #0b1714;
         --nodexa-surface-2: #10211d;
-        --nodexa-border: rgba(73, 238, 169, 0.13);
-        --nodexa-border-strong: rgba(73, 238, 169, 0.28);
         --nodexa-accent: #42e9a6;
+        --nodexa-accent-2: #68edb8;
+        --nodexa-accent-rgb: 66, 233, 166;
         --nodexa-accent-soft: rgba(66, 233, 166, 0.12);
+        --nodexa-border: rgba(66, 233, 166, 0.13);
+        --nodexa-border-strong: rgba(66, 233, 166, 0.28);
         --nodexa-blue: #38bdf8;
         --nodexa-text: #effbf6;
         --nodexa-muted: #8ca49b;
@@ -38,8 +40,8 @@ export default createGlobalStyle`
         color: var(--nodexa-text);
         letter-spacing: 0.01em;
         background:
-            radial-gradient(circle at 12% -5%, rgba(66, 233, 166, 0.11), transparent 31rem),
-            radial-gradient(circle at 90% 2%, rgba(56, 189, 248, 0.07), transparent 29rem),
+            radial-gradient(circle at 12% -5%, rgba(var(--nodexa-accent-rgb), 0.11), transparent 31rem),
+            radial-gradient(circle at 90% 2%, rgba(var(--nodexa-accent-rgb), 0.055), transparent 29rem),
             linear-gradient(180deg, #081411 0%, #06100e 48%, #050b0a 100%);
         background-attachment: fixed;
     }
@@ -52,8 +54,8 @@ export default createGlobalStyle`
         z-index: 0;
         opacity: 0.16;
         background-image:
-            linear-gradient(rgba(116, 255, 196, 0.025) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(116, 255, 196, 0.025) 1px, transparent 1px);
+            linear-gradient(rgba(var(--nodexa-accent-rgb), 0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(var(--nodexa-accent-rgb), 0.025) 1px, transparent 1px);
         background-size: 34px 34px;
         mask-image: linear-gradient(to bottom, black, transparent 78%);
     }
@@ -79,7 +81,7 @@ export default createGlobalStyle`
 
     ::selection {
         color: #ffffff;
-        background: rgba(66, 233, 166, 0.3);
+        background: rgba(var(--nodexa-accent-rgb), 0.3);
     }
 
     form {
@@ -109,12 +111,12 @@ export default createGlobalStyle`
     ::-webkit-scrollbar-thumb {
         border: 3px solid transparent;
         border-radius: 999px;
-        background: linear-gradient(180deg, rgba(66, 233, 166, 0.48), rgba(56, 189, 248, 0.28));
+        background: linear-gradient(180deg, rgba(var(--nodexa-accent-rgb), 0.48), rgba(var(--nodexa-accent-rgb), 0.24));
         background-clip: padding-box;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(180deg, rgba(66, 233, 166, 0.7), rgba(56, 189, 248, 0.45));
+        background: linear-gradient(180deg, rgba(var(--nodexa-accent-rgb), 0.7), rgba(var(--nodexa-accent-rgb), 0.42));
         background-clip: padding-box;
     }
 
