@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Pterodactyl\Extensions\Themes\Theme;
+use Pterodactyl\Services\Nodexa\AddonManager;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,6 +25,19 @@ class AppServiceProvider extends ServiceProvider
 
         View::share('appVersion', $this->versionData()['version'] ?? 'undefined');
         View::share('appIsGit', $this->versionData()['is_git'] ?? false);
+
+        // Addons are deliberately isolated from the core boot process. If the
+        // addon state table is unavailable or damaged, the Panel must still be
+        // able to boot so an administrator can repair it.
+        try {
+            $addons = $this->app->make(AddonManager::class);
+            View::share('nodexaAdminAddonStylesheets', $addons->adminStylesheets());
+            View::share('nodexaAdminAddonScripts', $addons->adminScripts());
+        } catch (\Throwable $exception) {
+            report($exception);
+            View::share('nodexaAdminAddonStylesheets', []);
+            View::share('nodexaAdminAddonScripts', []);
+        }
 
         Paginator::useBootstrap();
 
@@ -65,6 +79,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('extensions.themes', function () {
             return new Theme();
         });
+
+        $this->app->singleton(AddonManager::class, fn () => new AddonManager());
     }
 
     /**
