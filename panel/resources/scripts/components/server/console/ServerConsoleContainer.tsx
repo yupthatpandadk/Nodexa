@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { CubeIcon } from '@heroicons/react/solid';
 import { ServerContext } from '@/state/server';
 import Can from '@/components/elements/Can';
@@ -18,11 +18,16 @@ export type PowerAction = 'start' | 'stop' | 'restart' | 'kill';
 const ServerConsoleContainer = () => {
     const name = ServerContext.useStoreState((state) => state.server.data!.name);
     const description = ServerContext.useStoreState((state) => state.server.data!.description);
+    const eggName = ServerContext.useStoreState((state) => state.server.data!.eggName);
+    const eggIcon = ServerContext.useStoreState((state) => state.server.data!.eggIcon);
     const status = ServerContext.useStoreState((state) => state.status.value);
     const isInstalling = ServerContext.useStoreState((state) => state.server.isInstalling);
     const isTransferring = ServerContext.useStoreState((state) => state.server.data!.isTransferring);
     const eggFeatures = ServerContext.useStoreState((state) => state.server.data!.eggFeatures, isEqual);
     const isNodeUnderMaintenance = ServerContext.useStoreState((state) => state.server.data!.isNodeUnderMaintenance);
+    const [iconFailed, setIconFailed] = useState(false);
+
+    useEffect(() => setIconFailed(false), [eggIcon]);
 
     const statusLabel = status === 'running' ? 'Online' : status === 'offline' ? 'Offline' : status || 'Connecting';
 
@@ -41,7 +46,11 @@ const ServerConsoleContainer = () => {
             <section className={styles.server_hero}>
                 <div className={styles.server_identity}>
                     <div className={styles.server_icon}>
-                        <CubeIcon className={'w-7 h-7'} />
+                        {eggIcon && !iconFailed ? (
+                            <img src={eggIcon} alt={`${eggName} logo`} onError={() => setIconFailed(true)} />
+                        ) : (
+                            <CubeIcon className={'w-7 h-7'} />
+                        )}
                     </div>
                     <div className={'min-w-0'}>
                         <div className={'flex items-center flex-wrap gap-2'}>
@@ -51,7 +60,9 @@ const ServerConsoleContainer = () => {
                                 {statusLabel}
                             </span>
                         </div>
-                        <p className={'text-sm text-gray-400 mt-1 line-clamp-2'}>{description || 'Game server managed by Nodexa'}</p>
+                        <p className={'text-sm text-gray-400 mt-1 line-clamp-2'}>
+                            {description || `${eggName} server managed by Nodexa`}
+                        </p>
                     </div>
                 </div>
                 <Can action={['control.start', 'control.stop', 'control.restart']} matchAny>
