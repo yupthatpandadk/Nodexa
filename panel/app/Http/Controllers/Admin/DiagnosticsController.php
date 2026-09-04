@@ -189,7 +189,7 @@ class DiagnosticsController extends Controller
 
             try {
                 $data = $this->wings->setNode($node)->getSystemInformation();
-                $results[] = $base + [
+                $results[] = array_merge($base, [
                     'status' => $node->maintenance_mode ? 'warning' : 'ok',
                     'title' => $node->maintenance_mode ? 'Online · Maintenance Mode' : 'Online',
                     'detail' => 'Nodexa kan kontakte Wings API /api/system.',
@@ -200,14 +200,14 @@ class DiagnosticsController extends Controller
                         (string) ($data['architecture'] ?? ''),
                         (string) ($data['cpu_count'] ?? '?')
                     )),
-                ];
+                ]);
             } catch (\Throwable $exception) {
                 [$title, $detail] = $this->classifyNodeError($exception->getMessage(), $node);
-                $results[] = $base + [
+                $results[] = array_merge($base, [
                     'status' => 'error',
                     'title' => $title,
                     'detail' => $detail,
-                ];
+                ]);
             }
         }
 
@@ -274,7 +274,7 @@ class DiagnosticsController extends Controller
 
         foreach ($services as $service) {
             try {
-                $exists = new Process(['systemctl', 'cat', $service]);
+                $exists = new Process(['systemctl', 'cat', '--no-pager', $service]);
                 $exists->setTimeout(3);
                 $exists->run();
                 if (!$exists->isSuccessful()) {
@@ -289,7 +289,7 @@ class DiagnosticsController extends Controller
                     return ['active' => true, 'missing' => false];
                 }
             } catch (\Throwable $exception) {
-                // Fall through to a non-active result. Diagnostics must never crash the admin page.
+                // Diagnostics must never crash the admin page.
             }
         }
 
