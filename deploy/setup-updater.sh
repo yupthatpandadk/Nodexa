@@ -58,4 +58,9 @@ if [[ ! -f "$STATE_DIR/update-state.json" ]]; then
 fi
 touch /var/log/nodexa-update.log
 chmod 0644 /var/log/nodexa-update.log
+
+if [[ -x "$SOURCE_DIR/deploy/setup-diagnostics.sh" ]]; then
+  bash "$SOURCE_DIR/deploy/setup-diagnostics.sh"
+fi
+
 echo "[Nodexa] Panel updater installed for version ${VERSION}${INSTALLED_SHA:+ @ ${INSTALLED_SHA:0:8}} from ${REPO}:${BRANCH}."
