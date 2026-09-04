@@ -30,7 +30,8 @@ const PageContentBlock: React.FC<PageContentBlockProps> = ({ title, showFlashKey
                             rel={'noopener nofollow noreferrer'}
                             href={'https://pterodactyl.io'}
                             target={'_blank'}
-                            css={tw`no-underline text-neutral-500 hover:text-green-300`}
+                            className={'nodexa-theme-link'}
+                            css={tw`no-underline text-neutral-500`}
                         >
                             Pterodactyl&reg;
                         </a>
