@@ -175,4 +175,6 @@ text = text.replace('Nodexa v0.10.0', 'Nodexa v0.13.0')
 p.write_text(text)
 PY
 
+NODEXA_PANEL_DIR="$PANEL_DIR" bash "$(dirname "$0")/enforce-nodexa-branding.sh"
+
 echo "[Nodexa] Frontend fast-bootstrap optimization applied."
