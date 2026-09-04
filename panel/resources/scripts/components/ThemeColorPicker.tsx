@@ -304,7 +304,11 @@ export default () => {
             </Trigger>
             {open &&
                 createPortal(
-                    <Overlay onMouseDown={(event) => event.currentTarget === event.target && setOpen(false)}>
+                    <Overlay
+                        onMouseDown={(event: React.MouseEvent<HTMLDivElement>) =>
+                            event.currentTarget === event.target && setOpen(false)
+                        }
+                    >
                         <Panel role={'dialog'} aria-modal={'true'} aria-label={'Vælg Nodexa farve'}>
                             <Header>
                                 <div>
