@@ -30,8 +30,6 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
     const onSubmit = (values: Values, { setSubmitting }: FormikHelpers<Values>) => {
         clearFlashes();
 
-        // If there is no token in the state yet, request the token and then abort this submit request
-        // since it will be re-submitted when the recaptcha data is returned by the component.
         if (recaptchaEnabled && !token) {
             ref.current!.execute().catch((error) => {
                 console.error(error);
@@ -46,8 +44,7 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
         login({ ...values, recaptchaData: token })
             .then((response) => {
                 if (response.complete) {
-                    // @ts-expect-error this is valid
-                    window.location = response.intended || '/';
+                    window.location.assign(response.intended || '/');
                     return;
                 }
 
@@ -69,19 +66,29 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
             onSubmit={onSubmit}
             initialValues={{ username: '', password: '' }}
             validationSchema={object().shape({
-                username: string().required('A username or email must be provided.'),
-                password: string().required('Please enter your account password.'),
+                username: string().required('Indtast dit brugernavn eller din e-mailadresse.'),
+                password: string().required('Indtast din adgangskode.'),
             })}
         >
             {({ isSubmitting, setSubmitting, submitForm }) => (
-                <LoginFormContainer title={'Login to Continue'} css={tw`w-full flex`}>
-                    <Field light type={'text'} label={'Username or Email'} name={'username'} disabled={isSubmitting} />
+                <LoginFormContainer
+                    title={'Log ind på Nodexa'}
+                    subtitle={'Log ind på din Nodexa-konto for at fortsætte til kontrolpanelet.'}
+                    css={tw`w-full flex`}
+                >
+                    <Field
+                        light
+                        type={'text'}
+                        label={'Brugernavn eller e-mail'}
+                        name={'username'}
+                        disabled={isSubmitting}
+                    />
                     <div css={tw`mt-6`}>
-                        <Field light type={'password'} label={'Password'} name={'password'} disabled={isSubmitting} />
+                        <Field light type={'password'} label={'Adgangskode'} name={'password'} disabled={isSubmitting} />
                     </div>
                     <div css={tw`mt-6`}>
                         <Button type={'submit'} size={'xlarge'} isLoading={isSubmitting} disabled={isSubmitting}>
-                            Login
+                            Log ind
                         </Button>
                     </div>
                     {recaptchaEnabled && (
@@ -99,12 +106,13 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
                             }}
                         />
                     )}
-                    <div css={tw`mt-6 text-center`}>
-                        <Link
-                            to={'/auth/password'}
-                            css={tw`text-xs text-neutral-500 tracking-wide no-underline uppercase hover:text-neutral-600`}
-                        >
-                            Forgot password?
+                    <div css={tw`mt-6 text-center text-xs text-neutral-500`}>
+                        <Link to={'/auth/password'} css={tw`no-underline hover:text-neutral-700`}>
+                            Glemt adgangskode?
+                        </Link>
+                        <span css={tw`mx-2`}>·</span>
+                        <Link to={'/auth/register'} css={tw`font-semibold no-underline hover:text-neutral-700`}>
+                            Opret konto
                         </Link>
                     </div>
                 </LoginFormContainer>
