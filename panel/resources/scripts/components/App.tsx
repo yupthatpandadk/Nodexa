@@ -12,7 +12,7 @@ import { history } from '@/components/history';
 import { setupInterceptors } from '@/api/interceptors';
 import AuthenticatedRoute from '@/components/elements/AuthenticatedRoute';
 import { ServerContext } from '@/state/server';
-import { loadNodexaAccent } from '@/components/ThemeColorPicker';
+import ThemeColorPicker, { loadNodexaAccent } from '@/components/ThemeColorPicker';
 import '@/assets/tailwind.css';
 import Spinner from '@/components/elements/Spinner';
 
@@ -61,6 +61,7 @@ const App = () => {
     return (
         <>
             <GlobalStylesheet />
+            <ThemeColorPicker />
             <StoreProvider store={store}>
                 <ProgressBar />
                 <div css={tw`mx-auto w-auto`}>
