@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>{{ config('app.name', 'Pterodactyl') }}</title>
+        <title>{{ config('app.name', 'Nodexa') }}</title>
 
         @section('meta')
             <meta charset="utf-8">
@@ -35,6 +35,7 @@
         @yield('assets')
 
         @include('layouts.scripts')
+        <script src="/js/nodexa-branding.js" defer></script>
     </head>
     <body class="{{ $css['body'] ?? 'bg-neutral-50' }}">
         @section('content')
