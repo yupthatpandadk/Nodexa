@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Pterodactyl\Models\EggVariable;
 use League\Fractal\Resource\Collection;
 use League\Fractal\Resource\NullResource;
+use Pterodactyl\Services\Nodexa\AddonManager;
 use Pterodactyl\Services\Servers\StartupCommandService;
 
 class ServerTransformer extends BaseClientTransformer
@@ -30,6 +31,9 @@ class ServerTransformer extends BaseClientTransformer
     {
         /** @var StartupCommandService $service */
         $service = Container::getInstance()->make(StartupCommandService::class);
+        /** @var AddonManager $addonManager */
+        $addonManager = Container::getInstance()->make(AddonManager::class);
+        $enabledAddons = $addonManager->enabled();
 
         $user = $this->request->user();
 
@@ -64,6 +68,9 @@ class ServerTransformer extends BaseClientTransformer
             'egg_name' => $server->egg->name,
             'egg_icon' => $server->egg->icon_path ? Storage::disk('public')->url($server->egg->icon_path) : null,
             'egg_features' => $server->egg->inherit_features,
+            'nodexa_addons' => [
+                'minecraft_plugin_manager' => isset($enabledAddons['minecraft-plugin-manager']),
+            ],
             'feature_limits' => [
                 'databases' => $server->database_limit,
                 'allocations' => $server->allocation_limit,
