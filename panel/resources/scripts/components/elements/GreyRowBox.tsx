@@ -6,11 +6,11 @@ export default styled.div<{ $hoverable?: boolean }>`
     align-items: center;
     overflow: hidden;
     padding: 1rem 1.1rem;
-    border: 1px solid rgba(73, 238, 169, 0.1);
+    border: 1px solid var(--nodexa-border);
     border-radius: 16px;
-    color: #eafbf5;
+    color: var(--nodexa-text);
     text-decoration: none;
-    background: linear-gradient(145deg, rgba(16, 33, 29, 0.95), rgba(8, 20, 17, 0.94));
+    background: linear-gradient(145deg, var(--nodexa-surface-2), var(--nodexa-surface));
     box-shadow: 0 12px 34px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.018);
     transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
 
@@ -19,9 +19,9 @@ export default styled.div<{ $hoverable?: boolean }>`
         `
             &:hover {
                 transform: translateY(-1px);
-                border-color: rgba(73, 238, 169, 0.25);
-                background: linear-gradient(145deg, rgba(19, 42, 36, 0.97), rgba(9, 24, 20, 0.96));
-                box-shadow: 0 16px 42px rgba(0, 0, 0, 0.22), 0 0 26px rgba(66, 233, 166, 0.035);
+                border-color: var(--nodexa-border-strong);
+                background: linear-gradient(145deg, var(--nodexa-surface-hover), var(--nodexa-surface-2));
+                box-shadow: 0 16px 42px rgba(0, 0, 0, 0.22), 0 0 26px rgba(var(--nodexa-accent-rgb), 0.06);
             }
         `};
 
@@ -33,10 +33,10 @@ export default styled.div<{ $hoverable?: boolean }>`
         align-items: center;
         justify-content: center;
         padding: 0.75rem;
-        border: 1px solid rgba(73, 238, 169, 0.15);
+        border: 1px solid var(--nodexa-border-strong);
         border-radius: 14px;
-        color: #4ce9aa;
-        background: linear-gradient(145deg, rgba(66, 233, 166, 0.12), rgba(56, 189, 248, 0.055));
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        color: var(--nodexa-accent);
+        background: linear-gradient(145deg, rgba(var(--nodexa-accent-rgb), 0.15), rgba(var(--nodexa-accent-rgb), 0.045));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 0 24px rgba(var(--nodexa-accent-rgb), 0.035);
     }
 `;
