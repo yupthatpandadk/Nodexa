@@ -14,7 +14,7 @@
 @endsection
 
 @section('content')
-<form action="{{ route('admin.nests.egg.new') }}" method="POST">
+<form action="{{ route('admin.nests.egg.new') }}" method="POST" enctype="multipart/form-data">
     <div class="row">
         <div class="col-xs-12">
             <div class="box">
@@ -44,6 +44,11 @@
                                 <label for="pDescription" class="form-label">Description</label>
                                 <textarea id="pDescription" name="description" class="form-control" rows="8">{{ old('description') }}</textarea>
                                 <p class="text-muted small">A description of this Egg.</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="pGameLogo" class="control-label">Game Logo</label>
+                                <input type="file" id="pGameLogo" name="icon" class="form-control" accept="image/png,image/jpeg,image/webp" />
+                                <p class="text-muted small">Shown automatically on every server using this Egg. PNG, JPG or WebP, max 2 MB. A square transparent logo works best.</p>
                             </div>
                             <div class="form-group">
                                 <div class="checkbox checkbox-primary no-margin-bottom">
