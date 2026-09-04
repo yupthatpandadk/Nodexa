@@ -48,6 +48,12 @@ if [[ -x "$SOURCE_DIR/deploy/setup-admin-design.sh" ]]; then
     NODEXA_PANEL_DIR="$PANEL_DIR" bash "$SOURCE_DIR/deploy/setup-admin-design.sh"
 fi
 
+# Install/repair the optional addon framework after the core admin layout is in
+# place. The addon setup is idempotent and also republishes trusted static assets.
+if [[ -x "$SOURCE_DIR/deploy/setup-addons.sh" ]]; then
+    NODEXA_PANEL_DIR="$PANEL_DIR" bash "$SOURCE_DIR/deploy/setup-addons.sh"
+fi
+
 # The updater may have cached Blade views before this sidebar/design patch ran.
 # Clear only compiled views so the new menu/design appears immediately without
 # touching sessions, config or user data.
