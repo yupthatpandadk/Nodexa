@@ -26,20 +26,20 @@
 @section('content')
 <div class="row">
     <div class="col-xs-12">
-        <div class="box box-primary">
+        <div class="box box-primary nx-admin-system-card">
             <div class="box-header with-border">
                 <h3 class="box-title"><i class="fa fa-server"></i> Nodexa System Information</h3>
             </div>
             <div class="box-body">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;position:relative;z-index:1;">
                     <div>
-                        <div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--nodexa-muted);margin-bottom:4px;">Installeret system</div>
-                        <div style="font-size:22px;font-weight:700;line-height:1.2;">Nodexa <code>v{{ $nodexaVersion }}</code></div>
+                        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--nodexa-admin-muted);margin-bottom:5px;">Installeret system</div>
+                        <div style="font-size:24px;font-weight:750;line-height:1.2;letter-spacing:-.025em;">Nodexa <code>v{{ $nodexaVersion }}</code></div>
                         <p class="text-muted" style="margin:8px 0 0;">Du kører Nodexa version <strong>v{{ $nodexaVersion }}</strong>.</p>
                     </div>
                     @if($nodexaCommit !== '')
                         <div style="text-align:right;">
-                            <div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--nodexa-muted);margin-bottom:4px;">Commit</div>
+                            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--nodexa-admin-muted);margin-bottom:5px;">Commit</div>
                             <code>{{ substr($nodexaCommit, 0, 12) }}</code>
                         </div>
                     @endif
@@ -49,19 +49,19 @@
     </div>
 </div>
 
-<div class="row">
+<div class="row nx-admin-overview-actions">
     <div class="col-xs-6 col-sm-3 text-center">
-        <a href="{{ route('admin.updates') }}"><button class="btn btn-primary" style="width:100%;"><i class="fa fa-fw fa-cloud-download"></i> Update Center</button></a>
+        <a href="{{ route('admin.updates') }}"><button class="btn btn-primary"><i class="fa fa-fw fa-cloud-download"></i> Update Center</button></a>
     </div>
     <div class="col-xs-6 col-sm-3 text-center">
-        <a href="https://github.com/yupthatpandadk/Nodexa" target="_blank" rel="noopener noreferrer"><button class="btn btn-primary" style="width:100%;"><i class="fa fa-fw fa-github"></i> Nodexa GitHub</button></a>
+        <a href="https://github.com/yupthatpandadk/Nodexa" target="_blank" rel="noopener noreferrer"><button class="btn btn-primary"><i class="fa fa-fw fa-github"></i> Nodexa GitHub</button></a>
     </div>
-    <div class="clearfix visible-xs-block">&nbsp;</div>
+    <div class="clearfix visible-xs-block"></div>
     <div class="col-xs-6 col-sm-3 text-center">
-        <a href="{{ route('admin.nodes') }}"><button class="btn btn-primary" style="width:100%;"><i class="fa fa-fw fa-sitemap"></i> Nodes</button></a>
+        <a href="{{ route('admin.nodes') }}"><button class="btn btn-primary"><i class="fa fa-fw fa-sitemap"></i> Nodes</button></a>
     </div>
     <div class="col-xs-6 col-sm-3 text-center">
-        <a href="{{ route('admin.servers') }}"><button class="btn btn-primary" style="width:100%;"><i class="fa fa-fw fa-server"></i> Servers</button></a>
+        <a href="{{ route('admin.servers') }}"><button class="btn btn-primary"><i class="fa fa-fw fa-server"></i> Servers</button></a>
     </div>
 </div>
 @endsection
