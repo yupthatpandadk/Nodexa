@@ -42,4 +42,12 @@ if needle in text and 'admin.diagnostics' not in text:
 PY
 fi
 
+# The updater may have cached Blade views before this sidebar patch ran.
+# Clear only compiled views so the new menu appears immediately without
+# touching sessions, config or user data.
+if [[ -f "$PANEL_DIR/artisan" ]]; then
+    cd "$PANEL_DIR"
+    sudo -u www-data /usr/bin/php artisan view:clear >/dev/null 2>&1 || true
+fi
+
 echo '[Nodexa] Diagnostics Center installed.'
