@@ -14,7 +14,59 @@
         <link rel="mask-icon" href="/favicons/safari-pinned-tab.svg" color="#bc6e3c">
         <link rel="shortcut icon" href="/favicons/favicon.ico">
         <meta name="msapplication-config" content="/favicons/browserconfig.xml">
-        <meta name="theme-color" content="#0e4688">
+        <meta name="theme-color" content="#42e9a6" id="nodexa-browser-theme-color">
+
+        <script>
+            (function () {
+                var STORAGE_KEY = 'nodexa_theme_accent';
+                var DEFAULT_ACCENT = '#42e9a6';
+
+                function normalize(value) {
+                    return /^#[0-9a-fA-F]{6}$/.test(String(value || '').trim()) ? String(value).toLowerCase() : DEFAULT_ACCENT;
+                }
+
+                function rgb(hex) {
+                    return [
+                        parseInt(hex.slice(1, 3), 16),
+                        parseInt(hex.slice(3, 5), 16),
+                        parseInt(hex.slice(5, 7), 16)
+                    ];
+                }
+
+                function mixWhite(hex, amount) {
+                    var values = rgb(hex);
+                    return '#' + values.map(function (value) {
+                        return Math.round(value + (255 - value) * amount).toString(16).padStart(2, '0');
+                    }).join('');
+                }
+
+                window.applyNodexaAdminAccent = function (value) {
+                    var accent = normalize(value);
+                    var values = rgb(accent);
+                    var root = document.documentElement;
+                    root.style.setProperty('--nodexa-accent', accent);
+                    root.style.setProperty('--nodexa-accent-2', mixWhite(accent, 0.2));
+                    root.style.setProperty('--nodexa-accent-rgb', values.join(', '));
+                    root.style.setProperty('--nodexa-accent-soft', 'rgba(' + values.join(', ') + ', 0.12)');
+                    root.style.setProperty('--nodexa-border', 'rgba(' + values.join(', ') + ', 0.14)');
+                    root.style.setProperty('--nodexa-border-strong', 'rgba(' + values.join(', ') + ', 0.32)');
+                    root.style.setProperty('--nodexa-surface-glow', 'rgba(' + values.join(', ') + ', 0.065)');
+                    root.dataset.nodexaAccent = accent;
+
+                    var themeMeta = document.getElementById('nodexa-browser-theme-color');
+                    if (themeMeta) themeMeta.setAttribute('content', accent);
+                    return accent;
+                };
+
+                var saved = DEFAULT_ACCENT;
+                try { saved = localStorage.getItem(STORAGE_KEY) || DEFAULT_ACCENT; } catch (_) {}
+                window.applyNodexaAdminAccent(saved);
+
+                window.addEventListener('storage', function (event) {
+                    if (event.key === STORAGE_KEY) window.applyNodexaAdminAccent(event.newValue || DEFAULT_ACCENT);
+                });
+            })();
+        </script>
 
         @include('layouts.scripts')
 
@@ -28,6 +80,371 @@
             {!! Theme::css('css/pterodactyl.css?t={cache-version}') !!}
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css">
+
+            <style id="nodexa-admin-theme">
+                :root {
+                    --nodexa-accent: #42e9a6;
+                    --nodexa-accent-2: #68edb8;
+                    --nodexa-accent-rgb: 66, 233, 166;
+                    --nodexa-accent-soft: rgba(66, 233, 166, 0.12);
+                    --nodexa-border: rgba(66, 233, 166, 0.14);
+                    --nodexa-border-strong: rgba(66, 233, 166, 0.32);
+                    --nodexa-surface-glow: rgba(66, 233, 166, 0.065);
+                    --nodexa-admin-bg: #050b0d;
+                    --nodexa-admin-surface: #0a1417;
+                    --nodexa-admin-surface-2: #0e1a1e;
+                    --nodexa-admin-text: #edf7f5;
+                    --nodexa-admin-muted: #8ba09c;
+                }
+
+                html,
+                body,
+                .skin-blue .wrapper {
+                    background: var(--nodexa-admin-bg) !important;
+                }
+
+                body {
+                    color: var(--nodexa-admin-text) !important;
+                    background:
+                        radial-gradient(circle at 12% -6%, rgba(var(--nodexa-accent-rgb), 0.13), transparent 32rem),
+                        radial-gradient(circle at 90% 4%, rgba(var(--nodexa-accent-rgb), 0.055), transparent 28rem),
+                        linear-gradient(180deg, #071012 0%, #050b0d 60%, #04090b 100%) !important;
+                    background-attachment: fixed !important;
+                }
+
+                .skin-blue .main-sidebar,
+                .skin-blue .left-side {
+                    background:
+                        linear-gradient(180deg, rgba(var(--nodexa-accent-rgb), 0.075), transparent 15rem),
+                        #061012 !important;
+                    border-right: 1px solid var(--nodexa-border) !important;
+                    box-shadow: 14px 0 42px rgba(0, 0, 0, 0.18) !important;
+                }
+
+                .skin-blue .main-header .logo,
+                .skin-blue .main-header .navbar {
+                    background:
+                        linear-gradient(90deg, rgba(var(--nodexa-accent-rgb), 0.075), rgba(var(--nodexa-accent-rgb), 0.018)),
+                        #071214 !important;
+                    border-bottom: 1px solid var(--nodexa-border) !important;
+                }
+
+                .skin-blue .main-header .logo {
+                    color: #f4fbf9 !important;
+                    font-weight: 700 !important;
+                }
+
+                .skin-blue .main-header .logo:hover,
+                .skin-blue .main-header .navbar .sidebar-toggle:hover,
+                .skin-blue .main-header .navbar .nav > li > a:hover,
+                .skin-blue .main-header .navbar .nav > li > a:focus {
+                    color: var(--nodexa-accent-2) !important;
+                    background: var(--nodexa-accent-soft) !important;
+                }
+
+                .skin-blue .main-header .navbar .sidebar-toggle,
+                .skin-blue .main-header .navbar .nav > li > a {
+                    color: var(--nodexa-admin-muted) !important;
+                }
+
+                .skin-blue .sidebar-menu > li.header {
+                    color: rgba(var(--nodexa-accent-rgb), 0.62) !important;
+                    background: rgba(var(--nodexa-accent-rgb), 0.025) !important;
+                    letter-spacing: 0.13em;
+                }
+
+                .skin-blue .sidebar a,
+                .skin-blue .sidebar-menu > li > a,
+                .skin-blue .treeview-menu > li > a {
+                    color: var(--nodexa-admin-muted) !important;
+                }
+
+                .skin-blue .sidebar-menu > li > a {
+                    margin: 2px 8px;
+                    border: 1px solid transparent;
+                    border-radius: 8px;
+                }
+
+                .skin-blue .sidebar-menu > li:hover > a,
+                .skin-blue .sidebar-menu > li.active > a,
+                .skin-blue .sidebar-menu > li.menu-open > a,
+                .skin-blue .treeview-menu > li.active > a,
+                .skin-blue .treeview-menu > li > a:hover {
+                    color: #f4fbf9 !important;
+                    border-color: var(--nodexa-border) !important;
+                    border-left-color: var(--nodexa-accent) !important;
+                    background: linear-gradient(90deg, rgba(var(--nodexa-accent-rgb), 0.14), rgba(var(--nodexa-accent-rgb), 0.035)) !important;
+                }
+
+                .skin-blue .sidebar-menu > li.active > a > i,
+                .skin-blue .sidebar-menu > li:hover > a > i,
+                .skin-blue .treeview-menu > li.active > a > i {
+                    color: var(--nodexa-accent) !important;
+                }
+
+                .skin-blue .sidebar-menu > li > .treeview-menu {
+                    background: rgba(0, 0, 0, 0.18) !important;
+                }
+
+                .content-wrapper {
+                    min-height: calc(100vh - 50px) !important;
+                    background:
+                        radial-gradient(circle at 15% 0%, rgba(var(--nodexa-accent-rgb), 0.075), transparent 28rem),
+                        linear-gradient(180deg, rgba(var(--nodexa-accent-rgb), 0.018), transparent 20rem),
+                        #050c0e !important;
+                }
+
+                .content-header > h1,
+                .content-header > h1 > small,
+                .content-header > .breadcrumb > li,
+                .content-header > .breadcrumb > li > a,
+                .breadcrumb > .active {
+                    color: var(--nodexa-admin-text) !important;
+                }
+
+                .content-header > .breadcrumb {
+                    background: rgba(var(--nodexa-accent-rgb), 0.055) !important;
+                    border: 1px solid var(--nodexa-border) !important;
+                    border-radius: 7px !important;
+                }
+
+                .box,
+                .panel,
+                .well,
+                .nav-tabs-custom {
+                    color: var(--nodexa-admin-text) !important;
+                    border-color: var(--nodexa-border) !important;
+                    background:
+                        linear-gradient(145deg, rgba(var(--nodexa-accent-rgb), 0.055), rgba(var(--nodexa-accent-rgb), 0.012)),
+                        var(--nodexa-admin-surface) !important;
+                    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.18), inset 0 1px rgba(255, 255, 255, 0.015) !important;
+                }
+
+                .box,
+                .box.box-default,
+                .box.box-primary,
+                .box.box-success,
+                .box.box-info {
+                    border-top-color: var(--nodexa-border-strong) !important;
+                }
+
+                .box-header,
+                .box-footer,
+                .panel-heading,
+                .panel-footer {
+                    color: var(--nodexa-admin-text) !important;
+                    border-color: var(--nodexa-border) !important;
+                    background: rgba(var(--nodexa-accent-rgb), 0.045) !important;
+                }
+
+                .box-header.with-border {
+                    border-bottom-color: var(--nodexa-border) !important;
+                }
+
+                .main-footer {
+                    color: var(--nodexa-admin-muted) !important;
+                    border-top: 1px solid var(--nodexa-border) !important;
+                    background: #061012 !important;
+                }
+
+                .main-footer a,
+                a,
+                .small-box-footer {
+                    color: var(--nodexa-accent-2) !important;
+                }
+
+                a:hover,
+                a:focus,
+                .main-footer a:hover {
+                    color: var(--nodexa-accent) !important;
+                }
+
+                .text-primary,
+                .text-info {
+                    color: var(--nodexa-accent-2) !important;
+                }
+
+                .table > thead > tr > th,
+                .table > tbody > tr > th,
+                .table > tfoot > tr > th,
+                .table > thead > tr > td,
+                .table > tbody > tr > td,
+                .table > tfoot > tr > td {
+                    border-color: rgba(var(--nodexa-accent-rgb), 0.11) !important;
+                }
+
+                .table-hover > tbody > tr:hover,
+                tr:hover + tr.server-description {
+                    background: rgba(var(--nodexa-accent-rgb), 0.065) !important;
+                }
+
+                .nav-tabs-custom > .nav-tabs {
+                    border-bottom-color: var(--nodexa-border) !important;
+                }
+
+                .nav-tabs-custom > .nav-tabs > li:hover,
+                .nav-tabs-custom > .nav-tabs > li.active {
+                    border-top-color: var(--nodexa-accent) !important;
+                }
+
+                .nav-tabs-custom > .nav-tabs > li > a,
+                .nav-tabs-custom > .nav-tabs > li.active > a,
+                .nav-tabs-custom > .nav-tabs > li.active:hover > a {
+                    color: var(--nodexa-admin-muted) !important;
+                    border-left-color: var(--nodexa-border) !important;
+                    border-right-color: var(--nodexa-border) !important;
+                    background: transparent !important;
+                }
+
+                .nav-tabs-custom > .nav-tabs > li.active > a,
+                .nav-tabs-custom > .nav-tabs > li.active:hover > a {
+                    color: var(--nodexa-accent-2) !important;
+                    background: rgba(var(--nodexa-accent-rgb), 0.075) !important;
+                }
+
+                .form-control,
+                input.form-control,
+                textarea.form-control,
+                .input-group .input-group-addon,
+                .select2-container--default .select2-selection--single,
+                .select2-container--default .select2-selection--multiple,
+                .select2-dropdown,
+                pre,
+                code {
+                    color: var(--nodexa-admin-text) !important;
+                    border-color: rgba(var(--nodexa-accent-rgb), 0.19) !important;
+                    background: rgba(var(--nodexa-accent-rgb), 0.045) !important;
+                }
+
+                .form-control:focus,
+                input.form-control:focus,
+                textarea.form-control:focus,
+                .select2-container--default.select2-container--focus .select2-selection--multiple,
+                .select2-container--default .select2-search--dropdown .select2-search__field {
+                    border-color: var(--nodexa-accent) !important;
+                    box-shadow: 0 0 0 3px rgba(var(--nodexa-accent-rgb), 0.1) !important;
+                }
+
+                .select2-container--default .select2-selection--single .select2-selection__rendered,
+                .select2-container--default .select2-selection--multiple .select2-selection__choice {
+                    color: var(--nodexa-admin-text) !important;
+                }
+
+                .select2-results__option,
+                .select2-container--default .select2-results__option[aria-selected=true] {
+                    color: var(--nodexa-admin-text) !important;
+                    background: #0b1518 !important;
+                }
+
+                .select2-container--default .select2-results__option--highlighted[aria-selected] {
+                    color: #ffffff !important;
+                    background: rgba(var(--nodexa-accent-rgb), 0.24) !important;
+                }
+
+                .btn-primary,
+                .btn-success,
+                .btn-info,
+                .btn.active:not(.btn-danger):not(.btn-warning) {
+                    color: #04110e !important;
+                    border-color: var(--nodexa-accent) !important;
+                    background: linear-gradient(135deg, var(--nodexa-accent-2), var(--nodexa-accent)) !important;
+                    box-shadow: 0 8px 24px rgba(var(--nodexa-accent-rgb), 0.16) !important;
+                }
+
+                .btn-primary:hover,
+                .btn-primary:focus,
+                .btn-success:hover,
+                .btn-success:focus,
+                .btn-info:hover,
+                .btn-info:focus {
+                    color: #03100d !important;
+                    border-color: var(--nodexa-accent-2) !important;
+                    filter: brightness(1.06);
+                }
+
+                .btn-default {
+                    color: var(--nodexa-admin-text) !important;
+                    border-color: var(--nodexa-border-strong) !important;
+                    background: rgba(var(--nodexa-accent-rgb), 0.045) !important;
+                }
+
+                .btn-default:hover,
+                .btn-default:focus {
+                    color: #ffffff !important;
+                    border-color: var(--nodexa-accent) !important;
+                    background: var(--nodexa-accent-soft) !important;
+                }
+
+                .pagination > .active > a,
+                .pagination > .active > span,
+                .pagination > .active > a:hover,
+                .pagination > .active > span:hover,
+                .label-primary,
+                .bg-blue,
+                .bg-light-blue,
+                .progress-bar-primary,
+                .progress-bar-info {
+                    color: #04110e !important;
+                    border-color: var(--nodexa-accent) !important;
+                    background-color: var(--nodexa-accent) !important;
+                }
+
+                .pagination > li > a,
+                .pagination > li > span {
+                    color: var(--nodexa-admin-muted) !important;
+                    border-color: var(--nodexa-border) !important;
+                    background: rgba(var(--nodexa-accent-rgb), 0.035) !important;
+                }
+
+                .modal-content,
+                .modal-header,
+                .modal-body,
+                .modal-footer {
+                    color: var(--nodexa-admin-text) !important;
+                    border-color: var(--nodexa-border) !important;
+                    background: var(--nodexa-admin-surface) !important;
+                }
+
+                .dropdown-menu {
+                    color: var(--nodexa-admin-text) !important;
+                    border-color: var(--nodexa-border) !important;
+                    background: #091316 !important;
+                }
+
+                .dropdown-menu > li > a {
+                    color: var(--nodexa-admin-muted) !important;
+                }
+
+                .dropdown-menu > li > a:hover,
+                .dropdown-menu > li > a:focus {
+                    color: #ffffff !important;
+                    background: var(--nodexa-accent-soft) !important;
+                }
+
+                ::selection {
+                    color: #ffffff;
+                    background: rgba(var(--nodexa-accent-rgb), 0.32);
+                }
+
+                ::-webkit-scrollbar {
+                    width: 10px;
+                    height: 10px;
+                    background: transparent;
+                }
+
+                ::-webkit-scrollbar-thumb {
+                    border: 2px solid transparent;
+                    border-radius: 999px;
+                    background: rgba(var(--nodexa-accent-rgb), 0.4);
+                    background-clip: padding-box;
+                }
+
+                @media (max-width: 991px) {
+                    .content-header > .breadcrumb {
+                        background: rgba(var(--nodexa-accent-rgb), 0.055) !important;
+                    }
+                }
+            </style>
 
             <!--[if lt IE 9]>
             <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
