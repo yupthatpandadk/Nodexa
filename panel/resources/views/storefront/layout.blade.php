@@ -7,7 +7,7 @@
     <meta name="description" content="@yield('description', 'Nodexa Game Server Cloud — hurtig og moderne administration af game servers.')">
     <title>@yield('title', 'Game Server Cloud') · Nodexa</title>
     @include('partials.nodexa-theme')
-    <link rel="stylesheet" href="{{ asset('css/nodexa-storefront.css') }}?v=0.14.40">
+    <link rel="stylesheet" href="{{ asset('css/nodexa-storefront.css') }}?v=0.14.47">
 </head>
 <body class="nx-storefront">
     @php
@@ -62,7 +62,7 @@
                     <a class="nx-btn nx-btn-ghost" href="{{ $panelUrl() }}">Mit panel</a>
                 @else
                     <a class="nx-login" href="{{ $panelUrl('auth/login') }}">Log ind</a>
-                    <a class="nx-btn nx-btn-primary" href="{{ $panelUrl('auth/login') }}">Kom i gang <span>→</span></a>
+                    <a class="nx-btn nx-btn-primary" href="{{ $panelUrl('auth/register') }}">Opret konto <span>→</span></a>
                 @endauth
             </div>
         </div>
@@ -94,6 +94,7 @@
                     @auth
                         <a href="{{ $panelUrl() }}">Mit panel</a>
                     @else
+                        <a href="{{ $panelUrl('auth/register') }}">Opret konto</a>
                         <a href="{{ $panelUrl('auth/login') }}">Log ind</a>
                     @endauth
                 </div>
@@ -123,6 +124,6 @@
     </aside>
     <div class="nx-theme-backdrop" data-theme-backdrop></div>
 
-    <script src="{{ asset('js/nodexa-storefront.js') }}?v=0.14.40" defer></script>
+    <script src="{{ asset('js/nodexa-storefront.js') }}?v=0.14.47" defer></script>
 </body>
 </html>
