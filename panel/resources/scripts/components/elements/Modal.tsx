@@ -22,7 +22,8 @@ export interface ModalProps extends RequiredModalProps {
 
 export const ModalMask = styled.div`
     ${tw`fixed z-50 overflow-auto flex w-full inset-0`};
-    background: rgba(0, 0, 0, 0.7);
+    background: color-mix(in srgb, var(--nodexa-accent) 2%, rgba(0, 0, 0, 0.72) 98%);
+    backdrop-filter: blur(4px);
 `;
 
 const ModalContainer = styled.div<{ alignTop?: boolean }>`
@@ -47,6 +48,7 @@ const ModalContainer = styled.div<{ alignTop?: boolean }>`
 
         &:hover {
             ${tw`transform rotate-90`}
+            color: var(--nodexa-accent);
         }
 
         & > svg {
@@ -90,9 +92,9 @@ const Modal: React.FC<ModalProps> = ({
     return (
         <Fade in={render} timeout={150} appear={appear || true} unmountOnExit onExited={() => onDismissed()}>
             <ModalMask
-                onClick={(e) => e.stopPropagation()}
-                onContextMenu={(e) => e.stopPropagation()}
-                onMouseDown={(e) => {
+                onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+                onContextMenu={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+                onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => {
                     if (isDismissable && closeOnBackground) {
                         e.stopPropagation();
                         if (e.target === e.currentTarget) {
@@ -123,14 +125,19 @@ const Modal: React.FC<ModalProps> = ({
                         <Fade timeout={150} appear in>
                             <div
                                 css={tw`absolute w-full h-full rounded flex items-center justify-center`}
-                                style={{ background: 'hsla(211, 10%, 53%, 0.35)', zIndex: 9999 }}
+                                style={{ background: 'rgba(var(--nodexa-accent-rgb), 0.08)', zIndex: 9999 }}
                             >
                                 <Spinner />
                             </div>
                         </Fade>
                     )}
                     <div
-                        css={tw`bg-neutral-800 p-3 sm:p-4 md:p-6 rounded shadow-md overflow-y-scroll transition-all duration-150`}
+                        css={tw`p-3 sm:p-4 md:p-6 rounded shadow-md overflow-y-scroll transition-all duration-150`}
+                        style={{
+                            border: '1px solid var(--nodexa-border)',
+                            background: 'linear-gradient(145deg, var(--nodexa-surface-2), var(--nodexa-surface))',
+                            boxShadow: '0 24px 70px rgba(0, 0, 0, 0.42), 0 0 36px rgba(var(--nodexa-accent-rgb), 0.05)',
+                        }}
                     >
                         {children}
                     </div>
