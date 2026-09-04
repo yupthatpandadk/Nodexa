@@ -44,12 +44,25 @@ jobs:
 
   laravel-runtime:
     runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_DATABASE: nodexa_ci
+          MARIADB_ROOT_PASSWORD: nodexa
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, xml, curl, zip, bcmath, intl, pdo_sqlite, sqlite3
+          extensions: mbstring, xml, curl, zip, bcmath, intl, pdo_mysql
           coverage: none
       - name: Build the same Laravel skeleton used by the installer
         run: |
@@ -69,13 +82,16 @@ jobs:
             printf '\nAPP_KEY=%s\n' "$APP_KEY_VALUE" >> .env
           fi
           composer run-script post-autoload-dump
-          touch database/database.sqlite
       - name: Run migrations and framework boot checks
         working-directory: /tmp/nodexa-panel
         env:
           APP_ENV: testing
-          DB_CONNECTION: sqlite
-          DB_DATABASE: /tmp/nodexa-panel/database/database.sqlite
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: nodexa_ci
+          DB_USERNAME: root
+          DB_PASSWORD: nodexa
           CACHE_STORE: array
           SESSION_DRIVER: array
           QUEUE_CONNECTION: sync
