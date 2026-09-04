@@ -16,11 +16,18 @@ valid_domain(){ [[ "$1" =~ ^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Z
 APP_URL="$(sed -n 's/^APP_URL=//p' "$ENV_FILE" | tail -n1 | tr -d '\"' | tr -d "'" || true)"
 PANEL_DOMAIN="${NODEXA_DOMAIN:-$(normalize_domain "$APP_URL")}"; PANEL_DOMAIN="$(normalize_domain "$PANEL_DOMAIN")"
 
-# Keep the legacy default domain because it is useful during first install and
-# for migration from pre-multisite versions.
+# Keep a dedicated storefront hostname even when APP_URL itself uses the apex
+# domain. This makes www.example.com a public website while example.com can
+# remain the panel. If the panel uses panel.example.com, the public storefront
+# defaults to example.com and www.example.com.
 CURRENT_STORE="$(sed -n 's/^NODEXA_STOREFRONT_DOMAIN=//p' "$ENV_FILE" | tail -n1 | tr -d '\"' | tr -d "'" || true)"
 STORE_DOMAIN="${NODEXA_STOREFRONT_DOMAIN:-$CURRENT_STORE}"; STORE_DOMAIN="$(normalize_domain "$STORE_DOMAIN")"
-if [[ -z "$STORE_DOMAIN" && "$PANEL_DOMAIN" == panel.* ]]; then STORE_DOMAIN="${PANEL_DOMAIN#panel.}"; fi
+if [[ -z "$STORE_DOMAIN" && "$PANEL_DOMAIN" == panel.* ]]; then
+ STORE_DOMAIN="${PANEL_DOMAIN#panel.}"
+elif [[ -z "$STORE_DOMAIN" && -n "$PANEL_DOMAIN" ]]; then
+ STORE_DOMAIN="www.${PANEL_DOMAIN}"
+fi
+
 if [[ -n "$STORE_DOMAIN" && "$STORE_DOMAIN" != "$PANEL_DOMAIN" ]] && valid_domain "$STORE_DOMAIN"; then
  sed -i '/^NODEXA_STOREFRONT_DOMAIN=/d' "$ENV_FILE"
  printf '\nNODEXA_STOREFRONT_DOMAIN=%s\n' "$STORE_DOMAIN" >> "$ENV_FILE"
@@ -53,7 +60,16 @@ add_domain(){
  DOMAINS+=("$d")
 }
 for d in $DB_DOMAINS; do add_domain "$d"; done
-if ((${#DOMAINS[@]} == 0)) && [[ -n "$STORE_DOMAIN" ]]; then add_domain "$STORE_DOMAIN"; add_domain "www.$STORE_DOMAIN"; fi
+
+if ((${#DOMAINS[@]} == 0)) && [[ -n "$STORE_DOMAIN" ]]; then
+ add_domain "$STORE_DOMAIN"
+ if [[ "$STORE_DOMAIN" == www.* ]]; then
+  ROOT_STORE="${STORE_DOMAIN#www.}"
+  [[ "$ROOT_STORE" != "$PANEL_DOMAIN" ]] && add_domain "$ROOT_STORE"
+ else
+  add_domain "www.$STORE_DOMAIN"
+ fi
+fi
 
 if [[ -f "$NGINX_SITE" ]]; then
  python3 - "$NGINX_SITE" "$PANEL_DOMAIN" "${DOMAINS[*]}" <<'PY'
@@ -88,7 +104,7 @@ find "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache" -type d -exec chmod 775 {
 find "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache" -type f -exec chmod 664 {} + 2>/dev/null || true
 
 if ((${#DOMAINS[@]})); then
- log "Multisite storefront routing active for: ${DOMAINS[*]}"
+ log "Dedicated Storefront routing active for: ${DOMAINS[*]}"
 else
  warn "No active storefront domains found yet. Add one in Admin → Storefronts."
 fi
