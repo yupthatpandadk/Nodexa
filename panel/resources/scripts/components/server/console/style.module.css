@@ -28,11 +28,19 @@
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
     border: 1px solid var(--nodexa-border-strong);
     border-radius: 14px;
     color: var(--nodexa-accent);
     background: linear-gradient(145deg, rgba(var(--nodexa-accent-rgb), 0.16), var(--nodexa-surface-2));
     box-shadow: inset 0 0 28px rgba(var(--nodexa-accent-rgb), 0.05), 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+.server_icon > img {
+    width: 2.7rem;
+    height: 2.7rem;
+    object-fit: contain;
+    border-radius: 9px;
 }
 
 .status_pill {
@@ -261,6 +269,12 @@
     .server_icon {
         width: 3rem;
         height: 3rem;
+    }
+
+    .server_icon > img {
+        width: 2.2rem;
+        height: 2.2rem;
+        border-radius: 8px;
     }
 
     .details_grid {
