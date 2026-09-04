@@ -15,6 +15,7 @@ systemctl disable --now nodexa-agent 2>/dev/null || true
 
 bash deploy/setup-database-tools.sh
 bash deploy/setup-updater.sh
+bash deploy/setup-diagnostics.sh
 NODEXA_OPEN_AGENT_PORT=0 bash deploy/setup-firewall.sh
 bash deploy/setup-storefront.sh
 bash deploy/setup-ssl.sh
@@ -45,6 +46,7 @@ echo "  Panel:          ${PANEL_URL}"
 echo "  Administrator:  ${NODEXA_ADMIN_USERNAME} <${NODEXA_ADMIN_EMAIL}>"
 echo "  Account info:   /root/nodexa-admin.txt"
 echo "  Updates:        Admin → Opdateringer"
+echo "  Diagnostics:    Admin → Fejlcenter"
 echo "  SSL status:     /var/lib/nodexa/ssl.json"
 echo ""
 echo "Nodexa Agent is WAITING FOR CONFIGURATION."
