@@ -25,16 +25,6 @@ const PageContentBlock: React.FC<PageContentBlockProps> = ({ title, showFlashKey
                 <ContentContainer css={tw`mb-5`}>
                     <p css={tw`text-center text-neutral-500 text-xs`}>
                         <span css={tw`text-neutral-400 font-medium`}>Nodexa</span>
-                        {' · Powered by '}
-                        <a
-                            rel={'noopener nofollow noreferrer'}
-                            href={'https://pterodactyl.io'}
-                            target={'_blank'}
-                            className={'nodexa-theme-link'}
-                            css={tw`no-underline text-neutral-500`}
-                        >
-                            Pterodactyl&reg;
-                        </a>
                         {' · '}{new Date().getFullYear()}
                     </p>
                 </ContentContainer>
