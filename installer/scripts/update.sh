@@ -100,10 +100,6 @@ if [[ -s "$WINGS_CONFIG" ]]; then
  install -d /etc/nodexa
  ln -sfn "$WINGS_CONFIG" /etc/nodexa/config.yml
 
- # Preserve the currently installed service definition. Only repair the alias
- # when the Nodexa service exists, and only attempt recovery if the daemon is
- # already offline. Never fail a Panel update merely because a remote/local Node
- # is unavailable.
  if [[ -f /etc/systemd/system/nodexa-agent.service ]]; then
   ln -sfn /etc/systemd/system/nodexa-agent.service /etc/systemd/system/wings.service
   systemctl daemon-reload
@@ -147,6 +143,7 @@ fi
 
 bash "$SOURCE_ROOT/deploy/setup-updater.sh"
 if [[ -d "$PANEL_DIR" ]]; then
+ bash "$SOURCE_ROOT/deploy/setup-diagnostics.sh"
  bash "$SOURCE_ROOT/deploy/setup-scheduler.sh"
  bash "$SOURCE_ROOT/deploy/setup-upload-limits.sh"
  bash "$SOURCE_ROOT/deploy/optimize-panel-runtime.sh"
