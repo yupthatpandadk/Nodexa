@@ -14,16 +14,20 @@ export default createGlobalStyle`
     }
 
     :root {
-        --nodexa-bg: #050d0b;
-        --nodexa-surface: #0b1714;
-        --nodexa-surface-2: #10211d;
         --nodexa-accent: #42e9a6;
         --nodexa-accent-2: #68edb8;
         --nodexa-accent-rgb: 66, 233, 166;
         --nodexa-accent-soft: rgba(66, 233, 166, 0.12);
         --nodexa-border: rgba(66, 233, 166, 0.13);
         --nodexa-border-strong: rgba(66, 233, 166, 0.28);
-        --nodexa-blue: #38bdf8;
+
+        /* Every dark surface is derived from the selected accent. */
+        --nodexa-bg: color-mix(in srgb, var(--nodexa-accent) 5%, #020605 95%);
+        --nodexa-bg-2: color-mix(in srgb, var(--nodexa-accent) 7.5%, #030807 92.5%);
+        --nodexa-surface: color-mix(in srgb, var(--nodexa-accent) 10%, #050a09 90%);
+        --nodexa-surface-2: color-mix(in srgb, var(--nodexa-accent) 14%, #07100e 86%);
+        --nodexa-surface-3: color-mix(in srgb, var(--nodexa-accent) 19%, #081310 81%);
+        --nodexa-surface-hover: color-mix(in srgb, var(--nodexa-accent) 24%, #091512 76%);
         --nodexa-text: #effbf6;
         --nodexa-muted: #8ca49b;
     }
@@ -40,10 +44,11 @@ export default createGlobalStyle`
         color: var(--nodexa-text);
         letter-spacing: 0.01em;
         background:
-            radial-gradient(circle at 12% -5%, rgba(var(--nodexa-accent-rgb), 0.11), transparent 31rem),
-            radial-gradient(circle at 90% 2%, rgba(var(--nodexa-accent-rgb), 0.055), transparent 29rem),
-            linear-gradient(180deg, #081411 0%, #06100e 48%, #050b0a 100%);
+            radial-gradient(circle at 12% -5%, rgba(var(--nodexa-accent-rgb), 0.13), transparent 31rem),
+            radial-gradient(circle at 90% 2%, rgba(var(--nodexa-accent-rgb), 0.075), transparent 29rem),
+            linear-gradient(180deg, var(--nodexa-surface) 0%, var(--nodexa-bg-2) 48%, var(--nodexa-bg) 100%);
         background-attachment: fixed;
+        transition: background 180ms ease, color 180ms ease;
     }
 
     body::before {
@@ -90,6 +95,10 @@ export default createGlobalStyle`
         color: var(--nodexa-accent) !important;
         border-color: var(--nodexa-border-strong) !important;
         background: var(--nodexa-accent-soft) !important;
+    }
+
+    .nodexa-theme-link:hover {
+        color: var(--nodexa-accent) !important;
     }
 
     ::selection {
