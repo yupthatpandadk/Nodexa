@@ -32,6 +32,9 @@ export default () => {
     const id = ServerContext.useStoreState((state) => state.server.data?.id);
     const uuid = ServerContext.useStoreState((state) => state.server.data?.uuid);
     const eggName = ServerContext.useStoreState((state) => state.server.data?.eggName || '');
+    const minecraftPluginManager = ServerContext.useStoreState(
+        (state) => state.server.data?.addons.minecraftPluginManager || false
+    );
     const isMinecraft = /minecraft|paper|purpur|spigot|bukkit|folia|velocity|waterfall|bungee/i.test(eggName);
     const inConflictState = ServerContext.useStoreState((state) => state.server.inConflictState);
     const serverId = ServerContext.useStoreState((state) => state.server.data?.internalId);
@@ -44,6 +47,12 @@ export default () => {
         }
         return `${(url ? match.url : match.path).replace(/\/*$/, '')}/${value.replace(/^\/+/, '')}`;
     };
+
+    const availableServerRoutes = routes.server.filter(
+        (route) =>
+            (!route.minecraftOnly || isMinecraft) &&
+            (!route.addon || (route.addon === 'minecraftPluginManager' && minecraftPluginManager))
+    );
 
     useEffect(
         () => () => {
@@ -90,8 +99,8 @@ export default () => {
                 <CSSTransition timeout={150} classNames={'fade'} appear in>
                     <SubNavigation>
                         <div>
-                            {routes.server
-                                .filter((route) => !!route.name && (!route.minecraftOnly || isMinecraft))
+                            {availableServerRoutes
+                                .filter((route) => !!route.name)
                                 .map((route) =>
                                     route.permission ? (
                                         <Can key={route.path} action={route.permission} matchAny>
@@ -122,7 +131,7 @@ export default () => {
                     <ErrorBoundary>
                         <TransitionRouter>
                             <Switch location={location}>
-                                {routes.server.map(({ path, permission, component: Component }) => (
+                                {availableServerRoutes.map(({ path, permission, component: Component }) => (
                                     <PermissionRoute key={path} permission={permission} path={to(path)} exact>
                                         <Spinner.Suspense>
                                             <Component />
