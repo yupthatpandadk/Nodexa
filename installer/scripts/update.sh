@@ -93,76 +93,62 @@ if [[ -d "$PANEL_DIR" ]]; then
  done < <(systemctl list-unit-files --type=service --no-legend 'php*-fpm.service' 2>/dev/null | awk '{print $1}')
 fi
 
-AGENT_INSTALLED=0
-if [[ -d "$AGENT_DIR" || -x /usr/local/bin/nodexad || -f /etc/systemd/system/nodexa-agent.service || -f /etc/nodexa.env ]]; then AGENT_INSTALLED=1; fi
-if systemctl list-unit-files nodexa-agent.service --no-legend 2>/dev/null | grep -q '^nodexa-agent.service'; then AGENT_INSTALLED=1; fi
+# Nodexa nodes now use the protocol-compatible Wings engine. If a Wings config
+# already exists, never rebuild or re-enable the legacy custom Go daemon during an update.
+WINGS_CONFIG="/etc/pterodactyl/config.yml"
+if [[ -s "$WINGS_CONFIG" ]]; then
+ log "Updating Nodexa Agent Wings engine..."
+ apt-get install -y ca-certificates curl >/dev/null
+ ARCH="$(dpkg --print-architecture)"
+ case "$ARCH" in
+  amd64) WINGS_ARCH="amd64" ;;
+  arm64) WINGS_ARCH="arm64" ;;
+  *) fail "Unsupported Wings architecture: $ARCH" ;;
+ esac
 
-if [[ "$AGENT_INSTALLED" == "1" ]]; then
- log "Updating installed Nodexa Agent..."
- install -d "$AGENT_DIR" /var/lib/nodexa
- rsync -a --delete "$SOURCE_ROOT/agent/" "$AGENT_DIR/"
- cd "$AGENT_DIR"
- GO_BIN="$(command -v go || true)"
- [[ -x /usr/local/bin/go ]] && GO_BIN=/usr/local/bin/go
- [[ -n "$GO_BIN" ]] || fail "Nodexa Agent is installed but Go is unavailable; cannot rebuild Agent."
- "$GO_BIN" mod tidy
- AGENT_VERSION="$(tr -d '\r\n' < "$AGENT_DIR/VERSION" 2>/dev/null || echo unknown)"
- BUILD_COMMIT="$(resolve_source_commit)"
- BUILD_SHORT="${BUILD_COMMIT:0:8}"
- [[ -n "$BUILD_SHORT" ]] || BUILD_SHORT=unknown
- RUNTIME_VERSION="${AGENT_VERSION}+${BUILD_SHORT}"
- LDFLAGS="-s -w -X nodexa/agent/internal/health.BuildVersion=${AGENT_VERSION} -X nodexa/agent/internal/health.BuildCommit=${BUILD_COMMIT}"
- "$GO_BIN" build -trimpath -ldflags="$LDFLAGS" -o /usr/local/bin/nodexad ./cmd/nodexad
- chmod 0755 /usr/local/bin/nodexad
- printf '%s\n' "$RUNTIME_VERSION" > /var/lib/nodexa/agent-version
+ tmp_wings="$(mktemp)"
+ curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
+  "https://github.com/pterodactyl/wings/releases/latest/download/wings_linux_${WINGS_ARCH}" \
+  -o "$tmp_wings"
+ install -m 0755 "$tmp_wings" /usr/local/bin/wings
+ rm -f "$tmp_wings"
 
- AGENT_TOKEN=""
- if [[ -f /etc/nodexa.env ]]; then
-  AGENT_TOKEN="$(sed -n 's/^NODEXA_TOKEN=//p' /etc/nodexa.env | tail -n1)"
-  AGENT_TOKEN="${AGENT_TOKEN%\"}"; AGENT_TOKEN="${AGENT_TOKEN#\"}"; AGENT_TOKEN="${AGENT_TOKEN%\'}"; AGENT_TOKEN="${AGENT_TOKEN#\'}"
-  if grep -q '^NODEXA_AGENT_VERSION=' /etc/nodexa.env; then
-   sed -i "s/^NODEXA_AGENT_VERSION=.*/NODEXA_AGENT_VERSION=${RUNTIME_VERSION}/" /etc/nodexa.env
-  else
-   printf '\nNODEXA_AGENT_VERSION=%s\n' "$RUNTIME_VERSION" >> /etc/nodexa.env
-  fi
- fi
+ install -d /etc/nodexa
+ ln -sfn "$WINGS_CONFIG" /etc/nodexa/config.yml
+ systemctl stop nodexa-agent.service 2>/dev/null || true
 
- if [[ -n "$AGENT_TOKEN" ]]; then
-  log "Normalizing Nodexa Agent systemd service..."
-  cat >/etc/systemd/system/nodexa-agent.service <<'UNIT'
+ cat >/etc/systemd/system/nodexa-agent.service <<'UNIT'
 [Unit]
-Description=Nodexa Agent
+Description=Nodexa Agent (Wings Engine)
 After=network-online.target docker.service
 Requires=docker.service
 Wants=network-online.target
 
 [Service]
-Type=simple
-EnvironmentFile=/etc/nodexa.env
-ExecStart=/usr/local/bin/nodexad
-Restart=always
-RestartSec=3
-LimitNOFILE=1048576
+User=root
+WorkingDirectory=/etc/nodexa
+LimitNOFILE=4096
+PIDFile=/var/run/wings/daemon.pid
+ExecStart=/usr/local/bin/wings --config /etc/nodexa/config.yml
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
 UNIT
-  systemctl daemon-reload
-  systemctl enable nodexa-agent >/dev/null 2>&1 || true
-  systemctl restart nodexa-agent
-  sleep 1
-  systemctl is-active --quiet nodexa-agent || fail "Updated Nodexa Agent did not stay active. Check journalctl -u nodexa-agent -n 100 --no-pager"
-  RUNNING_EXEC="$(systemctl show -p ExecStart --value nodexa-agent 2>/dev/null || true)"
-  [[ "$RUNNING_EXEC" == *"/usr/local/bin/nodexad"* ]] || fail "nodexa-agent is not running /usr/local/bin/nodexad after update: ${RUNNING_EXEC:-unknown ExecStart}"
-  if [[ "$BUILD_COMMIT" == "unknown" ]]; then
-   log "Nodexa Agent updated to ${RUNTIME_VERSION}; GitHub commit could not be resolved, but build metadata is embedded in the binary."
-  else
-   log "Nodexa Agent updated to ${RUNTIME_VERSION} and restarted from /usr/local/bin/nodexad."
-  fi
- else
-  log "Agent files/binary were updated, but this host has no configured NODEXA_TOKEN; leaving nodexa-agent stopped."
-  systemctl disable --now nodexa-agent >/dev/null 2>&1 || true
- fi
+
+ ln -sfn /etc/systemd/system/nodexa-agent.service /etc/systemd/system/wings.service
+ systemctl daemon-reload
+ systemctl enable nodexa-agent.service >/dev/null 2>&1 || true
+ systemctl restart nodexa-agent.service
+ sleep 2
+ systemctl is-active --quiet nodexa-agent.service || {
+  journalctl -u nodexa-agent.service -n 80 --no-pager || true
+  fail "Updated Nodexa Agent Wings engine did not stay active."
+ }
+ log "Nodexa Agent Wings engine updated and restarted."
+elif [[ -x /usr/local/bin/nodexad || -f /etc/nodexa.env ]]; then
+ log "Legacy Nodexa Go agent detected without a Wings configuration. Leaving it unchanged. Generate a fresh Node Auto-Deploy command in Admin -> Nodes -> Configuration to migrate this node safely."
 fi
 
 if [[ -f /etc/nginx/sites-available/nodexa-agent ]]; then
