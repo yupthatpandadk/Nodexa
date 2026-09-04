@@ -24,21 +24,14 @@ class RouteServiceProvider extends ServiceProvider
     {
         $this->configureRateLimiting();
 
-        // Disable trimming string values when requesting file information — it isn't helpful
-        // and messes up the ability to actually open a directory that ends with a space.
         TrimStrings::skipWhen(function (Request $request) {
             return preg_match(self::FILE_PATH_REGEX, $request->getPathInfo()) === 1;
         });
 
-        // This is needed to make use of the "resolveRouteBinding" functionality in the
-        // model. Without it you'll never trigger that logic flow thus resulting in a 404
-        // error because we request databases with a HashID, and not with a normal ID.
         Route::model('database', Database::class);
 
         $this->routes(function () {
             Route::middleware('web')->group(function () {
-                // Public, cacheable, server-rendered Nodexa storefront. Keep these routes
-                // outside the authenticated panel group so visitors can browse before login.
                 Route::group([], base_path('routes/storefront.php'));
 
                 Route::middleware(['auth.session', RequireTwoFactorAuthentication::class])
@@ -65,6 +58,11 @@ class RouteServiceProvider extends ServiceProvider
                     ->prefix('/api/client')
                     ->scopeBindings()
                     ->group(base_path('routes/api-client.php'));
+
+                Route::middleware(['client-api', 'throttle:api.client'])
+                    ->prefix('/api/client')
+                    ->scopeBindings()
+                    ->group(base_path('routes/api-client-nodexa.php'));
             });
 
             Route::middleware('daemon')
