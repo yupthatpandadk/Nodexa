@@ -4,7 +4,9 @@ namespace Pterodactyl\Http\Controllers\Admin\Nests;
 
 use Illuminate\View\View;
 use Pterodactyl\Models\Egg;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Prologue\Alerts\AlertsMessageBag;
 use Illuminate\View\Factory as ViewFactory;
 use Pterodactyl\Http\Controllers\Controller;
@@ -17,9 +19,6 @@ use Pterodactyl\Contracts\Repository\NestRepositoryInterface;
 
 class EggController extends Controller
 {
-    /**
-     * EggController constructor.
-     */
     public function __construct(
         protected AlertsMessageBag $alert,
         protected EggCreationService $creationService,
@@ -31,11 +30,6 @@ class EggController extends Controller
     ) {
     }
 
-    /**
-     * Handle a request to display the Egg creation page.
-     *
-     * @throws \Pterodactyl\Exceptions\Repository\RecordNotFoundException
-     */
     public function create(): View
     {
         $nests = $this->nestRepository->getWithEggs();
@@ -44,16 +38,16 @@ class EggController extends Controller
         return view('admin.eggs.new', ['nests' => $nests]);
     }
 
-    /**
-     * Handle request to store a new Egg.
-     *
-     * @throws \Pterodactyl\Exceptions\Model\DataValidationException
-     * @throws \Pterodactyl\Exceptions\Service\Egg\NoParentConfigurationFoundException
-     */
     public function store(EggFormRequest $request): RedirectResponse
     {
         $data = $request->validated();
         $data['docker_images'] = $this->normalizeDockerImages($data['docker_images'] ?? null);
+
+        $icon = $request->file('icon');
+        unset($data['icon'], $data['remove_icon']);
+        if ($icon instanceof UploadedFile) {
+            $data['icon_path'] = $this->storeEggIcon($icon);
+        }
 
         $egg = $this->creationService->handle($data);
         $this->alert->success(trans('admin/nests.eggs.notices.egg_created'))->flash();
@@ -61,9 +55,6 @@ class EggController extends Controller
         return redirect()->route('admin.nests.egg.view', $egg->id);
     }
 
-    /**
-     * Handle request to view a single Egg.
-     */
     public function view(Egg $egg): View
     {
         return view('admin.eggs.view', [
@@ -76,17 +67,27 @@ class EggController extends Controller
         ]);
     }
 
-    /**
-     * Handle request to update an Egg.
-     *
-     * @throws \Pterodactyl\Exceptions\Model\DataValidationException
-     * @throws \Pterodactyl\Exceptions\Repository\RecordNotFoundException
-     * @throws \Pterodactyl\Exceptions\Service\Egg\NoParentConfigurationFoundException
-     */
     public function update(EggFormRequest $request, Egg $egg): RedirectResponse
     {
         $data = $request->validated();
         $data['docker_images'] = $this->normalizeDockerImages($data['docker_images'] ?? null);
+
+        $icon = $request->file('icon');
+        $removeIcon = (bool) ($data['remove_icon'] ?? false);
+        unset($data['icon'], $data['remove_icon']);
+
+        if ($icon instanceof UploadedFile) {
+            $newPath = $this->storeEggIcon($icon);
+            if ($egg->icon_path) {
+                Storage::disk('public')->delete($egg->icon_path);
+            }
+            $data['icon_path'] = $newPath;
+        } elseif ($removeIcon) {
+            if ($egg->icon_path) {
+                Storage::disk('public')->delete($egg->icon_path);
+            }
+            $data['icon_path'] = null;
+        }
 
         $this->updateService->handle($egg, $data);
         $this->alert->success(trans('admin/nests.eggs.notices.updated'))->flash();
@@ -94,30 +95,28 @@ class EggController extends Controller
         return redirect()->route('admin.nests.egg.view', $egg->id);
     }
 
-    /**
-     * Handle request to destroy an egg.
-     *
-     * @throws \Pterodactyl\Exceptions\Service\Egg\HasChildrenException
-     * @throws \Pterodactyl\Exceptions\Service\HasActiveServersException
-     */
     public function destroy(Egg $egg): RedirectResponse
     {
+        if ($egg->icon_path) {
+            Storage::disk('public')->delete($egg->icon_path);
+        }
+
         $this->deletionService->handle($egg->id);
         $this->alert->success(trans('admin/nests.eggs.notices.deleted'))->flash();
 
         return redirect()->route('admin.nests.view', $egg->nest_id);
     }
 
-    /**
-     * Normalizes a string of docker image data into the expected egg format.
-     */
+    protected function storeEggIcon(UploadedFile $file): string
+    {
+        return $file->storePublicly('egg-icons', ['disk' => 'public']);
+    }
+
     protected function normalizeDockerImages(?string $input = null): array
     {
         $data = array_map(fn ($value) => trim($value), explode("\n", $input ?? ''));
 
         $images = [];
-        // Iterate over the image data provided and convert it into a name => image
-        // pairing that is used to improve the display on the front-end.
         foreach ($data as $value) {
             $parts = explode('|', $value, 2);
             $images[$parts[0]] = empty($parts[1]) ? $parts[0] : $parts[1];
