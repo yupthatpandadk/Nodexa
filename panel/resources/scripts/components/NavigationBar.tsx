@@ -11,7 +11,6 @@ import http from '@/api/http';
 import SpinnerOverlay from '@/components/elements/SpinnerOverlay';
 import Tooltip from '@/components/elements/tooltip/Tooltip';
 import Avatar from '@/components/Avatar';
-import ThemeColorPicker from '@/components/ThemeColorPicker';
 
 const NavigationShell = styled.div`
     position: sticky;
@@ -140,7 +139,6 @@ export default () => {
                             <FontAwesomeIcon icon={faLayerGroup} />
                         </NavLink>
                     </Tooltip>
-                    <ThemeColorPicker />
                     {rootAdmin && (
                         <Tooltip placement={'bottom'} content={'Nodexa Admin'}>
                             <a href={'/admin'} rel={'noreferrer'}>
