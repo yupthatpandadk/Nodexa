@@ -35,7 +35,7 @@ const Trigger = styled.button`
     border-right: 0;
     border-radius: 14px 0 0 14px;
     color: #f2fff9;
-    background: linear-gradient(145deg, rgba(13, 31, 27, 0.97), rgba(7, 16, 14, 0.98));
+    background: linear-gradient(145deg, var(--nodexa-surface-2), var(--nodexa-bg-2));
     box-shadow: -10px 12px 34px rgba(0, 0, 0, 0.28), 0 0 24px rgba(var(--nodexa-accent-rgb), 0.08);
     backdrop-filter: blur(16px);
     cursor: pointer;
@@ -53,7 +53,7 @@ const Trigger = styled.button`
 
     &:hover {
         border-color: var(--nodexa-accent);
-        background: linear-gradient(145deg, rgba(var(--nodexa-accent-rgb), 0.14), rgba(7, 16, 14, 0.98));
+        background: linear-gradient(145deg, var(--nodexa-surface-hover), var(--nodexa-surface));
         box-shadow: -12px 14px 38px rgba(0, 0, 0, 0.32), 0 0 26px rgba(var(--nodexa-accent-rgb), 0.15);
     }
 
@@ -76,7 +76,7 @@ const Overlay = styled.div`
     display: flex;
     align-items: stretch;
     justify-content: flex-end;
-    background: rgba(2, 8, 7, 0.58);
+    background: color-mix(in srgb, var(--nodexa-accent) 3%, rgba(0, 0, 0, 0.62) 97%);
     backdrop-filter: blur(5px);
 `;
 
@@ -87,9 +87,9 @@ const Panel = styled.div`
     border-left: 1px solid var(--nodexa-border-strong);
     color: var(--nodexa-text);
     background:
-        radial-gradient(circle at 90% 5%, rgba(var(--nodexa-accent-rgb), 0.1), transparent 16rem),
-        linear-gradient(180deg, rgba(14, 30, 26, 0.995), rgba(6, 14, 12, 0.995));
-    box-shadow: -28px 0 80px rgba(0, 0, 0, 0.48), -4px 0 28px rgba(var(--nodexa-accent-rgb), 0.06);
+        radial-gradient(circle at 90% 5%, rgba(var(--nodexa-accent-rgb), 0.13), transparent 16rem),
+        linear-gradient(180deg, var(--nodexa-surface-2), var(--nodexa-bg));
+    box-shadow: -28px 0 80px rgba(0, 0, 0, 0.48), -4px 0 28px rgba(var(--nodexa-accent-rgb), 0.08);
     animation: nodexa-theme-drawer-in 180ms ease-out;
 
     @keyframes nodexa-theme-drawer-in {
@@ -114,7 +114,7 @@ const Header = styled.div`
     gap: 1rem;
     padding: 1.35rem 1.25rem 1.05rem;
     border-bottom: 1px solid var(--nodexa-border);
-    background: rgba(8, 20, 17, 0.92);
+    background: color-mix(in srgb, var(--nodexa-surface-2) 94%, transparent 6%);
     backdrop-filter: blur(18px);
 
     h2 {
@@ -159,7 +159,7 @@ const SectionTitle = styled.div`
 
     strong {
         display: block;
-        color: #eefbf6;
+        color: var(--nodexa-text);
         font-size: 0.78rem;
     }
 
@@ -220,13 +220,13 @@ const CustomRow = styled.div`
     gap: 1rem;
     margin-top: 1.15rem;
     padding: 0.9rem;
-    border: 1px solid rgba(148, 163, 184, 0.1);
+    border: 1px solid var(--nodexa-border);
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.025);
+    background: var(--nodexa-surface);
 
     label {
         display: block;
-        color: #e7f8f0;
+        color: var(--nodexa-text);
         font-size: 0.78rem;
         font-weight: 700;
     }
@@ -245,7 +245,7 @@ const CustomRow = styled.div`
         overflow: hidden;
         border: 1px solid var(--nodexa-border-strong);
         border-radius: 10px;
-        background: #07100e;
+        background: var(--nodexa-bg-2);
         cursor: pointer;
     }
 `;
@@ -257,7 +257,7 @@ const Footer = styled.div`
     gap: 1rem;
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.08);
+    border-top: 1px solid var(--nodexa-border);
 
     span {
         color: var(--nodexa-muted);
@@ -273,7 +273,7 @@ const Reset = styled.button`
     border: 1px solid var(--nodexa-border);
     border-radius: 9px;
     color: var(--nodexa-muted);
-    background: rgba(255, 255, 255, 0.025);
+    background: var(--nodexa-surface);
     cursor: pointer;
 
     &:hover {
