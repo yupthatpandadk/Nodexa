@@ -55,10 +55,11 @@ class MinecraftPluginController extends ClientApiController
             $facets[] = $loaderFacets;
         }
 
+        $query = trim((string) ($data['query'] ?? ''));
         $response = $this->modrinth()->get('/search', [
-            'query' => trim((string) ($data['query'] ?? '')),
+            'query' => $query,
             'facets' => json_encode($facets, JSON_UNESCAPED_SLASHES),
-            'index' => 'relevance',
+            'index' => $query === '' ? 'downloads' : 'relevance',
             'offset' => (int) ($data['offset'] ?? 0),
             'limit' => 24,
         ]);
@@ -276,7 +277,7 @@ class MinecraftPluginController extends ClientApiController
     {
         return Http::baseUrl(self::MODRINTH_BASE)
             ->acceptJson()
-            ->withHeaders(['User-Agent' => 'Nodexa/0.14.45 (https://github.com/yupthatpandadk/Nodexa)'])
+            ->withHeaders(['User-Agent' => 'Nodexa/0.14.46 (https://github.com/yupthatpandadk/Nodexa)'])
             ->connectTimeout(5)
             ->timeout(15)
             ->retry(2, 250);
