@@ -52,6 +52,11 @@ const terminalProps: ITerminalOptions = {
     theme: theme,
 };
 
+const normalizeNodexaBranding = (line: string) =>
+    line
+        .replace(/container@pterodactyl~/gi, 'nodexa@server~')
+        .replace(/Pterodactyl(?:®|&reg;)?/gi, 'Nodexa');
+
 export default () => {
     const TERMINAL_PRELUDE = '\u001b[1m\u001b[32mnodexa@server~ \u001b[0m';
     const ref = useRef<HTMLDivElement>(null);
@@ -74,7 +79,11 @@ export default () => {
     }`;
 
     const handleConsoleOutput = (line: string, prelude = false) =>
-        terminal.writeln((prelude ? TERMINAL_PRELUDE : '') + line.replace(/(?:\r\n|\r|\n)$/im, '') + '\u001b[0m');
+        terminal.writeln(
+            (prelude ? TERMINAL_PRELUDE : '') +
+                normalizeNodexaBranding(line).replace(/(?:\r\n|\r|\n)$/im, '') +
+                '\u001b[0m'
+        );
 
     const handleTransferStatus = (status: string) => {
         switch (status) {
@@ -86,7 +95,10 @@ export default () => {
 
     const handleDaemonErrorOutput = (line: string) =>
         terminal.writeln(
-            TERMINAL_PRELUDE + '\u001b[1m\u001b[41m' + line.replace(/(?:\r\n|\r|\n)$/im, '') + '\u001b[0m'
+            TERMINAL_PRELUDE +
+                '\u001b[1m\u001b[41m' +
+                normalizeNodexaBranding(line).replace(/(?:\r\n|\r|\n)$/im, '') +
+                '\u001b[0m'
         );
 
     const handlePowerChangeEvent = (state: string) =>
