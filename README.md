@@ -1,8 +1,8 @@
 # Nodexa
 
-Nodexa is an open game-server management platform with a Laravel/React panel and a Go-based node agent.
+Nodexa is an open game-server management platform with a Laravel/React panel and a Nodexa node agent.
 
-> Development preview: do not replace a production Pterodactyl installation with Nodexa yet.
+> Development preview: validate updates in a staging environment before replacing a production installation.
 
 ## One-line installer
 
@@ -17,7 +17,7 @@ The installer provides an interactive menu for Panel, Agent, combined installati
 ## Components
 
 - `panel/` — PHP/Laravel API and React/TypeScript interface
-- `agent/` — Go service controlling Docker containers
+- `agent/` — Nodexa node service and compatibility tooling
 - `installer/` — interactive Linux installer modules
 - `deploy/` — combined runtime deployment
 - `docs/` — feature roadmap and changelog
@@ -28,4 +28,4 @@ Ubuntu/Debian systems with `apt`; Ubuntu 22.04/24.04 is recommended. The Agent s
 
 ## License
 
-Nodexa is an original project and is not affiliated with Pterodactyl.
+See the repository license and bundled third-party notices for applicable terms.
