@@ -19,9 +19,10 @@ const NavigationShell = styled.div`
     width: 100%;
     overflow-x: auto;
     border-bottom: 1px solid var(--nodexa-border);
-    background: rgba(5, 13, 11, 0.84);
+    background: color-mix(in srgb, var(--nodexa-surface) 88%, transparent 12%);
     backdrop-filter: blur(18px);
-    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18), 0 1px 24px rgba(var(--nodexa-accent-rgb), 0.025);
+    transition: background 180ms ease, border-color 180ms ease;
 `;
 
 const Brand = styled(Link)`
@@ -66,7 +67,7 @@ const BrandName = styled.span`
 const BrandSub = styled.span`
     display: block;
     margin-top: 0.2rem;
-    color: #6f9186;
+    color: var(--nodexa-muted);
     font-size: 0.58rem;
     font-weight: 700;
     letter-spacing: 0.16em;
@@ -86,7 +87,7 @@ const RightNavigation = styled.div`
         padding: 0 0.8rem;
         border: 1px solid transparent;
         border-radius: 12px;
-        color: #8ca49b;
+        color: var(--nodexa-muted);
         text-decoration: none;
         cursor: pointer;
         transition: all 150ms ease;
