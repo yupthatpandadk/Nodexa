@@ -25,12 +25,16 @@ const Hero = styled.div`
     overflow: hidden;
     margin-bottom: 1.5rem;
     padding: 2rem;
-    border: 1px solid rgba(73, 238, 169, 0.15);
+    border: 1px solid var(--nodexa-border-strong);
     border-radius: 22px;
     background:
-        radial-gradient(circle at 82% 20%, rgba(56, 189, 248, 0.09), transparent 19rem),
-        linear-gradient(135deg, rgba(18, 45, 37, 0.96), rgba(7, 19, 16, 0.97));
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.025);
+        radial-gradient(circle at 82% 20%, rgba(var(--nodexa-accent-rgb), 0.13), transparent 19rem),
+        linear-gradient(135deg, var(--nodexa-surface-3), var(--nodexa-surface));
+    box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.22),
+        0 0 42px rgba(var(--nodexa-accent-rgb), 0.045),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025);
+    transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
 
     &::after {
         content: '';
@@ -39,9 +43,9 @@ const Hero = styled.div`
         height: 17rem;
         right: -5rem;
         top: -7rem;
-        border: 1px solid rgba(73, 238, 169, 0.11);
+        border: 1px solid var(--nodexa-border);
         border-radius: 50%;
-        box-shadow: 0 0 90px rgba(66, 233, 166, 0.05);
+        box-shadow: 0 0 90px rgba(var(--nodexa-accent-rgb), 0.08);
     }
 
     @media (max-width: 700px) {
@@ -57,27 +61,27 @@ const HeroBadge = styled.div`
     gap: 0.45rem;
     margin-bottom: 0.8rem;
     padding: 0.38rem 0.65rem;
-    border: 1px solid rgba(73, 238, 169, 0.16);
+    border: 1px solid var(--nodexa-border-strong);
     border-radius: 999px;
-    color: #62efb5;
+    color: var(--nodexa-accent-2);
     font-size: 0.66rem;
     font-weight: 700;
     letter-spacing: 0.14em;
-    background: rgba(66, 233, 166, 0.065);
+    background: var(--nodexa-accent-soft);
 
     &::before {
         content: '';
         width: 0.42rem;
         height: 0.42rem;
         border-radius: 50%;
-        background: #42e9a6;
-        box-shadow: 0 0 12px rgba(66, 233, 166, 0.7);
+        background: var(--nodexa-accent);
+        box-shadow: 0 0 12px rgba(var(--nodexa-accent-rgb), 0.72);
     }
 `;
 
 const HeroTitle = styled.h1`
     margin: 0;
-    color: #f3fff9;
+    color: var(--nodexa-text);
     font-size: clamp(1.65rem, 3vw, 2.45rem);
     font-weight: 700;
     line-height: 1.08;
@@ -87,7 +91,7 @@ const HeroTitle = styled.h1`
 const HeroText = styled.p`
     max-width: 38rem;
     margin: 0.75rem 0 0;
-    color: #91aaa1;
+    color: var(--nodexa-muted);
     font-size: 0.96rem;
     line-height: 1.6;
 `;
@@ -97,14 +101,15 @@ const Metric = styled.div`
     z-index: 1;
     min-width: 145px;
     padding: 1.1rem 1.2rem;
-    border: 1px solid rgba(73, 238, 169, 0.13);
+    border: 1px solid var(--nodexa-border);
     border-radius: 17px;
-    background: rgba(4, 14, 11, 0.52);
+    background: color-mix(in srgb, var(--nodexa-accent) 5%, rgba(2, 7, 6, 0.72) 95%);
+    box-shadow: inset 0 0 28px rgba(var(--nodexa-accent-rgb), 0.025);
     backdrop-filter: blur(8px);
 
     strong {
         display: block;
-        color: #f5fff9;
+        color: var(--nodexa-text);
         font-size: 2rem;
         line-height: 1;
         letter-spacing: -0.04em;
@@ -113,7 +118,7 @@ const Metric = styled.div`
     span {
         display: block;
         margin-top: 0.55rem;
-        color: #6f9186;
+        color: var(--nodexa-muted);
         font-size: 0.65rem;
         font-weight: 700;
         letter-spacing: 0.12em;
@@ -129,14 +134,14 @@ const SectionHeader = styled.div`
 
     h2 {
         margin: 0;
-        color: #eafff6;
+        color: var(--nodexa-text);
         font-size: 1rem;
         font-weight: 650;
     }
 
     p {
         margin: 0.25rem 0 0;
-        color: #718d83;
+        color: var(--nodexa-muted);
         font-size: 0.75rem;
     }
 `;
