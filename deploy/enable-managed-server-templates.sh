@@ -11,8 +11,12 @@ from pathlib import Path
 import sys
 p=Path(sys.argv[1]); text=p.read_text()
 text=text.replace('Game-filer/install scripts håndteres senere af Templates/Eggs-modulet.','Minecraft Java installeres automatisk af Nodexa. Reinstall kan senere gendanne de template-styrede filer.')
+optimized="java -Xms256M -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:+UseStringDeduplication -jar server.jar nogui"
+# Upgrade already transformed Nodexa sources as well as the original preset.
+text=text.replace('java -Xms128M -XX:MaxRAMPercentage=95.0 -jar server.jar nogui', optimized)
+text=text.replace('java -Xms128M -XX:MaxRAMPercentage=95.0 -jar server.jar', optimized)
 old="const presets={custom:{image:'ghcr.io/parkervcp/yolks:debian',startup:''},minecraft:{image:'ghcr.io/parkervcp/yolks:java_21',startup:'java -Xms128M -XX:MaxRAMPercentage=95.0 -jar server.jar'},fivem:{image:'ghcr.io/parkervcp/yolks:debian',startup:'bash ./run.sh'}};"
-new="let currentPreset='custom';\nconst presets={custom:{image:'ghcr.io/parkervcp/yolks:debian',startup:''},minecraft:{image:'ghcr.io/parkervcp/yolks:java_21',startup:'java -Xms128M -XX:MaxRAMPercentage=95.0 -jar server.jar nogui'},fivem:{image:'ghcr.io/parkervcp/yolks:debian',startup:'bash ./run.sh'}};"
+new=f"let currentPreset='custom';\nconst presets={{custom:{{image:'ghcr.io/parkervcp/yolks:debian',startup:''}},minecraft:{{image:'ghcr.io/parkervcp/yolks:java_21',startup:'{optimized}'}},fivem:{{image:'ghcr.io/parkervcp/yolks:debian',startup:'bash ./run.sh'}}}};"
 if old in text: text=text.replace(old,new,1)
 old="document.querySelectorAll('.preset').forEach(b=>b.onclick=()=>{document.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));b.classList.add('active');const p=presets[b.dataset.preset];$('image').value=p.image;$('startup').value=p.startup});"
 new="document.querySelectorAll('.preset').forEach(b=>b.onclick=()=>{document.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentPreset=b.dataset.preset||'custom';const p=presets[currentPreset];$('image').value=p.image;$('startup').value=p.startup;if(currentPreset==='minecraft'&&!$('environment').value.includes('MINECRAFT_VERSION=')){$('environment').value=($('environment').value.trim()?$('environment').value.trim()+'\\n':'')+'MINECRAFT_VERSION=1.21.8\\nSERVER_PORT=25565'}});"
