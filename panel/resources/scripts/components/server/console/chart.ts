@@ -9,12 +9,19 @@ import {
     PointElement,
 } from 'chart.js';
 import { DeepPartial } from 'ts-essentials';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { deepmerge, deepmergeCustom } from 'deepmerge-ts';
 import { theme } from 'twin.macro';
 import { hexToRgba } from '@/lib/helpers';
 
 ChartJS.register(LineElement, PointElement, Filler, LinearScale);
+
+const getThemeColor = (name: string, fallback: string): string => {
+    if (typeof document === 'undefined') return fallback;
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+};
+
+const getAccent = () => getThemeColor('--nodexa-accent', '#42e9a6');
 
 const options: ChartOptions<'line'> = {
     responsive: true,
@@ -79,6 +86,7 @@ type ChartDatasetCallback = (value: ChartDataset<'line'>, index: number) => Char
 
 function getEmptyData(label: string, sets = 1, callback?: ChartDatasetCallback | undefined): ChartData<'line'> {
     const next = callback || ((value) => value);
+    const accent = getAccent();
 
     return {
         labels: Array(20)
@@ -92,8 +100,8 @@ function getEmptyData(label: string, sets = 1, callback?: ChartDatasetCallback |
                         fill: true,
                         label,
                         data: Array(20).fill(-5),
-                        borderColor: '#3ee798',
-                        backgroundColor: 'rgba(34, 197, 94, 0.12)',
+                        borderColor: accent,
+                        backgroundColor: hexToRgba(accent, 0.12),
                     },
                     index
                 )
@@ -110,10 +118,31 @@ interface UseChartOptions {
 }
 
 function useChart(label: string, opts?: UseChartOptions) {
-    const options = getOptions(
+    const chartOptions = getOptions(
         typeof opts?.options === 'number' ? { scales: { y: { min: 0, suggestedMax: opts.options } } } : opts?.options
     );
     const [data, setData] = useState(getEmptyData(label, opts?.sets || 1, opts?.callback));
+
+    useEffect(() => {
+        const updateTheme = () => {
+            const accent = getAccent();
+            setData((state) =>
+                merge(state, {
+                    datasets: state.datasets.map((dataset, index) => {
+                        const themed: ChartDataset<'line'> = {
+                            ...dataset,
+                            borderColor: accent,
+                            backgroundColor: hexToRgba(accent, 0.12),
+                        };
+                        return opts?.callback ? opts.callback(themed, index) : themed;
+                    }),
+                })
+            );
+        };
+
+        window.addEventListener('nodexa:theme', updateTheme);
+        return () => window.removeEventListener('nodexa:theme', updateTheme);
+    }, []);
 
     const push = (items: number | null | (number | null)[]) =>
         setData((state) =>
@@ -137,7 +166,7 @@ function useChart(label: string, opts?: UseChartOptions) {
             })
         );
 
-    return { props: { data, options }, push, clear };
+    return { props: { data, options: chartOptions }, push, clear };
 }
 
 function useChartTickLabel(label: string, max: number, tickLabel: string, roundTo?: number) {
