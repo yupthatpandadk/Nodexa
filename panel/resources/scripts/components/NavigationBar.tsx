@@ -11,6 +11,7 @@ import http from '@/api/http';
 import SpinnerOverlay from '@/components/elements/SpinnerOverlay';
 import Tooltip from '@/components/elements/tooltip/Tooltip';
 import Avatar from '@/components/Avatar';
+import ThemeColorPicker from '@/components/ThemeColorPicker';
 
 const NavigationShell = styled.div`
     position: sticky;
@@ -18,7 +19,7 @@ const NavigationShell = styled.div`
     z-index: 40;
     width: 100%;
     overflow-x: auto;
-    border-bottom: 1px solid rgba(73, 238, 169, 0.11);
+    border-bottom: 1px solid var(--nodexa-border);
     background: rgba(5, 13, 11, 0.84);
     backdrop-filter: blur(18px);
     box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
@@ -35,7 +36,7 @@ const Brand = styled(Link)`
 
     &:hover {
         color: #ffffff;
-        background: rgba(66, 233, 166, 0.045);
+        background: rgba(var(--nodexa-accent-rgb), 0.045);
     }
 `;
 
@@ -45,13 +46,13 @@ const BrandMark = styled.span`
     height: 2.45rem;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(73, 238, 169, 0.32);
+    border: 1px solid var(--nodexa-border-strong);
     border-radius: 13px;
     color: #06100e;
     font-size: 1.1rem;
     font-weight: 800;
-    background: linear-gradient(145deg, #65f2b8, #2ddc98);
-    box-shadow: 0 8px 30px rgba(45, 220, 152, 0.2);
+    background: linear-gradient(145deg, var(--nodexa-accent-2), var(--nodexa-accent));
+    box-shadow: 0 8px 30px rgba(var(--nodexa-accent-rgb), 0.2);
 `;
 
 const BrandName = styled.span`
@@ -97,13 +98,13 @@ const RightNavigation = styled.div`
     & > .navigation-link:hover,
     & > a.active {
         color: #eafff6;
-        border-color: rgba(73, 238, 169, 0.18);
-        background: rgba(66, 233, 166, 0.08);
-        box-shadow: inset 0 0 0 1px rgba(66, 233, 166, 0.025), 0 8px 26px rgba(0, 0, 0, 0.12);
+        border-color: var(--nodexa-border-strong);
+        background: var(--nodexa-accent-soft);
+        box-shadow: inset 0 0 0 1px rgba(var(--nodexa-accent-rgb), 0.025), 0 8px 26px rgba(0, 0, 0, 0.12);
     }
 
     & > a.active {
-        color: #55eeb0;
+        color: var(--nodexa-accent);
     }
 `;
 
@@ -138,6 +139,9 @@ export default () => {
                         <NavLink to={'/'} exact>
                             <FontAwesomeIcon icon={faLayerGroup} />
                         </NavLink>
+                    </Tooltip>
+                    <Tooltip placement={'bottom'} content={'Vælg farve'}>
+                        <ThemeColorPicker />
                     </Tooltip>
                     {rootAdmin && (
                         <Tooltip placement={'bottom'} content={'Nodexa Admin'}>
