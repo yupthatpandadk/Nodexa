@@ -140,9 +140,7 @@ export default () => {
                             <FontAwesomeIcon icon={faLayerGroup} />
                         </NavLink>
                     </Tooltip>
-                    <Tooltip placement={'bottom'} content={'Vælg farve'}>
-                        <ThemeColorPicker />
-                    </Tooltip>
+                    <ThemeColorPicker />
                     {rootAdmin && (
                         <Tooltip placement={'bottom'} content={'Nodexa Admin'}>
                             <a href={'/admin'} rel={'noreferrer'}>
