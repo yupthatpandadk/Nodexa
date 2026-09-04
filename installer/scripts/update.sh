@@ -63,6 +63,7 @@ if [[ -d "$PANEL_DIR" ]]; then
  composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
  sudo -u www-data php artisan package:discover --ansi
  sudo -u www-data php artisan migrate --force
+ sudo -u www-data php artisan storage:link 2>/dev/null || true
  rm -f public/hot
  sudo -u www-data php artisan optimize:clear
  rm -f storage/framework/views/*.php 2>/dev/null || true
