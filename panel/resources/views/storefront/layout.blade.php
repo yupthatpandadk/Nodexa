@@ -7,14 +7,37 @@
     <meta name="description" content="@yield('description', 'Nodexa Game Server Cloud — hurtig og moderne administration af game servers.')">
     <title>@yield('title', 'Game Server Cloud') · Nodexa</title>
     @include('partials.nodexa-theme')
-    <link rel="stylesheet" href="{{ asset('css/nodexa-storefront.css') }}?v=0.14.36">
+    <link rel="stylesheet" href="{{ asset('css/nodexa-storefront.css') }}?v=0.14.40">
 </head>
 <body class="nx-storefront">
+    @php
+        $dedicatedStorefront = request()->routeIs('storefront.host*');
+        $storefrontOrigin = rtrim(request()->getSchemeAndHttpHost(), '/');
+        $panelOrigin = rtrim((string) config('app.url'), '/');
+        $storefrontRoutes = [
+            'home' => 'storefront.home',
+            'games' => 'storefront.games',
+            'pricing' => 'storefront.pricing',
+            'features' => 'storefront.features',
+            'support' => 'storefront.support',
+        ];
+        $storeUrl = static function (string $page) use ($dedicatedStorefront, $storefrontOrigin, $storefrontRoutes): string {
+            if ($dedicatedStorefront) {
+                return $page === 'home' ? $storefrontOrigin . '/' : $storefrontOrigin . '/' . $page;
+            }
+
+            return route($storefrontRoutes[$page]);
+        };
+        $panelUrl = static function (string $path = '') use ($panelOrigin): string {
+            return $panelOrigin . ($path === '' ? '/' : '/' . ltrim($path, '/'));
+        };
+    @endphp
+
     <div class="nx-noise" aria-hidden="true"></div>
 
     <header class="nx-header" id="top">
         <div class="nx-shell nx-nav-wrap">
-            <a class="nx-brand" href="{{ route('storefront.home') }}" aria-label="Nodexa Storefront">
+            <a class="nx-brand" href="{{ $storeUrl('home') }}" aria-label="Nodexa Storefront">
                 <span class="nx-brand-mark">N</span>
                 <span>
                     <strong>Nodexa</strong>
@@ -27,19 +50,19 @@
             </button>
 
             <nav class="nx-nav" id="nx-main-nav" data-menu>
-                <a class="{{ request()->routeIs('storefront.home') ? 'active' : '' }}" href="{{ route('storefront.home') }}">Forside</a>
-                <a class="{{ request()->routeIs('storefront.games') ? 'active' : '' }}" href="{{ route('storefront.games') }}">Game Hosting</a>
-                <a class="{{ request()->routeIs('storefront.pricing') ? 'active' : '' }}" href="{{ route('storefront.pricing') }}">Planer</a>
-                <a class="{{ request()->routeIs('storefront.features') ? 'active' : '' }}" href="{{ route('storefront.features') }}">Funktioner</a>
-                <a class="{{ request()->routeIs('storefront.support') ? 'active' : '' }}" href="{{ route('storefront.support') }}">Support</a>
+                <a class="{{ request()->routeIs('storefront.home', 'storefront.host*.home') ? 'active' : '' }}" href="{{ $storeUrl('home') }}">Forside</a>
+                <a class="{{ request()->routeIs('storefront.games', 'storefront.host*.games') ? 'active' : '' }}" href="{{ $storeUrl('games') }}">Game Hosting</a>
+                <a class="{{ request()->routeIs('storefront.pricing', 'storefront.host*.pricing') ? 'active' : '' }}" href="{{ $storeUrl('pricing') }}">Planer</a>
+                <a class="{{ request()->routeIs('storefront.features', 'storefront.host*.features') ? 'active' : '' }}" href="{{ $storeUrl('features') }}">Funktioner</a>
+                <a class="{{ request()->routeIs('storefront.support', 'storefront.host*.support') ? 'active' : '' }}" href="{{ $storeUrl('support') }}">Support</a>
             </nav>
 
             <div class="nx-nav-actions">
                 @auth
-                    <a class="nx-btn nx-btn-ghost" href="{{ route('index') }}">Mit panel</a>
+                    <a class="nx-btn nx-btn-ghost" href="{{ $panelUrl() }}">Mit panel</a>
                 @else
-                    <a class="nx-login" href="{{ route('auth.login') }}">Log ind</a>
-                    <a class="nx-btn nx-btn-primary" href="{{ route('auth.login') }}">Kom i gang <span>→</span></a>
+                    <a class="nx-login" href="{{ $panelUrl('auth/login') }}">Log ind</a>
+                    <a class="nx-btn nx-btn-primary" href="{{ $panelUrl('auth/login') }}">Kom i gang <span>→</span></a>
                 @endauth
             </div>
         </div>
@@ -52,7 +75,7 @@
     <footer class="nx-footer">
         <div class="nx-shell nx-footer-grid">
             <div>
-                <a class="nx-brand nx-footer-brand" href="{{ route('storefront.home') }}">
+                <a class="nx-brand nx-footer-brand" href="{{ $storeUrl('home') }}">
                     <span class="nx-brand-mark">N</span>
                     <span><strong>Nodexa</strong><small>GAME SERVER CLOUD</small></span>
                 </a>
@@ -61,17 +84,17 @@
             <div class="nx-footer-links">
                 <div>
                     <strong>Hosting</strong>
-                    <a href="{{ route('storefront.games') }}">Game Hosting</a>
-                    <a href="{{ route('storefront.pricing') }}">Planer</a>
-                    <a href="{{ route('storefront.features') }}">Funktioner</a>
+                    <a href="{{ $storeUrl('games') }}">Game Hosting</a>
+                    <a href="{{ $storeUrl('pricing') }}">Planer</a>
+                    <a href="{{ $storeUrl('features') }}">Funktioner</a>
                 </div>
                 <div>
                     <strong>Nodexa</strong>
-                    <a href="{{ route('storefront.support') }}">Support</a>
+                    <a href="{{ $storeUrl('support') }}">Support</a>
                     @auth
-                        <a href="{{ route('index') }}">Mit panel</a>
+                        <a href="{{ $panelUrl() }}">Mit panel</a>
                     @else
-                        <a href="{{ route('auth.login') }}">Log ind</a>
+                        <a href="{{ $panelUrl('auth/login') }}">Log ind</a>
                     @endauth
                 </div>
             </div>
@@ -100,6 +123,6 @@
     </aside>
     <div class="nx-theme-backdrop" data-theme-backdrop></div>
 
-    <script src="{{ asset('js/nodexa-storefront.js') }}?v=0.14.36" defer></script>
+    <script src="{{ asset('js/nodexa-storefront.js') }}?v=0.14.40" defer></script>
 </body>
 </html>
