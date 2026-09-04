@@ -28,6 +28,7 @@ interface RouteDefinition {
 interface ServerRouteDefinition extends RouteDefinition {
     permission: string | string[] | null;
     minecraftOnly?: boolean;
+    addon?: 'minecraftPluginManager';
 }
 
 interface Routes {
@@ -79,6 +80,7 @@ export default {
             name: 'Plugins',
             component: MinecraftPluginManager,
             minecraftOnly: true,
+            addon: 'minecraftPluginManager',
         },
         {
             path: '/files/:action(edit|new)',
