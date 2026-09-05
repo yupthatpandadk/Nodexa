@@ -29,7 +29,7 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Apply Kotlin compile hotfixes
+      - name: Apply Android UI transforms
         shell: bash
         run: |
           python3 - <<'PY'
@@ -44,18 +44,9 @@ jobs:
           if old in s and 'else -> Unit' not in s[s.find('when (event)'):s.find('when (event)') + 700]:
               s = s.replace(old, new, 1)
 
-          # Remove the server top app bar so dashboard content starts directly below the system status bar.
-          server_topbar = '''        topBar = {
-            TopAppBar(
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) } },
-                title = { Column { Text(server.name, fontWeight = FontWeight.Bold, fontSize = 18.sp); Text(server.id, color = Muted, fontSize = 11.sp) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Bg)
-            )
-        },
-'''
+          server_topbar = '        topBar = {\n            TopAppBar(\n                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) } },\n                title = { Column { Text(server.name, fontWeight = FontWeight.Bold, fontSize = 18.sp); Text(server.id, color = Muted, fontSize = 11.sp) } },\n                colors = TopAppBarDefaults.topAppBarColors(containerColor = Bg)\n            )\n        },\n'
           s = s.replace(server_topbar, '')
 
-          # Keep first cards and section titles clear of the system status bar.
           s = s.replace(
               'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 24.dp))',
               'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(top = 12.dp, bottom = 28.dp))'
@@ -83,8 +74,6 @@ jobs:
               'LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 24.dp))',
               'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(top = 12.dp, bottom = 32.dp))'
           )
-
-          # Give file rows and menu cards slightly more breathing room.
           s = s.replace('Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically)', 'Row(Modifier.padding(horizontal = 16.dp, vertical = 15.dp), verticalAlignment = Alignment.CenterVertically)')
 
           p.write_text(s)
