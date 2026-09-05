@@ -44,18 +44,29 @@ jobs:
           if old in s and 'else -> Unit' not in s[s.find('when (event)'):s.find('when (event)') + 700]:
               s = s.replace(old, new, 1)
 
-          # Keep first cards and section titles clear of the top app bar.
+          # Remove the server top app bar so dashboard content starts directly below the system status bar.
+          server_topbar = '''        topBar = {
+            TopAppBar(
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) } },
+                title = { Column { Text(server.name, fontWeight = FontWeight.Bold, fontSize = 18.sp); Text(server.id, color = Muted, fontSize = 11.sp) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Bg)
+            )
+        },
+'''
+          s = s.replace(server_topbar, '')
+
+          # Keep first cards and section titles clear of the system status bar.
           s = s.replace(
               'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 24.dp))',
-              'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(top = 14.dp, bottom = 28.dp))'
+              'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(top = 12.dp, bottom = 28.dp))'
           )
           s = s.replace(
               'LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 24.dp))',
-              'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(top = 14.dp, bottom = 28.dp))'
+              'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(top = 12.dp, bottom = 28.dp))'
           )
           s = s.replace(
               'Column(Modifier.fillMaxSize().padding(14.dp)) {',
-              'Column(Modifier.fillMaxSize().padding(horizontal = 14.dp).padding(top = 14.dp, bottom = 10.dp)) {',
+              'Column(Modifier.fillMaxSize().padding(horizontal = 14.dp).padding(top = 12.dp, bottom = 10.dp)) {',
               1
           )
           files_marker = 'fun FilesPage(api: Api, server: Server) {'
@@ -64,13 +75,13 @@ jobs:
               tail = s[idx:]
               tail = tail.replace(
                   'Column(Modifier.fillMaxSize().padding(14.dp)) {',
-                  'Column(Modifier.fillMaxSize().padding(horizontal = 14.dp).padding(top = 14.dp, bottom = 10.dp)) {',
+                  'Column(Modifier.fillMaxSize().padding(horizontal = 14.dp).padding(top = 12.dp, bottom = 10.dp)) {',
                   1
               )
               s = s[:idx] + tail
           s = s.replace(
               'LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 24.dp))',
-              'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(top = 14.dp, bottom = 32.dp))'
+              'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(top = 12.dp, bottom = 32.dp))'
           )
 
           # Give file rows and menu cards slightly more breathing room.
