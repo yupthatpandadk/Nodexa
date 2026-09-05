@@ -36,11 +36,30 @@ chmod 0440 /etc/sudoers.d/nodexa-updater
 visudo -cf /etc/sudoers.d/nodexa-updater >/dev/null
 systemctl daemon-reload
 
+# IMPORTANT: version.json must describe the code that is ACTUALLY installed.
+# Older updater versions fetched the current GitHub HEAD here when
+# NODEXA_SOURCE_COMMIT was missing. That could incorrectly mark an old panel as
+# fully updated without copying any new files. Only trust an explicitly passed
+# source commit, the current git checkout, or the previously recorded commit.
 INSTALLED_SHA="${NODEXA_SOURCE_COMMIT:-}"
-if [[ -z "$INSTALLED_SHA" ]]; then
-  INSTALLED_SHA="$(curl -fsSL -H 'Accept: application/vnd.github+json' -H 'User-Agent: Nodexa-Updater' "https://api.github.com/repos/${REPO}/commits/${BRANCH}" 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("sha", ""))' 2>/dev/null || true)"
+if [[ ! "$INSTALLED_SHA" =~ ^[0-9a-fA-F]{40}$ ]] && command -v git >/dev/null 2>&1 && git -C "$SOURCE_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  INSTALLED_SHA="$(git -C "$SOURCE_DIR" rev-parse HEAD 2>/dev/null || true)"
+fi
+if [[ ! "$INSTALLED_SHA" =~ ^[0-9a-fA-F]{40}$ ]] && [[ -r "$STATE_DIR/version.json" ]]; then
+  INSTALLED_SHA="$(python3 - "$STATE_DIR/version.json" <<'PY'
+import json,sys
+try:
+    with open(sys.argv[1]) as f:
+        value=(json.load(f).get('commit') or '').strip()
+    print(value)
+except Exception:
+    print('')
+PY
+)"
 fi
 [[ "$INSTALLED_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || INSTALLED_SHA=""
+INSTALLED_SHA="${INSTALLED_SHA,,}"
+
 python3 - "$STATE_DIR/version.json" "$VERSION" "$INSTALLED_SHA" "$REPO" "$BRANCH" <<'PY'
 import json,sys,datetime
 path,version,commit,repo,branch=sys.argv[1:]
