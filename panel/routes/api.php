@@ -23,7 +23,12 @@ use App\Http\Controllers\Api\ServerSftpController;
 Route::post('/login',[AuthController::class,'login'])->middleware('throttle:10,1');
 
 Route::middleware('auth:sanctum')->group(function(){
-Route::post('/logout',[AuthController::class,'logout']);Route::get('/me',[UserController::class,'me']);Route::get('/admin/users',[UserController::class,'adminIndex']);
+Route::post('/logout',[AuthController::class,'logout']);
+Route::get('/me',[UserController::class,'me']);
+Route::get('/client-api-keys',[UserController::class,'apiKeys']);
+Route::post('/client-api-keys',[UserController::class,'createApiKey']);
+Route::delete('/client-api-keys/{token}',[UserController::class,'deleteApiKey']);
+Route::get('/admin/users',[UserController::class,'adminIndex']);
 Route::get('/servers',[ServerController::class,'index']);Route::post('/servers',[ServerController::class,'store']);Route::post('/servers/{server}/retry-install',[ServerController::class,'retryInstall']);Route::post('/servers/{server}/reinstall',[ServerController::class,'reinstall']);Route::get('/servers/{server}',[ServerController::class,'show']);Route::put('/servers/{server}',[ServerSettingsController::class,'update']);Route::post('/servers/{server}/power',[ServerController::class,'power']);Route::post('/servers/{server}/command',[ServerController::class,'command']);Route::get('/servers/{server}/stats',[ServerRuntimeController::class,'stats']);Route::get('/servers/{server}/logs',[ServerRuntimeController::class,'logs']);Route::get('/servers/{server}/logs/stream',[ServerRuntimeController::class,'streamLogs']);
 Route::get('/servers/{server}/sftp',[ServerSftpController::class,'show']);Route::post('/servers/{server}/sftp/sync',[ServerSftpController::class,'sync']);
 Route::get('/servers/{server}/files',[ServerRuntimeController::class,'files']);Route::get('/servers/{server}/file',[ServerRuntimeController::class,'readFile']);Route::put('/servers/{server}/file',[ServerRuntimeController::class,'writeFile']);Route::post('/servers/{server}/file/rename',[ServerRuntimeController::class,'renameFile']);Route::post('/servers/{server}/directory',[ServerRuntimeController::class,'mkdir']);Route::post('/servers/{server}/upload',[ServerRuntimeController::class,'upload']);Route::get('/servers/{server}/download',[ServerRuntimeController::class,'download']);Route::post('/servers/{server}/archive',[ServerRuntimeController::class,'archive']);Route::post('/servers/{server}/extract',[ServerRuntimeController::class,'extract']);Route::delete('/servers/{server}/file',[ServerRuntimeController::class,'deleteFile']);
