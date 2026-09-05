@@ -162,8 +162,6 @@ class ApiKey extends Model implements HasAbilities
 
     public function can($ability)
     {
-        // todo: this was never initially implemented and only became obvious once
-        //  internal tooling was updated and started catching this mistake.
         return false;
     }
 
@@ -172,31 +170,16 @@ class ApiKey extends Model implements HasAbilities
         return ! $this->can($ability);
     }
 
-    /**
-     * Returns the user this token is assigned to.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\Pterodactyl\Models\User, $this>
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Required for support with Laravel Sanctum.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\Pterodactyl\Models\User, $this>
-     *
-     * @see \Laravel\Sanctum\Guard::supportsTokens()
-     */
     public function tokenable(): BelongsTo
     {
         return $this->user();
     }
 
-    /**
-     * Finds the model matching the provided token.
-     */
     public static function findToken(string $token): ?self
     {
         $identifier = substr($token, 0, self::IDENTIFIER_LENGTH);
@@ -210,18 +193,16 @@ class ApiKey extends Model implements HasAbilities
     }
 
     /**
-     * Returns the standard prefix for API keys in the system.
+     * Returns Nodexa's standard prefix for API keys.
+     * Client keys that previously used the upstream ptlc_ prefix now use nxa_.
      */
     public static function getPrefixForType(int $type): string
     {
         Assert::oneOf($type, [self::TYPE_ACCOUNT, self::TYPE_APPLICATION]);
 
-        return $type === self::TYPE_ACCOUNT ? 'ptlc_' : 'nxa_';
+        return 'nxa_';
     }
 
-    /**
-     * Generates a new identifier for an API key.
-     */
     public static function generateTokenIdentifier(int $type): string
     {
         $prefix = self::getPrefixForType($type);
