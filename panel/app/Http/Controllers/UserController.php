@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -33,6 +35,76 @@ class UserController extends Controller
             'email' => $user->email,
             'is_admin' => (bool) $user->is_admin,
         ];
+    }
+
+    /**
+     * List the current user's Nodexa client API keys.
+     * The actual token secret is never returned after creation.
+     */
+    public function apiKeys(Request $request)
+    {
+        return $request->user()->tokens()
+            ->where('name', 'like', 'client-api:%')
+            ->latest('id')
+            ->get()
+            ->map(fn ($token) => [
+                'id' => $token->id,
+                'name' => Str::after((string) $token->name, 'client-api:'),
+                'prefix' => 'nxa_',
+                'last_used_at' => $token->last_used_at,
+                'created_at' => $token->created_at,
+            ])
+            ->values();
+    }
+
+    /**
+     * Create a Nodexa client API key in the same recognizable style as
+     * Pterodactyl's ptla_ keys, but with Nodexa's own nxa_ prefix.
+     * Only a SHA-256 hash is persisted. The plain token is shown once.
+     */
+    public function createApiKey(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'nullable|string|max:64',
+        ]);
+
+        $label = trim((string) ($data['name'] ?? 'Mobile / Client API'));
+        if ($label === '') {
+            $label = 'Mobile / Client API';
+        }
+
+        do {
+            $plainTextToken = 'nxa_'.Str::random(48);
+            $hash = hash('sha256', $plainTextToken);
+            $exists = DB::table('personal_access_tokens')->where('token', $hash)->exists();
+        } while ($exists);
+
+        $token = $request->user()->tokens()->create([
+            'name' => 'client-api:'.$label,
+            'token' => $hash,
+            'abilities' => ['*'],
+        ]);
+
+        return response()->json([
+            'id' => $token->id,
+            'name' => $label,
+            'token' => $plainTextToken,
+            'prefix' => 'nxa_',
+            'created_at' => $token->created_at,
+            'message' => 'Gem API-nøglen nu. Af sikkerhedsgrunde vises den kun denne ene gang.',
+        ], 201);
+    }
+
+    public function deleteApiKey(Request $request, int $token)
+    {
+        $deleted = $request->user()->tokens()
+            ->whereKey($token)
+            ->where('name', 'like', 'client-api:%')
+            ->delete();
+
+        abort_if($deleted === 0, 404, 'API key not found.');
+
+        return response()->noContent();
     }
 
     public function adminIndex(Request $request)
