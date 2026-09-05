@@ -71,7 +71,8 @@
                             <form method="POST" action="{{ route('admin.updates.run') }}" style="display:inline;" onsubmit="return confirm('Vil du opdatere Nodexa fra GitHub nu? Panelet kan kortvarigt blive genindlæst.');">
                                 @csrf
                                 <button type="submit" class="btn btn-success" id="nodexa-update-button" {{ (!$updateAvailable || ($state['status'] ?? '') === 'running') ? 'disabled' : '' }}>
-                                    <i class="fa fa-download"></i> Opdater nu
+                                    <i class="fa {{ ($state['status'] ?? '') === 'running' ? 'fa-spinner fa-spin' : ($updateAvailable ? 'fa-download' : 'fa-check') }}"></i>
+                                    <span id="nodexa-update-button-text">{{ ($state['status'] ?? '') === 'running' ? 'Opdaterer...' : ($updateAvailable ? 'Opdater nu' : 'Allerede opdateret') }}</span>
                                 </button>
                             </form>
                         </div>
@@ -121,18 +122,36 @@
             var observedRunning = initialStatus === 'running';
             var finishedReloaded = false;
 
+            function setButton(button, available, running) {
+                if (!button) return;
+
+                var icon = button.querySelector('i');
+                var text = document.getElementById('nodexa-update-button-text');
+                button.disabled = running || !available;
+
+                if (icon) {
+                    icon.className = running
+                        ? 'fa fa-spinner fa-spin'
+                        : (available ? 'fa fa-download' : 'fa fa-check');
+                }
+
+                if (text) {
+                    text.textContent = running ? 'Opdaterer...' : (available ? 'Opdater nu' : 'Allerede opdateret');
+                }
+            }
+
             function poll() {
                 fetch(statusUrl, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'})
                     .then(function (response) { return response.json(); })
                     .then(function (data) {
                         var state = data.state || {};
+                        var updateAvailable = data.update_available === true;
                         var badge = document.getElementById('nodexa-update-badge');
                         var message = document.getElementById('nodexa-update-message');
                         var log = document.getElementById('nodexa-update-log');
                         var time = document.getElementById('nodexa-update-time');
                         var button = document.getElementById('nodexa-update-button');
 
-                        if (message) message.textContent = state.message || 'Ingen status.';
                         if (log) {
                             log.textContent = data.log || 'Ingen update-log endnu.';
                             log.scrollTop = log.scrollHeight;
@@ -142,12 +161,15 @@
                         if (state.status === 'running') {
                             observedRunning = true;
                             if (badge) { badge.className = 'label label-warning'; badge.textContent = 'OPDATERER'; }
-                            if (button) button.disabled = true;
+                            if (message) message.textContent = state.message || 'Opdatering kører.';
+                            setButton(button, updateAvailable, true);
                             return;
                         }
 
                         if (state.status === 'failed' && observedRunning) {
                             if (badge) { badge.className = 'label label-danger'; badge.textContent = 'FEJLET'; }
+                            if (message) message.textContent = state.message || 'Opdateringen fejlede.';
+                            setButton(button, updateAvailable, false);
                             if (!finishedReloaded) {
                                 finishedReloaded = true;
                                 setTimeout(function () { window.location.reload(); }, 1800);
@@ -157,11 +179,24 @@
 
                         if (state.status === 'success' && observedRunning) {
                             if (badge) { badge.className = 'label label-success'; badge.textContent = 'FÆRDIG'; }
+                            if (message) message.textContent = state.message || 'Opdateringen er færdig.';
+                            setButton(button, false, false);
                             if (!finishedReloaded) {
                                 finishedReloaded = true;
                                 setTimeout(function () { window.location.reload(); }, 1800);
                             }
+                            return;
                         }
+
+                        if (updateAvailable) {
+                            if (badge) { badge.className = 'label label-success'; badge.textContent = 'OPDATERING KLAR'; }
+                            if (message) message.textContent = 'En nyere version findes på GitHub.';
+                        } else {
+                            if (badge) { badge.className = 'label label-default'; badge.textContent = 'OPDATERET'; }
+                            if (message) message.textContent = 'Nodexa er på den nyeste kendte version.';
+                        }
+
+                        setButton(button, updateAvailable, false);
                     })
                     .catch(function () {});
             }
