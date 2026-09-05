@@ -102,32 +102,61 @@ class UpdateController extends Controller
 
         return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($repository, $branch) {
             try {
-                $response = Http::acceptJson()
+                $commitResponse = Http::acceptJson()
                     ->withUserAgent('Nodexa-Panel-Updater')
                     ->timeout(8)
                     ->get("https://api.github.com/repos/{$repository}/commits/{$branch}");
 
-                if (!$response->successful()) {
-                    return ['commit' => null, 'error' => 'GitHub svarede med HTTP ' . $response->status()];
+                if (!$commitResponse->successful()) {
+                    return ['commit' => null, 'version' => null, 'error' => 'GitHub svarede med HTTP ' . $commitResponse->status()];
                 }
 
-                $data = $response->json();
+                $commitData = $commitResponse->json();
+                $version = null;
+
+                try {
+                    $versionResponse = Http::accept('text/plain')
+                        ->withUserAgent('Nodexa-Panel-Updater')
+                        ->timeout(8)
+                        ->get("https://raw.githubusercontent.com/{$repository}/{$branch}/VERSION");
+
+                    if ($versionResponse->successful()) {
+                        $candidate = ltrim(trim((string) $versionResponse->body()), 'vV');
+                        if (preg_match('/^\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z.-]+)?$/', $candidate)) {
+                            $version = $candidate;
+                        }
+                    }
+                } catch (\Throwable $exception) {
+                    // Commit information is still useful if VERSION cannot be read.
+                }
+
                 return [
-                    'commit' => $data['sha'] ?? null,
-                    'message' => trim((string) data_get($data, 'commit.message', '')),
-                    'author' => data_get($data, 'commit.author.name'),
-                    'date' => data_get($data, 'commit.author.date'),
-                    'url' => $data['html_url'] ?? null,
+                    'version' => $version,
+                    'commit' => $commitData['sha'] ?? null,
+                    'message' => trim((string) data_get($commitData, 'commit.message', '')),
+                    'author' => data_get($commitData, 'commit.author.name'),
+                    'date' => data_get($commitData, 'commit.author.date'),
+                    'url' => $commitData['html_url'] ?? null,
                     'error' => null,
                 ];
             } catch (\Throwable $exception) {
-                return ['commit' => null, 'error' => 'Kunne ikke kontakte GitHub: ' . $exception->getMessage()];
+                return ['commit' => null, 'version' => null, 'error' => 'Kunne ikke kontakte GitHub: ' . $exception->getMessage()];
             }
         });
     }
 
     private function updateAvailable(array $installed, array $latest): bool
     {
+        $installedVersion = ltrim(trim((string) ($installed['version'] ?? '')), 'vV');
+        $latestVersion = ltrim(trim((string) ($latest['version'] ?? '')), 'vV');
+
+        // VERSION is the source of truth for releases. A different Git commit by itself
+        // must not make an already-installed release appear outdated.
+        if ($installedVersion !== '' && $latestVersion !== '' && $installedVersion !== 'unknown') {
+            return version_compare($latestVersion, $installedVersion, '>');
+        }
+
+        // Compatibility fallback for older installations where VERSION is unavailable.
         if (empty($installed['commit']) || empty($latest['commit'])) {
             return false;
         }
