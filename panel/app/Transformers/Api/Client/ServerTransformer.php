@@ -70,6 +70,7 @@ class ServerTransformer extends BaseClientTransformer
             'egg_features' => $server->egg->inherit_features,
             'nodexa_addons' => [
                 'minecraft_plugin_manager' => isset($enabledAddons['minecraft-plugin-manager']),
+                'minecraft_mod_manager' => isset($enabledAddons['minecraft-mod-manager']),
             ],
             'feature_limits' => [
                 'databases' => $server->database_limit,
