@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ClientApiKeyController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\ServerRuntimeController;
 use App\Http\Controllers\ServerDatabaseController;
@@ -25,9 +26,10 @@ Route::post('/login',[AuthController::class,'login'])->middleware('throttle:10,1
 Route::middleware('auth:sanctum')->group(function(){
 Route::post('/logout',[AuthController::class,'logout']);
 Route::get('/me',[UserController::class,'me']);
-Route::get('/client-api-keys',[UserController::class,'apiKeys']);
-Route::post('/client-api-keys',[UserController::class,'createApiKey']);
-Route::delete('/client-api-keys/{token}',[UserController::class,'deleteApiKey']);
+Route::get('/client-api',[ClientApiKeyController::class,'info']);
+Route::get('/client-api-keys',[ClientApiKeyController::class,'index']);
+Route::post('/client-api-keys',[ClientApiKeyController::class,'store']);
+Route::delete('/client-api-keys/{token}',[ClientApiKeyController::class,'destroy']);
 Route::get('/admin/users',[UserController::class,'adminIndex']);
 Route::get('/servers',[ServerController::class,'index']);Route::post('/servers',[ServerController::class,'store']);Route::post('/servers/{server}/retry-install',[ServerController::class,'retryInstall']);Route::post('/servers/{server}/reinstall',[ServerController::class,'reinstall']);Route::get('/servers/{server}',[ServerController::class,'show']);Route::put('/servers/{server}',[ServerSettingsController::class,'update']);Route::post('/servers/{server}/power',[ServerController::class,'power']);Route::post('/servers/{server}/command',[ServerController::class,'command']);Route::get('/servers/{server}/stats',[ServerRuntimeController::class,'stats']);Route::get('/servers/{server}/logs',[ServerRuntimeController::class,'logs']);Route::get('/servers/{server}/logs/stream',[ServerRuntimeController::class,'streamLogs']);
 Route::get('/servers/{server}/sftp',[ServerSftpController::class,'show']);Route::post('/servers/{server}/sftp/sync',[ServerSftpController::class,'sync']);
