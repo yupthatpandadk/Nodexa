@@ -30,7 +30,7 @@ interface ServerRouteDefinition extends RouteDefinition {
     permission: string | string[] | null;
     minecraftOnly?: boolean;
     moddedOnly?: boolean;
-    addon?: 'minecraftPluginManager';
+    addon?: 'minecraftPluginManager' | 'minecraftModManager';
 }
 
 interface Routes {
@@ -62,6 +62,7 @@ export default {
             name: 'Mods',
             component: MinecraftModManager,
             moddedOnly: true,
+            addon: 'minecraftModManager',
         },
         { path: '/files/:action(edit|new)', permission: 'file.*', name: undefined, component: FileEditContainer },
         { path: '/databases', permission: 'database.*', name: 'Databases', component: DatabasesContainer },
