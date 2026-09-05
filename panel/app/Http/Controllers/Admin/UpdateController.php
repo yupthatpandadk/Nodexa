@@ -4,6 +4,7 @@ namespace Pterodactyl\Http\Controllers\Admin;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
 use Pterodactyl\Http\Controllers\Controller;
@@ -19,7 +20,7 @@ class UpdateController extends Controller
     public function index(): View
     {
         $installed = $this->installedVersion();
-        $latest = $this->latestVersion($installed);
+        $latest = $this->latestVersion($installed, true);
         $state = $this->updateState();
 
         return view('admin.updates.index', [
@@ -27,17 +28,20 @@ class UpdateController extends Controller
             'latest' => $latest,
             'state' => $state,
             'log' => $this->tailLog(),
-            'updateAvailable' => !empty($installed['commit'])
-                && !empty($latest['commit'])
-                && strtolower((string) $installed['commit']) !== strtolower((string) $latest['commit']),
+            'updateAvailable' => $this->updateAvailable($installed, $latest),
         ]);
     }
 
     public function status(): JsonResponse
     {
+        $installed = $this->installedVersion();
+        $latest = $this->latestVersion($installed);
+
         return response()->json([
             'state' => $this->updateState(),
-            'installed' => $this->installedVersion(),
+            'installed' => $installed,
+            'latest' => $latest,
+            'update_available' => $this->updateAvailable($installed, $latest),
             'log' => $this->tailLog(),
         ]);
     }
@@ -50,8 +54,9 @@ class UpdateController extends Controller
         }
 
         $installed = $this->installedVersion();
-        $latest = $this->latestVersion($installed);
-        if (!empty($installed['commit']) && !empty($latest['commit']) && strtolower((string) $installed['commit']) === strtolower((string) $latest['commit'])) {
+        $latest = $this->latestVersion($installed, true);
+
+        if (!$this->updateAvailable($installed, $latest)) {
             return redirect()->route('admin.updates')->with('update_message', 'Nodexa er allerede opdateret til den nyeste GitHub-version.');
         }
 
@@ -85,33 +90,49 @@ class UpdateController extends Controller
         ];
     }
 
-    private function latestVersion(array $installed): array
+    private function latestVersion(array $installed, bool $force = false): array
     {
         $repository = preg_replace('/[^A-Za-z0-9_.\/-]/', '', (string) ($installed['repository'] ?? 'yupthatpandadk/Nodexa')) ?: 'yupthatpandadk/Nodexa';
         $branch = preg_replace('/[^A-Za-z0-9_.\/-]/', '', (string) ($installed['branch'] ?? 'pterodactyl-core')) ?: 'pterodactyl-core';
+        $cacheKey = 'nodexa:update:latest:' . sha1($repository . ':' . $branch);
 
-        try {
-            $response = Http::acceptJson()
-                ->withUserAgent('Nodexa-Panel-Updater')
-                ->timeout(8)
-                ->get("https://api.github.com/repos/{$repository}/commits/{$branch}");
-
-            if (!$response->successful()) {
-                return ['commit' => null, 'error' => 'GitHub svarede med HTTP ' . $response->status()];
-            }
-
-            $data = $response->json();
-            return [
-                'commit' => $data['sha'] ?? null,
-                'message' => trim((string) data_get($data, 'commit.message', '')),
-                'author' => data_get($data, 'commit.author.name'),
-                'date' => data_get($data, 'commit.author.date'),
-                'url' => $data['html_url'] ?? null,
-                'error' => null,
-            ];
-        } catch (\Throwable $exception) {
-            return ['commit' => null, 'error' => 'Kunne ikke kontakte GitHub: ' . $exception->getMessage()];
+        if ($force) {
+            Cache::forget($cacheKey);
         }
+
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($repository, $branch) {
+            try {
+                $response = Http::acceptJson()
+                    ->withUserAgent('Nodexa-Panel-Updater')
+                    ->timeout(8)
+                    ->get("https://api.github.com/repos/{$repository}/commits/{$branch}");
+
+                if (!$response->successful()) {
+                    return ['commit' => null, 'error' => 'GitHub svarede med HTTP ' . $response->status()];
+                }
+
+                $data = $response->json();
+                return [
+                    'commit' => $data['sha'] ?? null,
+                    'message' => trim((string) data_get($data, 'commit.message', '')),
+                    'author' => data_get($data, 'commit.author.name'),
+                    'date' => data_get($data, 'commit.author.date'),
+                    'url' => $data['html_url'] ?? null,
+                    'error' => null,
+                ];
+            } catch (\Throwable $exception) {
+                return ['commit' => null, 'error' => 'Kunne ikke kontakte GitHub: ' . $exception->getMessage()];
+            }
+        });
+    }
+
+    private function updateAvailable(array $installed, array $latest): bool
+    {
+        if (empty($installed['commit']) || empty($latest['commit'])) {
+            return false;
+        }
+
+        return strtolower((string) $installed['commit']) !== strtolower((string) $latest['commit']);
     }
 
     private function updateState(): array
