@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\RequireNodexaClientApiKey;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,7 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Nodexa API authentication is handled with Laravel Sanctum bearer tokens.
+        $middleware->alias([
+            'client.api' => RequireNodexaClientApiKey::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Keep Laravel's default exception handling.
