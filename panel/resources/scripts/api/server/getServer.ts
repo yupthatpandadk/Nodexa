@@ -51,6 +51,7 @@ export interface Server {
     eggFeatures: string[];
     addons: {
         minecraftPluginManager: boolean;
+        minecraftModManager: boolean;
     };
     featureLimits: {
         databases: number;
@@ -79,6 +80,7 @@ export const rawDataToServerObject = ({ attributes: data }: FractalResponseData)
     eggIcon: data.egg_icon || null,
     addons: {
         minecraftPluginManager: Boolean(data.nodexa_addons?.minecraft_plugin_manager),
+        minecraftModManager: Boolean(data.nodexa_addons?.minecraft_mod_manager),
     },
     sftpDetails: {
         ip: data.sftp_details.ip,
