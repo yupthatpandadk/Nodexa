@@ -35,7 +35,8 @@ export default () => {
     const minecraftPluginManager = ServerContext.useStoreState(
         (state) => state.server.data?.addons.minecraftPluginManager || false
     );
-    const isMinecraft = /minecraft|paper|purpur|spigot|bukkit|folia|velocity|waterfall|bungee/i.test(eggName);
+    const isMinecraft = /minecraft|paper|purpur|spigot|bukkit|folia|velocity|waterfall|bungee|forge|fabric/i.test(eggName);
+    const isModdedMinecraft = /forge|fabric/i.test(eggName);
     const inConflictState = ServerContext.useStoreState((state) => state.server.inConflictState);
     const serverId = ServerContext.useStoreState((state) => state.server.data?.internalId);
     const getServer = ServerContext.useStoreActions((actions) => actions.server.getServer);
@@ -51,6 +52,7 @@ export default () => {
     const availableServerRoutes = routes.server.filter(
         (route) =>
             (!route.minecraftOnly || isMinecraft) &&
+            (!route.moddedOnly || isModdedMinecraft) &&
             (!route.addon || (route.addon === 'minecraftPluginManager' && minecraftPluginManager))
     );
 
