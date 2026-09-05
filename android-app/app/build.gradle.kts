@@ -7,6 +7,7 @@ plugins {
 android {
     namespace = "org.nodexa.app"
     compileSdk = 35
+
     defaultConfig {
         applicationId = "org.nodexa.app"
         minSdk = 26
@@ -14,8 +15,18 @@ android {
         versionCode = 2
         versionName = "0.2.0"
     }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
     buildFeatures { compose = true }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 dependencies {
