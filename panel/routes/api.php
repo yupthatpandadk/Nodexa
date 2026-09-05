@@ -60,4 +60,39 @@ Route::post('/system-errors/{issue}/reopen',[SystemIssueController::class,'reope
 
 Route::get('/admin/update/check',[AdminUpdateController::class,'check']);Route::post('/admin/update/start',[AdminUpdateController::class,'start']);Route::post('/admin/update/run',[AdminUpdateController::class,'start']);Route::get('/admin/update/status',[AdminUpdateController::class,'status']);
 Route::get('/storefront-sites',[StorefrontSiteController::class,'index']);Route::post('/storefront-sites',[StorefrontSiteController::class,'store']);Route::put('/storefront-sites/{site}',[StorefrontSiteController::class,'update']);Route::delete('/storefront-sites/{site}',[StorefrontSiteController::class,'destroy']);Route::post('/storefront-sites/{site}/products',[StorefrontSiteController::class,'attachProduct']);Route::delete('/storefront-sites/{site}/products/{product}',[StorefrontSiteController::class,'detachProduct']);
+
+// Dedicated Nodexa Client API. These endpoints only accept tokens created as
+// Client API keys (nxa_...), not regular panel-login sessions.
+Route::prefix('client')->middleware('client.api')->group(function(){
+    Route::get('/', [ClientApiKeyController::class, 'info']);
+    Route::get('/account', [UserController::class, 'me']);
+    Route::get('/servers', [ServerController::class, 'index']);
+    Route::get('/servers/{server}', [ServerController::class, 'show']);
+    Route::get('/servers/{server}/resources', [ServerRuntimeController::class, 'stats']);
+    Route::get('/servers/{server}/logs', [ServerRuntimeController::class, 'logs']);
+    Route::post('/servers/{server}/power', [ServerController::class, 'power']);
+    Route::post('/servers/{server}/command', [ServerController::class, 'command']);
+
+    Route::get('/servers/{server}/files', [ServerRuntimeController::class, 'files']);
+    Route::get('/servers/{server}/file', [ServerRuntimeController::class, 'readFile']);
+    Route::put('/servers/{server}/file', [ServerRuntimeController::class, 'writeFile']);
+    Route::delete('/servers/{server}/file', [ServerRuntimeController::class, 'deleteFile']);
+
+    Route::get('/servers/{server}/backups', [ServerRuntimeController::class, 'backups']);
+    Route::post('/servers/{server}/backups', [ServerRuntimeController::class, 'backup']);
+    Route::post('/servers/{server}/backups/{name}/restore', [ServerRuntimeController::class, 'restoreBackup']);
+    Route::delete('/servers/{server}/backups/{name}', [ServerRuntimeController::class, 'deleteBackup']);
+
+    Route::get('/servers/{server}/databases', [ServerDatabaseController::class, 'index']);
+    Route::post('/servers/{server}/databases', [ServerDatabaseController::class, 'store']);
+    Route::get('/servers/{server}/databases/{database}/credentials', [ServerDatabaseController::class, 'credentials']);
+    Route::post('/servers/{server}/databases/{database}/rotate', [ServerDatabaseController::class, 'rotateCredentials']);
+    Route::delete('/servers/{server}/databases/{database}', [ServerDatabaseController::class, 'destroy']);
+
+    Route::get('/servers/{server}/schedules', [ScheduleController::class, 'index']);
+    Route::post('/servers/{server}/schedules/{schedule}/run', [ScheduleController::class, 'run']);
+
+    Route::get('/servers/{server}/users', [ServerSubuserController::class, 'index']);
+    Route::get('/servers/{server}/allocations', [ServerAllocationController::class, 'index']);
+});
 });
