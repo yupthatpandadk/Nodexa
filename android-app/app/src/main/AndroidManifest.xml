@@ -5,6 +5,7 @@
         android:allowBackup="true"
         android:label="Nodexa"
         android:supportsRtl="true"
+        android:theme="@style/Theme.Nodexa"
         android:usesCleartextTraffic="false">
         <activity
             android:name=".MainActivity"
