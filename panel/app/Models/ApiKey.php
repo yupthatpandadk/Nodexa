@@ -216,7 +216,7 @@ class ApiKey extends Model implements HasAbilities
     {
         Assert::oneOf($type, [self::TYPE_ACCOUNT, self::TYPE_APPLICATION]);
 
-        return $type === self::TYPE_ACCOUNT ? 'ptlc_' : 'ptla_';
+        return $type === self::TYPE_ACCOUNT ? 'ptlc_' : 'nxa_';
     }
 
     /**
