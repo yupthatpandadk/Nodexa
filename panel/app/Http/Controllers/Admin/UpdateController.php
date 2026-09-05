@@ -150,10 +150,23 @@ class UpdateController extends Controller
         $installedVersion = ltrim(trim((string) ($installed['version'] ?? '')), 'vV');
         $latestVersion = ltrim(trim((string) ($latest['version'] ?? '')), 'vV');
 
-        // VERSION is the source of truth for releases. A different Git commit by itself
-        // must not make an already-installed release appear outdated.
         if ($installedVersion !== '' && $latestVersion !== '' && $installedVersion !== 'unknown') {
-            return version_compare($latestVersion, $installedVersion, '>');
+            if (version_compare($latestVersion, $installedVersion, '>')) {
+                return true;
+            }
+
+            // Never offer a downgrade simply because the commits differ.
+            if (version_compare($latestVersion, $installedVersion, '<')) {
+                return false;
+            }
+
+            // The versions are equal. New commits on the configured branch still count
+            // as an update so fixes do not require a VERSION bump before being detected.
+            if (!empty($installed['commit']) && !empty($latest['commit'])) {
+                return strtolower((string) $installed['commit']) !== strtolower((string) $latest['commit']);
+            }
+
+            return false;
         }
 
         // Compatibility fallback for older installations where VERSION is unavailable.
