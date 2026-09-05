@@ -29,6 +29,19 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Apply Kotlin compile hotfix
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/dk/nodexa/app/MainActivity.kt')
+          s = p.read_text()
+          old = '                        "token expiring", "token expired" -> onLine("Console-forbindelsen skal fornyes.")\n                    }'
+          new = '                        "token expiring", "token expired" -> onLine("Console-forbindelsen skal fornyes.")\n                        else -> Unit\n                    }'
+          if old in s and 'else -> Unit' not in s[s.find('when (event)'):s.find('when (event)') + 700]:
+              p.write_text(s.replace(old, new, 1))
+          PY
+
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace
 
