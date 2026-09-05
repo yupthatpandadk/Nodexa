@@ -5,9 +5,27 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
+    private function createPanelToken(User $user): string
+    {
+        // Keep Nodexa API/session tokens instantly recognizable, similar to
+        // Pterodactyl's ptla_ prefix, while retaining Sanctum's hashed storage.
+        // Tokens without Sanctum's "id|secret" separator are supported by
+        // Sanctum and are looked up by their SHA-256 hash.
+        $plainTextToken = 'nxa_'.Str::random(48);
+
+        $user->tokens()->create([
+            'name' => 'panel',
+            'token' => hash('sha256', $plainTextToken),
+            'abilities' => ['*'],
+        ]);
+
+        return $plainTextToken;
+    }
+
     public function login(Request $request)
     {
         $data = $request->validate([
@@ -28,7 +46,7 @@ class AuthController extends Controller
 
         try {
             $user->tokens()->where('name', 'panel')->delete();
-            $token = $user->createToken('panel')->plainTextToken;
+            $token = $this->createPanelToken($user);
         } catch (\Throwable $exception) {
             report($exception);
 
