@@ -1,0 +1,11 @@
+{
+  "id": "minecraft-mod-manager",
+  "name": "Minecraft Mod Manager",
+  "description": "Tilføjer en Mods-fane på Forge- og Fabric-servere, hvor brugere kan finde, installere og fjerne kompatible mods direkte via Nodexa.",
+  "version": "1.0.0",
+  "author": "Nodexa Software",
+  "category": "Server Tools",
+  "icon": "fa-cubes",
+  "min_nodexa": "0.14.51",
+  "assets": {}
+}
