@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Pterodactyl\Facades\Activity;
 use Pterodactyl\Models\Permission;
 use Pterodactyl\Models\Server;
+use Pterodactyl\Services\Nodexa\AddonManager;
 use Pterodactyl\Repositories\Wings\DaemonFileRepository;
 use Pterodactyl\Http\Controllers\Api\Client\ClientApiController;
 
@@ -17,8 +18,10 @@ class MinecraftModController extends ClientApiController
 {
     private const MODRINTH_BASE = 'https://api.modrinth.com/v2';
 
-    public function __construct(private DaemonFileRepository $files)
-    {
+    public function __construct(
+        private DaemonFileRepository $files,
+        private AddonManager $addons,
+    ) {
         parent::__construct();
     }
 
@@ -225,7 +228,7 @@ class MinecraftModController extends ClientApiController
     {
         return Http::baseUrl(self::MODRINTH_BASE)
             ->acceptJson()
-            ->withHeaders(['User-Agent' => 'Nodexa/0.14.50 (https://github.com/yupthatpandadk/Nodexa)'])
+            ->withHeaders(['User-Agent' => 'Nodexa/0.14.51 (https://github.com/yupthatpandadk/Nodexa)'])
             ->connectTimeout(5)
             ->timeout(15)
             ->retry(2, 250);
@@ -233,6 +236,10 @@ class MinecraftModController extends ClientApiController
 
     private function guard(Request $request, Server $server): void
     {
+        if (!isset($this->addons->enabled()['minecraft-mod-manager'])) {
+            abort(404, 'Minecraft Mod Manager addon er ikke installeret eller aktiveret.');
+        }
+
         if (!$request->user()?->can(Permission::ACTION_FILE_CREATE, $server)) {
             abort(403, 'Du har ikke tilladelse til at administrere mods på denne server.');
         }
