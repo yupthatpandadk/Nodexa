@@ -21,12 +21,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -35,7 +39,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -57,6 +64,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -64,30 +72,39 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-private val Bg = Color(0xFF07111D)
-private val Surface = Color(0xFF0E1C2C)
-private val Surface2 = Color(0xFF13263B)
-private val Accent = Color(0xFF2F80ED)
-private val Success = Color(0xFF34D399)
+private val Bg = Color(0xFF091019)
+private val Surface = Color(0xFF101925)
+private val Surface2 = Color(0xFF172231)
+private val Surface3 = Color(0xFF1D2A3A)
+private val Accent = Color(0xFF6C7CFF)
+private val Success = Color(0xFF4ADE80)
 private val Danger = Color(0xFFFB7185)
-private val Muted = Color(0xFF91A4B7)
+private val Warning = Color(0xFFFBBF24)
+private val Muted = Color(0xFF8D9AAF)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            MaterialTheme {
-                NodexaApp(applicationContext)
-            }
-        }
+        setContent { MaterialTheme { NodexaApp(applicationContext) } }
     }
 }
 
 data class ServerItem(val id: String, val name: String, val description: String, val status: String)
 data class SimpleItem(val title: String, val subtitle: String = "")
+data class ServerMetrics(
+    val state: String = "unknown",
+    val cpu: Double = 0.0,
+    val memoryBytes: Long = 0,
+    val diskBytes: Long = 0,
+    val uptimeMs: Long = 0,
+)
 
 enum class ServerTab(val label: String) {
-    OVERVIEW("Overview"), FILES("Files"), BACKUPS("Backups"), DATABASES("Databases"), PLUGINS("Plugins"), MODS("Mods")
+    DASHBOARD("Overview"), CONSOLE("Console"), FILES("Files"), MORE("More")
+}
+
+enum class MoreSection(val label: String) {
+    BACKUPS("Backups"), DATABASES("Databases"), PLUGINS("Plugins"), MODS("Mods")
 }
 
 class ApiClient(private val baseUrl: String, private val token: String) {
@@ -106,7 +123,6 @@ class ApiClient(private val baseUrl: String, private val token: String) {
                 outputStream.bufferedWriter().use { it.write(body) }
             }
         }
-
         val code = connection.responseCode
         val text = (if (code in 200..299) connection.inputStream else connection.errorStream)
             ?.bufferedReader()?.use { it.readText() }.orEmpty()
@@ -130,20 +146,37 @@ class ApiClient(private val baseUrl: String, private val token: String) {
         return buildList {
             for (i in 0 until data.length()) {
                 val a = data.optJSONObject(i)?.optJSONObject("attributes") ?: continue
-                add(
-                    ServerItem(
-                        id = a.optString("identifier"),
-                        name = a.optString("name", "Server"),
-                        description = a.optString("description"),
-                        status = a.optString("status", "unknown")
-                    )
-                )
+                add(ServerItem(
+                    id = a.optString("identifier"),
+                    name = a.optString("name", "Server"),
+                    description = a.optString("description"),
+                    status = a.optString("status", "unknown")
+                ))
             }
         }
     }
 
+    fun metrics(server: String): ServerMetrics {
+        val root = JSONObject(request("/api/client/servers/$server/resources"))
+        val a = root.optJSONObject("attributes")
+            ?: root.optJSONObject("data")?.optJSONObject("attributes")
+            ?: JSONObject()
+        val resources = a.optJSONObject("resources") ?: JSONObject()
+        return ServerMetrics(
+            state = a.optString("current_state", "unknown"),
+            cpu = resources.optDouble("cpu_absolute", 0.0),
+            memoryBytes = resources.optLong("memory_bytes", 0L),
+            diskBytes = resources.optLong("disk_bytes", 0L),
+            uptimeMs = resources.optLong("uptime", 0L),
+        )
+    }
+
     fun power(server: String, signal: String) {
         request("/api/client/servers/$server/power", "POST", JSONObject().put("signal", signal).toString())
+    }
+
+    fun command(server: String, command: String) {
+        request("/api/client/servers/$server/command", "POST", JSONObject().put("command", command).toString())
     }
 
     fun files(server: String): List<SimpleItem> {
@@ -159,52 +192,54 @@ class ApiClient(private val baseUrl: String, private val token: String) {
         }
     }
 
-    fun backups(server: String): List<SimpleItem> {
-        val json = JSONObject(request("/api/client/servers/$server/backups"))
-        val data = json.optJSONArray("data") ?: JSONArray()
-        return buildList {
-            for (i in 0 until data.length()) {
-                val a = data.optJSONObject(i)?.optJSONObject("attributes") ?: continue
-                add(SimpleItem(a.optString("name", "Backup"), if (a.optBoolean("is_successful", false)) "Klar" else "Behandler"))
-            }
-        }
+    fun backups(server: String): List<SimpleItem> = listAttributes("/api/client/servers/$server/backups") { a ->
+        SimpleItem(a.optString("name", "Backup"), if (a.optBoolean("is_successful", false)) "Klar" else "Behandler")
     }
 
-    fun databases(server: String): List<SimpleItem> {
-        val json = JSONObject(request("/api/client/servers/$server/databases"))
-        val data = json.optJSONArray("data") ?: JSONArray()
-        return buildList {
-            for (i in 0 until data.length()) {
-                val a = data.optJSONObject(i)?.optJSONObject("attributes") ?: continue
-                add(SimpleItem(a.optString("name", "Database"), a.optString("host", "Database")))
-            }
-        }
+    fun databases(server: String): List<SimpleItem> = listAttributes("/api/client/servers/$server/databases") { a ->
+        SimpleItem(a.optString("name", "Database"), a.optString("host", "Database"))
     }
 
     fun plugins(server: String): List<SimpleItem> = installedAddon(server, "plugins")
     fun mods(server: String): List<SimpleItem> = installedAddon(server, "mods")
 
+    private fun listAttributes(path: String, mapper: (JSONObject) -> SimpleItem): List<SimpleItem> {
+        val data = JSONObject(request(path)).optJSONArray("data") ?: JSONArray()
+        return buildList {
+            for (i in 0 until data.length()) {
+                val a = data.optJSONObject(i)?.optJSONObject("attributes") ?: continue
+                add(mapper(a))
+            }
+        }
+    }
+
     private fun installedAddon(server: String, type: String): List<SimpleItem> {
-        val json = JSONObject(request("/api/client/servers/$server/$type/installed"))
-        val data = json.optJSONArray("data") ?: JSONArray()
+        val data = JSONObject(request("/api/client/servers/$server/$type/installed")).optJSONArray("data") ?: JSONArray()
         return buildList {
             for (i in 0 until data.length()) {
                 val a = data.optJSONObject(i) ?: continue
-                add(
-                    SimpleItem(
-                        title = a.optString("name", a.optString("filename", type)),
-                        subtitle = listOf(a.optString("version_number"), a.optString("filename")).filter { it.isNotBlank() }.joinToString(" · ")
-                    )
-                )
+                add(SimpleItem(
+                    a.optString("name", a.optString("filename", type)),
+                    listOf(a.optString("version_number"), a.optString("filename")).filter { it.isNotBlank() }.joinToString(" · ")
+                ))
             }
         }
     }
 
     companion object {
         fun formatBytes(bytes: Long): String = when {
-            bytes >= 1024 * 1024 -> String.format("%.1f MB", bytes / 1024.0 / 1024.0)
+            bytes >= 1024L * 1024 * 1024 -> String.format("%.2f GB", bytes / 1024.0 / 1024.0 / 1024.0)
+            bytes >= 1024L * 1024 -> String.format("%.1f MB", bytes / 1024.0 / 1024.0)
             bytes >= 1024 -> String.format("%.0f KB", bytes / 1024.0)
             else -> "$bytes B"
+        }
+
+        fun formatUptime(ms: Long): String {
+            val sec = ms / 1000
+            val days = sec / 86400
+            val hours = (sec % 86400) / 3600
+            val min = (sec % 3600) / 60
+            return if (days > 0) "${days}d ${hours}h" else "${hours}h ${min}m"
         }
     }
 }
@@ -222,12 +257,10 @@ fun NodexaApp(context: Context) {
             prefs.edit().putString("baseUrl", baseUrl.trim()).putString("token", token.trim()).apply()
             configured = true
         }
-        selected == null -> ServerListScreen(ApiClient(baseUrl, token), onOpen = { selected = it }, onLogout = {
-            prefs.edit().clear().apply()
-            configured = false
-            token = ""
-        })
-        else -> ServerScreen(ApiClient(baseUrl, token), selected!!, onBack = { selected = null })
+        selected == null -> ServerListScreen(ApiClient(baseUrl, token), { selected = it }) {
+            prefs.edit().clear().apply(); configured = false; token = ""
+        }
+        else -> ServerScreen(ApiClient(baseUrl, token), selected!!) { selected = null }
     }
 }
 
@@ -235,26 +268,23 @@ fun NodexaApp(context: Context) {
 fun LoginScreen(baseUrl: String, token: String, setBase: (String) -> Unit, setToken: (String) -> Unit, onSave: () -> Unit) {
     Box(Modifier.fillMaxSize().background(Bg).padding(24.dp), contentAlignment = Alignment.Center) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.background(Accent, RoundedCornerShape(18.dp)).padding(horizontal = 18.dp, vertical = 12.dp)) {
+            Box(Modifier.background(Accent, RoundedCornerShape(18.dp)).padding(horizontal = 19.dp, vertical = 12.dp)) {
                 Text("N", color = Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineMedium)
             }
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(16.dp))
             Text("Nodexa", color = Color.White, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-            Text("GAME SERVER CLOUD", color = Accent, style = MaterialTheme.typography.labelSmall)
-            Spacer(Modifier.height(30.dp))
-            Card(colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(20.dp)) {
-                Column(Modifier.padding(18.dp)) {
-                    Text("Forbind til dit panel", color = Color.White, fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.height(12.dp))
+            Text("MOBILE SERVER CONTROL", color = Accent, style = MaterialTheme.typography.labelSmall)
+            Spacer(Modifier.height(28.dp))
+            Card(colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(24.dp)) {
+                Column(Modifier.padding(20.dp)) {
+                    Text("Connect panel", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Brug din Nodexa Client API key.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(14.dp))
                     OutlinedTextField(value = baseUrl, onValueChange = setBase, modifier = Modifier.fillMaxWidth(), label = { Text("Panel URL") }, placeholder = { Text("https://panel.example.com") })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = token, onValueChange = setToken, modifier = Modifier.fillMaxWidth(), label = { Text("Client API key") }, visualTransformation = PasswordVisualTransformation())
+                    OutlinedTextField(value = token, onValueChange = setToken, modifier = Modifier.fillMaxWidth(), label = { Text("nxa_ API key") }, placeholder = { Text("nxa_...") }, visualTransformation = PasswordVisualTransformation())
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = onSave, enabled = baseUrl.startsWith("https://") && token.isNotBlank(), modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Accent)) {
-                        Text("Fortsæt")
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Text("API-nøglen gemmes kun lokalt på enheden.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    Button(onClick = onSave, enabled = baseUrl.startsWith("https://") && token.isNotBlank(), modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Accent)) { Text("Connect") }
                 }
             }
         }
@@ -270,8 +300,7 @@ fun ServerListScreen(api: ApiClient, onOpen: (ServerItem) -> Unit, onLogout: () 
     var error by remember { mutableStateOf<String?>(null) }
 
     fun load() {
-        loading = true
-        error = null
+        loading = true; error = null
         scope.launch {
             runCatching { withContext(Dispatchers.IO) { api.servers() } }
                 .onSuccess { servers = it }
@@ -282,139 +311,268 @@ fun ServerListScreen(api: ApiClient, onOpen: (ServerItem) -> Unit, onLogout: () 
     LaunchedEffect(Unit) { load() }
 
     Scaffold(containerColor = Bg, topBar = {
-        TopAppBar(title = { Text("Nodexa", fontWeight = FontWeight.Bold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface, titleContentColor = Color.White), actions = {
-            IconButton(onClick = { load() }) { Icon(Icons.Default.Refresh, null, tint = Color.White) }
-            IconButton(onClick = onLogout) { Icon(Icons.Default.Settings, null, tint = Color.White) }
-        })
+        TopAppBar(
+            title = { Column { Text("Nodexa", color = Color.White, fontWeight = FontWeight.Bold); Text("Your servers", color = Muted, style = MaterialTheme.typography.labelSmall) } },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Bg),
+            actions = {
+                IconButton(onClick = { load() }) { Icon(Icons.Default.Refresh, null, tint = Color.White) }
+                IconButton(onClick = onLogout) { Icon(Icons.Default.Settings, null, tint = Color.White) }
+            }
+        )
     }) { pad ->
-        Box(Modifier.fillMaxSize().padding(pad).padding(16.dp)) {
+        Box(Modifier.fillMaxSize().padding(pad).padding(horizontal = 16.dp)) {
             when {
                 loading -> CircularProgressIndicator(Modifier.align(Alignment.Center), color = Accent)
                 error != null -> Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(error!!, color = Danger)
-                    Spacer(Modifier.height(12.dp))
-                    Button(onClick = { load() }) { Text("Prøv igen") }
+                    Spacer(Modifier.height(12.dp)); Button(onClick = { load() }) { Text("Prøv igen") }
                 }
                 servers.isEmpty() -> Text("Ingen servere fundet.", color = Muted, modifier = Modifier.align(Alignment.Center))
                 else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    item {
-                        Text("Dine servere", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text("Administrér dine Nodexa-servere fra mobilen.", color = Muted)
-                        Spacer(Modifier.height(6.dp))
-                    }
-                    items(servers) { server ->
-                        Card(onClick = { onOpen(server) }, colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
-                            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.background(Accent.copy(alpha = .16f), RoundedCornerShape(14.dp)).padding(12.dp)) { Icon(Icons.Default.Cloud, null, tint = Accent) }
-                                Spacer(Modifier.width(12.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(server.name, color = Color.White, fontWeight = FontWeight.SemiBold)
-                                    Text(server.description.ifBlank { "Game server" }, color = Muted, style = MaterialTheme.typography.bodySmall)
-                                }
-                                val statusColor = if (server.status == "running") Success else Muted
-                                Text(server.status.ifBlank { "unknown" }, color = statusColor, style = MaterialTheme.typography.labelMedium)
-                            }
-                        }
-                    }
+                    item { Spacer(Modifier.height(4.dp)) }
+                    items(servers) { server -> ServerCard(server) { onOpen(server) } }
+                    item { Spacer(Modifier.height(16.dp)) }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ServerCard(server: ServerItem, onClick: () -> Unit) {
+    Card(onClick = onClick, colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.background(Accent.copy(alpha = .14f), RoundedCornerShape(14.dp)).padding(11.dp)) { Icon(Icons.Default.Dns, null, tint = Accent) }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(server.name, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Text(server.description.ifBlank { "Game server" }, color = Muted, style = MaterialTheme.typography.bodySmall)
+                }
+                StatusPill(server.status)
+            }
+            Spacer(Modifier.height(14.dp))
+            Text("Tap to manage server", color = Muted, style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
+@Composable
+fun StatusPill(status: String) {
+    val online = status.equals("running", true)
+    val color = if (online) Success else Muted
+    Box(Modifier.background(color.copy(alpha = .14f), RoundedCornerShape(20.dp)).padding(horizontal = 10.dp, vertical = 6.dp)) {
+        Text(if (online) "ONLINE" else status.uppercase().ifBlank { "UNKNOWN" }, color = color, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ServerScreen(api: ApiClient, server: ServerItem, onBack: () -> Unit) {
-    var tab by remember { mutableStateOf(ServerTab.OVERVIEW) }
-    Scaffold(containerColor = Bg, topBar = {
-        TopAppBar(navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) } }, title = {
-            Column { Text(server.name, color = Color.White, fontWeight = FontWeight.Bold); Text(server.id, color = Muted, style = MaterialTheme.typography.labelSmall) }
-        }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface))
-    }) { pad ->
-        Column(Modifier.fillMaxSize().padding(pad)) {
-            LazyColumn(Modifier.fillMaxWidth().weight(1f).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        ServerTab.entries.forEach { value ->
-                            TextButton(onClick = { tab = value }, colors = ButtonDefaults.textButtonColors(contentColor = if (tab == value) Accent else Muted)) { Text(value.label, style = MaterialTheme.typography.labelSmall) }
-                        }
-                    }
+    var tab by remember { mutableStateOf(ServerTab.DASHBOARD) }
+    Scaffold(
+        containerColor = Bg,
+        topBar = {
+            TopAppBar(
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) } },
+                title = { Column { Text(server.name, color = Color.White, fontWeight = FontWeight.Bold); Text(server.id, color = Muted, style = MaterialTheme.typography.labelSmall) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Bg)
+            )
+        },
+        bottomBar = {
+            NavigationBar(containerColor = Surface) {
+                ServerTab.entries.forEach { item ->
+                    NavigationBarItem(
+                        selected = tab == item,
+                        onClick = { tab = item },
+                        icon = {
+                            Icon(
+                                when (item) {
+                                    ServerTab.DASHBOARD -> Icons.Default.Dashboard
+                                    ServerTab.CONSOLE -> Icons.Default.Terminal
+                                    ServerTab.FILES -> Icons.Default.Folder
+                                    ServerTab.MORE -> Icons.Default.MoreHoriz
+                                }, null
+                            )
+                        },
+                        label = { Text(item.label) }
+                    )
                 }
-                item {
-                    when (tab) {
-                        ServerTab.OVERVIEW -> OverviewPanel(api, server)
-                        else -> ResourcePanel(api, server, tab)
-                    }
-                }
+            }
+        }
+    ) { pad ->
+        Box(Modifier.fillMaxSize().padding(pad).padding(16.dp)) {
+            when (tab) {
+                ServerTab.DASHBOARD -> DashboardPanel(api, server)
+                ServerTab.CONSOLE -> ConsolePanel(api, server)
+                ServerTab.FILES -> ResourcePanel(api, server, MoreSection.PLUGINS, filesMode = true)
+                ServerTab.MORE -> MorePanel(api, server)
             }
         }
     }
 }
 
 @Composable
-fun OverviewPanel(api: ApiClient, server: ServerItem) {
+fun DashboardPanel(api: ApiClient, server: ServerItem) {
     val scope = rememberCoroutineScope()
-    var message by remember { mutableStateOf<String?>(null) }
+    var metrics by remember { mutableStateOf(ServerMetrics(state = server.status)) }
+    var error by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
 
+    fun refresh() {
+        scope.launch {
+            runCatching { withContext(Dispatchers.IO) { api.metrics(server.id) } }
+                .onSuccess { metrics = it; error = null }
+                .onFailure { error = it.message }
+        }
+    }
     fun signal(value: String) {
         busy = true
-        message = null
         scope.launch {
             runCatching { withContext(Dispatchers.IO) { api.power(server.id, value) } }
-                .onSuccess { message = "Kommando sendt: $value" }
-                .onFailure { message = it.message }
-            busy = false
+                .onFailure { error = it.message }
+            delay(900); refresh(); busy = false
         }
     }
 
-    Card(colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(18.dp)) {
-            Text("Server control", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text("Start, genstart eller stop serveren direkte fra appen.", color = Muted)
-            Spacer(Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { signal("start") }, enabled = !busy, colors = ButtonDefaults.buttonColors(containerColor = Success)) { Icon(Icons.Default.PlayArrow, null); Spacer(Modifier.width(4.dp)); Text("Start") }
-                Button(onClick = { signal("restart") }, enabled = !busy, colors = ButtonDefaults.buttonColors(containerColor = Accent)) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(4.dp)); Text("Restart") }
-                OutlinedButton(onClick = { signal("stop") }, enabled = !busy) { Icon(Icons.Default.Stop, null); Spacer(Modifier.width(4.dp)); Text("Stop") }
+    LaunchedEffect(server.id) {
+        while (true) { refresh(); delay(5000) }
+    }
+
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(18.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Server status", color = Muted, style = MaterialTheme.typography.labelMedium)
+                            Spacer(Modifier.height(4.dp))
+                            Text(metrics.state.replaceFirstChar { it.uppercase() }, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
+                        }
+                        StatusPill(metrics.state)
+                    }
+                    Spacer(Modifier.height(18.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { signal("start") }, enabled = !busy, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Success)) { Icon(Icons.Default.PlayArrow, null); Spacer(Modifier.width(4.dp)); Text("Start") }
+                        Button(onClick = { signal("restart") }, enabled = !busy, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Accent)) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(4.dp)); Text("Restart") }
+                        OutlinedButton(onClick = { signal("stop") }, enabled = !busy, modifier = Modifier.weight(1f)) { Icon(Icons.Default.Stop, null); Spacer(Modifier.width(4.dp)); Text("Stop") }
+                    }
+                }
             }
-            if (message != null) { Spacer(Modifier.height(12.dp)); Text(message!!, color = if (message!!.startsWith("HTTP")) Danger else Muted, style = MaterialTheme.typography.bodySmall) }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                MetricCard("CPU", String.format("%.1f%%", metrics.cpu), (metrics.cpu / 100.0).toFloat().coerceIn(0f, 1f), Modifier.weight(1f))
+                MetricCard("Memory", ApiClient.formatBytes(metrics.memoryBytes), 0f, Modifier.weight(1f))
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                MetricCard("Disk", ApiClient.formatBytes(metrics.diskBytes), 0f, Modifier.weight(1f))
+                MetricCard("Uptime", ApiClient.formatUptime(metrics.uptimeMs), 0f, Modifier.weight(1f))
+            }
+        }
+        if (error != null) item { Text(error!!, color = Danger, style = MaterialTheme.typography.bodySmall) }
+    }
+}
+
+@Composable
+fun MetricCard(title: String, value: String, progress: Float, modifier: Modifier = Modifier) {
+    Card(colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(18.dp), modifier = modifier) {
+        Column(Modifier.padding(15.dp)) {
+            Text(title, color = Muted, style = MaterialTheme.typography.labelMedium)
+            Spacer(Modifier.height(6.dp))
+            Text(value, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            if (progress > 0f) {
+                Spacer(Modifier.height(10.dp)); LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth(), color = if (progress > .85f) Warning else Accent)
+            }
         }
     }
 }
 
 @Composable
-fun ResourcePanel(api: ApiClient, server: ServerItem, tab: ServerTab) {
+fun ConsolePanel(api: ApiClient, server: ServerItem) {
     val scope = rememberCoroutineScope()
-    var data by remember(tab, server.id) { mutableStateOf<List<SimpleItem>>(emptyList()) }
-    var loading by remember(tab, server.id) { mutableStateOf(true) }
-    var error by remember(tab, server.id) { mutableStateOf<String?>(null) }
+    var command by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf("Ready to send commands") }
+    var busy by remember { mutableStateOf(false) }
+
+    Card(colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Terminal, null, tint = Accent)
+                Spacer(Modifier.width(10.dp))
+                Column { Text("Console", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge); Text("Send commands directly to the server", color = Muted, style = MaterialTheme.typography.bodySmall) }
+            }
+            Spacer(Modifier.height(18.dp))
+            Box(Modifier.fillMaxWidth().height(230.dp).background(Color(0xFF080D13), RoundedCornerShape(14.dp)).padding(14.dp)) {
+                Text(message, color = Color(0xFFB9C7D8), style = MaterialTheme.typography.bodySmall)
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(value = command, onValueChange = { command = it }, modifier = Modifier.weight(1f), placeholder = { Text("Enter command…") }, singleLine = true)
+                Spacer(Modifier.width(8.dp))
+                IconButton(enabled = command.isNotBlank() && !busy, onClick = {
+                    val value = command.trim(); command = ""; busy = true
+                    scope.launch {
+                        runCatching { withContext(Dispatchers.IO) { api.command(server.id, value) } }
+                            .onSuccess { message = "> $value\nCommand sent successfully." }
+                            .onFailure { message = it.message ?: "Command failed" }
+                        busy = false
+                    }
+                }) { Icon(Icons.Default.Send, null, tint = Accent) }
+            }
+        }
+    }
+}
+
+@Composable
+fun MorePanel(api: ApiClient, server: ServerItem) {
+    var section by remember { mutableStateOf(MoreSection.BACKUPS) }
+    Column {
+        LazyColumn(Modifier.fillMaxWidth().height(52.dp), horizontalAlignment = Alignment.Start) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    MoreSection.entries.forEach { s ->
+                        TextButton(onClick = { section = s }, colors = ButtonDefaults.textButtonColors(contentColor = if (section == s) Accent else Muted)) { Text(s.label) }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        ResourcePanel(api, server, section)
+    }
+}
+
+@Composable
+fun ResourcePanel(api: ApiClient, server: ServerItem, section: MoreSection, filesMode: Boolean = false) {
+    val scope = rememberCoroutineScope()
+    var data by remember(section, server.id, filesMode) { mutableStateOf<List<SimpleItem>>(emptyList()) }
+    var loading by remember(section, server.id, filesMode) { mutableStateOf(true) }
+    var error by remember(section, server.id, filesMode) { mutableStateOf<String?>(null) }
 
     fun load() {
-        loading = true
-        error = null
+        loading = true; error = null
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    when (tab) {
-                        ServerTab.FILES -> api.files(server.id)
-                        ServerTab.BACKUPS -> api.backups(server.id)
-                        ServerTab.DATABASES -> api.databases(server.id)
-                        ServerTab.PLUGINS -> api.plugins(server.id)
-                        ServerTab.MODS -> api.mods(server.id)
-                        else -> emptyList()
+                    if (filesMode) api.files(server.id) else when (section) {
+                        MoreSection.BACKUPS -> api.backups(server.id)
+                        MoreSection.DATABASES -> api.databases(server.id)
+                        MoreSection.PLUGINS -> api.plugins(server.id)
+                        MoreSection.MODS -> api.mods(server.id)
                     }
                 }
             }.onSuccess { data = it }.onFailure { error = it.message }
             loading = false
         }
     }
-    LaunchedEffect(tab, server.id) { load() }
+    LaunchedEffect(section, server.id, filesMode) { load() }
 
-    Card(colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(tab.label, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text(if (filesMode) "Files" else section.label, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 IconButton(onClick = { load() }) { Icon(Icons.Default.Refresh, null, tint = Accent) }
             }
             when {
@@ -422,8 +580,8 @@ fun ResourcePanel(api: ApiClient, server: ServerItem, tab: ServerTab) {
                 error != null -> Text(error!!, color = Danger, modifier = Modifier.padding(vertical = 14.dp))
                 data.isEmpty() -> Text("Ingen elementer fundet.", color = Muted, modifier = Modifier.padding(vertical = 14.dp))
                 else -> data.forEach { item ->
-                    Row(Modifier.fillMaxWidth().background(Surface2, RoundedCornerShape(12.dp)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(if (tab == ServerTab.FILES) Icons.Default.Folder else Icons.Default.Cloud, null, tint = Accent)
+                    Row(Modifier.fillMaxWidth().background(Surface2, RoundedCornerShape(14.dp)).padding(13.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(if (filesMode) Icons.Default.Folder else Icons.Default.Cloud, null, tint = Accent)
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
                             Text(item.title, color = Color.White, fontWeight = FontWeight.Medium)
