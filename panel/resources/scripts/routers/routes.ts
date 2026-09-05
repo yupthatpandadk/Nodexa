@@ -8,6 +8,7 @@ import NetworkContainer from '@/components/server/network/NetworkContainer';
 import StartupContainer from '@/components/server/startup/StartupContainer';
 import FileManagerContainer from '@/components/server/files/FileManagerContainer';
 import MinecraftPluginManager from '@/components/server/plugins/MinecraftPluginManager';
+import MinecraftModManager from '@/components/server/mods/MinecraftModManager';
 import SettingsContainer from '@/components/server/settings/SettingsContainer';
 import AccountOverviewContainer from '@/components/dashboard/AccountOverviewContainer';
 import AccountApiContainer from '@/components/dashboard/AccountApiContainer';
@@ -28,6 +29,7 @@ interface RouteDefinition {
 interface ServerRouteDefinition extends RouteDefinition {
     permission: string | string[] | null;
     minecraftOnly?: boolean;
+    moddedOnly?: boolean;
     addon?: 'minecraftPluginManager';
 }
 
@@ -38,42 +40,14 @@ interface Routes {
 
 export default {
     account: [
-        {
-            path: '/',
-            name: 'Account',
-            component: AccountOverviewContainer,
-            exact: true,
-        },
-        {
-            path: '/api',
-            name: 'API Credentials',
-            component: AccountApiContainer,
-        },
-        {
-            path: '/ssh',
-            name: 'SSH Keys',
-            component: AccountSSHContainer,
-        },
-        {
-            path: '/activity',
-            name: 'Activity',
-            component: ActivityLogContainer,
-        },
+        { path: '/', name: 'Account', component: AccountOverviewContainer, exact: true },
+        { path: '/api', name: 'API Credentials', component: AccountApiContainer },
+        { path: '/ssh', name: 'SSH Keys', component: AccountSSHContainer },
+        { path: '/activity', name: 'Activity', component: ActivityLogContainer },
     ],
     server: [
-        {
-            path: '/',
-            permission: null,
-            name: 'Console',
-            component: ServerConsole,
-            exact: true,
-        },
-        {
-            path: '/files',
-            permission: 'file.*',
-            name: 'Files',
-            component: FileManagerContainer,
-        },
+        { path: '/', permission: null, name: 'Console', component: ServerConsole, exact: true },
+        { path: '/files', permission: 'file.*', name: 'Files', component: FileManagerContainer },
         {
             path: '/plugins',
             permission: 'file.create',
@@ -83,64 +57,21 @@ export default {
             addon: 'minecraftPluginManager',
         },
         {
-            path: '/files/:action(edit|new)',
-            permission: 'file.*',
-            name: undefined,
-            component: FileEditContainer,
+            path: '/mods',
+            permission: 'file.create',
+            name: 'Mods',
+            component: MinecraftModManager,
+            moddedOnly: true,
         },
-        {
-            path: '/databases',
-            permission: 'database.*',
-            name: 'Databases',
-            component: DatabasesContainer,
-        },
-        {
-            path: '/schedules',
-            permission: 'schedule.*',
-            name: 'Schedules',
-            component: ScheduleContainer,
-        },
-        {
-            path: '/schedules/:id',
-            permission: 'schedule.*',
-            name: undefined,
-            component: ScheduleEditContainer,
-        },
-        {
-            path: '/users',
-            permission: 'user.*',
-            name: 'Users',
-            component: UsersContainer,
-        },
-        {
-            path: '/backups',
-            permission: 'backup.*',
-            name: 'Backups',
-            component: BackupContainer,
-        },
-        {
-            path: '/network',
-            permission: 'allocation.*',
-            name: 'Network',
-            component: NetworkContainer,
-        },
-        {
-            path: '/startup',
-            permission: 'startup.*',
-            name: 'Startup',
-            component: StartupContainer,
-        },
-        {
-            path: '/settings',
-            permission: ['settings.*', 'file.sftp'],
-            name: 'Settings',
-            component: SettingsContainer,
-        },
-        {
-            path: '/activity',
-            permission: 'activity.*',
-            name: 'Activity',
-            component: ServerActivityLogContainer,
-        },
+        { path: '/files/:action(edit|new)', permission: 'file.*', name: undefined, component: FileEditContainer },
+        { path: '/databases', permission: 'database.*', name: 'Databases', component: DatabasesContainer },
+        { path: '/schedules', permission: 'schedule.*', name: 'Schedules', component: ScheduleContainer },
+        { path: '/schedules/:id', permission: 'schedule.*', name: undefined, component: ScheduleEditContainer },
+        { path: '/users', permission: 'user.*', name: 'Users', component: UsersContainer },
+        { path: '/backups', permission: 'backup.*', name: 'Backups', component: BackupContainer },
+        { path: '/network', permission: 'allocation.*', name: 'Network', component: NetworkContainer },
+        { path: '/startup', permission: 'startup.*', name: 'Startup', component: StartupContainer },
+        { path: '/settings', permission: ['settings.*', 'file.sftp'], name: 'Settings', component: SettingsContainer },
+        { path: '/activity', permission: 'activity.*', name: 'Activity', component: ServerActivityLogContainer },
     ],
 } as Routes;
