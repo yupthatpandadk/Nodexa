@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
                 builtInZoomControls = false
                 displayZoomControls = false
                 setSupportZoom(false)
-                userAgentString = "$userAgentString NodexaAndroid/1.0"
+                userAgentString = "$userAgentString NodexaAndroid/1.1"
             }
 
             CookieManager.getInstance().apply {
@@ -70,14 +70,17 @@ class MainActivity : ComponentActivity() {
                     val uri = request.url
                     val scheme = uri.scheme.orEmpty()
 
-                    if (scheme == "http" || scheme == "https") {
-                        return false
-                    }
+                    if (scheme == "http" || scheme == "https") return false
 
                     return runCatching {
                         startActivity(Intent(Intent.ACTION_VIEW, uri))
                         true
                     }.getOrDefault(false)
+                }
+
+                override fun onPageFinished(view: WebView, url: String) {
+                    super.onPageFinished(view, url)
+                    injectMobileFixes(view)
                 }
             }
 
@@ -133,20 +136,94 @@ class MainActivity : ComponentActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (webView.canGoBack()) {
-                    webView.goBack()
-                } else {
+                if (webView.canGoBack()) webView.goBack() else {
                     isEnabled = false
                     onBackPressedDispatcher.onBackPressed()
                 }
             }
         })
 
-        if (savedInstanceState == null) {
-            webView.loadUrl(PANEL_URL)
-        } else {
-            webView.restoreState(savedInstanceState)
-        }
+        if (savedInstanceState == null) webView.loadUrl(PANEL_URL)
+        else webView.restoreState(savedInstanceState)
+    }
+
+    private fun injectMobileFixes(view: WebView) {
+        val js = """
+            (function () {
+                if (!document.getElementById('nodexa-app-mobile-fixes')) {
+                    const style = document.createElement('style');
+                    style.id = 'nodexa-app-mobile-fixes';
+                    style.textContent = `
+                        input, textarea, select {
+                            color: #f7fffc !important;
+                            -webkit-text-fill-color: #f7fffc !important;
+                            caret-color: #52e7b3 !important;
+                            font-weight: 500 !important;
+                        }
+                        input::placeholder, textarea::placeholder {
+                            color: rgba(247,255,252,.58) !important;
+                            -webkit-text-fill-color: rgba(247,255,252,.58) !important;
+                            opacity: 1 !important;
+                        }
+                        input:-webkit-autofill,
+                        input:-webkit-autofill:hover,
+                        input:-webkit-autofill:focus {
+                            -webkit-text-fill-color: #f7fffc !important;
+                            caret-color: #52e7b3 !important;
+                            -webkit-box-shadow: 0 0 0 1000px #103d35 inset !important;
+                            box-shadow: 0 0 0 1000px #103d35 inset !important;
+                        }
+                        @media (max-width: 760px) {
+                            button, [role="button"], input[type="button"], input[type="submit"] {
+                                min-height: 44px !important;
+                                padding: 10px 14px !important;
+                                line-height: 1.2 !important;
+                                font-size: 14px !important;
+                            }
+                            .nodexa-action-group {
+                                display: flex !important;
+                                flex-wrap: wrap !important;
+                                gap: 10px !important;
+                                width: 100% !important;
+                            }
+                            .nodexa-action-group > button,
+                            .nodexa-action-group > a,
+                            .nodexa-action-group > [role="button"] {
+                                flex: 1 1 110px !important;
+                                width: auto !important;
+                                min-width: 105px !important;
+                                max-width: 100% !important;
+                                white-space: normal !important;
+                                text-align: center !important;
+                            }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+
+                function improveActionGroups() {
+                    if (window.innerWidth > 760) return;
+                    const candidates = document.querySelectorAll('button, a[role="button"], input[type="button"], input[type="submit"]');
+                    const parents = new Set();
+                    candidates.forEach(el => { if (el.parentElement) parents.add(el.parentElement); });
+
+                    parents.forEach(parent => {
+                        const direct = Array.from(parent.children).filter(el =>
+                            el.matches('button, a[role="button"], input[type="button"], input[type="submit"]')
+                        );
+                        if (direct.length >= 3) parent.classList.add('nodexa-action-group');
+                    });
+                }
+
+                improveActionGroups();
+                if (!window.__nodexaMobileObserver) {
+                    window.__nodexaMobileObserver = new MutationObserver(() => improveActionGroups());
+                    window.__nodexaMobileObserver.observe(document.body, { childList: true, subtree: true });
+                }
+            })();
+        """.trimIndent()
+
+        view.evaluateJavascript(js, null)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
