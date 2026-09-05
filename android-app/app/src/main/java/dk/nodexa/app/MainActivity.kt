@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
         window.statusBarColor = Color.rgb(9, 13, 20)
         window.navigationBarColor = Color.rgb(9, 13, 20)
 
-        webView = WebView(this).apply {
+        webView = WebView(this).apply web@{
             setBackgroundColor(Color.rgb(9, 13, 20))
 
             settings.apply {
@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
 
             CookieManager.getInstance().apply {
                 setAcceptCookie(true)
-                setAcceptThirdPartyCookies(this@apply, true)
+                setAcceptThirdPartyCookies(this@web, true)
             }
 
             webViewClient = object : WebViewClient() {
