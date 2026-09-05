@@ -200,3 +200,84 @@
         background: rgba(var(--nodexa-accent-rgb), 0.42);
     }
 </style>
+
+@if (request()->routeIs('admin.*'))
+    <script id="nodexa-admin-update-banner">
+        (function () {
+            function installUpdateBanner() {
+                var wrapper = document.querySelector('.content-wrapper');
+                if (!wrapper || document.getElementById('nodexa-update-available-banner')) return;
+
+                fetch(@json(route('admin.updates.status')), {
+                    headers: {'Accept': 'application/json'},
+                    credentials: 'same-origin'
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('Status request failed');
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!data || data.update_available !== true) return;
+
+                        var latestCommit = data.latest && data.latest.commit
+                            ? String(data.latest.commit).slice(0, 12)
+                            : '';
+
+                        var banner = document.createElement('div');
+                        banner.id = 'nodexa-update-available-banner';
+                        banner.setAttribute('role', 'status');
+                        banner.style.cssText = [
+                            'margin:0',
+                            'padding:12px 22px',
+                            'display:flex',
+                            'align-items:center',
+                            'justify-content:space-between',
+                            'gap:14px',
+                            'flex-wrap:wrap',
+                            'color:#edf7f5',
+                            'background:linear-gradient(90deg, rgba(var(--nodexa-accent-rgb), .22), rgba(var(--nodexa-accent-rgb), .08))',
+                            'border-bottom:1px solid var(--nodexa-border-strong)',
+                            'box-shadow:0 8px 24px rgba(0,0,0,.14)'
+                        ].join(';');
+
+                        var message = document.createElement('div');
+                        message.style.cssText = 'display:flex;align-items:center;gap:10px;min-width:0';
+
+                        var icon = document.createElement('i');
+                        icon.className = 'fa fa-cloud-download';
+                        icon.style.cssText = 'color:var(--nodexa-accent);font-size:18px';
+
+                        var text = document.createElement('span');
+                        var strong = document.createElement('strong');
+                        strong.textContent = 'Ny Nodexa-opdatering er tilgængelig';
+                        text.appendChild(strong);
+                        if (latestCommit) {
+                            text.appendChild(document.createTextNode(' · GitHub ' + latestCommit));
+                        }
+
+                        message.appendChild(icon);
+                        message.appendChild(text);
+
+                        var link = document.createElement('a');
+                        link.href = @json(route('admin.updates'));
+                        link.className = 'btn btn-success btn-sm';
+                        link.innerHTML = '<i class="fa fa-arrow-circle-right"></i> Se opdatering';
+                        link.style.cssText = 'white-space:nowrap';
+
+                        banner.appendChild(message);
+                        banner.appendChild(link);
+                        wrapper.insertBefore(banner, wrapper.firstChild);
+                    })
+                    .catch(function () {
+                        // Update-status must never block the admin interface.
+                    });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', installUpdateBanner, { once: true });
+            } else {
+                installUpdateBanner();
+            }
+        })();
+    </script>
+@endif
