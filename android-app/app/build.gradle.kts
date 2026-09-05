@@ -11,8 +11,8 @@ android {
         applicationId = "dk.nodexa.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.2.0"
+        versionCode = 4
+        versionName = "0.3.0"
     }
 
     compileOptions {
@@ -44,5 +44,6 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.3.0")
     implementation("androidx.compose.foundation:foundation:1.7.1")
     implementation("androidx.compose.material:material-icons-extended:1.7.1")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     debugImplementation("androidx.compose.ui:ui-tooling:1.7.1")
 }
