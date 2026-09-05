@@ -51,6 +51,7 @@ export default ({ baseUrl, rootAdmin, internalId }: Props) => {
     const name = ServerContext.useStoreState((state) => state.server.data!.name);
     const eggName = ServerContext.useStoreState((state) => state.server.data!.eggName || '');
     const minecraftPluginManager = ServerContext.useStoreState((state) => state.server.data!.addons.minecraftPluginManager);
+    const minecraftModManager = ServerContext.useStoreState((state) => state.server.data!.addons.minecraftModManager);
     const status = ServerContext.useStoreState((state) => state.status.value);
     const isMinecraft = /minecraft|paper|purpur|spigot|bukkit|folia|velocity|waterfall|bungee|forge|fabric/i.test(eggName);
     const isModdedMinecraft = /forge|fabric/i.test(eggName);
@@ -78,7 +79,15 @@ export default ({ baseUrl, rootAdmin, internalId }: Props) => {
 
                 <nav className={'space-y-1'}>
                     {routes.server
-                        .filter((route) => !!route.name && (!route.minecraftOnly || isMinecraft) && (!route.moddedOnly || isModdedMinecraft) && (!route.addon || (route.addon === 'minecraftPluginManager' && minecraftPluginManager)))
+                        .filter(
+                            (route) =>
+                                !!route.name &&
+                                (!route.minecraftOnly || isMinecraft) &&
+                                (!route.moddedOnly || isModdedMinecraft) &&
+                                (!route.addon ||
+                                    (route.addon === 'minecraftPluginManager' && minecraftPluginManager) ||
+                                    (route.addon === 'minecraftModManager' && minecraftModManager))
+                        )
                         .map((route) => {
                             const item = <NavLink to={routeUrl(baseUrl, route.path)} exact={route.exact} activeClassName={'nodexa-sidebar-active'} className={'nodexa-sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent text-gray-400 no-underline transition-all'}><FontAwesomeIcon icon={iconForPath(route.path)} className={'w-4 text-gray-500'} /><span>{route.name}</span></NavLink>;
                             return route.permission ? <Can key={route.path} action={route.permission} matchAny>{item}</Can> : <React.Fragment key={route.path}>{item}</React.Fragment>;
