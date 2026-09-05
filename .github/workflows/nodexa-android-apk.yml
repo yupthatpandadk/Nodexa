@@ -36,11 +36,46 @@ jobs:
           from pathlib import Path
           p = Path('app/src/main/java/dk/nodexa/app/MainActivity.kt')
           s = p.read_text()
+
           s = s.replace('Icons.Default.HardDrive', 'Icons.Default.Storage')
+
           old = '                        "token expiring", "token expired" -> onLine("Console-forbindelsen skal fornyes.")\n                    }'
           new = '                        "token expiring", "token expired" -> onLine("Console-forbindelsen skal fornyes.")\n                        else -> Unit\n                    }'
           if old in s and 'else -> Unit' not in s[s.find('when (event)'):s.find('when (event)') + 700]:
               s = s.replace(old, new, 1)
+
+          # Keep first cards and section titles clear of the top app bar.
+          s = s.replace(
+              'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 24.dp))',
+              'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(top = 14.dp, bottom = 28.dp))'
+          )
+          s = s.replace(
+              'LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 24.dp))',
+              'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(top = 14.dp, bottom = 28.dp))'
+          )
+          s = s.replace(
+              'Column(Modifier.fillMaxSize().padding(14.dp)) {',
+              'Column(Modifier.fillMaxSize().padding(horizontal = 14.dp).padding(top = 14.dp, bottom = 10.dp)) {',
+              1
+          )
+          files_marker = 'fun FilesPage(api: Api, server: Server) {'
+          idx = s.find(files_marker)
+          if idx != -1:
+              tail = s[idx:]
+              tail = tail.replace(
+                  'Column(Modifier.fillMaxSize().padding(14.dp)) {',
+                  'Column(Modifier.fillMaxSize().padding(horizontal = 14.dp).padding(top = 14.dp, bottom = 10.dp)) {',
+                  1
+              )
+              s = s[:idx] + tail
+          s = s.replace(
+              'LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 24.dp))',
+              'LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(top = 14.dp, bottom = 32.dp))'
+          )
+
+          # Give file rows and menu cards slightly more breathing room.
+          s = s.replace('Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically)', 'Row(Modifier.padding(horizontal = 16.dp, vertical = 15.dp), verticalAlignment = Alignment.CenterVertically)')
+
           p.write_text(s)
           PY
 
