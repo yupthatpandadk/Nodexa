@@ -6,12 +6,17 @@
         $nodexaIdentityData = is_array($decodedIdentity) ? $decodedIdentity : [];
     }
     $nodexaInstalledVersion = (string) ($nodexaIdentityData['version'] ?? 'unknown');
+
+    $nodexaThemeRootDomain = (string) (parse_url((string) config('app.url'), PHP_URL_HOST) ?: request()->getHost());
+    $nodexaThemeRootDomain = strtolower(trim($nodexaThemeRootDomain));
+    $nodexaThemeRootDomain = preg_replace('/^(?:panel|www)\./i', '', $nodexaThemeRootDomain) ?: $nodexaThemeRootDomain;
 @endphp
 
 <script id="nodexa-global-theme-bootstrap">
     (function () {
         var KEY = 'nodexa_theme_accent';
         var DEFAULT_ACCENT = '#42e9a6';
+        var ROOT_DOMAIN = @json($nodexaThemeRootDomain);
 
         function normalize(value) {
             value = String(value || '').trim();
@@ -53,10 +58,22 @@
             return '';
         }
 
+        function sharedCookieDomain() {
+            var host = String(window.location.hostname || '').toLowerCase();
+            var root = String(ROOT_DOMAIN || '').toLowerCase().replace(/^\./, '');
+            if (!root || root.indexOf('.') === -1) return '';
+            if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(root)) return '';
+            if (host === root || host.slice(-(root.length + 1)) === '.' + root) return '.' + root;
+            return '';
+        }
+
         function persist(value) {
             var accent = normalize(value);
             try { localStorage.setItem(KEY, accent); } catch (_) {}
+
             var cookie = KEY + '=' + encodeURIComponent(accent) + '; Path=/; Max-Age=31536000; SameSite=Lax';
+            var domain = sharedCookieDomain();
+            if (domain) cookie += '; Domain=' + domain;
             if (window.location.protocol === 'https:') cookie += '; Secure';
             document.cookie = cookie;
             return accent;
@@ -104,30 +121,47 @@
             return accent;
         }
 
-        var saved = '';
-        try { saved = localStorage.getItem(KEY) || ''; } catch (_) {}
-        if (!saved) saved = readCookie();
-        saved = apply(saved || DEFAULT_ACCENT, true);
+        function readSharedTheme() {
+            var cookie = readCookie();
+            if (cookie) return cookie;
+
+            var local = '';
+            try { local = localStorage.getItem(KEY) || ''; } catch (_) {}
+            return local;
+        }
+
+        function syncFromSharedCookie() {
+            var cookie = readCookie();
+            if (!cookie) return;
+            var accent = normalize(cookie);
+            var current = normalize(document.documentElement.dataset.nodexaAccent || DEFAULT_ACCENT);
+            if (accent !== current) apply(accent, false);
+            try {
+                if (localStorage.getItem(KEY) !== accent) localStorage.setItem(KEY, accent);
+            } catch (_) {}
+        }
+
+        var saved = apply(readSharedTheme() || DEFAULT_ACCENT, true);
 
         window.NodexaTheme = {
             key: KEY,
             defaultAccent: DEFAULT_ACCENT,
             normalize: normalize,
             apply: function (value) { return apply(value, true); },
-            get: function () { return normalize(document.documentElement.dataset.nodexaAccent || saved); }
+            get: function () { return normalize(document.documentElement.dataset.nodexaAccent || saved); },
+            sync: syncFromSharedCookie
         };
 
         window.addEventListener('nodexa:theme', function (event) {
             if (event && event.detail && event.detail.accent) apply(event.detail.accent, true);
         });
         window.addEventListener('storage', function (event) {
-            if (event.key === KEY) apply(event.newValue || DEFAULT_ACCENT, false);
+            if (event.key === KEY) apply(event.newValue || DEFAULT_ACCENT, true);
         });
-        window.addEventListener('pageshow', function () {
-            var current = '';
-            try { current = localStorage.getItem(KEY) || ''; } catch (_) {}
-            if (!current) current = readCookie();
-            apply(current || DEFAULT_ACCENT, false);
+        window.addEventListener('pageshow', syncFromSharedCookie);
+        window.addEventListener('focus', syncFromSharedCookie);
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) syncFromSharedCookie();
         });
     })();
 </script>
