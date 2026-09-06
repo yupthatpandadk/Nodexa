@@ -38,7 +38,18 @@
                         </div>
                         <div class="col-sm-6">
                             <p class="text-muted text-uppercase" style="font-size:11px;font-weight:700;letter-spacing:.08em;">GitHub</p>
-                            @if (!empty($latest['commit']))
+                            @if (!empty($latest['version']))
+                                <h3 style="margin-top:0;">v{{ $latest['version'] }}</h3>
+                                @if (!empty($latest['commit']))
+                                    <p>Commit: <code>{{ substr($latest['commit'], 0, 12) }}</code></p>
+                                    <p>{{ \Illuminate\Support\Str::limit($latest['message'] ?? 'Ingen commit-besked.', 120) }}</p>
+                                @else
+                                    <p class="text-muted">Commit-data er midlertidigt utilgængelig.</p>
+                                @endif
+                                @if (!empty($latest['warning']))
+                                    <p class="text-warning" style="margin-bottom:0;"><i class="fa fa-exclamation-triangle"></i> {{ $latest['warning'] }}</p>
+                                @endif
+                            @elseif (!empty($latest['commit']))
                                 <h3 style="margin-top:0;">{{ substr($latest['commit'], 0, 12) }}</h3>
                                 <p>{{ \Illuminate\Support\Str::limit($latest['message'] ?? 'Ingen commit-besked.', 120) }}</p>
                             @else
@@ -201,9 +212,6 @@
                     .catch(function () {});
             }
 
-            // Poll continuously while this page is open. This intentionally starts even
-            // when the initial state is idle so a just-triggered systemd update cannot be
-            // missed during the redirect back to the page.
             setInterval(poll, 2500);
             poll();
         })();
