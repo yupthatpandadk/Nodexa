@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Pterodactyl\Http\Controllers\StorefrontController;
+use Pterodactyl\Http\Controllers\StorefrontCustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,10 +42,6 @@ if ($configuredStorefront !== '') {
     }
 }
 
-// Automatic sensible default:
-// - panel.example.com -> example.com + www.example.com are storefronts
-// - example.com       -> www.example.com is the storefront and example.com
-//                        remains the panel if APP_URL points there.
 if ($panelHost !== '') {
     if (str_starts_with($panelHost, 'panel.')) {
         $baseHost = substr($panelHost, 6);
@@ -55,13 +52,24 @@ if ($panelHost !== '') {
     }
 }
 
+$customerRoutes = static function (): void {
+    Route::middleware('auth')->prefix('client')->name('client.')->group(function () {
+        Route::get('/', [StorefrontCustomerController::class, 'dashboard'])->name('dashboard');
+        Route::get('/services', [StorefrontCustomerController::class, 'services'])->name('services');
+        Route::get('/invoices', [StorefrontCustomerController::class, 'invoices'])->name('invoices');
+        Route::get('/support', [StorefrontCustomerController::class, 'support'])->name('support');
+        Route::get('/account', [StorefrontCustomerController::class, 'account'])->name('account');
+    });
+};
+
 foreach ($storefrontHosts as $index => $host) {
-    Route::domain($host)->name("storefront.host{$index}.")->group(function () {
+    Route::domain($host)->name("storefront.host{$index}.")->group(function () use ($customerRoutes) {
         Route::get('/', [StorefrontController::class, 'home'])->name('home');
         Route::get('/games', [StorefrontController::class, 'games'])->name('games');
         Route::get('/pricing', [StorefrontController::class, 'pricing'])->name('pricing');
         Route::get('/features', [StorefrontController::class, 'features'])->name('features');
         Route::get('/support', [StorefrontController::class, 'support'])->name('support');
+        $customerRoutes();
     });
 }
 
@@ -69,17 +77,14 @@ foreach ($storefrontHosts as $index => $host) {
 |--------------------------------------------------------------------------
 | Storefront compatibility paths
 |--------------------------------------------------------------------------
-|
-| Keep /store available from the panel host as a preview and for existing
-| bookmarks. Dedicated storefront hosts use the clean root URLs above.
-|
 */
-Route::prefix('store')->name('storefront.')->group(function () {
+Route::prefix('store')->name('storefront.')->group(function () use ($customerRoutes) {
     Route::get('/', [StorefrontController::class, 'home'])->name('home');
     Route::get('/games', [StorefrontController::class, 'games'])->name('games');
     Route::get('/pricing', [StorefrontController::class, 'pricing'])->name('pricing');
     Route::get('/features', [StorefrontController::class, 'features'])->name('features');
     Route::get('/support', [StorefrontController::class, 'support'])->name('support');
+    $customerRoutes();
 });
 
 Route::redirect('/storefront', '/store', 301);
