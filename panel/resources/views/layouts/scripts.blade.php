@@ -320,7 +320,6 @@
                     color: var(--nodexa-muted) !important;
                 }
 
-                /* Login/auth and other legacy Blade surfaces use the same palette. */
                 body.login-page {
                     color: var(--nodexa-text) !important;
                     background:
@@ -362,21 +361,38 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var menu = document.querySelector('.sidebar-menu');
-        if (!menu || document.getElementById('nodexa-updates-menu-item')) return;
+        if (!menu) return;
 
-        var item = document.createElement('li');
-        item.id = 'nodexa-updates-menu-item';
-        item.className = @json(request()->routeIs('admin.updates*') ? 'active' : '');
-        item.innerHTML = '<a href="' + @json(route('admin.updates')) + '"><i class="fa fa-cloud-download"></i> <span>Opdateringer</span></a>';
+        if (!document.getElementById('nodexa-updates-menu-item')) {
+            var updateItem = document.createElement('li');
+            updateItem.id = 'nodexa-updates-menu-item';
+            updateItem.className = @json(request()->routeIs('admin.updates*') ? 'active' : '');
+            updateItem.innerHTML = '<a href="' + @json(route('admin.updates')) + '"><i class="fa fa-cloud-download"></i> <span>Opdateringer</span></a>';
 
-        var managementHeader = Array.prototype.find.call(menu.querySelectorAll('li.header'), function (header) {
-            return header.textContent.trim().toUpperCase() === 'MANAGEMENT';
-        });
+            var managementHeader = Array.prototype.find.call(menu.querySelectorAll('li.header'), function (header) {
+                return header.textContent.trim().toUpperCase() === 'MANAGEMENT';
+            });
 
-        if (managementHeader) {
-            menu.insertBefore(item, managementHeader);
-        } else {
-            menu.appendChild(item);
+            if (managementHeader) menu.insertBefore(updateItem, managementHeader);
+            else menu.appendChild(updateItem);
         }
+
+        @if(Auth::check() && (Auth::user()->root_admin || \Pterodactyl\Support\NodexaPermissions::userHas(Auth::user(), 'admin.roles.view')))
+            if (!document.getElementById('nodexa-roles-menu-item')) {
+                var roleItem = document.createElement('li');
+                roleItem.id = 'nodexa-roles-menu-item';
+                roleItem.className = @json(request()->routeIs('admin.roles*') ? 'active' : '');
+                roleItem.innerHTML = '<a href="' + @json(route('admin.roles')) + '"><i class="fa fa-shield"></i> <span>Roles & Permissions</span></a>';
+
+                var usersLink = Array.prototype.find.call(menu.querySelectorAll('a'), function (link) {
+                    return link.getAttribute('href') === @json(route('admin.users'));
+                });
+                if (usersLink && usersLink.parentNode) {
+                    usersLink.parentNode.insertAdjacentElement('afterend', roleItem);
+                } else {
+                    menu.appendChild(roleItem);
+                }
+            }
+        @endif
     });
 </script>
