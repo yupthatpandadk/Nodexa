@@ -6,7 +6,7 @@
 @section('content')
 @php
     $panelOrigin = rtrim((string) config('app.url'), '/');
-    $clientBase = $panelOrigin . '/store/client';
+    $clientBase = $panelOrigin . '/client';
     $money = static fn ($value, $currency = 'DKK') => number_format((float) $value, 2, ',', '.') . ' ' . strtoupper((string) $currency);
     $statusLabel = [
         'open' => 'Åben', 'answered' => 'Besvaret', 'customer_reply' => 'Kundesvar', 'closed' => 'Lukket',
