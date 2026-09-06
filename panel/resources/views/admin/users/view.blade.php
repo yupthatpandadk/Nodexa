@@ -65,6 +65,7 @@
                 </div>
             </div>
         </div>
+
         <div class="col-md-6">
             <div class="box">
                 <div class="box-header with-border">
@@ -82,26 +83,60 @@
                 </div>
             </div>
         </div>
+
         <div class="col-md-6">
             <div class="box">
                 <div class="box-header with-border">
-                    <h3 class="box-title">Permissions</h3>
+                    <h3 class="box-title">Permissions & Roles</h3>
                 </div>
                 <div class="box-body">
                     <div class="form-group">
-                        <label for="root_admin" class="control-label">Administrator</label>
+                        <label for="root_admin" class="control-label">Root Administrator</label>
                         <div>
-                            <select name="root_admin" class="form-control">
+                            <select name="root_admin" class="form-control" {{ $canManageRoles ? '' : 'disabled' }}>
                                 <option value="0">@lang('strings.no')</option>
                                 <option value="1" {{ $user->root_admin ? 'selected="selected"' : '' }}>@lang('strings.yes')</option>
                             </select>
-                            <p class="text-muted"><small>Setting this to 'Yes' gives a user full administrative access.</small></p>
+                            <p class="text-muted"><small>Root administrator bypasses all role permissions and has full access.</small></p>
                         </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="form-group">
+                        <label class="control-label">Nodexa Roles</label>
+                        @if($canManageRoles)
+                            <select name="roles[]" class="form-control" multiple size="{{ max(3, min(8, count($roles))) }}">
+                                @foreach($roles as $role)
+                                    <option value="{{ $role->id }}" {{ in_array((int) $role->id, $assignedRoleIds, true) ? 'selected' : '' }}>
+                                        {{ $role->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-muted"><small>Hold Ctrl/Cmd nede for at vælge flere roller. Roller kombinerer deres permissions.</small></p>
+                        @else
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                @forelse($roles->whereIn('id', $assignedRoleIds) as $role)
+                                    <span class="label" style="background:{{ $role->color }};color:#061012;padding:6px 9px;">{{ $role->name }}</span>
+                                @empty
+                                    <span class="text-muted">Ingen roller tildelt.</span>
+                                @endforelse
+                            </div>
+                            <p class="text-muted"><small>Kun en root administrator kan ændre rolletildelinger.</small></p>
+                        @endif
+                    </div>
+
+                    <div class="alert alert-info" style="margin-bottom:0;">
+                        <strong>Standardroller:</strong><br>
+                        Supporter = læseadgang til brugere og servere.<br>
+                        Moderator = administrere brugere og servere.<br>
+                        Manager = bred adminadgang uden root-rettigheder.
                     </div>
                 </div>
             </div>
         </div>
     </form>
+
     <div class="col-xs-12">
         <div class="box box-danger">
             <div class="box-header with-border">
