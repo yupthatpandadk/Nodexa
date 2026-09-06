@@ -81,6 +81,16 @@ class StorefrontCustomerController extends Controller
             }
 
             return $query->limit(25);
+        })->map(static function ($ticket) {
+            $ticket->id = $ticket->id ?? 0;
+            $ticket->subject = $ticket->subject ?? 'Support ticket';
+            $ticket->category = $ticket->category ?? 'support';
+            $ticket->priority = $ticket->priority ?? 'normal';
+            $ticket->status = $ticket->status ?? 'open';
+            $ticket->updated_at = $ticket->updated_at ?? null;
+            $ticket->last_reply_at = $ticket->last_reply_at ?? $ticket->updated_at;
+
+            return $ticket;
         });
 
         $invoices = $this->loadOptionalCustomerRows('nodexa_invoices', $user->id, function ($query) {
@@ -89,6 +99,16 @@ class StorefrontCustomerController extends Controller
             }
 
             return $query->limit(50);
+        })->map(static function ($invoice) {
+            $invoice->id = $invoice->id ?? 0;
+            $invoice->number = $invoice->number ?? ('#' . $invoice->id);
+            $invoice->description = $invoice->description ?? 'Nodexa service';
+            $invoice->total = $invoice->total ?? 0;
+            $invoice->currency = $invoice->currency ?? 'DKK';
+            $invoice->due_at = $invoice->due_at ?? null;
+            $invoice->status = $invoice->status ?? 'unpaid';
+
+            return $invoice;
         });
 
         $stats = [
