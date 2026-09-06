@@ -24,7 +24,10 @@
                             <input type="text" name="filter[email]" class="form-control pull-right" value="{{ request()->input('filter.email') }}" placeholder="Search">
                             <div class="input-group-btn">
                                 <button type="submit" class="btn btn-default"><i class="fa fa-search"></i></button>
-                                <a href="{{ route('admin.users.new') }}"><button type="button" class="btn btn-sm btn-primary" style="border-radius: 0 3px 3px 0;margin-left:-1px;">Create New</button></a>
+                                @if(Auth::user()->root_admin || \Pterodactyl\Support\NodexaPermissions::userHas(Auth::user(), 'admin.roles.view'))
+                                    <a href="{{ route('admin.roles') }}" class="btn btn-sm btn-default" style="margin-left:4px;"><i class="fa fa-shield"></i> Roles & Permissions</a>
+                                @endif
+                                <a href="{{ route('admin.users.new') }}" class="btn btn-sm btn-primary" style="margin-left:4px;">Create New</a>
                             </div>
                         </div>
                     </form>
