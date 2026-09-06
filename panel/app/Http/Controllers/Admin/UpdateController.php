@@ -22,6 +22,7 @@ class UpdateController extends Controller
         $installed = $this->installedVersion();
         $latest = $this->latestVersion($installed, true);
         $state = $this->updateState();
+        $changelog = $this->changelog($installed, true);
 
         return view('admin.updates.index', [
             'installed' => $installed,
@@ -29,6 +30,7 @@ class UpdateController extends Controller
             'state' => $state,
             'log' => $this->tailLog(),
             'updateAvailable' => $this->updateAvailable($installed, $latest),
+            'changelog' => $changelog,
         ]);
     }
 
@@ -109,8 +111,6 @@ class UpdateController extends Controller
             $url = null;
             $error = null;
 
-            // Use raw.githubusercontent.com as the primary update source.
-            // This endpoint is not subject to the unauthenticated GitHub API 60 req/hour limit.
             try {
                 $versionResponse = Http::accept('text/plain')
                     ->withUserAgent('Nodexa-Panel-Updater')
@@ -131,8 +131,6 @@ class UpdateController extends Controller
                 $error = 'VERSION kunne ikke hentes fra GitHub.';
             }
 
-            // Commit metadata is optional. Only query api.github.com when an explicit token
-            // is configured, otherwise we deliberately avoid the 60 req/hour shared IP limit.
             $token = trim((string) env('NODEXA_GITHUB_TOKEN', ''));
             if ($token !== '') {
                 try {
@@ -165,6 +163,46 @@ class UpdateController extends Controller
                 'warning' => null,
                 'error' => $version === null ? $error : null,
             ];
+        });
+    }
+
+    private function changelog(array $installed, bool $force = false): array
+    {
+        $repository = preg_replace('/[^A-Za-z0-9_.\/-]/', '', (string) ($installed['repository'] ?? 'yupthatpandadk/Nodexa')) ?: 'yupthatpandadk/Nodexa';
+        $branch = preg_replace('/[^A-Za-z0-9_.\/-]/', '', (string) ($installed['branch'] ?? 'pterodactyl-core')) ?: 'pterodactyl-core';
+        $cacheKey = 'nodexa:update:changelog:' . sha1($repository . ':' . $branch);
+
+        if ($force) {
+            Cache::forget($cacheKey);
+        }
+
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($repository, $branch) {
+            try {
+                $response = Http::acceptJson()
+                    ->withUserAgent('Nodexa-Panel-Updater')
+                    ->timeout(8)
+                    ->get("https://raw.githubusercontent.com/{$repository}/{$branch}/CHANGELOG.json");
+
+                if (!$response->successful()) {
+                    return ['versions' => [], 'error' => 'Changelog kunne ikke hentes (HTTP ' . $response->status() . ').'];
+                }
+
+                $payload = $response->json();
+                $versions = is_array($payload) && is_array($payload['versions'] ?? null) ? $payload['versions'] : [];
+                $versions = array_values(array_filter($versions, static function ($release) {
+                    return is_array($release)
+                        && !empty($release['version'])
+                        && is_array($release['changes'] ?? null);
+                }));
+
+                usort($versions, static function ($a, $b) {
+                    return version_compare((string) ($b['version'] ?? '0'), (string) ($a['version'] ?? '0'));
+                });
+
+                return ['versions' => $versions, 'error' => null];
+            } catch (\Throwable $exception) {
+                return ['versions' => [], 'error' => 'Changelog kunne ikke hentes lige nu.'];
+            }
         });
     }
 
