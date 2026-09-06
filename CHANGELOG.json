@@ -1,0 +1,122 @@
+{
+  "versions": [
+    {
+      "version": "0.14.65",
+      "date": "2026-09-06",
+      "title": "Nyt Update Center",
+      "type": "feature",
+      "changes": [
+        "Update Center har fået et nyt, mere overskueligt design.",
+        "Changelog for den nyeste opdatering vises direkte før installation.",
+        "Tidligere Nodexa-versioner kan nu ses som versionshistorik.",
+        "Changelog hentes fra raw GitHub og er ikke afhængig af GitHub API-rate limits."
+      ]
+    },
+    {
+      "version": "0.14.64",
+      "date": "2026-09-06",
+      "title": "Kundeområde på www",
+      "type": "feature",
+      "changes": [
+        "Kundeområdet er flyttet til www.revivegaming.org/client.",
+        "Panel-links til /client viderestiller til den offentlige hjemmeside.",
+        "Gamle /store/client-links viderestilles fortsat automatisk."
+      ]
+    },
+    {
+      "version": "0.14.63",
+      "date": "2026-09-06",
+      "title": "Mere stabilt kundeområde",
+      "type": "fix",
+      "changes": [
+        "Kundeområdet håndterer forskellige Pterodactyl-databaseskemaer mere sikkert.",
+        "Manglende valgfrie ticket- eller fakturatabeller giver ikke længere en 500-side.",
+        "Fallback-værdier er tilføjet til manglende kunde-, ticket- og fakturafelter."
+      ]
+    },
+    {
+      "version": "0.14.62",
+      "date": "2026-09-06",
+      "title": "WHMCS-lignende kundeområde",
+      "type": "feature",
+      "changes": [
+        "Nyt kunde-dashboard med services, fakturaer, support og konto.",
+        "Grundlag til Nodexas fakturasystem er tilføjet.",
+        "Kunder kan se deres aktive servere og gå direkte til administration."
+      ]
+    },
+    {
+      "version": "0.14.61",
+      "date": "2026-09-06",
+      "title": "Tickets i adminpanelet",
+      "type": "improvement",
+      "changes": [
+        "Ticket-systemet er gjort tydeligt tilgængeligt fra Admin Overview.",
+        "Staff får hurtigere adgang til supporthenvendelser."
+      ]
+    },
+    {
+      "version": "0.14.60",
+      "date": "2026-09-06",
+      "title": "Stabil updater uden GitHub API",
+      "type": "fix",
+      "changes": [
+        "Versionscheck bruger raw.githubusercontent.com som primær kilde.",
+        "GitHub API kaldes kun, hvis NODEXA_GITHUB_TOKEN er konfigureret.",
+        "GitHub API-rate limits blokerer ikke længere normale versionschecks."
+      ]
+    },
+    {
+      "version": "0.14.59",
+      "date": "2026-09-06",
+      "title": "Forbedret versionskontrol",
+      "type": "fix",
+      "changes": [
+        "Update Center kan vise den seneste VERSION, selv når GitHub API er utilgængeligt.",
+        "Commit-metadata er gjort valgfri."
+      ]
+    },
+    {
+      "version": "0.14.58",
+      "date": "2026-09-06",
+      "title": "Ticket-system",
+      "type": "feature",
+      "changes": [
+        "Kunder kan oprette, besvare og lukke supporttickets.",
+        "Staff kan se, filtrere, besvare og tildele tickets.",
+        "Status, prioritet og ticket-permissions er tilføjet."
+      ]
+    },
+    {
+      "version": "0.14.57",
+      "date": "2026-09-06",
+      "title": "Roles & Permissions",
+      "type": "feature",
+      "changes": [
+        "Roles & Permissions er tilføjet som selvstændigt adminområde.",
+        "Roller vælges via kort, før deres permissions vises.",
+        "Supporter, Moderator og Manager kan styres med separate permissions."
+      ]
+    },
+    {
+      "version": "0.14.56",
+      "date": "2026-09-06",
+      "title": "Rolleadministration",
+      "type": "feature",
+      "changes": [
+        "Ny side til at oprette og administrere roller.",
+        "Roller kan få navn, farve, beskrivelse, brugere og permissions."
+      ]
+    },
+    {
+      "version": "0.14.55",
+      "date": "2026-09-06",
+      "title": "Permissions-grundlag",
+      "type": "feature",
+      "changes": [
+        "Første version af Nodexas rolle- og permissionsystem.",
+        "Root Admin beholder fuld adgang, mens staff kan begrænses pr. område."
+      ]
+    }
+  ]
+}
