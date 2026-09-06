@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
@@ -35,6 +36,20 @@ return new class extends Migration {
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->index(['ticket_id', 'created_at']);
         });
+
+        if (Schema::hasTable('nodexa_roles')) {
+            foreach (DB::table('nodexa_roles')->whereIn('slug', ['supporter', 'moderator', 'manager'])->get() as $role) {
+                $permissions = json_decode((string) $role->permissions, true);
+                $permissions = is_array($permissions) ? $permissions : [];
+                $permissions[] = 'admin.tickets.view';
+                $permissions[] = 'admin.tickets.manage';
+
+                DB::table('nodexa_roles')->where('id', $role->id)->update([
+                    'permissions' => json_encode(array_values(array_unique($permissions))),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
     }
 
     public function down(): void
