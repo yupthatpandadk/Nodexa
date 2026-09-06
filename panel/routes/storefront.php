@@ -75,16 +75,33 @@ foreach ($storefrontHosts as $index => $host) {
 
 /*
 |--------------------------------------------------------------------------
+| Panel customer area
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->prefix('client')->name('client.')->group(function () {
+    Route::get('/', [StorefrontCustomerController::class, 'dashboard'])->name('dashboard');
+    Route::get('/services', [StorefrontCustomerController::class, 'services'])->name('services');
+    Route::get('/invoices', [StorefrontCustomerController::class, 'invoices'])->name('invoices');
+    Route::get('/support', [StorefrontCustomerController::class, 'support'])->name('support');
+    Route::get('/account', [StorefrontCustomerController::class, 'account'])->name('account');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Storefront compatibility paths
 |--------------------------------------------------------------------------
 */
-Route::prefix('store')->name('storefront.')->group(function () use ($customerRoutes) {
+Route::prefix('store')->name('storefront.')->group(function () {
     Route::get('/', [StorefrontController::class, 'home'])->name('home');
     Route::get('/games', [StorefrontController::class, 'games'])->name('games');
     Route::get('/pricing', [StorefrontController::class, 'pricing'])->name('pricing');
     Route::get('/features', [StorefrontController::class, 'features'])->name('features');
     Route::get('/support', [StorefrontController::class, 'support'])->name('support');
-    $customerRoutes();
 });
 
+Route::redirect('/store/client', '/client', 301);
+Route::redirect('/store/client/services', '/client/services', 301);
+Route::redirect('/store/client/invoices', '/client/invoices', 301);
+Route::redirect('/store/client/support', '/client/support', 301);
+Route::redirect('/store/client/account', '/client/account', 301);
 Route::redirect('/storefront', '/store', 301);
