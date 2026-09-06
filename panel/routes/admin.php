@@ -135,7 +135,7 @@ Route::group(['prefix' => 'nests'], function () {
     Route::post('/new', [Admin\Nests\NestController::class, 'store']);
     Route::post('/import', [Admin\Nests\EggShareController::class, 'import'])->name('admin.nests.egg.import');
     Route::post('/egg/new', [Admin\Nests\EggController::class, 'store']);
-    Route::post('/egg/{egg:id}/variables', [Admin\Nests\EggController::class, 'store']);
+    Route::post('/egg/{egg:id}/variables', [Admin\Nests\EggVariableController::class, 'store']);
     Route::put('/egg/{egg:id}', [Admin\Nests\EggShareController::class, 'update']);
     Route::patch('/view/{nest:id}', [Admin\Nests\NestController::class, 'update']);
     Route::patch('/egg/{egg:id}', [Admin\Nests\EggController::class, 'update']);
