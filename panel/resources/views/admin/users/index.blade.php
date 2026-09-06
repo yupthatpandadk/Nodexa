@@ -24,6 +24,9 @@
                             <input type="text" name="filter[email]" class="form-control pull-right" value="{{ request()->input('filter.email') }}" placeholder="Search">
                             <div class="input-group-btn">
                                 <button type="submit" class="btn btn-default"><i class="fa fa-search"></i></button>
+                                @if(Auth::user()->root_admin || \Pterodactyl\Support\NodexaPermissions::userHas(Auth::user(), 'admin.tickets.view'))
+                                    <a href="{{ route('admin.tickets') }}" class="btn btn-sm btn-default" style="margin-left:4px;"><i class="fa fa-ticket"></i> Tickets</a>
+                                @endif
                                 @if(Auth::user()->root_admin || \Pterodactyl\Support\NodexaPermissions::userHas(Auth::user(), 'admin.roles.view'))
                                     <a href="{{ route('admin.roles') }}" class="btn btn-sm btn-default" style="margin-left:4px;"><i class="fa fa-shield"></i> Roles & Permissions</a>
                                 @endif
@@ -61,9 +64,7 @@
                                         <i class="fa fa-unlock text-red"></i>
                                     @endif
                                 </td>
-                                <td class="text-center">
-                                    <a href="{{ route('admin.servers', ['filter[owner_id]' => $user->id]) }}">{{ $user->servers_count }}</a>
-                                </td>
+                                <td class="text-center"><a href="{{ route('admin.servers', ['filter[owner_id]' => $user->id]) }}">{{ $user->servers_count }}</a></td>
                                 <td class="text-center">{{ $user->subuser_of_count }}</td>
                                 <td class="text-center"><img src="https://www.gravatar.com/avatar/{{ md5(strtolower($user->email)) }}?s=100" style="height:20px;" class="img-circle" /></td>
                             </tr>
@@ -72,9 +73,7 @@
                 </table>
             </div>
             @if($users->hasPages())
-                <div class="box-footer with-border">
-                    <div class="col-md-12 text-center">{!! $users->appends(['query' => Request::input('query')])->render() !!}</div>
-                </div>
+                <div class="box-footer with-border"><div class="col-md-12 text-center">{!! $users->appends(['query' => Request::input('query')])->render() !!}</div></div>
             @endif
         </div>
     </div>
