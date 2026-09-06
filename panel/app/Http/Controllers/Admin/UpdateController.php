@@ -101,47 +101,77 @@ class UpdateController extends Controller
         }
 
         return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($repository, $branch) {
+            $version = null;
+            $commit = null;
+            $message = null;
+            $author = null;
+            $date = null;
+            $url = null;
+            $warnings = [];
+
+            // VERSION is fetched independently from the GitHub API. This means the updater
+            // can still discover releases when api.github.com returns 403 due to rate limits.
             try {
-                $commitResponse = Http::acceptJson()
+                $versionResponse = Http::accept('text/plain')
                     ->withUserAgent('Nodexa-Panel-Updater')
                     ->timeout(8)
-                    ->get("https://api.github.com/repos/{$repository}/commits/{$branch}");
+                    ->get("https://raw.githubusercontent.com/{$repository}/{$branch}/VERSION");
 
-                if (!$commitResponse->successful()) {
-                    return ['commit' => null, 'version' => null, 'error' => 'GitHub svarede med HTTP ' . $commitResponse->status()];
-                }
-
-                $commitData = $commitResponse->json();
-                $version = null;
-
-                try {
-                    $versionResponse = Http::accept('text/plain')
-                        ->withUserAgent('Nodexa-Panel-Updater')
-                        ->timeout(8)
-                        ->get("https://raw.githubusercontent.com/{$repository}/{$branch}/VERSION");
-
-                    if ($versionResponse->successful()) {
-                        $candidate = ltrim(trim((string) $versionResponse->body()), 'vV');
-                        if (preg_match('/^\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z.-]+)?$/', $candidate)) {
-                            $version = $candidate;
-                        }
+                if ($versionResponse->successful()) {
+                    $candidate = ltrim(trim((string) $versionResponse->body()), 'vV');
+                    if (preg_match('/^\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z.-]+)?$/', $candidate)) {
+                        $version = $candidate;
                     }
-                } catch (\Throwable $exception) {
-                    // Commit information is still useful if VERSION cannot be read.
+                } else {
+                    $warnings[] = 'VERSION kunne ikke hentes (HTTP ' . $versionResponse->status() . ')';
+                }
+            } catch (\Throwable $exception) {
+                $warnings[] = 'VERSION kunne ikke hentes';
+            }
+
+            // Commit metadata is useful, but it is no longer required for version checks.
+            try {
+                $request = Http::acceptJson()
+                    ->withUserAgent('Nodexa-Panel-Updater')
+                    ->timeout(8);
+
+                $token = trim((string) env('NODEXA_GITHUB_TOKEN', ''));
+                if ($token !== '') {
+                    $request = $request->withToken($token);
                 }
 
-                return [
-                    'version' => $version,
-                    'commit' => $commitData['sha'] ?? null,
-                    'message' => trim((string) data_get($commitData, 'commit.message', '')),
-                    'author' => data_get($commitData, 'commit.author.name'),
-                    'date' => data_get($commitData, 'commit.author.date'),
-                    'url' => $commitData['html_url'] ?? null,
-                    'error' => null,
-                ];
+                $commitResponse = $request->get("https://api.github.com/repos/{$repository}/commits/{$branch}");
+
+                if ($commitResponse->successful()) {
+                    $commitData = $commitResponse->json();
+                    $commit = $commitData['sha'] ?? null;
+                    $message = trim((string) data_get($commitData, 'commit.message', ''));
+                    $author = data_get($commitData, 'commit.author.name');
+                    $date = data_get($commitData, 'commit.author.date');
+                    $url = $commitData['html_url'] ?? null;
+                } else {
+                    $warnings[] = 'GitHub API HTTP ' . $commitResponse->status();
+                }
             } catch (\Throwable $exception) {
-                return ['commit' => null, 'version' => null, 'error' => 'Kunne ikke kontakte GitHub: ' . $exception->getMessage()];
+                $warnings[] = 'GitHub API kunne ikke kontaktes';
             }
+
+            // Only fail the check if neither the release version nor commit metadata could be read.
+            $error = null;
+            if ($version === null && $commit === null) {
+                $error = $warnings !== [] ? implode(' · ', $warnings) : 'Kunne ikke hente versionsinformation fra GitHub.';
+            }
+
+            return [
+                'version' => $version,
+                'commit' => $commit,
+                'message' => $message,
+                'author' => $author,
+                'date' => $date,
+                'url' => $url,
+                'warning' => $warnings !== [] ? implode(' · ', $warnings) : null,
+                'error' => $error,
+            ];
         });
     }
 
@@ -155,13 +185,10 @@ class UpdateController extends Controller
                 return true;
             }
 
-            // Never offer a downgrade simply because the commits differ.
             if (version_compare($latestVersion, $installedVersion, '<')) {
                 return false;
             }
 
-            // The versions are equal. New commits on the configured branch still count
-            // as an update so fixes do not require a VERSION bump before being detected.
             if (!empty($installed['commit']) && !empty($latest['commit'])) {
                 return strtolower((string) $installed['commit']) !== strtolower((string) $latest['commit']);
             }
@@ -169,7 +196,6 @@ class UpdateController extends Controller
             return false;
         }
 
-        // Compatibility fallback for older installations where VERSION is unavailable.
         if (empty($installed['commit']) || empty($latest['commit'])) {
             return false;
         }
