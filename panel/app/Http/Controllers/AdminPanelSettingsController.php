@@ -21,11 +21,19 @@ class AdminPanelSettingsController extends Controller
 
         return response()->json([
             'settings' => PanelSetting::values(),
+            'theme' => PanelSetting::theme(),
             'locales' => [
                 ['value' => 'da', 'label' => 'Dansk'],
                 ['value' => 'en', 'label' => 'English'],
             ],
             'timezones' => timezone_identifiers_list(),
+        ]);
+    }
+
+    public function theme()
+    {
+        return response()->json([
+            'theme' => PanelSetting::theme(),
         ]);
     }
 
@@ -40,6 +48,11 @@ class AdminPanelSettingsController extends Controller
             'timezone' => ['required', 'string', Rule::in(timezone_identifiers_list())],
             'locale' => ['required', Rule::in(['da', 'en'])],
             'support_email' => ['nullable', 'email', 'max:255'],
+            'theme_primary' => ['sometimes', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'theme_secondary' => ['sometimes', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'theme_background' => ['sometimes', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'theme_surface' => ['sometimes', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'theme_text' => ['sometimes', 'regex:/^#[0-9a-fA-F]{6}$/'],
         ]);
 
         $data['panel_url'] = rtrim($data['panel_url'], '/');
@@ -66,6 +79,7 @@ class AdminPanelSettingsController extends Controller
         return response()->json([
             'message' => 'Kontrolpanel-indstillingerne er gemt.',
             'settings' => PanelSetting::values(),
+            'theme' => PanelSetting::theme(),
         ]);
     }
 }
