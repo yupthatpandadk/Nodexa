@@ -54,7 +54,7 @@
         <a href="{{ route('admin.updates') }}"><button class="btn btn-primary"><i class="fa fa-fw fa-cloud-download"></i> Update Center</button></a>
     </div>
     <div class="col-xs-6 col-sm-3 text-center">
-        <a href="https://github.com/yupthatpandadk/Nodexa" target="_blank" rel="noopener noreferrer"><button class="btn btn-primary"><i class="fa fa-fw fa-github"></i> Nodexa GitHub</button></a>
+        <a href="{{ route('admin.tickets') }}"><button class="btn btn-primary"><i class="fa fa-fw fa-ticket"></i> Tickets</button></a>
     </div>
     <div class="clearfix visible-xs-block"></div>
     <div class="col-xs-6 col-sm-3 text-center">
