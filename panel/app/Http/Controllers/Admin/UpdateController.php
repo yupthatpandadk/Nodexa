@@ -107,10 +107,10 @@ class UpdateController extends Controller
             $author = null;
             $date = null;
             $url = null;
-            $warnings = [];
+            $error = null;
 
-            // VERSION is fetched independently from the GitHub API. This means the updater
-            // can still discover releases when api.github.com returns 403 due to rate limits.
+            // Use raw.githubusercontent.com as the primary update source.
+            // This endpoint is not subject to the unauthenticated GitHub API 60 req/hour limit.
             try {
                 $versionResponse = Http::accept('text/plain')
                     ->withUserAgent('Nodexa-Panel-Updater')
@@ -121,45 +121,38 @@ class UpdateController extends Controller
                     $candidate = ltrim(trim((string) $versionResponse->body()), 'vV');
                     if (preg_match('/^\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z.-]+)?$/', $candidate)) {
                         $version = $candidate;
+                    } else {
+                        $error = 'VERSION-filen indeholder et ugyldigt versionsnummer.';
                     }
                 } else {
-                    $warnings[] = 'VERSION kunne ikke hentes (HTTP ' . $versionResponse->status() . ')';
+                    $error = 'VERSION kunne ikke hentes (HTTP ' . $versionResponse->status() . ').';
                 }
             } catch (\Throwable $exception) {
-                $warnings[] = 'VERSION kunne ikke hentes';
+                $error = 'VERSION kunne ikke hentes fra GitHub.';
             }
 
-            // Commit metadata is useful, but it is no longer required for version checks.
-            try {
-                $request = Http::acceptJson()
-                    ->withUserAgent('Nodexa-Panel-Updater')
-                    ->timeout(8);
+            // Commit metadata is optional. Only query api.github.com when an explicit token
+            // is configured, otherwise we deliberately avoid the 60 req/hour shared IP limit.
+            $token = trim((string) env('NODEXA_GITHUB_TOKEN', ''));
+            if ($token !== '') {
+                try {
+                    $commitResponse = Http::acceptJson()
+                        ->withUserAgent('Nodexa-Panel-Updater')
+                        ->withToken($token)
+                        ->timeout(8)
+                        ->get("https://api.github.com/repos/{$repository}/commits/{$branch}");
 
-                $token = trim((string) env('NODEXA_GITHUB_TOKEN', ''));
-                if ($token !== '') {
-                    $request = $request->withToken($token);
+                    if ($commitResponse->successful()) {
+                        $commitData = $commitResponse->json();
+                        $commit = $commitData['sha'] ?? null;
+                        $message = trim((string) data_get($commitData, 'commit.message', ''));
+                        $author = data_get($commitData, 'commit.author.name');
+                        $date = data_get($commitData, 'commit.author.date');
+                        $url = $commitData['html_url'] ?? null;
+                    }
+                } catch (\Throwable $exception) {
+                    // Version checks continue to work even if optional commit metadata fails.
                 }
-
-                $commitResponse = $request->get("https://api.github.com/repos/{$repository}/commits/{$branch}");
-
-                if ($commitResponse->successful()) {
-                    $commitData = $commitResponse->json();
-                    $commit = $commitData['sha'] ?? null;
-                    $message = trim((string) data_get($commitData, 'commit.message', ''));
-                    $author = data_get($commitData, 'commit.author.name');
-                    $date = data_get($commitData, 'commit.author.date');
-                    $url = $commitData['html_url'] ?? null;
-                } else {
-                    $warnings[] = 'GitHub API HTTP ' . $commitResponse->status();
-                }
-            } catch (\Throwable $exception) {
-                $warnings[] = 'GitHub API kunne ikke kontaktes';
-            }
-
-            // Only fail the check if neither the release version nor commit metadata could be read.
-            $error = null;
-            if ($version === null && $commit === null) {
-                $error = $warnings !== [] ? implode(' · ', $warnings) : 'Kunne ikke hente versionsinformation fra GitHub.';
             }
 
             return [
@@ -169,8 +162,8 @@ class UpdateController extends Controller
                 'author' => $author,
                 'date' => $date,
                 'url' => $url,
-                'warning' => $warnings !== [] ? implode(' · ', $warnings) : null,
-                'error' => $error,
+                'warning' => null,
+                'error' => $version === null ? $error : null,
             ];
         });
     }
