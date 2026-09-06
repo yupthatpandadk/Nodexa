@@ -55,6 +55,12 @@ Route::group(['prefix' => 'roles'], function () {
     Route::delete('/{role}', [Admin\RoleController::class, 'delete'])->name('admin.roles.delete');
 });
 
+Route::group(['prefix' => 'tickets'], function () {
+    Route::get('/', [Admin\TicketController::class, 'index'])->name('admin.tickets');
+    Route::post('/{ticket}/reply', [Admin\TicketController::class, 'reply'])->name('admin.tickets.reply');
+    Route::patch('/{ticket}', [Admin\TicketController::class, 'update'])->name('admin.tickets.update');
+});
+
 Route::group(['prefix' => 'servers'], function () {
     Route::get('/', [Admin\Servers\ServerController::class, 'index'])->name('admin.servers');
     Route::get('/new', [Admin\Servers\CreateServerController::class, 'index'])->name('admin.servers.new');
@@ -129,7 +135,7 @@ Route::group(['prefix' => 'nests'], function () {
     Route::post('/new', [Admin\Nests\NestController::class, 'store']);
     Route::post('/import', [Admin\Nests\EggShareController::class, 'import'])->name('admin.nests.egg.import');
     Route::post('/egg/new', [Admin\Nests\EggController::class, 'store']);
-    Route::post('/egg/{egg:id}/variables', [Admin\Nests\EggVariableController::class, 'store']);
+    Route::post('/egg/{egg:id}/variables', [Admin\Nests\EggController::class, 'store']);
     Route::put('/egg/{egg:id}', [Admin\Nests\EggShareController::class, 'update']);
     Route::patch('/view/{nest:id}', [Admin\Nests\NestController::class, 'update']);
     Route::patch('/egg/{egg:id}', [Admin\Nests\EggController::class, 'update']);
