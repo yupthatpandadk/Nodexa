@@ -18,14 +18,27 @@ repair_laravel_skeleton(){
 }
 
 resolve_source_commit(){
- local candidate="${NODEXA_SOURCE_COMMIT:-}" repo branch
- if [[ "$candidate" =~ ^[0-9a-fA-F]{40}$ ]]; then printf '%s' "${candidate,,}"; return 0; fi
+ local candidate="" repo branch fallback="${NODEXA_SOURCE_COMMIT:-}"
  repo="${NODEXA_UPDATE_REPOSITORY:-${NODEXA_REPOSITORY:-yupthatpandadk/Nodexa}}"
- branch="${NODEXA_UPDATE_BRANCH:-${NODEXA_BRANCH:-pterodactyl-core}}"
+ branch="${NODEXA_UPDATE_BRANCH:-${NODEXA_BRANCH:-main}}"
+ # GitHub branch HEAD is authoritative. Do not trust a stale inherited value;
+ # older updater versions could accidentally persist a blob SHA as installed.
  candidate="$(curl -fsSL -H 'Accept: application/vnd.github+json' -H 'User-Agent: Nodexa-Updater' "https://api.github.com/repos/${repo}/commits/${branch}" 2>/dev/null | grep -oE '"sha"[[:space:]]*:[[:space:]]*"[0-9a-fA-F]{40}"' | head -n1 | cut -d'"' -f4 | tr 'A-F' 'a-f' || true)"
  if [[ "$candidate" =~ ^[0-9a-f]{40}$ ]]; then printf '%s' "$candidate"; return 0; fi
+ if [[ "$fallback" =~ ^[0-9a-fA-F]{40}$ ]]; then printf '%s' "${fallback,,}"; return 0; fi
  printf '%s' unknown
 }
+
+# Resolve this before setup-updater.sh writes version.json, so the Update Center
+# always records the commit that was actually deployed.
+DEPLOYED_SOURCE_COMMIT="$(resolve_source_commit)"
+if [[ "$DEPLOYED_SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+ export NODEXA_SOURCE_COMMIT="$DEPLOYED_SOURCE_COMMIT"
+ log "Deploying GitHub commit ${DEPLOYED_SOURCE_COMMIT:0:12}."
+else
+ unset NODEXA_SOURCE_COMMIT || true
+ warn "Could not resolve GitHub commit; update will continue without a commit marker."
+fi
 
 ensure_panel_app_key(){
  local env_file="$PANEL_DIR/.env" current
@@ -48,7 +61,7 @@ if [[ -d "$PANEL_DIR" ]]; then
  fi
 
  log "Updating panel files without touching local configuration or data..."
- rsync -a --exclude='.env' --exclude='storage/' --exclude='bootstrap/cache/' --exclude='vendor/' --exclude='node_modules/' --exclude='public/build/' "$SOURCE_ROOT/panel/" "$PANEL_DIR/"
+ rsync -a --delete --exclude='.env' --exclude='storage/' --exclude='bootstrap/cache/' --exclude='vendor/' --exclude='node_modules/' --exclude='public/build/' "$SOURCE_ROOT/panel/" "$PANEL_DIR/"
  cd "$PANEL_DIR"
 
  install -d -o www-data -g www-data storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
@@ -75,6 +88,7 @@ if [[ -d "$PANEL_DIR" ]]; then
  bash "$SOURCE_ROOT/deploy/optimize-frontend-delivery-source.sh"
 
  npm install
+ rm -rf public/build
  npm run build
  sudo -u www-data php artisan config:cache
  sudo -u www-data php artisan route:cache || true
@@ -91,9 +105,6 @@ if [[ -d "$PANEL_DIR" ]]; then
  done < <(systemctl list-unit-files --type=service --no-legend 'php*-fpm.service' 2>/dev/null | awk '{print $1}')
 fi
 
-# A normal Nodexa Panel update must never reconfigure, replace, stop, or restart
-# a healthy Wings installation. Node configuration is panel-issued state and is
-# intentionally preserved across panel updates.
 WINGS_CONFIG="/etc/pterodactyl/config.yml"
 if [[ -s "$WINGS_CONFIG" ]]; then
  log "Existing Nodexa Agent/Wings detected; preserving Node configuration and binary."
