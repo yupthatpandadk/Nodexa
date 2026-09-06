@@ -38,12 +38,15 @@ class StorefrontCustomerController extends Controller
     {
         $user = $request->user();
 
+        // Pterodactyl stores the server lifecycle in `status` and `installed_at`.
+        // Older Nodexa customer-area code queried the removed `suspended` and
+        // `installed` columns directly, which caused /store/client to return HTTP 500.
         $services = DB::table('servers')
             ->where('owner_id', $user->id)
             ->orderBy('name')
             ->get([
-                'id', 'uuid', 'uuidShort', 'name', 'description', 'suspended', 'installed',
-                'memory', 'disk', 'cpu', 'created_at',
+                'id', 'uuid', 'uuidShort', 'name', 'description', 'status',
+                'memory', 'disk', 'cpu', 'created_at', 'installed_at',
             ]);
 
         $tickets = collect();
@@ -67,7 +70,7 @@ class StorefrontCustomerController extends Controller
 
         $stats = [
             'services' => $services->count(),
-            'active_services' => $services->where('suspended', 0)->count(),
+            'active_services' => $services->filter(static fn ($service) => $service->status !== 'suspended')->count(),
             'open_tickets' => $tickets->whereIn('status', ['open', 'answered', 'customer_reply'])->count(),
             'unpaid_invoices' => $invoices->whereIn('status', ['unpaid', 'overdue'])->count(),
         ];
