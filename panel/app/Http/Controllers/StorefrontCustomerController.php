@@ -3,9 +3,12 @@
 namespace Pterodactyl\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
+use Throwable;
 
 class StorefrontCustomerController extends Controller
 {
@@ -38,43 +41,89 @@ class StorefrontCustomerController extends Controller
     {
         $user = $request->user();
 
-        // Pterodactyl stores the server lifecycle in `status` and `installed_at`.
-        // Older Nodexa customer-area code queried the removed `suspended` and
-        // `installed` columns directly, which caused /store/client to return HTTP 500.
+        /*
+         * Keep the customer area compatible with both older and newer
+         * Pterodactyl schemas. Selecting a hard-coded column list caused the
+         * whole page to fail whenever a panel version did not contain one of
+         * those columns (for example status/installed_at).
+         */
         $services = DB::table('servers')
             ->where('owner_id', $user->id)
             ->orderBy('name')
-            ->get([
-                'id', 'uuid', 'uuidShort', 'name', 'description', 'status',
-                'memory', 'disk', 'cpu', 'created_at', 'installed_at',
-            ]);
+            ->get()
+            ->map(static function ($service) {
+                $service->uuid = $service->uuid ?? '';
+                $service->uuidShort = $service->uuidShort ?? substr((string) $service->uuid, 0, 8);
+                $service->name = $service->name ?? 'Server';
+                $service->description = $service->description ?? '';
+                $service->memory = $service->memory ?? 0;
+                $service->disk = $service->disk ?? 0;
+                $service->cpu = $service->cpu ?? 0;
 
-        $tickets = collect();
-        if (Schema::hasTable('nodexa_tickets')) {
-            $tickets = DB::table('nodexa_tickets')
-                ->where('user_id', $user->id)
-                ->orderByRaw("FIELD(status, 'customer_reply', 'open', 'answered', 'closed')")
-                ->orderByDesc('last_reply_at')
-                ->limit(25)
-                ->get();
-        }
+                if (!isset($service->status) || $service->status === '') {
+                    $service->status = !empty($service->suspended) ? 'suspended' : 'active';
+                }
 
-        $invoices = collect();
-        if (Schema::hasTable('nodexa_invoices')) {
-            $invoices = DB::table('nodexa_invoices')
-                ->where('user_id', $user->id)
-                ->orderByDesc('id')
-                ->limit(50)
-                ->get();
-        }
+                return $service;
+            });
+
+        $tickets = $this->loadOptionalCustomerRows('nodexa_tickets', $user->id, function ($query) {
+            if (Schema::hasColumn('nodexa_tickets', 'status')) {
+                $query->orderByRaw("FIELD(status, 'customer_reply', 'open', 'answered', 'closed')");
+            }
+
+            if (Schema::hasColumn('nodexa_tickets', 'last_reply_at')) {
+                $query->orderByDesc('last_reply_at');
+            } elseif (Schema::hasColumn('nodexa_tickets', 'updated_at')) {
+                $query->orderByDesc('updated_at');
+            } elseif (Schema::hasColumn('nodexa_tickets', 'id')) {
+                $query->orderByDesc('id');
+            }
+
+            return $query->limit(25);
+        });
+
+        $invoices = $this->loadOptionalCustomerRows('nodexa_invoices', $user->id, function ($query) {
+            if (Schema::hasColumn('nodexa_invoices', 'id')) {
+                $query->orderByDesc('id');
+            }
+
+            return $query->limit(50);
+        });
 
         $stats = [
             'services' => $services->count(),
-            'active_services' => $services->filter(static fn ($service) => $service->status !== 'suspended')->count(),
-            'open_tickets' => $tickets->whereIn('status', ['open', 'answered', 'customer_reply'])->count(),
-            'unpaid_invoices' => $invoices->whereIn('status', ['unpaid', 'overdue'])->count(),
+            'active_services' => $services->filter(static fn ($service) => ($service->status ?? 'active') !== 'suspended')->count(),
+            'open_tickets' => $tickets->filter(static fn ($ticket) => in_array($ticket->status ?? '', ['open', 'answered', 'customer_reply'], true))->count(),
+            'unpaid_invoices' => $invoices->filter(static fn ($invoice) => in_array($invoice->status ?? '', ['unpaid', 'overdue'], true))->count(),
         ];
 
         return view('storefront.customer', compact('user', 'services', 'tickets', 'invoices', 'stats', 'section'));
+    }
+
+    /**
+     * Load data from Nodexa-only tables without taking down the entire customer
+     * area if an optional migration has not yet been applied on the live panel.
+     */
+    private function loadOptionalCustomerRows(string $table, int $userId, callable $configure): Collection
+    {
+        try {
+            if (!Schema::hasTable($table) || !Schema::hasColumn($table, 'user_id')) {
+                return collect();
+            }
+
+            $query = DB::table($table)->where('user_id', $userId);
+            $query = $configure($query);
+
+            return $query->get();
+        } catch (Throwable $exception) {
+            Log::warning('Nodexa customer area skipped optional data source.', [
+                'table' => $table,
+                'user_id' => $userId,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return collect();
+        }
     }
 }
