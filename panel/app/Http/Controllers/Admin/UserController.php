@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Pterodactyl\Models\User;
 use Pterodactyl\Models\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Prologue\Alerts\AlertsMessageBag;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -26,9 +27,6 @@ class UserController extends Controller
 {
     use AvailableLanguages;
 
-    /**
-     * UserController constructor.
-     */
     public function __construct(
         protected AlertsMessageBag $alert,
         protected UserCreationService $creationService,
@@ -40,9 +38,6 @@ class UserController extends Controller
     ) {
     }
 
-    /**
-     * Display user index page.
-     */
     public function index(Request $request): View
     {
         $users = QueryBuilder::for(
@@ -61,9 +56,6 @@ class UserController extends Controller
         return view('admin.users.index', ['users' => $users]);
     }
 
-    /**
-     * Display new user page.
-     */
     public function create(): View
     {
         return view('admin.users.new', [
@@ -71,27 +63,32 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Display user view page.
-     */
     public function view(User $user): View
     {
+        $roles = DB::table('nodexa_roles')->orderBy('name')->get();
+        $assignedRoleIds = DB::table('nodexa_role_user')
+            ->where('user_id', $user->id)
+            ->pluck('role_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
         return view('admin.users.view', [
             'user' => $user,
             'languages' => $this->getAvailableLanguages(true),
+            'roles' => $roles,
+            'assignedRoleIds' => $assignedRoleIds,
+            'canManageRoles' => (bool) request()->user()?->root_admin,
         ]);
     }
 
-    /**
-     * Delete a user from the system.
-     *
-     * @throws \Exception
-     * @throws DisplayException
-     */
     public function delete(Request $request, User $user): RedirectResponse
     {
         if ($request->user()->is($user)) {
             throw new DisplayException(__('admin/user.exceptions.delete_self'));
+        }
+
+        if ($user->root_admin && !$request->user()->root_admin) {
+            throw new DisplayException('Kun en root administrator kan slette en anden root administrator.');
         }
 
         $this->deletionService->handle($user);
@@ -99,55 +96,76 @@ class UserController extends Controller
         return redirect()->route('admin.users');
     }
 
-    /**
-     * Create a user.
-     *
-     * @throws \Exception
-     * @throws \Throwable
-     */
     public function store(NewUserFormRequest $request): RedirectResponse
     {
-        $user = $this->creationService->handle($request->normalize());
+        $data = $request->normalize();
+
+        // Role based admins must never be able to promote a new account to root.
+        if (!$request->user()->root_admin) {
+            $data['root_admin'] = false;
+        }
+
+        $user = $this->creationService->handle($data);
         $this->alert->success($this->translator->get('admin/user.notices.account_created'))->flash();
 
         return redirect()->route('admin.users.view', $user->id);
     }
 
-    /**
-     * Update a user on the system.
-     *
-     * @throws \Pterodactyl\Exceptions\Model\DataValidationException
-     * @throws \Pterodactyl\Exceptions\Repository\RecordNotFoundException
-     */
     public function update(UserFormRequest $request, User $user): RedirectResponse
     {
+        $data = $request->normalize();
+
+        // Prevent privilege escalation from a role based administrator.
+        if (!$request->user()->root_admin) {
+            unset($data['root_admin']);
+        }
+
         $this->updateService
             ->setUserLevel(User::USER_LEVEL_ADMIN)
-            ->handle($user, $request->normalize());
+            ->handle($user, $data);
+
+        // Root admins can assign Nodexa roles from the existing user editor.
+        if ($request->user()->root_admin && $request->has('roles')) {
+            $roleIds = collect($request->input('roles', []))
+                ->map(fn ($id) => (int) $id)
+                ->filter(fn ($id) => $id > 0)
+                ->unique()
+                ->values();
+
+            $validRoleIds = DB::table('nodexa_roles')
+                ->whereIn('id', $roleIds->all())
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id);
+
+            DB::transaction(function () use ($user, $validRoleIds) {
+                DB::table('nodexa_role_user')->where('user_id', $user->id)->delete();
+
+                foreach ($validRoleIds as $roleId) {
+                    DB::table('nodexa_role_user')->insert([
+                        'role_id' => $roleId,
+                        'user_id' => $user->id,
+                    ]);
+                }
+            });
+        }
 
         $this->alert->success(trans('admin/user.notices.account_updated'))->flash();
 
         return redirect()->route('admin.users.view', $user->id);
     }
 
-    /**
-     * Get a JSON response of users on the system.
-     */
     public function json(Request $request): Model|Collection
     {
         $users = QueryBuilder::for(User::query())->allowedFilters(['email'])->paginate(25);
 
-        // Handle single user requests.
         if ($request->query('user_id')) {
             $user = User::query()->findOrFail($request->input('user_id'));
-            // @phpstan-ignore-next-line property.notFound
             $user->md5 = md5(strtolower($user->email));
 
             return $user;
         }
 
         return $users->map(function ($item) {
-            // @phpstan-ignore-next-line property.notFound
             $item->md5 = md5(strtolower($item->email));
 
             return $item;
