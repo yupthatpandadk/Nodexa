@@ -5,7 +5,7 @@
 @endsection
 
 @section('content-header')
-    <h1>Roles & Permissions<small>Opret roller og styr præcist hvad staff kan tilgå.</small></h1>
+    <h1>Roles & Permissions<small>Vælg en rolle for at se og redigere dens permissions.</small></h1>
     <ol class="breadcrumb">
         <li><a href="{{ route('admin.index') }}">Admin</a></li>
         <li class="active">Roles & Permissions</li>
@@ -18,8 +18,31 @@
 @endif
 
 <div class="row">
-    @if($canManage)
     <div class="col-xs-12">
+        <div class="box box-primary">
+            <div class="box-header with-border">
+                <h3 class="box-title"><i class="fa fa-shield"></i> Vælg rolle</h3>
+            </div>
+            <div class="box-body">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="nodexa-role-selector">Rolle</label>
+                    <select id="nodexa-role-selector" class="form-control">
+                        <option value="">— Vælg en rolle —</option>
+                        @foreach($roles as $role)
+                            <option value="{{ $role->id }}">{{ $role->name }}{{ $role->is_system ? ' (Standard)' : '' }}</option>
+                        @endforeach
+                        @if($canManage)
+                            <option value="new">+ Opret ny rolle</option>
+                        @endif
+                    </select>
+                    <p class="text-muted small" style="margin:8px 0 0;">Permissions vises først, når du har valgt en rolle.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if($canManage)
+    <div class="col-xs-12 nodexa-role-panel" data-role-panel="new" style="display:none;">
         <div class="box box-primary">
             <div class="box-header with-border">
                 <h3 class="box-title"><i class="fa fa-plus-circle"></i> Opret ny rolle</h3>
@@ -84,7 +107,7 @@
     @endif
 
     @forelse($roles as $role)
-        <div class="col-xs-12">
+        <div class="col-xs-12 nodexa-role-panel" data-role-panel="{{ $role->id }}" style="display:none;">
             <div class="box" style="border-top:3px solid {{ $role->color }} !important;">
                 <div class="box-header with-border">
                     <h3 class="box-title">
@@ -172,4 +195,25 @@
         </div>
     @endforelse
 </div>
+@endsection
+
+@section('footer-scripts')
+    @parent
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var selector = document.getElementById('nodexa-role-selector');
+            var panels = document.querySelectorAll('.nodexa-role-panel');
+            if (!selector) return;
+
+            function showSelectedRole() {
+                var selected = String(selector.value || '');
+                panels.forEach(function (panel) {
+                    panel.style.display = panel.getAttribute('data-role-panel') === selected ? '' : 'none';
+                });
+            }
+
+            selector.addEventListener('change', showSelectedRole);
+            showSelectedRole();
+        });
+    </script>
 @endsection
