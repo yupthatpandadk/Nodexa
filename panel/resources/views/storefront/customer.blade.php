@@ -55,7 +55,7 @@
                             @foreach($services->take(5) as $service)
                                 <div class="nx-service">
                                     <div><strong>{{ $service->name }}</strong><small>{{ $service->memory }} MB RAM · {{ $service->disk }} MB disk · {{ $service->cpu }}% CPU</small></div>
-                                    <div><span class="nx-badge">{{ $service->suspended ? 'Suspenderet' : 'Aktiv' }}</span> <a class="nx-btn nx-btn-ghost" href="{{ $panelOrigin }}/server/{{ $service->uuidShort }}">Administrér</a></div>
+                                    <div><span class="nx-badge">{{ $service->status === 'suspended' ? 'Suspenderet' : 'Aktiv' }}</span> <a class="nx-btn nx-btn-ghost" href="{{ $panelOrigin }}/server/{{ $service->uuidShort }}">Administrér</a></div>
                                 </div>
                             @endforeach
                         </div>
@@ -76,7 +76,7 @@
                 </div>
             @elseif($section === 'services')
                 <div class="nx-client-card"><h2>Mine services</h2><p class="muted">Alle servere tilknyttet din konto.</p>
-                    @if($services->isEmpty())<div class="nx-empty">Du har ingen services endnu.</div>@else<div class="nx-service-list">@foreach($services as $service)<div class="nx-service"><div><strong>{{ $service->name }}</strong><small>ID {{ $service->uuidShort }} · {{ $service->memory }} MB RAM · {{ $service->disk }} MB disk · {{ $service->cpu }}% CPU</small></div><div><span class="nx-badge">{{ $service->suspended ? 'Suspenderet' : 'Aktiv' }}</span> <a class="nx-btn nx-btn-primary" href="{{ $panelOrigin }}/server/{{ $service->uuidShort }}">Administrér</a></div></div>@endforeach</div>@endif
+                    @if($services->isEmpty())<div class="nx-empty">Du har ingen services endnu.</div>@else<div class="nx-service-list">@foreach($services as $service)<div class="nx-service"><div><strong>{{ $service->name }}</strong><small>ID {{ $service->uuidShort }} · {{ $service->memory }} MB RAM · {{ $service->disk }} MB disk · {{ $service->cpu }}% CPU</small></div><div><span class="nx-badge">{{ $service->status === 'suspended' ? 'Suspenderet' : 'Aktiv' }}</span> <a class="nx-btn nx-btn-primary" href="{{ $panelOrigin }}/server/{{ $service->uuidShort }}">Administrér</a></div></div>@endforeach</div>@endif
                     <div class="nx-actions"><a class="nx-btn nx-btn-primary" href="{{ route('storefront.pricing') }}">Bestil ny service</a></div>
                 </div>
             @elseif($section === 'invoices')
