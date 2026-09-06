@@ -16,10 +16,6 @@ valid_domain(){ [[ "$1" =~ ^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Z
 APP_URL="$(sed -n 's/^APP_URL=//p' "$ENV_FILE" | tail -n1 | tr -d '\"' | tr -d "'" || true)"
 PANEL_DOMAIN="${NODEXA_DOMAIN:-$(normalize_domain "$APP_URL")}"; PANEL_DOMAIN="$(normalize_domain "$PANEL_DOMAIN")"
 
-# Keep a dedicated storefront hostname even when APP_URL itself uses the apex
-# domain. This makes www.example.com a public website while example.com can
-# remain the panel. If the panel uses panel.example.com, the public storefront
-# defaults to example.com and www.example.com.
 CURRENT_STORE="$(sed -n 's/^NODEXA_STOREFRONT_DOMAIN=//p' "$ENV_FILE" | tail -n1 | tr -d '\"' | tr -d "'" || true)"
 STORE_DOMAIN="${NODEXA_STOREFRONT_DOMAIN:-$CURRENT_STORE}"; STORE_DOMAIN="$(normalize_domain "$STORE_DOMAIN")"
 if [[ -z "$STORE_DOMAIN" && "$PANEL_DOMAIN" == panel.* ]]; then
@@ -33,10 +29,24 @@ if [[ -n "$STORE_DOMAIN" && "$STORE_DOMAIN" != "$PANEL_DOMAIN" ]] && valid_domai
  printf '\nNODEXA_STOREFRONT_DOMAIN=%s\n' "$STORE_DOMAIN" >> "$ENV_FILE"
 fi
 
-# PHP-FPM runs as www-data. Keep .env readable and all Laravel writable paths
-# owned by that same account before any Artisan process boots. This prevents a
-# root-run storefront sync from recreating root-owned compiled caches and
-# leaving the panel on HTTP 500 after an update.
+# Panel and storefront are served by the same Laravel application. When the
+# panel is panel.example.com and the storefront is example.com/www.example.com,
+# the session cookie must belong to .example.com or @auth on the storefront
+# cannot see an existing panel login.
+SESSION_DOMAIN=""
+if [[ "$PANEL_DOMAIN" == panel.* ]]; then
+ SESSION_DOMAIN=".${PANEL_DOMAIN#panel.}"
+elif [[ -n "$STORE_DOMAIN" ]]; then
+ ROOT_PANEL="${PANEL_DOMAIN#www.}"
+ ROOT_STORE="${STORE_DOMAIN#www.}"
+ if [[ "$ROOT_PANEL" == "$ROOT_STORE" ]]; then SESSION_DOMAIN=".${ROOT_PANEL}"; fi
+fi
+if [[ -n "$SESSION_DOMAIN" ]]; then
+ sed -i '/^SESSION_DOMAIN=/d;/^SESSION_SECURE_COOKIE=/d;/^SESSION_SAME_SITE=/d' "$ENV_FILE"
+ printf '\nSESSION_DOMAIN=%s\nSESSION_SECURE_COOKIE=true\nSESSION_SAME_SITE=lax\n' "$SESSION_DOMAIN" >> "$ENV_FILE"
+ log "Shared login session enabled for ${SESSION_DOMAIN}."
+fi
+
 chown root:www-data "$ENV_FILE"
 chmod 0640 "$ENV_FILE"
 mkdir -p \
@@ -49,7 +59,6 @@ chown -R www-data:www-data "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache"
 chmod -R 775 "$PANEL_DIR/storage" "$PANEL_DIR/bootstrap/cache"
 
 cd "$PANEL_DIR"
-# After migration, the database is the source of truth for multisite domains.
 DB_DOMAINS="$(sudo -u www-data php artisan nodexa:storefront-domains --plain 2>/dev/null | tail -n1 || true)"
 DOMAINS=()
 add_domain(){
@@ -91,9 +100,6 @@ PY
  systemctl reload nginx
 fi
 
-# IMPORTANT: never run these commands as root. The compiled Laravel cache is
-# consumed by PHP-FPM/www-data and root-owned cache files are what caused the
-# Update Center to leave the panel on HTTP 500.
 rm -f "$PANEL_DIR/bootstrap/cache/config.php"
 sudo -u www-data php artisan optimize:clear >/dev/null 2>&1 || true
 sudo -u www-data php artisan config:cache >/dev/null 2>&1 || true
@@ -109,9 +115,6 @@ else
  warn "No active storefront domains found yet. Add one in Admin → Storefronts."
 fi
 
-# Expand the panel certificate with every active storefront domain that already
-# resolves in DNS. Let's Encrypt currently allows up to 100 names/certificate;
-# keep headroom for the panel and future aliases.
 if [[ "$APP_URL" == https://* ]] && ((${#DOMAINS[@]})); then
  EMAIL="$(sed -n 's/^MAIL_FROM_ADDRESS=//p' "$ENV_FILE" | tail -n1 | tr -d '\"' | tr -d "'" || true)"
  [[ "$EMAIL" == *@*.* ]] || EMAIL="admin@${DOMAINS[0]}"
