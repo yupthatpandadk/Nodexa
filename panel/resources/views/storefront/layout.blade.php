@@ -7,7 +7,7 @@
     <meta name="description" content="@yield('description', 'Nodexa Game Server Cloud — hurtig og moderne administration af game servers.')">
     <title>@yield('title', 'Game Server Cloud') · Nodexa</title>
     @include('partials.nodexa-theme')
-    <link rel="stylesheet" href="{{ asset('css/nodexa-storefront.css') }}?v=0.14.47">
+    <link rel="stylesheet" href="{{ asset('css/nodexa-storefront.css') }}?v=0.14.62">
 </head>
 <body class="nx-storefront">
     @php
@@ -31,6 +31,9 @@
         $panelUrl = static function (string $path = '') use ($panelOrigin): string {
             return $panelOrigin . ($path === '' ? '/' : '/' . ltrim($path, '/'));
         };
+        // Keep the canonical customer area on the panel host so the existing
+        // authenticated session works even when the public storefront uses a root domain.
+        $customerUrl = $panelUrl('store/client');
     @endphp
 
     <div class="nx-noise" aria-hidden="true"></div>
@@ -59,9 +62,10 @@
 
             <div class="nx-nav-actions">
                 @auth
-                    <a class="nx-btn nx-btn-ghost" href="{{ $panelUrl() }}">Mit panel</a>
+                    <a class="nx-login" href="{{ $customerUrl }}">Kundeområde</a>
+                    <a class="nx-btn nx-btn-ghost" href="{{ $panelUrl() }}">Serverpanel</a>
                 @else
-                    <a class="nx-login" href="{{ $panelUrl('auth/login') }}">Log ind</a>
+                    <a class="nx-login" href="{{ $customerUrl }}">Kundeområde</a>
                     <a class="nx-btn nx-btn-primary" href="{{ $panelUrl('auth/register') }}">Opret konto <span>→</span></a>
                 @endauth
             </div>
@@ -89,10 +93,11 @@
                     <a href="{{ $storeUrl('features') }}">Funktioner</a>
                 </div>
                 <div>
-                    <strong>Nodexa</strong>
-                    <a href="{{ $storeUrl('support') }}">Support</a>
+                    <strong>Kunde</strong>
+                    <a href="{{ $customerUrl }}">Kundeområde</a>
+                    <a href="{{ $panelUrl('tickets') }}">Support tickets</a>
                     @auth
-                        <a href="{{ $panelUrl() }}">Mit panel</a>
+                        <a href="{{ $panelUrl() }}">Serverpanel</a>
                     @else
                         <a href="{{ $panelUrl('auth/register') }}">Opret konto</a>
                         <a href="{{ $panelUrl('auth/login') }}">Log ind</a>
@@ -124,6 +129,6 @@
     </aside>
     <div class="nx-theme-backdrop" data-theme-backdrop></div>
 
-    <script src="{{ asset('js/nodexa-storefront.js') }}?v=0.14.47" defer></script>
+    <script src="{{ asset('js/nodexa-storefront.js') }}?v=0.14.62" defer></script>
 </body>
 </html>
