@@ -1,15 +1,10 @@
 <?php
-
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Nodexa Storefront Domain
-    |--------------------------------------------------------------------------
-    |
-    | This value is cached with the rest of Laravel's configuration so the
-    | storefront host routes continue to work after `config:cache` and
-    | `route:cache` have been generated in production.
-    |
-    */
-    'storefront_domain' => env('NODEXA_STOREFRONT_DOMAIN'),
+    'database_host' => env('NODEXA_DATABASE_HOST', '127.0.0.1'),
+    'database_port' => (int) env('NODEXA_DATABASE_PORT', 3306),
+    'phpmyadmin_url' => env('NODEXA_PHPMYADMIN_URL', '/phpmyadmin/'),
+    'phpmyadmin_signon_session' => env('NODEXA_PHPMYADMIN_SIGNON_SESSION', 'NodexaSignon'),
+
+    'update_repository' => env('NODEXA_UPDATE_REPOSITORY', 'yupthatpandadk/Nodexa'),
+    'update_branch' => env('NODEXA_UPDATE_BRANCH', 'main'),
 ];
