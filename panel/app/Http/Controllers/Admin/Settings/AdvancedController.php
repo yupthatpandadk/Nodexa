@@ -13,48 +13,37 @@ use Pterodactyl\Http\Requests\Admin\Settings\AdvancedSettingsFormRequest;
 
 class AdvancedController extends Controller
 {
-    /**
-     * AdvancedController constructor.
-     */
-    public function __construct(
-        private AlertsMessageBag $alert,
-        private ConfigRepository $config,
-        private Kernel $kernel,
-        private SettingsRepositoryInterface $settings,
-    ) {
-    }
+    public function __construct(private AlertsMessageBag $alert, private ConfigRepository $config, private Kernel $kernel, private SettingsRepositoryInterface $settings) {}
 
-    /**
-     * Render advanced Panel settings UI.
-     */
     public function index(): View
     {
-        $showRecaptchaWarning = false;
-        if (
-            $this->config->get('recaptcha._shipped_secret_key') === $this->config->get('recaptcha.secret_key')
-            || $this->config->get('recaptcha._shipped_website_key') === $this->config->get('recaptcha.website_key')
-        ) {
-            $showRecaptchaWarning = true;
-        }
-
-        return view('admin.settings.advanced', [
-            'showRecaptchaWarning' => $showRecaptchaWarning,
-        ]);
+        $showRecaptchaWarning = $this->config->get('recaptcha._shipped_secret_key') === $this->config->get('recaptcha.secret_key') || $this->config->get('recaptcha._shipped_website_key') === $this->config->get('recaptcha.website_key');
+        return view('admin.settings.advanced', ['showRecaptchaWarning' => $showRecaptchaWarning]);
     }
 
-    /**
-     * @throws \Pterodactyl\Exceptions\Model\DataValidationException
-     * @throws \Pterodactyl\Exceptions\Repository\RecordNotFoundException
-     */
     public function update(AdvancedSettingsFormRequest $request): RedirectResponse
     {
-        foreach ($request->normalize() as $key => $value) {
-            $this->settings->set('settings::' . $key, $value);
-        }
+        $data = $request->normalize();
+        foreach ($data as $key => $value) $this->settings->set('settings::' . $key, $value);
 
+        $limit = (int) ($data['nodexa:upload_limit_mb'] ?? 2048);
+        $result = $this->applySystemUploadLimit($limit);
         $this->kernel->call('queue:restart');
-        $this->alert->success('Advanced settings have been updated successfully and the queue worker was restarted to apply these changes.')->flash();
 
+        if ($result['ok']) {
+            $this->alert->success("Advanced settings updated. Upload limit is now {$limit} MB for Nodexa, PHP and Nginx.")->flash();
+        } else {
+            $this->alert->warning("Nodexa saved {$limit} MB, but the system upload limit could not be applied automatically: {$result['message']}")->flash();
+        }
         return redirect()->route('admin.settings.advanced');
+    }
+
+    private function applySystemUploadLimit(int $mb): array
+    {
+        $script = base_path('scripts/apply-upload-limit.sh');
+        if (!is_file($script)) return ['ok' => false, 'message' => 'apply-upload-limit.sh is missing'];
+        $command = 'sudo -n ' . escapeshellarg($script) . ' ' . escapeshellarg((string) $mb) . ' 2>&1';
+        exec($command, $output, $code);
+        return ['ok' => $code === 0, 'message' => trim(implode("\n", $output)) ?: 'unknown system error'];
     }
 }
