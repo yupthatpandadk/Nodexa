@@ -25,23 +25,18 @@ class AdvancedController extends Controller
     {
         $data = $request->normalize();
         foreach ($data as $key => $value) $this->settings->set('settings::' . $key, $value);
-
         $limit = (int) ($data['nodexa:upload_limit_mb'] ?? 2048);
         $result = $this->applySystemUploadLimit($limit);
         $this->kernel->call('queue:restart');
-
-        if ($result['ok']) {
-            $this->alert->success("Advanced settings updated. Upload limit is now {$limit} MB for Nodexa, PHP and Nginx.")->flash();
-        } else {
-            $this->alert->warning("Nodexa saved {$limit} MB, but the system upload limit could not be applied automatically: {$result['message']}")->flash();
-        }
+        if ($result['ok']) $this->alert->success("Advanced settings updated. Upload limit is now {$limit} MB for Nodexa, PHP and Nginx.")->flash();
+        else $this->alert->warning("Nodexa saved {$limit} MB, but the system upload limit could not be applied automatically: {$result['message']}")->flash();
         return redirect()->route('admin.settings.advanced');
     }
 
     private function applySystemUploadLimit(int $mb): array
     {
-        $script = base_path('scripts/apply-upload-limit.sh');
-        if (!is_file($script)) return ['ok' => false, 'message' => 'apply-upload-limit.sh is missing'];
+        $script = '/usr/local/sbin/nodexa-apply-upload-limit';
+        if (!is_file($script)) return ['ok' => false, 'message' => 'system upload helper is not installed; run the Nodexa updater once'];
         $command = 'sudo -n ' . escapeshellarg($script) . ' ' . escapeshellarg((string) $mb) . ' 2>&1';
         exec($command, $output, $code);
         return ['ok' => $code === 0, 'message' => trim(implode("\n", $output)) ?: 'unknown system error'];
