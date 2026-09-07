@@ -12,22 +12,7 @@ repair_laravel_skeleton(){ local tmp; tmp="$(mktemp -d)"; log "Repairing Laravel
 resolve_source_commit(){ local candidate="" repo branch fallback="${NODEXA_SOURCE_COMMIT:-}"; repo="${NODEXA_UPDATE_REPOSITORY:-${NODEXA_REPOSITORY:-yupthatpandadk/Nodexa}}"; branch="${NODEXA_UPDATE_BRANCH:-${NODEXA_BRANCH:-main}}"; candidate="$(curl -fsSL -H 'Accept: application/vnd.github+json' -H 'User-Agent: Nodexa-Updater' "https://api.github.com/repos/${repo}/commits/${branch}" 2>/dev/null | grep -oE '"sha"[[:space:]]*:[[:space:]]*"[0-9a-fA-F]{40}"' | head -n1 | cut -d'"' -f4 | tr 'A-F' 'a-f' || true)"; if [[ "$candidate" =~ ^[0-9a-f]{40}$ ]]; then printf '%s' "$candidate"; return; fi; if [[ "$fallback" =~ ^[0-9a-fA-F]{40}$ ]]; then printf '%s' "${fallback,,}"; return; fi; printf '%s' unknown; }
 DEPLOYED_SOURCE_COMMIT="$(resolve_source_commit)"; if [[ "$DEPLOYED_SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then export NODEXA_SOURCE_COMMIT="$DEPLOYED_SOURCE_COMMIT"; log "Deploying GitHub commit ${DEPLOYED_SOURCE_COMMIT:0:12}."; else unset NODEXA_SOURCE_COMMIT || true; warn "Could not resolve GitHub commit; update will continue without a commit marker."; fi
 ensure_panel_app_key(){ local env_file="$PANEL_DIR/.env" current; [[ -f "$env_file" ]] || fail "Panel .env is missing; refusing to update without local configuration."; current="$(sed -n 's/^APP_KEY=//p' "$env_file" | tail -n1 | tr -d '\r' || true)"; if [[ -z "$current" || "$current" == "null" || "$current" == '""' ]]; then current="base64:$(openssl rand -base64 32 | tr -d '\r\n')"; sed -i '/^APP_KEY=/d' "$env_file"; printf '\nAPP_KEY=%s\n' "$current" >> "$env_file"; log "Recovered missing Laravel APP_KEY before update."; fi; chown root:www-data "$env_file"; chmod 0640 "$env_file"; rm -f "$PANEL_DIR/bootstrap/cache/config.php"; }
-ensure_storage_link(){
- # public/ is normally root-owned on production installs. Running artisan
- # storage:link as www-data therefore fails with symlink(): Permission denied.
- local link="$PANEL_DIR/public/storage" target="$PANEL_DIR/storage/app/public"
- install -d -o www-data -g www-data "$target"
- if [[ -L "$link" ]]; then
-  [[ "$(readlink -f "$link" 2>/dev/null || true)" == "$(readlink -f "$target")" ]] && { log "Laravel storage link is already valid."; return; }
-  rm -f "$link"
- elif [[ -e "$link" ]]; then
-  warn "public/storage exists and is not a symlink; preserving it and skipping storage link creation."
-  return
- fi
- ln -s "$target" "$link"
- chown -h www-data:www-data "$link" 2>/dev/null || true
- log "Laravel storage link verified."
-}
+ensure_storage_link(){ local link="$PANEL_DIR/public/storage" target="$PANEL_DIR/storage/app/public"; install -d -o www-data -g www-data "$target"; if [[ -L "$link" ]]; then [[ "$(readlink -f "$link" 2>/dev/null || true)" == "$(readlink -f "$target")" ]] && { log "Laravel storage link is already valid."; return; }; rm -f "$link"; elif [[ -e "$link" ]]; then warn "public/storage exists and is not a symlink; preserving it and skipping storage link creation."; return; fi; ln -s "$target" "$link"; chown -h www-data:www-data "$link" 2>/dev/null || true; log "Laravel storage link verified."; }
 
 if [[ -d "$PANEL_DIR" ]]; then
  if [[ ! -f "$PANEL_DIR/public/index.php" || ! -f "$PANEL_DIR/artisan" || ! -f "$PANEL_DIR/bootstrap/app.php" ]]; then repair_laravel_skeleton; fi
@@ -44,7 +29,7 @@ if [[ -d "$PANEL_DIR" ]]; then
  rm -f public/hot
  sudo -u www-data php artisan optimize:clear
  rm -f storage/framework/views/*.php 2>/dev/null || true
- bash "$SOURCE_ROOT/deploy/optimize-frontend-source.sh"; bash "$SOURCE_ROOT/deploy/enable-managed-server-templates.sh"; bash "$SOURCE_ROOT/deploy/enable-runtime-modules.sh"; bash "$SOURCE_ROOT/deploy/enable-server-configuration-modules.sh"; bash "$SOURCE_ROOT/deploy/enable-realtime-console.sh"; bash "$SOURCE_ROOT/deploy/fix-installer-ready-ui.sh"; bash "$SOURCE_ROOT/deploy/enable-power-feedback.sh"; bash "$SOURCE_ROOT/deploy/optimize-frontend-delivery-source.sh"
+ bash "$SOURCE_ROOT/deploy/optimize-frontend-source.sh"; bash "$SOURCE_ROOT/deploy/enable-managed-server-templates.sh"; bash "$SOURCE_ROOT/deploy/enable-runtime-modules.sh"; bash "$SOURCE_ROOT/deploy/enable-server-configuration-modules.sh"; bash "$SOURCE_ROOT/deploy/enable-realtime-console.sh"; bash "$SOURCE_ROOT/deploy/fix-installer-ready-ui.sh"; bash "$SOURCE_ROOT/deploy/enable-power-feedback.sh"; bash "$SOURCE_ROOT/deploy/optimize-frontend-delivery-source.sh"; bash "$SOURCE_ROOT/deploy/dedupe-update-center-menu.sh"
  npm install; rm -rf public/build; npm run build
  sudo -u www-data php artisan config:cache; sudo -u www-data php artisan route:cache || true; sudo -u www-data php artisan view:cache || true
  chmod 755 /var/www /var/www/nodexa "$PANEL_DIR" "$PANEL_DIR/public" 2>/dev/null || true; find "$PANEL_DIR/public" -type d -exec chmod 755 {} + 2>/dev/null || true; find "$PANEL_DIR/public" -type f -exec chmod 644 {} + 2>/dev/null || true; chown -R www-data:www-data storage bootstrap/cache; chmod -R 775 storage bootstrap/cache
