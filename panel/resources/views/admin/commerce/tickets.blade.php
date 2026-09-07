@@ -1,0 +1,6 @@
+@extends('layouts.admin')
+@section('title','Ticket Center')
+@section('content-header')<h1>Ticket Center <small>Kundesupport</small></h1>@endsection
+@section('content')
+<div class="box box-primary"><div class="box-header with-border"><h3 class="box-title">Support tickets</h3><span class="badge pull-right">{{ $tickets->count() }}</span></div><div class="table-responsive"><table class="table table-hover"><thead><tr><th>#</th><th>Kunde</th><th>Emne</th><th>Afdeling</th><th>Prioritet</th><th>Status</th><th>Opdateret</th></tr></thead><tbody>@forelse($tickets as $ticket)<tr><td>{{ $ticket->id }}</td><td>#{{ $ticket->user_id }}</td><td><strong>{{ $ticket->subject }}</strong></td><td>{{ ucfirst($ticket->department) }}</td><td>{{ ucfirst($ticket->priority) }}</td><td><span class="label label-{{ $ticket->status==='closed'?'default':'success' }}">{{ str_replace('_',' ',ucfirst($ticket->status)) }}</span></td><td>{{ $ticket->updated_at }}</td></tr>@empty<tr><td colspan="7" class="text-muted">Ingen tickets endnu.</td></tr>@endforelse</tbody></table></div></div>
+@endsection
