@@ -1,211 +1,29 @@
 @extends('layouts.admin')
-
-@section('title')
-    Opdateringer
-@endsection
-
+@section('title','Update Center')
 @section('content-header')
-    <h1>Opdateringer<small>Hold Nodexa synkroniseret med GitHub.</small></h1>
-    <ol class="breadcrumb">
-        <li><a href="{{ route('admin.index') }}">Admin</a></li>
-        <li class="active">Opdateringer</li>
-    </ol>
+<div class="nx-head"><div><span class="nx-kicker">SYSTEM</span><h1>Update Center</h1><p>Hold Nodexa sikkert og synkroniseret med den nyeste version.</p></div><div id="nx-top-status" class="nx-status {{ ($state['status']??'')==='running'?'running':($updateAvailable?'ready':'ok') }}"><i class="fa {{ ($state['status']??'')==='running'?'fa-spinner fa-spin':($updateAvailable?'fa-arrow-down':'fa-check') }}"></i><span>{{ ($state['status']??'')==='running'?'Opdaterer':($updateAvailable?'Opdatering klar':'System opdateret') }}</span></div></div>
 @endsection
-
 @section('content')
-    @if (session('update_message'))
-        <div class="alert alert-success">{{ session('update_message') }}</div>
-    @endif
-    @if (session('update_error'))
-        <div class="alert alert-danger">{{ session('update_error') }}</div>
-    @endif
-
-    <div class="row">
-        <div class="col-md-8">
-            <div class="box box-primary">
-                <div class="box-header with-border">
-                    <h3 class="box-title"><i class="fa fa-cloud-download"></i> Nodexa Update Center</h3>
-                </div>
-                <div class="box-body">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <p class="text-muted text-uppercase" style="font-size:11px;font-weight:700;letter-spacing:.08em;">Installeret</p>
-                            <h3 style="margin-top:0;">v{{ $installed['version'] }}</h3>
-                            <p>
-                                Commit:
-                                <code>{{ $installed['commit'] ? substr($installed['commit'], 0, 12) : 'ukendt' }}</code>
-                            </p>
-                        </div>
-                        <div class="col-sm-6">
-                            <p class="text-muted text-uppercase" style="font-size:11px;font-weight:700;letter-spacing:.08em;">GitHub</p>
-                            @if (!empty($latest['commit']))
-                                <h3 style="margin-top:0;">{{ substr($latest['commit'], 0, 12) }}</h3>
-                                <p>{{ \Illuminate\Support\Str::limit($latest['message'] ?? 'Ingen commit-besked.', 120) }}</p>
-                            @else
-                                <h3 style="margin-top:0;">Utilgængelig</h3>
-                                <p class="text-danger">{{ $latest['error'] ?? 'Kunne ikke hente GitHub-status.' }}</p>
-                            @endif
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-                        <div>
-                            @if (($state['status'] ?? '') === 'running')
-                                <span class="label label-warning" id="nodexa-update-badge">OPDATERER</span>
-                                <strong style="margin-left:8px;" id="nodexa-update-message">{{ $state['message'] }}</strong>
-                            @elseif ($updateAvailable)
-                                <span class="label label-success" id="nodexa-update-badge">OPDATERING KLAR</span>
-                                <strong style="margin-left:8px;" id="nodexa-update-message">En nyere version findes på GitHub.</strong>
-                            @else
-                                <span class="label label-default" id="nodexa-update-badge">OPDATERET</span>
-                                <strong style="margin-left:8px;" id="nodexa-update-message">Nodexa er på den nyeste kendte version.</strong>
-                            @endif
-                        </div>
-
-                        <div style="display:flex;gap:8px;">
-                            <a href="{{ route('admin.updates') }}" class="btn btn-default">
-                                <i class="fa fa-refresh"></i> Tjek igen
-                            </a>
-                            <form method="POST" action="{{ route('admin.updates.run') }}" style="display:inline;" onsubmit="return confirm('Vil du opdatere Nodexa fra GitHub nu? Panelet kan kortvarigt blive genindlæst.');">
-                                @csrf
-                                <button type="submit" class="btn btn-success" id="nodexa-update-button" {{ (!$updateAvailable || ($state['status'] ?? '') === 'running') ? 'disabled' : '' }}>
-                                    <i class="fa {{ ($state['status'] ?? '') === 'running' ? 'fa-spinner fa-spin' : ($updateAvailable ? 'fa-download' : 'fa-check') }}"></i>
-                                    <span id="nodexa-update-button-text">{{ ($state['status'] ?? '') === 'running' ? 'Opdaterer...' : ($updateAvailable ? 'Opdater nu' : 'Allerede opdateret') }}</span>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="box box-default">
-                <div class="box-header with-border">
-                    <h3 class="box-title"><i class="fa fa-terminal"></i> Update-log</h3>
-                </div>
-                <div class="box-body" style="padding:0;">
-                    <pre id="nodexa-update-log" style="margin:0;border:0;border-radius:0;min-height:260px;max-height:520px;overflow:auto;background:#091019;color:#9ce7c5;padding:18px;white-space:pre-wrap;">{{ $log }}</pre>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="box box-default">
-                <div class="box-header with-border">
-                    <h3 class="box-title">Update-kilde</h3>
-                </div>
-                <div class="box-body">
-                    <dl>
-                        <dt>Repository</dt>
-                        <dd><code>{{ $installed['repository'] }}</code></dd>
-                        <dt style="margin-top:12px;">Branch</dt>
-                        <dd><code>{{ $installed['branch'] }}</code></dd>
-                        <dt style="margin-top:12px;">Seneste status</dt>
-                        <dd id="nodexa-update-time">{{ $state['updated_at'] ?? 'Ingen status endnu' }}</dd>
-                    </dl>
-                    <p class="text-muted" style="margin-top:18px;">
-                        Update-knappen kan kun starte Nodexas dedikerede systemd-updater. Den kan ikke køre vilkårlige shell-kommandoer fra browseren.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
+<style>
+.nx-update{--p:var(--nodexa-primary,#745cff);--bg:var(--nodexa-background,#0b0d12);--surface:var(--nodexa-surface,#121620);--text:var(--nodexa-text,#f5f7fb);--muted:#8d96a8;--line:rgba(255,255,255,.08);color:var(--text)}
+.nx-head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:8px 0 18px}.nx-head h1{font-size:30px;font-weight:750;margin:3px 0 4px}.nx-head p{color:#8d96a8;margin:0}.nx-kicker{font-size:11px;font-weight:800;letter-spacing:.16em;color:var(--nodexa-primary,#745cff)}.nx-status{display:flex;align-items:center;gap:9px;padding:10px 14px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(35,201,130,.1);color:#58dca4;border:1px solid rgba(88,220,164,.2)}.nx-status.ready{background:rgba(116,92,255,.12);color:#a99dff;border-color:rgba(116,92,255,.3)}.nx-status.running{background:rgba(245,184,70,.1);color:#f5c66d;border-color:rgba(245,184,70,.25)}
+.nx-grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px}.nx-card{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.01)),var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 10px 35px rgba(0,0,0,.15);margin-bottom:18px}.nx-card-title{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:750;margin-bottom:18px}.nx-card-title i{color:var(--p)}
+.nx-versions{display:grid;grid-template-columns:1fr 48px 1fr;align-items:center;gap:14px}.nx-version{background:rgba(0,0,0,.15);border:1px solid var(--line);border-radius:13px;padding:18px}.nx-label{color:var(--muted);font-size:11px;text-transform:uppercase;font-weight:800;letter-spacing:.1em}.nx-version strong{display:block;font-size:27px;margin:6px 0}.nx-version code,.nx-meta code{color:#bcb4ff;background:rgba(116,92,255,.1);padding:4px 7px;border-radius:6px}.nx-arrow{text-align:center;color:var(--muted);font-size:18px}.nx-commit{color:var(--muted);font-size:13px;line-height:1.5;margin-top:8px}.nx-state{display:flex;align-items:center;justify-content:space-between;gap:18px;border-top:1px solid var(--line);margin-top:20px;padding-top:20px}.nx-state-text strong{display:block;font-size:15px}.nx-state-text span{display:block;color:var(--muted);font-size:13px;margin-top:3px}.nx-actions{display:flex;gap:9px}.nx-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 15px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--text);font-weight:700;text-decoration:none!important;transition:.15s}.nx-btn:hover{transform:translateY(-1px);color:#fff;background:rgba(255,255,255,.07)}.nx-btn.primary{border-color:transparent;background:var(--p);color:#fff}.nx-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.nx-progress{height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-top:18px;display:none}.nx-progress.on{display:block}.nx-progress span{display:block;width:38%;height:100%;background:var(--p);border-radius:99px;animation:nxload 1.25s ease-in-out infinite alternate}@keyframes nxload{from{transform:translateX(-70%)}to{transform:translateX(230%)}}
+.nx-log-wrap{padding:0;overflow:hidden}.nx-log-head{padding:16px 19px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.nx-log-head span{font-weight:750}.nx-live{font-size:11px;color:#58dca4;text-transform:uppercase;font-weight:800;letter-spacing:.08em}.nx-log{margin:0;border:0;border-radius:0;min-height:300px;max-height:520px;overflow:auto;background:#080b10;color:#8de0b8;padding:18px;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap}.nx-meta{margin:0}.nx-meta dt{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin:16px 0 6px}.nx-meta dt:first-child{margin-top:0}.nx-meta dd{margin:0;overflow-wrap:anywhere}.nx-note{margin-top:20px;padding:13px;border-radius:10px;background:rgba(116,92,255,.08);color:#aeb6c7;font-size:12px;line-height:1.55;border:1px solid rgba(116,92,255,.13)}
+.nx-flash{padding:12px 15px;border-radius:10px;margin-bottom:15px}.nx-flash.ok{background:rgba(35,201,130,.1);color:#68dfad;border:1px solid rgba(35,201,130,.2)}.nx-flash.err{background:rgba(240,78,92,.1);color:#ff8792;border:1px solid rgba(240,78,92,.2)}
+@media(max-width:900px){.nx-grid{grid-template-columns:1fr}.nx-versions{grid-template-columns:1fr}.nx-arrow{transform:rotate(90deg)}.nx-state{align-items:flex-start;flex-direction:column}.nx-actions{width:100%;flex-wrap:wrap}.nx-btn{flex:1}.nx-head{align-items:flex-start;flex-direction:column}.nx-status{align-self:flex-start}}
+</style>
+<div class="nx-update">
+@if(session('update_message'))<div class="nx-flash ok"><i class="fa fa-check-circle"></i> {{ session('update_message') }}</div>@endif
+@if(session('update_error'))<div class="nx-flash err"><i class="fa fa-exclamation-circle"></i> {{ session('update_error') }}</div>@endif
+<div class="nx-grid"><div>
+<section class="nx-card"><div class="nx-card-title"><i class="fa fa-cloud-download"></i> Nodexa version</div><div class="nx-versions"><div class="nx-version"><span class="nx-label">Installeret</span><strong>v{{ $installed['version'] }}</strong><span>Commit <code>{{ $installed['commit'] ? substr($installed['commit'],0,12) : 'ukendt' }}</code></span></div><div class="nx-arrow"><i class="fa fa-long-arrow-right"></i></div><div class="nx-version"><span class="nx-label">Nyeste på GitHub</span>@if(!empty($latest['commit']))<strong>{{ substr($latest['commit'],0,12) }}</strong><span class="nx-commit">{{ \Illuminate\Support\Str::limit($latest['message']??'Ingen commit-besked.',105) }}</span>@else<strong style="font-size:20px">Utilgængelig</strong><span class="nx-commit">{{ $latest['error']??'Kunne ikke hente GitHub-status.' }}</span>@endif</div></div>
+<div class="nx-state"><div class="nx-state-text"><strong id="nodexa-update-title">{{ ($state['status']??'')==='running'?'Opdateringen installeres':($updateAvailable?'En ny opdatering er klar':'Du er opdateret') }}</strong><span id="nodexa-update-message">{{ ($state['status']??'')==='running'?($state['message']??'Opdatering kører...'):($updateAvailable?'Installer den nyeste Nodexa-version fra GitHub.':'Nodexa kører den nyeste kendte version.') }}</span></div><div class="nx-actions"><a href="{{ route('admin.updates') }}" class="nx-btn"><i class="fa fa-refresh"></i> Tjek igen</a><form method="POST" action="{{ route('admin.updates.run') }}" onsubmit="return confirm('Vil du opdatere Nodexa nu? Panelet kan kortvarigt genindlæse.');">@csrf<button type="submit" class="nx-btn primary" id="nodexa-update-button" {{ (!$updateAvailable||($state['status']??'')==='running')?'disabled':'' }}><i class="fa {{ ($state['status']??'')==='running'?'fa-spinner fa-spin':($updateAvailable?'fa-download':'fa-check') }}"></i><span id="nodexa-update-button-text">{{ ($state['status']??'')==='running'?'Installerer...':($updateAvailable?'Opdater nu':'Opdateret') }}</span></button></form></div></div><div id="nodexa-progress" class="nx-progress {{ ($state['status']??'')==='running'?'on':'' }}"><span></span></div></section>
+<section class="nx-card nx-log-wrap"><div class="nx-log-head"><span><i class="fa fa-terminal"></i>&nbsp; Live update-log</span><small class="nx-live">● LIVE</small></div><pre class="nx-log" id="nodexa-update-log">{{ $log ?: 'Ingen update-log endnu.' }}</pre></section>
+</div><aside><section class="nx-card"><div class="nx-card-title"><i class="fa fa-code-fork"></i> Update-kilde</div><dl class="nx-meta"><dt>Repository</dt><dd><code>{{ $installed['repository'] }}</code></dd><dt>Branch</dt><dd><code>{{ $installed['branch'] }}</code></dd><dt>Seneste aktivitet</dt><dd id="nodexa-update-time">{{ $state['updated_at']??'Ingen status endnu' }}</dd></dl><div class="nx-note"><i class="fa fa-shield"></i>&nbsp; Nodexa bruger den dedikerede system-updater. Lokale <code>.env</code>-indstillinger, storage og nodekonfiguration bevares under opdatering.</div></section></aside></div></div>
 @endsection
-
 @section('footer-scripts')
-    @parent
-    <script>
-        (function () {
-            var statusUrl = @json(route('admin.updates.status'));
-            var initialStatus = @json($state['status'] ?? 'idle');
-            var observedRunning = initialStatus === 'running';
-            var finishedReloaded = false;
-
-            function setButton(button, available, running) {
-                if (!button) return;
-
-                var icon = button.querySelector('i');
-                var text = document.getElementById('nodexa-update-button-text');
-                button.disabled = running || !available;
-
-                if (icon) {
-                    icon.className = running
-                        ? 'fa fa-spinner fa-spin'
-                        : (available ? 'fa fa-download' : 'fa fa-check');
-                }
-
-                if (text) {
-                    text.textContent = running ? 'Opdaterer...' : (available ? 'Opdater nu' : 'Allerede opdateret');
-                }
-            }
-
-            function poll() {
-                fetch(statusUrl, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'})
-                    .then(function (response) { return response.json(); })
-                    .then(function (data) {
-                        var state = data.state || {};
-                        var updateAvailable = data.update_available === true;
-                        var badge = document.getElementById('nodexa-update-badge');
-                        var message = document.getElementById('nodexa-update-message');
-                        var log = document.getElementById('nodexa-update-log');
-                        var time = document.getElementById('nodexa-update-time');
-                        var button = document.getElementById('nodexa-update-button');
-
-                        if (log) {
-                            log.textContent = data.log || 'Ingen update-log endnu.';
-                            log.scrollTop = log.scrollHeight;
-                        }
-                        if (time) time.textContent = state.updated_at || 'Ingen status endnu';
-
-                        if (state.status === 'running') {
-                            observedRunning = true;
-                            if (badge) { badge.className = 'label label-warning'; badge.textContent = 'OPDATERER'; }
-                            if (message) message.textContent = state.message || 'Opdatering kører.';
-                            setButton(button, updateAvailable, true);
-                            return;
-                        }
-
-                        if (state.status === 'failed' && observedRunning) {
-                            if (badge) { badge.className = 'label label-danger'; badge.textContent = 'FEJLET'; }
-                            if (message) message.textContent = state.message || 'Opdateringen fejlede.';
-                            setButton(button, updateAvailable, false);
-                            if (!finishedReloaded) {
-                                finishedReloaded = true;
-                                setTimeout(function () { window.location.reload(); }, 1800);
-                            }
-                            return;
-                        }
-
-                        if (state.status === 'success' && observedRunning) {
-                            if (badge) { badge.className = 'label label-success'; badge.textContent = 'FÆRDIG'; }
-                            if (message) message.textContent = state.message || 'Opdateringen er færdig.';
-                            setButton(button, false, false);
-                            if (!finishedReloaded) {
-                                finishedReloaded = true;
-                                setTimeout(function () { window.location.reload(); }, 1800);
-                            }
-                            return;
-                        }
-
-                        if (updateAvailable) {
-                            if (badge) { badge.className = 'label label-success'; badge.textContent = 'OPDATERING KLAR'; }
-                            if (message) message.textContent = 'En nyere version findes på GitHub.';
-                        } else {
-                            if (badge) { badge.className = 'label label-default'; badge.textContent = 'OPDATERET'; }
-                            if (message) message.textContent = 'Nodexa er på den nyeste kendte version.';
-                        }
-
-                        setButton(button, updateAvailable, false);
-                    })
-                    .catch(function () {});
-            }
-
-            // Poll continuously while this page is open. This intentionally starts even
-            // when the initial state is idle so a just-triggered systemd update cannot be
-            // missed during the redirect back to the page.
-            setInterval(poll, 2500);
-            poll();
-        })();
-    </script>
+@parent
+<script>(function(){var url=@json(route('admin.updates.status')),initial=@json($state['status']??'idle'),observed=initial==='running',reloaded=false;function button(b,a,r){if(!b)return;var i=b.querySelector('i'),t=document.getElementById('nodexa-update-button-text');b.disabled=r||!a;if(i)i.className=r?'fa fa-spinner fa-spin':(a?'fa fa-download':'fa fa-check');if(t)t.textContent=r?'Installerer...':(a?'Opdater nu':'Opdateret')}function poll(){fetch(url,{headers:{Accept:'application/json'},credentials:'same-origin'}).then(r=>r.json()).then(d=>{var s=d.state||{},a=d.update_available===true,log=document.getElementById('nodexa-update-log'),time=document.getElementById('nodexa-update-time'),btn=document.getElementById('nodexa-update-button'),msg=document.getElementById('nodexa-update-message'),title=document.getElementById('nodexa-update-title'),top=document.getElementById('nx-top-status'),progress=document.getElementById('nodexa-progress');if(log){log.textContent=d.log||'Ingen update-log endnu.';log.scrollTop=log.scrollHeight}if(time)time.textContent=s.updated_at||'Ingen status endnu';if(s.status==='running'){observed=true;if(title)title.textContent='Opdateringen installeres';if(msg)msg.textContent=s.message||'Opdatering kører...';if(top){top.className='nx-status running';top.innerHTML='<i class="fa fa-spinner fa-spin"></i><span>Opdaterer</span>'}if(progress)progress.classList.add('on');button(btn,a,true);return}if(progress)progress.classList.remove('on');if(s.status==='failed'&&observed){if(title)title.textContent='Opdateringen fejlede';if(msg)msg.textContent=s.message||'Se update-loggen for detaljer.';if(top){top.className='nx-status';top.style.color='#ff8792';top.innerHTML='<i class="fa fa-times"></i><span>Fejlet</span>'}button(btn,a,false);if(!reloaded){reloaded=true;setTimeout(()=>location.reload(),2200)}return}if(s.status==='success'&&observed){if(title)title.textContent='Opdateringen er færdig';if(msg)msg.textContent=s.message||'Nodexa er opdateret.';if(top){top.className='nx-status ok';top.innerHTML='<i class="fa fa-check"></i><span>Færdig</span>'}button(btn,false,false);if(!reloaded){reloaded=true;setTimeout(()=>location.reload(),2200)}return}if(title)title.textContent=a?'En ny opdatering er klar':'Du er opdateret';if(msg)msg.textContent=a?'Installer den nyeste Nodexa-version fra GitHub.':'Nodexa kører den nyeste kendte version.';if(top){top.className='nx-status '+(a?'ready':'ok');top.innerHTML=a?'<i class="fa fa-arrow-down"></i><span>Opdatering klar</span>':'<i class="fa fa-check"></i><span>System opdateret</span>'}button(btn,a,false)}).catch(()=>{})}setInterval(poll,2500);poll()})();</script>
 @endsection
