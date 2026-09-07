@@ -1,0 +1,8 @@
+[
+  {"type":"added","title":"Danske changelog-kategorier","description":"Update Center viser nu tydeligt Tilføjet, Repareret, Fjernet, Ændret, Sikkerhed og Forbedret.","date":"2026-09-07"},
+  {"type":"added","title":"Changelog i Update Center","description":"Update Center har fået en indbygget changelog, så ændringer kan ses direkte i panelet uden en console.","date":"2026-09-07"},
+  {"type":"removed","title":"Console fra Update Center","description":"Den tekniske installationsconsole er fjernet fra opdateringssiden for et renere interface.","date":"2026-09-07"},
+  {"type":"changed","title":"Nyt Update Center design","description":"Update Center er bygget om med versionsstatus, update-knap, progress og et moderne Nodexa-layout.","date":"2026-09-07"},
+  {"type":"fixed","title":"Updater storage-link","description":"Updateren opretter storage-link med korrekte rettigheder og undgår symlink permission denied.","date":"2026-09-07"},
+  {"type":"improved","title":"Mere robust Nodexa updater","description":"GitHub main branch er autoritativ update-kilde, builds ryddes korrekt og lokale konfigurationer bevares.","date":"2026-09-07"}
+]
