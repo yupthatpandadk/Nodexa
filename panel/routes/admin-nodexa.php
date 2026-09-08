@@ -10,11 +10,15 @@ Route::group(['prefix' => 'updates'], function () {
     Route::get('/status', [UpdateController::class, 'status'])->name('admin.updates.status');
     Route::post('/run', [UpdateController::class, 'run'])->name('admin.updates.run');
 });
-
 Route::group(['prefix' => 'diagnostics'], function () {
     Route::get('/', [DiagnosticsController::class, 'index'])->name('admin.diagnostics');
     Route::post('/fix', [DiagnosticsController::class, 'fix'])->name('admin.diagnostics.fix');
 });
-
 Route::get('/billing', [CommerceController::class, 'billing'])->name('admin.billing');
+Route::post('/billing/categories', [CommerceController::class, 'storeCategory'])->name('admin.billing.categories.store');
+Route::patch('/billing/categories/{id}', [CommerceController::class, 'updateCategory'])->name('admin.billing.categories.update');
+Route::delete('/billing/categories/{id}', [CommerceController::class, 'deleteCategory'])->name('admin.billing.categories.delete');
+Route::post('/billing/packages', [CommerceController::class, 'storeProduct'])->name('admin.billing.packages.store');
+Route::patch('/billing/packages/{id}', [CommerceController::class, 'updateProduct'])->name('admin.billing.packages.update');
+Route::delete('/billing/packages/{id}', [CommerceController::class, 'deleteProduct'])->name('admin.billing.packages.delete');
 Route::get('/tickets', [CommerceController::class, 'tickets'])->name('admin.tickets');
