@@ -1,43 +1,4 @@
 <?php
-
 namespace Pterodactyl\Http\Controllers;
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
-
-class ClientAreaController extends Controller
-{
-    public function index(Request $request) {
-        $user=$request->user(); abort_unless($user,401);
-        $services=Schema::hasTable('servers')?DB::table('servers')->where('owner_id',$user->id)->orderByDesc('id')->get():collect();
-        $invoices=Schema::hasTable('invoices')?DB::table('invoices')->where('user_id',$user->id)->orderByDesc('id')->limit(8)->get():collect();
-        $tickets=Schema::hasTable('tickets')?DB::table('tickets')->where('user_id',$user->id)->orderByDesc('updated_at')->get():collect();
-        $products=Schema::hasTable('billing_products')?DB::table('billing_products')->where('active',true)->orderBy('price')->get():collect();
-        return view('client.index',compact('user','services','invoices','tickets','products'));
-    }
-    public function order(Request $request) {
-        $user=$request->user(); abort_unless($user,401); $data=$request->validate(['product_id'=>'required|integer']);
-        $product=DB::table('billing_products')->where('id',$data['product_id'])->where('active',true)->first(); abort_unless($product,404); $now=now();
-        $orderId=DB::table('billing_orders')->insertGetId(['user_id'=>$user->id,'product_id'=>$product->id,'status'=>'pending','amount'=>$product->price,'currency'=>$product->currency,'created_at'=>$now,'updated_at'=>$now]);
-        $invoiceId=DB::table('invoices')->insertGetId(['user_id'=>$user->id,'order_id'=>$orderId,'number'=>'NX-'.now()->format('Ym').'-'.strtoupper(Str::random(6)),'status'=>'unpaid','subtotal'=>$product->price,'tax'=>0,'total'=>$product->price,'currency'=>$product->currency,'due_at'=>now()->addDays(7),'created_at'=>$now,'updated_at'=>$now]);
-        DB::table('invoice_items')->insert(['invoice_id'=>$invoiceId,'description'=>$product->name.' ('.$product->billing_cycle.')','quantity'=>1,'unit_price'=>$product->price,'total'=>$product->price,'created_at'=>$now,'updated_at'=>$now]); return redirect('/client#invoices')->with('success','Ordren er oprettet.');
-    }
-    public function createTicket(Request $request) {
-        $user=$request->user(); abort_unless($user,401); $data=$request->validate(['subject'=>'required|string|max:190','message'=>'required|string|max:10000','department'=>'nullable|in:support,billing,sales','priority'=>'nullable|in:low,normal,high']); $now=now();
-        $id=DB::table('tickets')->insertGetId(['user_id'=>$user->id,'subject'=>$data['subject'],'department'=>$data['department']??'support','priority'=>$data['priority']??'normal','status'=>'open','created_at'=>$now,'updated_at'=>$now]);
-        DB::table('ticket_messages')->insert(['ticket_id'=>$id,'user_id'=>$user->id,'message'=>$data['message'],'staff'=>false,'created_at'=>$now,'updated_at'=>$now]); return redirect('/client/tickets/'.$id);
-    }
-    public function ticket(Request $request,int $id) {
-        $user=$request->user(); $ticket=DB::table('tickets')->where('id',$id)->where('user_id',$user->id)->first(); abort_unless($ticket,404);
-        $messages=DB::table('ticket_messages')->where('ticket_id',$id)->orderBy('id')->get(); return view('client.ticket',compact('user','ticket','messages'));
-    }
-    public function replyTicket(Request $request,int $id) {
-        $user=$request->user(); $ticket=DB::table('tickets')->where('id',$id)->where('user_id',$user->id)->first(); abort_unless($ticket,404); abort_if($ticket->status==='closed',422,'Ticketen er lukket.');
-        $data=$request->validate(['message'=>'required|string|max:10000']); $now=now(); DB::table('ticket_messages')->insert(['ticket_id'=>$id,'user_id'=>$user->id,'message'=>$data['message'],'staff'=>false,'created_at'=>$now,'updated_at'=>$now]); DB::table('tickets')->where('id',$id)->update(['status'=>'customer_reply','updated_at'=>$now]); return back();
-    }
-    public function closeTicket(Request $request,int $id) {
-        $user=$request->user(); DB::table('tickets')->where('id',$id)->where('user_id',$user->id)->update(['status'=>'closed','updated_at'=>now()]); return redirect('/client#tickets');
-    }
-}
+use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; use Illuminate\Support\Facades\Schema; use Illuminate\Support\Str;
+class ClientAreaController { public function index(Request $r){$u=$r->user();abort_unless($u,401);$services=Schema::hasTable('servers')?DB::table('servers')->where('owner_id',$u->id)->orderByDesc('id')->get():collect();$vpsServices=Schema::hasTable('vps_services')?DB::table('vps_services')->where('user_id',$u->id)->orderByDesc('id')->get():collect();$invoices=Schema::hasTable('invoices')?DB::table('invoices')->where('user_id',$u->id)->orderByDesc('id')->limit(8)->get():collect();$tickets=Schema::hasTable('tickets')?DB::table('tickets')->where('user_id',$u->id)->orderByDesc('updated_at')->get():collect();$products=Schema::hasTable('billing_products')?DB::table('billing_products')->where('active',true)->orderBy('price')->get():collect();return view('client.index',compact('u','services','vpsServices','invoices','tickets','products'))->with('user',$u);} public function orderPage(Request $r,int $product){$p=DB::table('billing_products')->where('id',$product)->where('active',true)->first();abort_unless($p,404);return view('client.order',['product'=>$p,'user'=>$r->user()]);} public function order(Request $r){$u=$r->user();abort_unless($u,401);$d=$r->validate(['product_id'=>'required|integer']);$p=DB::table('billing_products')->where('id',$d['product_id'])->where('active',true)->first();abort_unless($p,404);$now=now();$orderId=DB::table('billing_orders')->insertGetId(['user_id'=>$u->id,'product_id'=>$p->id,'status'=>'pending','amount'=>$p->price,'currency'=>$p->currency,'created_at'=>$now,'updated_at'=>$now]);$invoiceId=DB::table('invoices')->insertGetId(['user_id'=>$u->id,'order_id'=>$orderId,'number'=>'NX-'.now()->format('Ym').'-'.strtoupper(Str::random(6)),'status'=>'unpaid','subtotal'=>$p->price,'tax'=>0,'total'=>$p->price,'currency'=>$p->currency,'due_at'=>now()->addDays(7),'created_at'=>$now,'updated_at'=>$now]);DB::table('invoice_items')->insert(['invoice_id'=>$invoiceId,'description'=>$p->name.' ('.$p->billing_cycle.')','quantity'=>1,'unit_price'=>$p->price,'total'=>$p->price,'created_at'=>$now,'updated_at'=>$now]);if(($p->product_type??'game')==='vps'&&Schema::hasTable('vps_services')){$provider=DB::table('vps_providers')->where('active',true)->first();DB::table('vps_services')->insert(['user_id'=>$u->id,'order_id'=>$orderId,'product_id'=>$p->id,'provider_id'=>$provider->id??0,'os_id'=>$p->default_os_id,'status'=>'awaiting_payment','created_at'=>$now,'updated_at'=>$now]);}return redirect('/client#invoices')->with('success','Ordren er oprettet.');} public function createTicket(Request $r){$u=$r->user();$d=$r->validate(['subject'=>'required|string|max:190','message'=>'required|string|max:10000','department'=>'nullable|in:support,billing,sales','priority'=>'nullable|in:low,normal,high']);$now=now();$id=DB::table('tickets')->insertGetId(['user_id'=>$u->id,'subject'=>$d['subject'],'department'=>$d['department']??'support','priority'=>$d['priority']??'normal','status'=>'open','created_at'=>$now,'updated_at'=>$now]);DB::table('ticket_messages')->insert(['ticket_id'=>$id,'user_id'=>$u->id,'message'=>$d['message'],'staff'=>false,'created_at'=>$now,'updated_at'=>$now]);return redirect('/client/tickets/'.$id);} public function ticket(Request $r,int $id){$u=$r->user();$ticket=DB::table('tickets')->where('id',$id)->where('user_id',$u->id)->first();abort_unless($ticket,404);$messages=DB::table('ticket_messages')->where('ticket_id',$id)->orderBy('id')->get();return view('client.ticket',compact('u','ticket','messages'))->with('user',$u);} public function replyTicket(Request $r,int $id){$u=$r->user();$ticket=DB::table('tickets')->where('id',$id)->where('user_id',$u->id)->first();abort_unless($ticket,404);abort_if($ticket->status==='closed',422);$d=$r->validate(['message'=>'required|string|max:10000']);DB::table('ticket_messages')->insert(['ticket_id'=>$id,'user_id'=>$u->id,'message'=>$d['message'],'staff'=>false,'created_at'=>now(),'updated_at'=>now()]);DB::table('tickets')->where('id',$id)->update(['status'=>'customer_reply','updated_at'=>now()]);return back();} public function closeTicket(Request $r,int $id){DB::table('tickets')->where('id',$id)->where('user_id',$r->user()->id)->update(['status'=>'closed','updated_at'=>now()]);return redirect('/client#tickets');}}
