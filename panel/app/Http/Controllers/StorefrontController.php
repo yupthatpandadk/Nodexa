@@ -1,41 +1,4 @@
 <?php
-
 namespace Pterodactyl\Http\Controllers;
-
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\View\View;
-
-class StorefrontController extends Controller
-{
-    public function home(): View { return view('storefront.home'); }
-    public function games(): View { return view('storefront.games', ['games' => $this->gamesCatalog()]); }
-
-    public function pricing(): View
-    {
-        $categories = Schema::hasTable('billing_categories')
-            ? DB::table('billing_categories')->where('active', true)->orderBy('sort_order')->orderBy('name')->get()
-            : collect();
-        $products = Schema::hasTable('billing_products')
-            ? DB::table('billing_products')->where('active', true)->orderBy('sort_order')->orderBy('price')->get()
-            : collect();
-        return view('storefront.pricing', ['categories'=>$categories, 'products'=>$products]);
-    }
-
-    public function features(): View { return view('storefront.features'); }
-    public function support(): View { return view('storefront.support'); }
-
-    private function gamesCatalog(): array
-    {
-        return [
-            ['name'=>'Minecraft','tag'=>'Java / Paper / Forge','icon'=>'⛏','description'=>'Vanilla, Paper, plugins og modded servers med fuld fil- og consoleadgang.'],
-            ['name'=>'FiveM','tag'=>'FXServer','icon'=>'V','description'=>'Byg og administrér din FiveM-server med console, filer, backups og databaseværktøjer.'],
-            ['name'=>'Rust','tag'=>'Dedicated Server','icon'=>'R','description'=>'En stærk base til Rust communities med planlagte tasks, backups og ressourcekontrol.'],
-            ['name'=>'Counter-Strike 2','tag'=>'SteamCMD','icon'=>'CS','description'=>'Serverhosting til communities, private matches og egne konfigurationer.'],
-            ['name'=>'Palworld','tag'=>'Dedicated Server','icon'=>'P','description'=>'Kør en persistent Palworld-verden og administrér den direkte fra Nodexa.'],
-            ['name'=>'Valheim','tag'=>'Dedicated Server','icon'=>'V','description'=>'Enkel hosting til private eller community-baserede Valheim-verdener.'],
-            ['name'=>'Terraria','tag'=>'Vanilla / tModLoader','icon'=>'T','description'=>'Letvægts game hosting med hurtig adgang til config, worlds og backups.'],
-            ['name'=>'Andre games','tag'=>'Egg-baseret','icon'=>'+','description'=>'Nodexa kan udvides med Eggs til flere spil og servertyper efter behov.'],
-        ];
-    }
-}
+use Illuminate\Support\Facades\DB; use Illuminate\Support\Facades\Schema; use Illuminate\View\View;
+class StorefrontController extends Controller { public function home():View{return view('storefront.home');} public function games():View{return view('storefront.games',['games'=>$this->gamesCatalog()]);} public function pricing():View{$categories=Schema::hasTable('billing_categories')?DB::table('billing_categories')->where('active',true)->orderBy('sort_order')->orderBy('name')->get():collect();$products=Schema::hasTable('billing_products')?DB::table('billing_products')->where('active',true)->where(function($q){$q->whereNull('product_type')->orWhere('product_type','game');})->orderBy('sort_order')->orderBy('price')->get():collect();return view('storefront.pricing',compact('categories','products'));} public function vps():View{$products=Schema::hasColumn('billing_products','product_type')?DB::table('billing_products')->where('active',true)->where('product_type','vps')->orderBy('sort_order')->orderBy('price')->get():collect();return view('storefront.vps',compact('products'));} public function features():View{return view('storefront.features');} public function support():View{return view('storefront.support');} private function gamesCatalog():array{return [['name'=>'Minecraft','tag'=>'Java / Paper / Forge','icon'=>'⛏','description'=>'Vanilla, Paper, plugins og modded servers med fuld fil- og consoleadgang.'],['name'=>'FiveM','tag'=>'FXServer','icon'=>'V','description'=>'Byg og administrér din FiveM-server med console, filer, backups og databaseværktøjer.'],['name'=>'Rust','tag'=>'Dedicated Server','icon'=>'R','description'=>'En stærk base til Rust communities med planlagte tasks, backups og ressourcekontrol.'],['name'=>'Counter-Strike 2','tag'=>'SteamCMD','icon'=>'CS','description'=>'Serverhosting til communities, private matches og egne konfigurationer.'],['name'=>'Palworld','tag'=>'Dedicated Server','icon'=>'P','description'=>'Kør en persistent Palworld-verden og administrér den direkte fra Nodexa.'],['name'=>'Valheim','tag'=>'Dedicated Server','icon'=>'V','description'=>'Enkel hosting til private eller community-baserede Valheim-verdener.'],['name'=>'Terraria','tag'=>'Vanilla / tModLoader','icon'=>'T','description'=>'Letvægts game hosting med hurtig adgang til config, worlds og backups.'],['name'=>'Andre games','tag'=>'Egg-baseret','icon'=>'+','description'=>'Nodexa kan udvides med Eggs til flere spil og servertyper efter behov.']];}}
