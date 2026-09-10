@@ -1,11 +1,10 @@
 [
-  {"type":"added","title":"VPS Hosting","description":"Ny VPS Hosting-side med pakker, vCPU, RAM, NVMe og checkout gennem Nodexa Client Area.","date":"2026-09-08"},
-  {"type":"added","title":"Flax reseller integration","description":"Nodexa kan nu gemme Flax API-konfiguration krypteret og kommunikere med VPS API'et til serverinfo, power, OS og provisioning.","date":"2026-09-08"},
-  {"type":"added","title":"VPS administration","description":"Admin får VPS-provider, API-test, VPS-pakker og oversigt over provisionerede VPS-services.","date":"2026-09-08"},
-  {"type":"added","title":"Danske changelog-kategorier","description":"Update Center viser nu tydeligt Tilføjet, Repareret, Fjernet, Ændret, Sikkerhed og Forbedret.","date":"2026-09-07"},
-  {"type":"added","title":"Changelog i Update Center","description":"Update Center har fået en indbygget changelog, så ændringer kan ses direkte i panelet uden en console.","date":"2026-09-07"},
-  {"type":"removed","title":"Console fra Update Center","description":"Den tekniske installationsconsole er fjernet fra opdateringssiden for et renere interface.","date":"2026-09-07"},
-  {"type":"changed","title":"Nyt Update Center design","description":"Update Center er bygget om med versionsstatus, update-knap, progress og et moderne Nodexa-layout.","date":"2026-09-07"},
-  {"type":"fixed","title":"Updater storage-link","description":"Updateren opretter storage-link med korrekte rettigheder og undgår symlink permission denied.","date":"2026-09-07"},
-  {"type":"improved","title":"Mere robust Nodexa updater","description":"GitHub main branch er autoritativ update-kilde, builds ryddes korrekt og lokale konfigurationer bevares.","date":"2026-09-07"}
+  {"version":"0.14.63","type":"changed","title":"Nyt VPS Control design","description":"VPS Control er redesignet, så serveroversigt, strømstyring, serveradgang, password-håndtering og administration følger Nodexa Hosting Cloud-temaet og fungerer bedre på mobil.","date":"2026-09-10"},
+  {"version":"0.14.63","type":"improved","title":"Bedre VPS administration","description":"Serverkontrol og administrationshandlinger er opdelt tydeligere, med forbedrede statuskort, spacing, typografi og danger zone.","date":"2026-09-10"},
+  {"version":"0.14.62","type":"changed","title":"Automatisk administratorkonto","description":"Ved nulstilling af VPS-adgangskode vælger Nodexa nu automatisk root på Linux og Administrator på Windows.","date":"2026-09-10"},
+  {"version":"0.14.62","type":"security","title":"Brugernavn kan ikke manipuleres","description":"Kunden kan ikke længere selv angive brugernavnet ved password-reset. Kontoen bestemmes server-side før kaldet sendes til Flax Hosting API.","date":"2026-09-10"},
+  {"version":"0.14.61","type":"changed","title":"Nodexa Client Area redesign","description":"Client Area og VPS Control blev redesignet til Nodexa Hosting Cloud-temaet med forbedret navigation og mobilvisning.","date":"2026-09-10"},
+  {"version":"0.14.61","type":"added","title":"Krypteret VPS password","description":"Nodexa kan gemme adgangskoden krypteret efter et Flax password-reset og vise den til den korrekte kunde i VPS Control.","date":"2026-09-10"},
+  {"version":"0.14.60","type":"fixed","title":"Korrekt Flax VPS IP","description":"VPS-synkronisering bruger den primære IPv4 fra Flax-data i stedet for en vilkårlig adresse.","date":"2026-09-10"},
+  {"version":"0.14.60","type":"fixed","title":"Aktuelt operativsystem","description":"Flax VPS-data og OS-detektion blev forbedret, så den tilknyttede VPS viser de aktuelle serveroplysninger mere korrekt.","date":"2026-09-10"}
 ]
