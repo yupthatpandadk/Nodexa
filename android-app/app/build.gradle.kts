@@ -11,8 +11,8 @@ android {
         applicationId = "dk.nodexa.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.plus(1000) ?: 1000
-        versionName = "1.0.0"
+        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.plus(2000) ?: 2000
+        versionName = "2.0.0"
     }
 
     compileOptions {
