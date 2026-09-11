@@ -2,7 +2,7 @@ name: Nodexa Android APK
 
 on:
   push:
-    branches: [pterodactyl-core]
+    branches: [main, pterodactyl-core]
     paths:
       - 'android-app/**'
       - '.github/workflows/nodexa-android-apk.yml'
