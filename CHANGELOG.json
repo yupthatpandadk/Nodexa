@@ -1,4 +1,5 @@
 [
+  {"version":"0.14.68","type":"improved","title":"Forbedret VPS Hosting mobil-layout","description":"VPS Hosting har fået et mere kompakt og mobilvenligt layout med bedre statistik-kort, formularer, knapper, tabeller, pakker og hurtige handlinger. Suspenderede VPS'er vises fortsat med rød status.","date":"2026-09-11"},
   {"version":"0.14.67","type":"fixed","title":"Korrekt VPS-status fra Flax","description":"VPS Hosting viser nu kundevenlige statustekster som Aktiv, Suspenderet, Udløbet og Termineret i stedet for VirtFusions tekniske provisioning-status complete.","date":"2026-09-11"},
   {"version":"0.14.67","type":"improved","title":"Samme status på tilknyttede VPS'er","description":"Synkronisering gemmer den normaliserede Flax VPS-status på tilknyttede services, så serveroversigten og kundetilknytningen bruger samme status.","date":"2026-09-11"},
   {"version":"0.14.66","type":"fixed","title":"Stabil versionskontrol i Update Center","description":"Update Center henter nu versionsnummer og GitHub commit uafhængigt af hinanden, så Nyeste version ikke bliver Ukendt blot fordi GitHub commit-opslaget fejler.","date":"2026-09-11"},
