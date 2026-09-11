@@ -97,8 +97,9 @@ export const getInstalledMinecraftPlugins = async (server: string): Promise<Inst
         params: { directory: '/plugins' },
     });
 
-    const files = (filesResponse.data || [])
-        .map(mapPluginFile)
+    const rawFiles: any[] = Array.isArray(filesResponse.data) ? filesResponse.data : [];
+    const files: InstalledMinecraftPlugin[] = rawFiles
+        .map((item: any): InstalledMinecraftPlugin | null => mapPluginFile(item))
         .filter((plugin: InstalledMinecraftPlugin | null): plugin is InstalledMinecraftPlugin => plugin !== null);
 
     // Enrich files installed through Nodexa with Modrinth/managed metadata when that
@@ -106,16 +107,26 @@ export const getInstalledMinecraftPlugins = async (server: string): Promise<Inst
     let managed: InstalledMinecraftPlugin[] = [];
     try {
         const { data } = await http.get(`/api/client/servers/${server}/plugins/installed`);
-        managed = (data.data || []).map(mapInstalled);
+        const rawManaged: any[] = Array.isArray(data.data) ? data.data : [];
+        managed = rawManaged.map((item: any): InstalledMinecraftPlugin => mapInstalled(item));
     } catch (_) {
         managed = [];
     }
 
-    const managedByFilename = new Map(managed.map((plugin) => [plugin.filename.toLowerCase(), plugin]));
+    const managedByFilename = new Map<string, InstalledMinecraftPlugin>(
+        managed.map((plugin: InstalledMinecraftPlugin): [string, InstalledMinecraftPlugin] => [
+            plugin.filename.toLowerCase(),
+            plugin,
+        ])
+    );
 
     return files
-        .map((file) => managedByFilename.get(file.filename.toLowerCase()) || file)
-        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+        .map((file: InstalledMinecraftPlugin): InstalledMinecraftPlugin =>
+            managedByFilename.get(file.filename.toLowerCase()) || file
+        )
+        .sort((a: InstalledMinecraftPlugin, b: InstalledMinecraftPlugin): number =>
+            a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+        );
 };
 
 export const installMinecraftPlugin = async (
