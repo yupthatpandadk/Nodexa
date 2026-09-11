@@ -1,4 +1,7 @@
 [
+  {"version":"0.14.65","type":"improved","title":"Fleksibel changelog-visning","description":"Update Center viser 15 versioner pr. side som standard og giver mulighed for at vælge 10, 15, 20, 50, 100 eller 250 versioner pr. side.","date":"2026-09-11"},
+  {"version":"0.14.65","type":"added","title":"Søgning og pagination i changelog","description":"Changelog kan søges, filtreres og bladres igennem, så hele Nodexa-opdateringshistorikken er lettere at finde rundt i.","date":"2026-09-11"},
+  {"version":"0.14.64","type":"added","title":"Komplet opdateringshistorik","description":"Update Center kan hente historiske Nodexa-releases fra GitHub og vise dem som separate versions-dropdowns.","date":"2026-09-11"},
   {"version":"0.14.63","type":"changed","title":"Nyt VPS Control design","description":"VPS Control er redesignet, så serveroversigt, strømstyring, serveradgang, password-håndtering og administration følger Nodexa Hosting Cloud-temaet og fungerer bedre på mobil.","date":"2026-09-10"},
   {"version":"0.14.63","type":"improved","title":"Bedre VPS administration","description":"Serverkontrol og administrationshandlinger er opdelt tydeligere, med forbedrede statuskort, spacing, typografi og danger zone.","date":"2026-09-10"},
   {"version":"0.14.62","type":"changed","title":"Automatisk administratorkonto","description":"Ved nulstilling af VPS-adgangskode vælger Nodexa nu automatisk root på Linux og Administrator på Windows.","date":"2026-09-10"},
