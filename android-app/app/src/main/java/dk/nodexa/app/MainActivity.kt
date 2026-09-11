@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private lateinit var webView: WebView
-    private lateinit var progress: ProgressBar
+    private lateinit var pageProgress: ProgressBar
     private lateinit var title: TextView
     private lateinit var subtitle: TextView
     private lateinit var offline: TextView
@@ -61,12 +61,12 @@ class MainActivity : ComponentActivity() {
             setBackgroundColor(Color.rgb(7, 10, 16))
         }
         root.addView(createHeader())
-        progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+        pageProgress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
             max = 100
             progress = 0
             visibility = View.GONE
         }
-        root.addView(progress, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(2)))
+        root.addView(pageProgress, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(2)))
 
         val content = FrameLayout(this)
         content.addView(webView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -130,17 +130,20 @@ class MainActivity : ComponentActivity() {
                 return runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)); true }.getOrDefault(false)
             }
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
-                progress.visibility = View.VISIBLE; offline.visibility = View.GONE; updatePageLabel(url)
+                pageProgress.visibility = View.VISIBLE; offline.visibility = View.GONE; updatePageLabel(url)
             }
             override fun onPageFinished(view: WebView, url: String) {
-                progress.visibility = View.GONE; updatePageLabel(url); injectAppTheme(view)
+                pageProgress.visibility = View.GONE; updatePageLabel(url); injectAppTheme(view)
             }
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: android.webkit.WebResourceError) {
-                if (request.isForMainFrame && !isOnline()) { progress.visibility = View.GONE; offline.visibility = View.VISIBLE }
+                if (request.isForMainFrame && !isOnline()) { pageProgress.visibility = View.GONE; offline.visibility = View.VISIBLE }
             }
         }
         webChromeClient = object : WebChromeClient() {
-            override fun onProgressChanged(view: WebView?, newProgress: Int) { progress.progress = newProgress; progress.visibility = if (newProgress >= 100) View.GONE else View.VISIBLE }
+            override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                pageProgress.progress = newProgress
+                pageProgress.visibility = if (newProgress >= 100) View.GONE else View.VISIBLE
+            }
             override fun onShowFileChooser(webView: WebView?, cb: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
                 fileCallback?.onReceiveValue(null); fileCallback = cb
                 val intent = runCatching { params?.createIntent() }.getOrNull() ?: Intent(Intent.ACTION_GET_CONTENT).apply { type = "*/*"; addCategory(Intent.CATEGORY_OPENABLE) }
