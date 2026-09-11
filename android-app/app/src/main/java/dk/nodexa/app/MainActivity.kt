@@ -1,239 +1,170 @@
 package dk.nodexa.app
 
-import android.app.DownloadManager
-import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
-import android.webkit.DownloadListener
-import android.webkit.ValueCallback
-import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
-import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.LinearLayout
-import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.result.contract.ActivityResultContracts
 
 class MainActivity : ComponentActivity() {
     companion object {
-        private const val PANEL_URL = "https://panel.revivegaming.org"
-        private const val APP_UA = "NodexaAndroid/2.0"
+        private const val PANEL = "https://panel.revivegaming.org"
     }
 
-    private lateinit var webView: WebView
-    private lateinit var pageProgress: ProgressBar
-    private lateinit var title: TextView
-    private lateinit var subtitle: TextView
-    private lateinit var offline: TextView
-    private var fileCallback: ValueCallback<Array<Uri>>? = null
-    private val navItems = mutableListOf<TextView>()
-
-    private val filePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        fileCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data))
-        fileCallback = null
-    }
+    private lateinit var root: FrameLayout
+    private var browser: WebView? = null
+    private var currentTab = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = Color.rgb(7, 10, 16)
-        window.navigationBarColor = Color.rgb(7, 10, 16)
-
-        webView = createWebView()
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.rgb(7, 10, 16))
-        }
-        root.addView(createHeader())
-        pageProgress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
-            max = 100
-            progress = 0
-            visibility = View.GONE
-        }
-        root.addView(pageProgress, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(2)))
-
-        val content = FrameLayout(this)
-        content.addView(webView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        offline = TextView(this).apply {
-            text = "Ingen forbindelse\nTjek dit netværk og tryk Opdater"
-            setTextColor(Color.rgb(225, 231, 239)); textSize = 16f; gravity = Gravity.CENTER
-            visibility = View.GONE
-            setBackgroundColor(Color.rgb(7, 10, 16))
-            setOnClickListener { webView.reload() }
-        }
-        content.addView(offline, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        root.addView(content, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
-        root.addView(createBottomNavigation())
+        window.statusBarColor = c("#090C12")
+        window.navigationBarColor = c("#090C12")
+        root = FrameLayout(this).apply { setBackgroundColor(c("#090C12")) }
         setContentView(root)
-
+        showDashboard()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (webView.canGoBack()) webView.goBack() else { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
+                browser?.let { if (it.canGoBack()) { it.goBack(); return } }
+                if (browser != null) showDashboard() else { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
             }
         })
-        if (savedInstanceState == null) webView.loadUrl(PANEL_URL) else webView.restoreState(savedInstanceState)
     }
 
-    private fun createHeader(): View {
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(18), dp(10), dp(12), dp(10))
-            setBackgroundColor(Color.rgb(10, 15, 23))
-        }
-        val brand = TextView(this).apply {
-            text = "N"; gravity = Gravity.CENTER; textSize = 18f; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD)
-            background = rounded(Color.rgb(92, 75, 255), 14)
-        }
-        row.addView(brand, LinearLayout.LayoutParams(dp(42), dp(42)))
-        val textBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
-        title = TextView(this).apply { text = "Nodexa"; textSize = 16f; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD) }
-        subtitle = TextView(this).apply { text = "Server Management"; textSize = 11f; setTextColor(Color.rgb(137, 148, 166)) }
-        textBox.addView(title); textBox.addView(subtitle)
-        row.addView(textBox, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        val refresh = TextView(this).apply {
-            text = "↻"; textSize = 24f; gravity = Gravity.CENTER; setTextColor(Color.rgb(174, 184, 201)); background = rounded(Color.rgb(17, 24, 36), 14)
-            setOnClickListener { webView.reload() }
-        }
-        row.addView(refresh, LinearLayout.LayoutParams(dp(42), dp(42)))
-        return row
+    private fun showDashboard() {
+        browser?.destroy(); browser = null; currentTab = 0; root.removeAllViews()
+        val shell = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(c("#090C12")) }
+        shell.addView(topBar("Nodexa", "Game server management"))
+        val scroll = ScrollView(this).apply { isFillViewport = true }
+        val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(18), dp(18), dp(24)) }
+
+        body.addView(TextView(this).apply { text = "OVERSIGT"; textSize = 12f; setTextColor(c("#7E8A9D")); setTypeface(typeface, Typeface.BOLD) })
+        body.addView(TextView(this).apply { text = "Dine servere"; textSize = 29f; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD); setPadding(0, dp(4), 0, dp(5)) })
+        body.addView(TextView(this).apply { text = "Administrér alt fra én hurtig mobilapp."; textSize = 15f; setTextColor(c("#8D98A9")); setPadding(0, 0, 0, dp(20)) })
+
+        body.addView(serverCard("Nodexa Server", "Tryk for at åbne serverpanelet", "ONLINE", "$PANEL/client"))
+        body.addView(space(14))
+
+        val quickTitle = TextView(this).apply { text = "Hurtige handlinger"; textSize = 18f; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD); setPadding(0, dp(8), 0, dp(12)) }
+        body.addView(quickTitle)
+        body.addView(actionRow("⌘", "Konsol", "Live konsol og kommandoer") { openPanel("$PANEL/server", "Konsol") })
+        body.addView(actionRow("▤", "Filer", "Administrér serverfiler") { openPanel("$PANEL/server", "Filer") })
+        body.addView(actionRow("↻", "Backups", "Opret og gendan backups") { openPanel("$PANEL/server", "Backups") })
+        body.addView(actionRow("▦", "Databaser", "Administrér databaser") { openPanel("$PANEL/server", "Databaser") })
+
+        scroll.addView(body)
+        shell.addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        shell.addView(bottomBar())
+        root.addView(shell)
     }
 
-    private fun createWebView(): WebView = WebView(this).apply web@{
-        setBackgroundColor(Color.rgb(7, 10, 16))
-        settings.apply {
-            javaScriptEnabled = true; domStorageEnabled = true; databaseEnabled = true
-            cacheMode = WebSettings.LOAD_DEFAULT; allowFileAccess = true; allowContentAccess = true
-            mediaPlaybackRequiresUserGesture = false; builtInZoomControls = false; displayZoomControls = false; setSupportZoom(false)
-            userAgentString = "$userAgentString $APP_UA"
-        }
-        CookieManager.getInstance().apply { setAcceptCookie(true); setAcceptThirdPartyCookies(this@web, true) }
-        webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                val uri = request.url
-                if (uri.scheme == "http" || uri.scheme == "https") return false
-                return runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)); true }.getOrDefault(false)
-            }
-            override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
-                pageProgress.visibility = View.VISIBLE; offline.visibility = View.GONE; updatePageLabel(url)
-            }
-            override fun onPageFinished(view: WebView, url: String) {
-                pageProgress.visibility = View.GONE; updatePageLabel(url); injectAppTheme(view)
-            }
-            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: android.webkit.WebResourceError) {
-                if (request.isForMainFrame && !isOnline()) { pageProgress.visibility = View.GONE; offline.visibility = View.VISIBLE }
-            }
-        }
-        webChromeClient = object : WebChromeClient() {
-            override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                pageProgress.progress = newProgress
-                pageProgress.visibility = if (newProgress >= 100) View.GONE else View.VISIBLE
-            }
-            override fun onShowFileChooser(webView: WebView?, cb: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
-                fileCallback?.onReceiveValue(null); fileCallback = cb
-                val intent = runCatching { params?.createIntent() }.getOrNull() ?: Intent(Intent.ACTION_GET_CONTENT).apply { type = "*/*"; addCategory(Intent.CATEGORY_OPENABLE) }
-                return runCatching { filePicker.launch(intent); true }.getOrElse { fileCallback = null; false }
-            }
-        }
-        setDownloadListener(DownloadListener { url, userAgent, disposition, mime, _ ->
-            runCatching {
-                val request = DownloadManager.Request(Uri.parse(url)).apply {
-                    setMimeType(mime); addRequestHeader("User-Agent", userAgent)
-                    CookieManager.getInstance().getCookie(url)?.let { addRequestHeader("Cookie", it) }
-                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                    setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, android.webkit.URLUtil.guessFileName(url, disposition, mime))
-                }
-                (getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
-                Toast.makeText(this@MainActivity, "Download startet", Toast.LENGTH_SHORT).show()
-            }.onFailure { Toast.makeText(this@MainActivity, "Download fejlede", Toast.LENGTH_SHORT).show() }
-        })
-    }
-
-    private fun createBottomNavigation(): View {
-        val bar = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(dp(8), dp(7), dp(8), dp(8))
-            background = rounded(Color.rgb(10, 15, 23), 0)
-        }
-        listOf(
-            Triple("⌂\nHjem", "$PANEL_URL/", 0),
-            Triple("▣\nServere", "$PANEL_URL/client", 1),
-            Triple("＋\nBestil", "$PANEL_URL/client/order", 2),
-            Triple("☰\nMenu", "menu", 3)
-        ).forEach { (label, url, index) ->
-            val item = navButton(label) { if (url == "menu") openWebsiteMenu() else webView.loadUrl(url); selectNav(index) }
-            navItems.add(item); bar.addView(item)
-        }
-        selectNav(0)
+    private fun topBar(name: String, sub: String): View {
+        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(18), dp(12), dp(14), dp(12)); setBackgroundColor(c("#0D1119")) }
+        val logo = TextView(this).apply { text = "N"; gravity = Gravity.CENTER; textSize = 19f; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD); background = round("#6C5CE7", 13) }
+        bar.addView(logo, LinearLayout.LayoutParams(dp(44), dp(44)))
+        val labels = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
+        labels.addView(TextView(this).apply { text = name; textSize = 17f; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD) })
+        labels.addView(TextView(this).apply { text = sub; textSize = 11f; setTextColor(c("#778397")) })
+        bar.addView(labels, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        bar.addView(TextView(this).apply { text = "●"; gravity = Gravity.CENTER; textSize = 13f; setTextColor(c("#42D392")); background = round("#151B26", 13) }, LinearLayout.LayoutParams(dp(42), dp(42)))
         return bar
     }
 
-    private fun navButton(label: String, click: () -> Unit) = TextView(this).apply {
-        text = label; textSize = 11f; gravity = Gravity.CENTER; setTextColor(Color.rgb(137, 148, 166)); setPadding(dp(3), dp(5), dp(3), dp(5))
-        background = rounded(Color.TRANSPARENT, 14); setOnClickListener { click() }
-        layoutParams = LinearLayout.LayoutParams(0, dp(58), 1f).apply { marginStart = dp(2); marginEnd = dp(2) }
-    }
-
-    private fun selectNav(index: Int) = navItems.forEachIndexed { i, v ->
-        v.setTextColor(if (i == index) Color.rgb(197, 190, 255) else Color.rgb(137, 148, 166))
-        v.background = rounded(if (i == index) Color.rgb(27, 25, 58) else Color.TRANSPARENT, 14)
-    }
-
-    private fun updatePageLabel(url: String) {
-        val label = when {
-            url.contains("server", true) -> "Server"
-            url.contains("billing", true) -> "Billing"
-            url.contains("ticket", true) -> "Support"
-            url.contains("order", true) -> "Bestil"
-            url.contains("admin", true) -> "Administration"
-            else -> "Dashboard"
-        }
-        title.text = label; subtitle.text = "Nodexa • Server Management"
-    }
-
-    private fun openWebsiteMenu() {
-        webView.evaluateJavascript("""(function(){const s=['button[aria-label*=menu i]','button[title*=menu i]','header button','nav button'];for(const q of s){const x=[...document.querySelectorAll(q)].find(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0});if(x){x.click();return 'ok'}}return 'no'})()""") { r ->
-            if (r == "\"no\"") Toast.makeText(this, "Menuen kunne ikke findes", Toast.LENGTH_SHORT).show()
+    private fun serverCard(name: String, description: String, status: String, url: String): View {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(18), dp(18), dp(18)); background = bordered("#101722", "#222D3E", 18)
+            val header = LinearLayout(this@MainActivity).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+            val icon = TextView(this@MainActivity).apply { text = "▣"; gravity = Gravity.CENTER; textSize = 22f; setTextColor(c("#9B8CFF")); background = round("#201C3A", 13) }
+            header.addView(icon, LinearLayout.LayoutParams(dp(48), dp(48)))
+            val info = LinearLayout(this@MainActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
+            info.addView(TextView(this@MainActivity).apply { text = name; textSize = 18f; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD) })
+            info.addView(TextView(this@MainActivity).apply { text = description; textSize = 12f; setTextColor(c("#7F8B9E")) })
+            header.addView(info, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            header.addView(TextView(this@MainActivity).apply { text = status; textSize = 10f; gravity = Gravity.CENTER; setTextColor(c("#62E6A7")); setTypeface(typeface, Typeface.BOLD); background = round("#123328", 10); setPadding(dp(10), dp(7), dp(10), dp(7)) })
+            addView(header)
+            addView(space(18))
+            val stats = LinearLayout(this@MainActivity).apply { orientation = LinearLayout.HORIZONTAL }
+            stats.addView(stat("CPU", "—")); stats.addView(stat("RAM", "—")); stats.addView(stat("DISK", "—"))
+            addView(stats)
+            addView(space(16))
+            val power = LinearLayout(this@MainActivity).apply { orientation = LinearLayout.HORIZONTAL }
+            power.addView(powerButton("▶", "Start") { openPanel(url, "Server") }); power.addView(powerButton("↻", "Genstart") { openPanel(url, "Server") }); power.addView(powerButton("■", "Stop") { openPanel(url, "Server") })
+            addView(power)
+            setOnClickListener { openPanel(url, name) }
         }
     }
 
-    private fun injectAppTheme(view: WebView) {
-        val js = """
-            (function(){
-              if(document.getElementById('nodexa-native-v2')) return;
-              const s=document.createElement('style');s.id='nodexa-native-v2';s.textContent=`
-              :root{--app-accent:#786cff!important} html,body{background:#070a10!important}
-              @media(max-width:760px){body{overscroll-behavior-y:none} main,.content,.container{max-width:100%!important} .card,[class*=card]{border-radius:16px!important} table{font-size:12px!important} button,a[role=button],input[type=submit]{min-height:44px!important;border-radius:12px!important} input,textarea,select{font-size:16px!important;min-height:44px!important} }
-              input,textarea,select{color:#f4f7fb!important;-webkit-text-fill-color:#f4f7fb!important} input::placeholder,textarea::placeholder{color:#778399!important;-webkit-text-fill-color:#778399!important}
-              `;document.head.appendChild(s);
-            })();
-        """.trimIndent()
-        view.evaluateJavascript(js, null)
+    private fun stat(label: String, value: String): View = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(10), dp(12), dp(10)); background = round("#0B1018", 11)
+        addView(TextView(this@MainActivity).apply { text = value; textSize = 16f; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD) })
+        addView(TextView(this@MainActivity).apply { text = label; textSize = 9f; setTextColor(c("#68758A")) })
+        layoutParams = LinearLayout.LayoutParams(0, dp(58), 1f).apply { marginEnd = dp(7) }
     }
 
-    private fun isOnline(): Boolean {
-        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = cm.activeNetwork ?: return false
-        val caps = cm.getNetworkCapabilities(network) ?: return false
-        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    private fun powerButton(icon: String, label: String, action: () -> Unit): View = TextView(this).apply {
+        text = "$icon  $label"; textSize = 11f; gravity = Gravity.CENTER; setTextColor(c("#C6CFDC")); background = bordered("#151C28", "#273247", 11); setOnClickListener { action() }
+        layoutParams = LinearLayout.LayoutParams(0, dp(43), 1f).apply { marginEnd = dp(7) }
     }
 
-    private fun rounded(color: Int, radius: Int) = GradientDrawable().apply { setColor(color); cornerRadius = dp(radius).toFloat() }
+    private fun actionRow(icon: String, name: String, desc: String, click: () -> Unit): View = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = bordered("#0F151F", "#1C2635", 14)
+        addView(TextView(this@MainActivity).apply { text = icon; gravity = Gravity.CENTER; textSize = 20f; setTextColor(c("#9C8DFF")); background = round("#1B1932", 11) }, LinearLayout.LayoutParams(dp(43), dp(43)))
+        val txt = LinearLayout(this@MainActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
+        txt.addView(TextView(this@MainActivity).apply { text = name; textSize = 14f; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD) })
+        txt.addView(TextView(this@MainActivity).apply { text = desc; textSize = 11f; setTextColor(c("#778397")) })
+        addView(txt, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        addView(TextView(this@MainActivity).apply { text = "›"; textSize = 25f; setTextColor(c("#68758A")) })
+        setOnClickListener { click() }; layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(72)).apply { bottomMargin = dp(9) }
+    }
+
+    private fun bottomBar(): View {
+        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(dp(7), dp(7), dp(7), dp(9)); setBackgroundColor(c("#0D1119")) }
+        listOf("⌂\nHjem", "▣\nServere", "＋\nBestil", "☰\nMere").forEachIndexed { i, label ->
+            bar.addView(TextView(this).apply {
+                text = label; textSize = 11f; gravity = Gravity.CENTER; setTextColor(if (i == currentTab) c("#C7BEFF") else c("#788397")); background = if (i == currentTab) round("#211D3D", 13) else round("#0D1119", 13)
+                setOnClickListener { when(i) { 0 -> showDashboard(); 1 -> openPanel("$PANEL/client", "Servere"); 2 -> openPanel("$PANEL/client/order", "Bestil"); else -> openPanel(PANEL, "Nodexa") } }
+            }, LinearLayout.LayoutParams(0, dp(57), 1f))
+        }
+        return bar
+    }
+
+    private fun openPanel(url: String, page: String) {
+        root.removeAllViews(); currentTab = if (url.contains("order")) 2 else 1
+        val shell = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(c("#090C12")) }
+        shell.addView(topBar(page, "Nodexa"))
+        val web = WebView(this).apply {
+            setBackgroundColor(c("#090C12")); settings.javaScriptEnabled = true; settings.domStorageEnabled = true
+            settings.userAgentString = "${settings.userAgentString} NodexaAndroid/3.0"
+            CookieManager.getInstance().apply { setAcceptCookie(true); setAcceptThirdPartyCookies(this@apply, true) }
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                    val uri = request.url; if (uri.scheme == "http" || uri.scheme == "https") return false
+                    return runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)); true }.getOrDefault(false)
+                }
+            }
+            loadUrl(url)
+        }
+        browser = web; shell.addView(web, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)); shell.addView(bottomBar()); root.addView(shell)
+    }
+
+    private fun space(h: Int) = View(this).apply { layoutParams = LinearLayout.LayoutParams(1, dp(h)) }
+    private fun c(hex: String) = Color.parseColor(hex)
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
-    override fun onSaveInstanceState(outState: Bundle) { webView.saveState(outState); super.onSaveInstanceState(outState) }
-    override fun onDestroy() { fileCallback?.onReceiveValue(null); webView.stopLoading(); webView.destroy(); super.onDestroy() }
+    private fun round(color: String, radius: Int) = GradientDrawable().apply { setColor(c(color)); cornerRadius = dp(radius).toFloat() }
+    private fun bordered(bg: String, stroke: String, radius: Int) = GradientDrawable().apply { setColor(c(bg)); setStroke(dp(1), c(stroke)); cornerRadius = dp(radius).toFloat() }
+    override fun onDestroy() { browser?.destroy(); super.onDestroy() }
 }
