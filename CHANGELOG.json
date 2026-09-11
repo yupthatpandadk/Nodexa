@@ -1,4 +1,5 @@
 [
+  {"version":"0.14.73","type":"fixed","title":"Marketing i adminmenuen","description":"Marketing er nu tilføjet som et synligt menupunkt under Customers & Commerce, så announcements og rabatkoder kan administreres direkte fra adminpanelet.","date":"2026-09-11"},
   {"version":"0.14.72","type":"added","title":"Announcement Banner","description":"Nodexa har nu announcements med titel, besked, type, valgfri knap, start/slutdato og aktiv-status. Aktive announcements vises øverst på storefront og bestillingssiden.","date":"2026-09-11"},
   {"version":"0.14.72","type":"added","title":"Rabatkoder og kampagner","description":"Nyt server-side rabatsystem med procent eller fast rabat, minimumskøb, maksimumrabat, brugsgrænser, nye kunder, produktbegrænsning og gyldighedsperiode. Rabat gemmes på ordre og faktura.","date":"2026-09-11"},
   {"version":"0.14.72","type":"added","title":"Marketing administration","description":"Ny adminside på /admin/marketing til oprettelse og administration af announcements og rabatkoder.","date":"2026-09-11"},
