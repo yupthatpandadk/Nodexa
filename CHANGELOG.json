@@ -1,4 +1,6 @@
 [
+  {"version":"0.14.67","type":"fixed","title":"Korrekt VPS-status fra Flax","description":"VPS Hosting viser nu kundevenlige statustekster som Aktiv, Suspenderet, Udløbet og Termineret i stedet for VirtFusions tekniske provisioning-status complete.","date":"2026-09-11"},
+  {"version":"0.14.67","type":"improved","title":"Samme status på tilknyttede VPS'er","description":"Synkronisering gemmer den normaliserede Flax VPS-status på tilknyttede services, så serveroversigten og kundetilknytningen bruger samme status.","date":"2026-09-11"},
   {"version":"0.14.66","type":"fixed","title":"Stabil versionskontrol i Update Center","description":"Update Center henter nu versionsnummer og GitHub commit uafhængigt af hinanden, så Nyeste version ikke bliver Ukendt blot fordi GitHub commit-opslaget fejler.","date":"2026-09-11"},
   {"version":"0.14.66","type":"fixed","title":"Korrekt repository og branch fallback","description":"Update Center falder sikkert tilbage til Nodexa main ved gamle eller ugyldige updater-indstillinger og kan læse installeret version direkte fra VERSION-filen som fallback.","date":"2026-09-11"},
   {"version":"0.14.65","type":"improved","title":"Fleksibel changelog-visning","description":"Update Center viser 15 versioner pr. side som standard og giver mulighed for at vælge 10, 15, 20, 50, 100 eller 250 versioner pr. side.","date":"2026-09-11"},
