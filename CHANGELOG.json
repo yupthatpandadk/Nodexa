@@ -1,4 +1,6 @@
 [
+  {"version":"0.14.71","type":"fixed","title":"Mobil sidemenu kan åbnes igen","description":"Menu-knappen i adminpanelet har nu sin egen sikre mobil-toggle, så sidebaren kan åbnes og lukkes på telefon efter det nye responsive layout.","date":"2026-09-11"},
+  {"version":"0.14.71","type":"improved","title":"Tydelig mobil menu-knap","description":"Menu-knappen er gjort tydeligere på små skærme, og sidemenuen lukkes automatisk ved tryk uden for menuen.","date":"2026-09-11"},
   {"version":"0.14.70","type":"fixed","title":"Mobil viewport og breakpoint rettet","description":"Admin-layoutets viewport og responsive breakpoint er rettet, så telefoner ikke længere viser det sammenpressede desktop-layout. Mobilvisningen aktiveres nu også på bredere mobile viewports op til 991 px.","date":"2026-09-11"},
   {"version":"0.14.70","type":"improved","title":"Mobil sidebar som overlay","description":"Admin-sidebaren ligger nu uden for skærmen på mobil og åbnes som overlay via menu-knappen, mens hovedindholdet beholder hele skærmbredden.","date":"2026-09-11"},
   {"version":"0.14.69","type":"fixed","title":"Rigtigt mobil-layout i Admin","description":"Adminpanelet bruger nu hele skærmbredden på mobil. Sidebaren er skjult som standard og åbnes via menu-knappen, mens indhold, header og footer ikke længere presses sammen af desktop-sidebaren.","date":"2026-09-11"},
