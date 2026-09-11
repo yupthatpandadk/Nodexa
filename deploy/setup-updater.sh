@@ -4,7 +4,7 @@ set -Eeuo pipefail
 [[ $EUID -eq 0 ]] || { echo "[Nodexa] setup-updater.sh must run as root." >&2; exit 1; }
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO="${NODEXA_UPDATE_REPOSITORY:-yupthatpandadk/Nodexa}"
-BRANCH="${NODEXA_UPDATE_BRANCH:-${NODEXA_BRANCH:-pterodactyl-core}}"
+BRANCH="${NODEXA_UPDATE_BRANCH:-${NODEXA_BRANCH:-main}}"
 STATE_DIR="/var/lib/nodexa"
 VERSION="$(tr -d '[:space:]' < "$SOURCE_DIR/VERSION" 2>/dev/null || echo unknown)"
 apt-get install -y sudo curl python3 >/dev/null
