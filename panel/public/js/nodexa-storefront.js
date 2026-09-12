@@ -14,6 +14,21 @@
         }));
     }
 
+    const profile = document.querySelector('[data-profile-menu]');
+    const profileToggle = document.querySelector('[data-profile-toggle]');
+    const profileDropdown = document.querySelector('[data-profile-dropdown]');
+    const setProfile = (open) => {
+        if (!profile || !profileToggle || !profileDropdown) return;
+        profile.classList.toggle('open', open);
+        profileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    profileToggle?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setProfile(!profile?.classList.contains('open'));
+    });
+    profileDropdown?.addEventListener('click', (event) => event.stopPropagation());
+    document.addEventListener('click', () => setProfile(false));
+
     const drawer = document.querySelector('[data-theme-drawer]');
     const backdrop = document.querySelector('[data-theme-backdrop]');
     const trigger = document.querySelector('[data-theme-toggle]');
@@ -31,7 +46,10 @@
     close?.addEventListener('click', () => setDrawer(false));
     backdrop?.addEventListener('click', () => setDrawer(false));
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') setDrawer(false);
+        if (event.key === 'Escape') {
+            setDrawer(false);
+            setProfile(false);
+        }
     });
 
     const apply = (accent) => {
