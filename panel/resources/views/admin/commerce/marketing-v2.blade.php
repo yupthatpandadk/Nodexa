@@ -1,40 +1,117 @@
 @extends('layouts.admin')
 @section('title', 'Marketing')
 @section('content')
-<div class="container-fluid px-0">
-@if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
-@if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
-<div class="mb-4"><h1 class="h3 mb-1">Marketing</h1><p class="text-muted mb-0">Announcements og rabatkoder til Nodexa.</p></div>
-<div class="row g-4">
-<div class="col-12 col-xl-6"><div class="card h-100"><div class="card-body p-4">
-<h2 class="h5">Nyt Announcement Banner</h2><p class="text-muted small">Vis en besked på storefront og bestillingssiden.</p>
-<form method="POST" action="{{ route('admin.marketing.announcements.store') }}">@csrf
-<div class="mb-3"><label class="form-label">Titel</label><input class="form-control" name="title" required></div>
-<div class="mb-3"><label class="form-label">Besked</label><textarea class="form-control" name="message" rows="3" required></textarea></div>
-<div class="row g-3"><div class="col-md-6"><label class="form-label">Type</label><select class="form-select" name="type"><option value="info">Info</option><option value="success">Success</option><option value="warning">Warning</option><option value="danger">Danger</option></select></div><div class="col-md-6"><label class="form-label">Knaptekst</label><input class="form-control" name="button_text"></div></div>
-<div class="mt-3"><label class="form-label">Knap URL</label><input class="form-control" name="button_url"></div>
-<div class="row g-3 mt-0"><div class="col-md-6"><label class="form-label">Start</label><input class="form-control" type="datetime-local" name="starts_at"></div><div class="col-md-6"><label class="form-label">Slut</label><input class="form-control" type="datetime-local" name="ends_at"></div></div>
-<div class="form-check mt-3"><input class="form-check-input" type="checkbox" name="active" value="1" checked id="announcement-active"><label class="form-check-label" for="announcement-active">Aktiv</label></div>
-<button class="btn btn-primary w-100 mt-4">Opret announcement</button></form>
-<hr class="my-4"><h3 class="h6">Announcements</h3>
-@forelse($announcements as $item)<div class="border rounded p-3 mt-3"><div class="d-flex justify-content-between gap-2"><strong>{{ $item->title }}</strong><span class="badge {{ $item->active ? 'bg-success' : 'bg-secondary' }}">{{ $item->active ? 'Aktiv' : 'Deaktiveret' }}</span></div><div class="small text-muted mt-2">{{ $item->message }}</div><form class="mt-3" method="POST" action="{{ route('admin.marketing.announcements.delete',$item->id) }}">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Slet</button></form></div>@empty<p class="text-muted small mt-3">Ingen announcements endnu.</p>@endforelse
-</div></div></div>
-<div class="col-12 col-xl-6"><div class="card h-100"><div class="card-body p-4">
-<h2 class="h5">Ny rabatkode</h2><p class="text-muted small">Vælg om kunden får rabat i én måned eller permanent.</p>
-<form method="POST" action="{{ route('admin.marketing.discounts.store') }}">@csrf
-<div class="row g-3"><div class="col-md-6"><label class="form-label">Kode</label><input class="form-control text-uppercase" name="code" required placeholder="WELCOME20"></div><div class="col-md-6"><label class="form-label">Navn</label><input class="form-control" name="name" required placeholder="Velkomstrabat"></div></div>
-<div class="row g-3 mt-0"><div class="col-md-6"><label class="form-label">Rabattype</label><select class="form-select" name="type"><option value="percent">Procent</option><option value="fixed">Fast beløb</option></select></div><div class="col-md-6"><label class="form-label">Værdi</label><input class="form-control" type="number" step="0.01" min="0.01" name="value" required></div></div>
-<div class="mt-4 p-3 rounded border discount-duration-box"><label class="form-label fw-bold">Rabattens varighed</label><select class="form-select" name="duration" id="discount-duration" required><option value="once">1 måneds rabat</option><option value="forever">Permanent rabat</option></select><div class="form-text mt-2" id="duration-help"></div></div>
-<div class="row g-3 mt-0"><div class="col-md-6"><label class="form-label">Minimumskøb</label><input class="form-control" type="number" step="0.01" min="0" name="minimum_amount"></div><div class="col-md-6"><label class="form-label">Maks. rabat</label><input class="form-control" type="number" step="0.01" min="0" name="maximum_discount"></div></div>
-<div class="row g-3 mt-0"><div class="col-md-6"><label class="form-label">Brugsgrænse</label><input class="form-control" type="number" min="1" name="usage_limit"></div><div class="col-md-6"><label class="form-label">Pr. kunde</label><input class="form-control" type="number" min="1" name="per_user_limit"></div></div>
-<div class="row g-3 mt-0"><div class="col-md-6"><label class="form-label">Gyldig fra</label><input class="form-control" type="datetime-local" name="starts_at"></div><div class="col-md-6"><label class="form-label">Gyldig til</label><input class="form-control" type="datetime-local" name="ends_at"></div></div>
-<div class="form-check mt-3"><input class="form-check-input" type="checkbox" name="new_customers_only" value="1" id="new-customers"><label class="form-check-label" for="new-customers">Kun nye kunder</label></div><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="active" value="1" checked id="discount-active"><label class="form-check-label" for="discount-active">Aktiv</label></div>
-@if($products->count())<div class="mt-3"><label class="form-label">Begræns til produkter</label><div class="border rounded p-3 product-list">@foreach($products as $product)<div class="form-check"><input class="form-check-input" type="checkbox" name="products[]" value="{{ $product->id }}" id="product-{{ $product->id }}"><label class="form-check-label" for="product-{{ $product->id }}">{{ $product->name }}</label></div>@endforeach</div></div>@endif
-<button class="btn btn-primary w-100 mt-4">Opret rabatkode</button></form>
-<hr class="my-4"><h3 class="h6">Rabatkoder</h3>
-@forelse($discounts as $discount)<div class="border rounded p-3 mt-3"><div class="d-flex justify-content-between gap-2"><div><strong>{{ $discount->code }}</strong><div class="small text-muted">{{ $discount->name }}</div><div class="small mt-1"><span class="badge bg-primary">{{ $discount->duration === 'forever' ? 'Permanent rabat' : '1 måneds rabat' }}</span></div>@if($discount->duration !== 'forever')<div class="small text-muted mt-2">Efter første betalingsperiode betaler kunden det fulde beløb.</div>@endif</div><span class="badge {{ $discount->active ? 'bg-success' : 'bg-secondary' }}">{{ $discount->active ? 'Aktiv' : 'Deaktiveret' }}</span></div><form class="mt-3" method="POST" action="{{ route('admin.marketing.discounts.delete',$discount->id) }}">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Slet</button></form></div>@empty<p class="text-muted small mt-3">Ingen rabatkoder endnu.</p>@endforelse
-</div></div></div>
-</div></div>
-<style>.discount-duration-box{background:rgba(99,102,241,.08);border-color:rgba(129,140,248,.3)!important}.product-list{max-height:180px;overflow:auto}@media(max-width:767px){.card-body{padding:1rem!important}.form-control,.form-select,.btn{min-height:44px}}</style>
-<script>document.addEventListener('DOMContentLoaded',function(){var s=document.getElementById('discount-duration'),h=document.getElementById('duration-help');if(!s||!h)return;function u(){h.innerHTML=s.value==='forever'?'<strong>Permanent:</strong> Rabatten fortsætter på alle efterfølgende betalingsperioder.':'<strong>1 måned:</strong> Rabatten gælder kun første betalingsperiode. Fra næste måned betaler kunden det fulde normale beløb.';}s.addEventListener('change',u);u();});</script>
+<div class="container-fluid px-0 marketing-page">
+    @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+    @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+
+    <div class="marketing-header mb-4">
+        <div>
+            <div class="eyebrow">COMMERCE</div>
+            <h1 class="mb-1">Marketing</h1>
+            <p class="text-muted mb-0">Administrer rabatkoder og announcements fra ét sted.</p>
+        </div>
+        <div class="marketing-stats">
+            <div class="mini-stat"><strong>{{ $discounts->count() }}</strong><span>Rabatkoder</span></div>
+            <div class="mini-stat"><strong>{{ $announcements->count() }}</strong><span>Announcements</span></div>
+        </div>
+    </div>
+
+    <div class="marketing-tabs mb-4">
+        <button type="button" class="marketing-tab active" data-tab="discounts">Rabatkoder</button>
+        <button type="button" class="marketing-tab" data-tab="announcements">Announcements</button>
+    </div>
+
+    <section class="marketing-panel active" data-panel="discounts">
+        <div class="row g-4">
+            <div class="col-12 col-xxl-7">
+                <div class="marketing-card">
+                    <div class="card-heading"><div><span class="section-kicker">NY RABAT</span><h2>Opret rabatkode</h2><p>Opret kampagner med engangs- eller permanent rabat.</p></div></div>
+                    <form method="POST" action="{{ route('admin.marketing.discounts.store') }}">@csrf
+                        <div class="form-section">
+                            <div class="section-title">Grundlæggende</div>
+                            <div class="row g-3">
+                                <div class="col-md-6"><label class="form-label">Kode</label><input class="form-control text-uppercase" name="code" required placeholder="WELCOME20"></div>
+                                <div class="col-md-6"><label class="form-label">Navn</label><input class="form-control" name="name" required placeholder="Velkomstrabat"></div>
+                                <div class="col-md-6"><label class="form-label">Rabattype</label><select class="form-select" name="type"><option value="percent">Procent</option><option value="fixed">Fast beløb</option></select></div>
+                                <div class="col-md-6"><label class="form-label">Værdi</label><input class="form-control" type="number" step="0.01" min="0.01" name="value" required placeholder="20"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-title">Rabattens varighed</div>
+                            <div class="duration-grid">
+                                <label class="duration-option active" data-duration-card="once">
+                                    <input type="radio" name="duration" value="once" checked>
+                                    <span class="duration-icon">1×</span><span><strong>Kun første måned</strong><small>Rabatten bruges på første betalingsperiode. Derefter betales normal pris.</small></span>
+                                </label>
+                                <label class="duration-option" data-duration-card="forever">
+                                    <input type="radio" name="duration" value="forever">
+                                    <span class="duration-icon">∞</span><span><strong>Permanent rabat</strong><small>Rabatten fortsætter automatisk på alle efterfølgende betalingsperioder.</small></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-title">Begrænsninger</div>
+                            <div class="row g-3">
+                                <div class="col-md-6"><label class="form-label">Minimumskøb</label><input class="form-control" type="number" step="0.01" min="0" name="minimum_amount" placeholder="Ingen grænse"></div>
+                                <div class="col-md-6"><label class="form-label">Maks. rabat</label><input class="form-control" type="number" step="0.01" min="0" name="maximum_discount" placeholder="Ingen grænse"></div>
+                                <div class="col-md-6"><label class="form-label">Brugsgrænse</label><input class="form-control" type="number" min="1" name="usage_limit" placeholder="Ubegrænset"></div>
+                                <div class="col-md-6"><label class="form-label">Pr. kunde</label><input class="form-control" type="number" min="1" name="per_user_limit" placeholder="Ubegrænset"></div>
+                                <div class="col-md-6"><label class="form-label">Gyldig fra</label><input class="form-control" type="datetime-local" name="starts_at"></div>
+                                <div class="col-md-6"><label class="form-label">Gyldig til</label><input class="form-control" type="datetime-local" name="ends_at"></div>
+                            </div>
+                        </div>
+
+                        @if($products->count())
+                        <div class="form-section"><div class="section-title">Produkter</div><div class="product-list">@foreach($products as $product)<label class="product-check"><input type="checkbox" name="products[]" value="{{ $product->id }}"><span>{{ $product->name }}</span></label>@endforeach</div></div>
+                        @endif
+
+                        <div class="form-section compact"><label class="switch-row"><input type="checkbox" name="new_customers_only" value="1"><span><strong>Kun nye kunder</strong><small>Eksisterende kunder kan ikke bruge koden.</small></span></label><label class="switch-row"><input type="checkbox" name="active" value="1" checked><span><strong>Aktiv rabatkode</strong><small>Koden kan bruges med det samme.</small></span></label></div>
+                        <button class="btn btn-primary create-btn">Opret rabatkode</button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-12 col-xxl-5">
+                <div class="marketing-card sticky-card">
+                    <div class="card-heading"><div><span class="section-kicker">OVERSIGT</span><h2>Rabatkoder</h2><p>Aktive og tidligere kampagner.</p></div></div>
+                    <div class="item-list">
+                    @forelse($discounts as $discount)
+                        <div class="marketing-item">
+                            <div class="item-top"><div><div class="code-pill">{{ $discount->code }}</div><strong class="item-name">{{ $discount->name }}</strong></div><span class="status-dot {{ $discount->active ? 'is-active' : '' }}">{{ $discount->active ? 'Aktiv' : 'Deaktiveret' }}</span></div>
+                            <div class="item-meta"><span>{{ $discount->duration === 'forever' ? '∞ Permanent' : '1× Første måned' }}</span></div>
+                            <form method="POST" action="{{ route('admin.marketing.discounts.delete',$discount->id) }}">@csrf @method('DELETE')<button class="delete-link">Slet rabatkode</button></form>
+                        </div>
+                    @empty<div class="empty-state"><strong>Ingen rabatkoder endnu</strong><span>Din første rabatkode vises her.</span></div>@endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="marketing-panel" data-panel="announcements">
+        <div class="row g-4">
+            <div class="col-12 col-xxl-7"><div class="marketing-card"><div class="card-heading"><div><span class="section-kicker">NY BESKED</span><h2>Opret announcement</h2><p>Vis vigtig information på storefront og bestillingssiden.</p></div></div>
+                <form method="POST" action="{{ route('admin.marketing.announcements.store') }}">@csrf
+                    <div class="form-section"><div class="row g-3"><div class="col-12"><label class="form-label">Titel</label><input class="form-control" name="title" required></div><div class="col-12"><label class="form-label">Besked</label><textarea class="form-control" name="message" rows="4" required></textarea></div><div class="col-md-6"><label class="form-label">Type</label><select class="form-select" name="type"><option value="info">Info</option><option value="success">Success</option><option value="warning">Warning</option><option value="danger">Danger</option></select></div><div class="col-md-6"><label class="form-label">Knaptekst</label><input class="form-control" name="button_text"></div><div class="col-12"><label class="form-label">Knap URL</label><input class="form-control" name="button_url"></div><div class="col-md-6"><label class="form-label">Start</label><input class="form-control" type="datetime-local" name="starts_at"></div><div class="col-md-6"><label class="form-label">Slut</label><input class="form-control" type="datetime-local" name="ends_at"></div></div></div>
+                    <div class="form-section compact"><label class="switch-row"><input type="checkbox" name="active" value="1" checked><span><strong>Aktiv announcement</strong><small>Vis beskeden med det samme.</small></span></label></div><button class="btn btn-primary create-btn">Opret announcement</button>
+                </form>
+            </div></div>
+            <div class="col-12 col-xxl-5"><div class="marketing-card sticky-card"><div class="card-heading"><div><span class="section-kicker">OVERSIGT</span><h2>Announcements</h2></div></div><div class="item-list">@forelse($announcements as $item)<div class="marketing-item"><div class="item-top"><strong class="item-name">{{ $item->title }}</strong><span class="status-dot {{ $item->active ? 'is-active' : '' }}">{{ $item->active ? 'Aktiv' : 'Deaktiveret' }}</span></div><p class="announcement-text">{{ $item->message }}</p><form method="POST" action="{{ route('admin.marketing.announcements.delete',$item->id) }}">@csrf @method('DELETE')<button class="delete-link">Slet announcement</button></form></div>@empty<div class="empty-state"><strong>Ingen announcements</strong><span>Nye beskeder vises her.</span></div>@endforelse</div></div></div>
+        </div>
+    </section>
+</div>
+
+<style>
+.marketing-page{max-width:1500px;margin:0 auto;padding-bottom:40px}.marketing-header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}.marketing-header h1{font-size:30px;font-weight:750;letter-spacing:-.03em}.eyebrow,.section-kicker{font-size:11px;font-weight:800;letter-spacing:.12em;color:#818cf8}.marketing-stats{display:flex;gap:10px}.mini-stat{min-width:105px;padding:12px 16px;border:1px solid rgba(148,163,184,.18);border-radius:12px;background:rgba(15,23,42,.22);display:flex;flex-direction:column}.mini-stat strong{font-size:20px}.mini-stat span{font-size:11px;color:#94a3b8}.marketing-tabs{display:flex;gap:6px;padding:5px;border:1px solid rgba(148,163,184,.15);border-radius:13px;width:max-content;background:rgba(15,23,42,.22)}.marketing-tab{border:0;background:transparent;color:#94a3b8;padding:9px 18px;border-radius:9px;font-weight:650}.marketing-tab.active{background:rgba(99,102,241,.16);color:#c7d2fe}.marketing-panel{display:none}.marketing-panel.active{display:block}.marketing-card{border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(15,23,42,.26);overflow:hidden}.card-heading{padding:24px 26px;border-bottom:1px solid rgba(148,163,184,.12)}.card-heading h2{font-size:20px;margin:4px 0 3px;font-weight:720}.card-heading p{font-size:13px;color:#94a3b8;margin:0}.form-section{padding:24px 26px;border-bottom:1px solid rgba(148,163,184,.1)}.form-section.compact{padding-top:18px;padding-bottom:18px}.section-title{font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.07em;color:#cbd5e1;margin-bottom:14px}.form-label{font-size:12px;font-weight:650;color:#cbd5e1}.form-control,.form-select{min-height:44px;border-radius:9px}.duration-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.duration-option{position:relative;display:flex;gap:13px;padding:17px;border:1px solid rgba(148,163,184,.18);border-radius:12px;cursor:pointer;transition:.15s}.duration-option:hover,.duration-option.active{border-color:rgba(129,140,248,.65);background:rgba(99,102,241,.08)}.duration-option input{position:absolute;opacity:0}.duration-icon{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(99,102,241,.14);color:#a5b4fc;font-weight:800;flex:none}.duration-option strong{display:block;font-size:13px;margin:1px 0 4px}.duration-option small{display:block;color:#94a3b8;line-height:1.45}.product-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:220px;overflow:auto}.product-check{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(148,163,184,.14);border-radius:9px;font-size:13px;cursor:pointer}.switch-row{display:flex;align-items:flex-start;gap:11px;padding:8px 0;cursor:pointer}.switch-row+ .switch-row{margin-top:5px}.switch-row input{margin-top:4px}.switch-row strong,.switch-row small{display:block}.switch-row strong{font-size:13px}.switch-row small{color:#94a3b8;font-size:11px;margin-top:2px}.create-btn{margin:22px 26px 26px;width:calc(100% - 52px);min-height:46px;border-radius:10px;font-weight:700}.sticky-card{position:sticky;top:20px}.item-list{padding:10px}.marketing-item{padding:16px;border-radius:11px;border:1px solid transparent}.marketing-item+.marketing-item{border-top-color:rgba(148,163,184,.1);border-radius:0}.item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.code-pill{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.07em;color:#a5b4fc;background:rgba(99,102,241,.11);padding:4px 7px;border-radius:6px;margin-bottom:7px}.item-name{display:block;font-size:14px}.status-dot{font-size:10px;font-weight:700;color:#94a3b8;white-space:nowrap}.status-dot:before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#64748b;margin-right:5px}.status-dot.is-active{color:#86efac}.status-dot.is-active:before{background:#22c55e}.item-meta{display:flex;gap:8px;margin-top:10px;font-size:11px;color:#94a3b8}.delete-link{border:0;background:none;padding:0;margin-top:13px;color:#f87171;font-size:11px}.announcement-text{font-size:12px;color:#94a3b8;line-height:1.55;margin:10px 0 0}.empty-state{padding:45px 20px;text-align:center;color:#94a3b8}.empty-state strong,.empty-state span{display:block}.empty-state strong{color:#cbd5e1;font-size:14px}.empty-state span{font-size:11px;margin-top:5px}
+@media(max-width:767px){.marketing-header{align-items:flex-start;flex-direction:column}.marketing-stats{width:100%}.mini-stat{flex:1}.marketing-tabs{width:100%}.marketing-tab{flex:1}.duration-grid,.product-list{grid-template-columns:1fr}.card-heading,.form-section{padding-left:18px;padding-right:18px}.create-btn{margin-left:18px;margin-right:18px;width:calc(100% - 36px)}}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+    var tabs=document.querySelectorAll('.marketing-tab'),panels=document.querySelectorAll('.marketing-panel');
+    tabs.forEach(function(tab){tab.addEventListener('click',function(){tabs.forEach(function(t){t.classList.remove('active')});panels.forEach(function(p){p.classList.remove('active')});tab.classList.add('active');var panel=document.querySelector('[data-panel="'+tab.dataset.tab+'"]');if(panel)panel.classList.add('active')})});
+    var durationCards=document.querySelectorAll('.duration-option');durationCards.forEach(function(card){card.addEventListener('click',function(){durationCards.forEach(function(c){c.classList.remove('active')});card.classList.add('active');var input=card.querySelector('input');if(input)input.checked=true})});
+});
+</script>
 @endsection
