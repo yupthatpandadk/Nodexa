@@ -1,0 +1,28 @@
+<?php
+namespace Pterodactyl\Http\Controllers\Admin;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Pterodactyl\Http\Controllers\Controller;
+
+class InvoiceController extends Controller
+{
+    public function index(Request $r){
+        $q=DB::table('invoices as i')->leftJoin('users as u','u.id','=','i.user_id')->select('i.*','u.username','u.email');
+        if($r->filled('status'))$q->where('i.status',$r->status);
+        if($r->filled('search')){$s='%'.$r->search.'%';$q->where(function($x)use($s){$x->where('i.number','like',$s)->orWhere('u.username','like',$s)->orWhere('u.email','like',$s);});}
+        $invoices=$q->orderByDesc('i.id')->limit(300)->get();
+        $stats=['unpaid'=>DB::table('invoices')->where('status','unpaid')->sum('total'),'overdue'=>DB::table('invoices')->where('status','unpaid')->where('due_at','<',now())->sum('total'),'paid'=>DB::table('invoices')->where('status','paid')->sum('total'),'count'=>DB::table('invoices')->count()];
+        $users=DB::table('users')->orderBy('username')->get(['id','username','email']);
+        return view('admin.commerce.invoices',compact('invoices','stats','users'));
+    }
+    public function show(int $id){$invoice=DB::table('invoices as i')->leftJoin('users as u','u.id','=','i.user_id')->select('i.*','u.username','u.email')->where('i.id',$id)->first();abort_unless($invoice,404);$items=DB::table('invoice_items')->where('invoice_id',$id)->get();$payments=Schema::hasTable('invoice_payments')?DB::table('invoice_payments')->where('invoice_id',$id)->orderByDesc('paid_at')->get():collect();return view('admin.commerce.invoice',compact('invoice','items','payments'));}
+    public function store(Request $r){$d=$r->validate(['user_id'=>'required|integer|exists:users,id','description'=>'required|string|max:255','quantity'=>'required|numeric|min:0.01','unit_price'=>'required|numeric|min:0','tax_rate'=>'nullable|numeric|min:0|max:100','currency'=>'required|string|size:3','due_at'=>'required|date','notes'=>'nullable|string|max:5000']);$subtotal=round($d['quantity']*$d['unit_price'],2);$taxRate=(float)($d['tax_rate']??0);$tax=round($subtotal*$taxRate/100,2);$total=$subtotal+$tax;$now=now();$id=DB::transaction(function()use($d,$subtotal,$taxRate,$tax,$total,$now){$id=DB::table('invoices')->insertGetId(['user_id'=>$d['user_id'],'order_id'=>null,'number'=>'NX-'.now()->format('Ym').'-'.strtoupper(Str::random(6)),'status'=>'unpaid','issued_at'=>$now,'subtotal'=>$subtotal,'tax_rate'=>$taxRate,'tax'=>$tax,'credit'=>0,'total'=>$total,'balance'=>$total,'currency'=>strtoupper($d['currency']),'due_at'=>$d['due_at'],'notes'=>$d['notes']??null,'created_at'=>$now,'updated_at'=>$now]);DB::table('invoice_items')->insert(['invoice_id'=>$id,'description'=>$d['description'],'quantity'=>$d['quantity'],'unit_price'=>$d['unit_price'],'total'=>$subtotal,'created_at'=>$now,'updated_at'=>$now]);return $id;});return redirect()->route('admin.invoices.show',$id)->with('success','Fakturaen blev oprettet.');}
+    public function status(Request $r,int $id){$d=$r->validate(['status'=>'required|in:unpaid,paid,cancelled,refunded']);$data=['status'=>$d['status'],'updated_at'=>now()];if($d['status']==='paid'){$data['paid_at']=now();$data['balance']=0;}if($d['status']==='cancelled'){$data['cancelled_at']=now();$data['balance']=0;}DB::table('invoices')->where('id',$id)->update($data);return back()->with('success','Fakturastatus blev opdateret.');}
+    public function addItem(Request $r,int $id){$d=$r->validate(['description'=>'required|string|max:255','quantity'=>'required|numeric|min:0.01','unit_price'=>'required|numeric|min:0']);DB::table('invoice_items')->insert(['invoice_id'=>$id,'description'=>$d['description'],'quantity'=>$d['quantity'],'unit_price'=>$d['unit_price'],'total'=>round($d['quantity']*$d['unit_price'],2),'created_at'=>now(),'updated_at'=>now()]);$this->recalculate($id);return back()->with('success','Fakturalinjen blev tilføjet.');}
+    public function payment(Request $r,int $id){$d=$r->validate(['amount'=>'required|numeric|min:0.01','method'=>'nullable|string|max:40','transaction_id'=>'nullable|string|max:190','notes'=>'nullable|string|max:2000']);$i=DB::table('invoices')->where('id',$id)->first();abort_unless($i,404);DB::table('invoice_payments')->insert(['invoice_id'=>$id,'amount'=>$d['amount'],'currency'=>$i->currency,'method'=>$d['method']??'manual','transaction_id'=>$d['transaction_id']??null,'notes'=>$d['notes']??null,'paid_at'=>now(),'created_at'=>now(),'updated_at'=>now()]);$paid=DB::table('invoice_payments')->where('invoice_id',$id)->sum('amount');$balance=max(0,(float)$i->total-$paid);DB::table('invoices')->where('id',$id)->update(['balance'=>$balance,'status'=>$balance<=0?'paid':'unpaid','paid_at'=>$balance<=0?now():null,'updated_at'=>now()]);return back()->with('success','Betalingen blev registreret.');}
+    public function remind(int $id){DB::table('invoices')->where('id',$id)->update(['last_reminder_at'=>now(),'reminder_count'=>DB::raw('reminder_count + 1'),'updated_at'=>now()]);return back()->with('success','Rykkeren er registreret som sendt.');}
+    private function recalculate(int $id){$i=DB::table('invoices')->where('id',$id)->first();$subtotal=(float)DB::table('invoice_items')->where('invoice_id',$id)->sum('total');$tax=round($subtotal*(float)($i->tax_rate??0)/100,2);$total=$subtotal+$tax;$paid=Schema::hasTable('invoice_payments')?(float)DB::table('invoice_payments')->where('invoice_id',$id)->sum('amount'):0;DB::table('invoices')->where('id',$id)->update(['subtotal'=>$subtotal,'tax'=>$tax,'total'=>$total,'balance'=>max(0,$total-$paid),'updated_at'=>now()]);}
+}
