@@ -31,10 +31,12 @@ Route::group(['prefix' => 'databases'], function () {
 Route::group(['prefix' => 'settings'], function () {
     Route::get('/', [Admin\Settings\IndexController::class, 'index'])->name('admin.settings');
     Route::get('/mail', [Admin\Settings\MailController::class, 'index'])->name('admin.settings.mail');
+    Route::get('/discord', [Admin\Settings\DiscordController::class, 'index'])->name('admin.settings.discord');
     Route::get('/advanced', [Admin\Settings\AdvancedController::class, 'index'])->name('admin.settings.advanced');
     Route::post('/mail/test', [Admin\Settings\MailController::class, 'test'])->name('admin.settings.mail.test');
     Route::patch('/', [Admin\Settings\IndexController::class, 'update']);
     Route::patch('/mail', [Admin\Settings\MailController::class, 'update']);
+    Route::patch('/discord', [Admin\Settings\DiscordController::class, 'update'])->name('admin.settings.discord.update');
     Route::patch('/advanced', [Admin\Settings\AdvancedController::class, 'update']);
 });
 
