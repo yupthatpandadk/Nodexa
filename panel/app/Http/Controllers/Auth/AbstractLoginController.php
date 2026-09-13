@@ -84,10 +84,39 @@ abstract class AbstractLoginController extends Controller
         return new JsonResponse([
             'data' => [
                 'complete' => true,
-                'intended' => $this->redirectPath(),
+                'intended' => $this->storefrontUrl(),
                 'user' => $user->toVueObject(),
             ],
         ]);
+    }
+
+    /**
+     * Send successful logins to the public Nodexa storefront rather than the panel dashboard.
+     */
+    protected function storefrontUrl(): string
+    {
+        $configured = trim((string) config('nodexa.storefront_domain', ''));
+
+        if ($configured !== '') {
+            if (!preg_match('#^https?://#i', $configured)) {
+                $configured = 'https://' . $configured;
+            }
+
+            return rtrim($configured, '/') . '/';
+        }
+
+        $panelUrl = (string) config('app.url', '/');
+        $parts = parse_url($panelUrl);
+        $host = strtolower((string) ($parts['host'] ?? ''));
+
+        if ($host !== '' && str_starts_with($host, 'panel.')) {
+            $scheme = (string) ($parts['scheme'] ?? 'https');
+            $storefrontHost = substr($host, 6);
+
+            return $scheme . '://' . $storefrontHost . '/';
+        }
+
+        return '/';
     }
 
     /**
