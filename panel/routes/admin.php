@@ -48,6 +48,13 @@ Route::group(['prefix' => 'users'], function () {
     Route::delete('/view/{user:id}', [Admin\UserController::class, 'delete'])->name('admin.users.delete');
 });
 
+Route::group(['prefix' => 'roles'], function () {
+    Route::get('/', [Admin\RoleController::class, 'index'])->name('admin.roles');
+    Route::post('/', [Admin\RoleController::class, 'store'])->name('admin.roles.store');
+    Route::patch('/{role}', [Admin\RoleController::class, 'update'])->name('admin.roles.update');
+    Route::delete('/{role}', [Admin\RoleController::class, 'delete'])->name('admin.roles.delete');
+});
+
 Route::group(['prefix' => 'servers'], function () {
     Route::get('/', [Admin\Servers\ServerController::class, 'index'])->name('admin.servers');
     Route::get('/new', [Admin\Servers\CreateServerController::class, 'index'])->name('admin.servers.new');
