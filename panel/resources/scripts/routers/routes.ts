@@ -9,6 +9,7 @@ import StartupContainer from '@/components/server/startup/StartupContainer';
 import FileManagerContainer from '@/components/server/files/FileManagerContainer';
 import MinecraftPluginManager from '@/components/server/plugins/MinecraftPluginManager';
 import MinecraftModManager from '@/components/server/mods/MinecraftModManager';
+import MinecraftPlayerList from '@/components/server/players/MinecraftPlayerList';
 import SettingsContainer from '@/components/server/settings/SettingsContainer';
 import AccountOverviewContainer from '@/components/dashboard/AccountOverviewContainer';
 import AccountApiContainer from '@/components/dashboard/AccountApiContainer';
@@ -19,24 +20,9 @@ import ServerActivityLogContainer from '@/components/server/ServerActivityLogCon
 const FileEditContainer = lazy(() => import('@/components/server/files/FileEditContainer'));
 const ScheduleEditContainer = lazy(() => import('@/components/server/schedules/ScheduleEditContainer'));
 
-interface RouteDefinition {
-    path: string;
-    name: string | undefined;
-    component: React.ComponentType;
-    exact?: boolean;
-}
-
-interface ServerRouteDefinition extends RouteDefinition {
-    permission: string | string[] | null;
-    minecraftOnly?: boolean;
-    moddedOnly?: boolean;
-    addon?: 'minecraftPluginManager' | 'minecraftModManager';
-}
-
-interface Routes {
-    account: RouteDefinition[];
-    server: ServerRouteDefinition[];
-}
+interface RouteDefinition { path: string; name: string | undefined; component: React.ComponentType; exact?: boolean; }
+interface ServerRouteDefinition extends RouteDefinition { permission: string | string[] | null; minecraftOnly?: boolean; moddedOnly?: boolean; addon?: 'minecraftPluginManager' | 'minecraftModManager' | 'minecraftPlayerList'; }
+interface Routes { account: RouteDefinition[]; server: ServerRouteDefinition[]; }
 
 export default {
     account: [
@@ -47,23 +33,10 @@ export default {
     ],
     server: [
         { path: '/', permission: null, name: 'Console', component: ServerConsole, exact: true },
+        { path: '/players', permission: 'control.console', name: 'Players', component: MinecraftPlayerList, minecraftOnly: true, addon: 'minecraftPlayerList' },
         { path: '/files', permission: 'file.*', name: 'Files', component: FileManagerContainer },
-        {
-            path: '/plugins',
-            permission: 'file.create',
-            name: 'Plugins',
-            component: MinecraftPluginManager,
-            minecraftOnly: true,
-            addon: 'minecraftPluginManager',
-        },
-        {
-            path: '/mods',
-            permission: 'file.create',
-            name: 'Mods',
-            component: MinecraftModManager,
-            moddedOnly: true,
-            addon: 'minecraftModManager',
-        },
+        { path: '/plugins', permission: 'file.create', name: 'Plugins', component: MinecraftPluginManager, minecraftOnly: true, addon: 'minecraftPluginManager' },
+        { path: '/mods', permission: 'file.create', name: 'Mods', component: MinecraftModManager, moddedOnly: true, addon: 'minecraftModManager' },
         { path: '/files/:action(edit|new)', permission: 'file.*', name: undefined, component: FileEditContainer },
         { path: '/databases', permission: 'database.*', name: 'Databases', component: DatabasesContainer },
         { path: '/schedules', permission: 'schedule.*', name: 'Schedules', component: ScheduleContainer },
