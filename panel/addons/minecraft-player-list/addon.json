@@ -1,0 +1,11 @@
+{
+  "id": "minecraft-player-list",
+  "name": "Minecraft Player List",
+  "description": "Tilføjer en Players-fane på Minecraft-servere med live spillerliste og hurtige administrationshandlinger.",
+  "version": "1.0.0",
+  "author": "Nodexa Software",
+  "category": "Server Tools",
+  "icon": "fa-users",
+  "min_nodexa": "0.14.83",
+  "assets": {}
+}
