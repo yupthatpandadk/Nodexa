@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {runtimeInfo} from '../src/runtime-info.js';test('runtime metadata reports Node version',()=>assert.match(runtimeInfo().node,/^v\d+/));
