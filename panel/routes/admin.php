@@ -57,6 +57,13 @@ Route::group(['prefix' => 'roles'], function () {
     Route::delete('/{role}', [Admin\RoleController::class, 'delete'])->name('admin.roles.delete');
 });
 
+Route::group(['prefix' => 'addons'], function () {
+    Route::get('/', [Admin\AddonController::class, 'index'])->name('admin.addons');
+    Route::post('/{slug}/install', [Admin\AddonController::class, 'install'])->name('admin.addons.install');
+    Route::patch('/{slug}', [Admin\AddonController::class, 'toggle'])->name('admin.addons.toggle');
+    Route::delete('/{slug}', [Admin\AddonController::class, 'uninstall'])->name('admin.addons.uninstall');
+});
+
 Route::group(['prefix' => 'servers'], function () {
     Route::get('/', [Admin\Servers\ServerController::class, 'index'])->name('admin.servers');
     Route::get('/new', [Admin\Servers\CreateServerController::class, 'index'])->name('admin.servers.new');
