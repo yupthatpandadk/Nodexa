@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {publicError} from '../src/errors.js';test('permission errors are friendly',()=>assert.match(publicError({code:50013}),/permissions/i));
