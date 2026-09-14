@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {validateAppeal} from '../src/appeal-validation.js';test('valid appeal accepted',()=>assert.equal(validateAppeal('case-000001','Jeg ønsker sagen genvurderet').caseId,'CASE-000001'));test('bad case id rejected',()=>assert.throws(()=>validateAppeal('1','lang nok begrundelse')));
