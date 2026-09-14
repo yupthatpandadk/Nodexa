@@ -49,6 +49,7 @@
         <li class="{{ starts_with(Route::currentRouteName(),'admin.locations')?'active':'' }}"><a href="{{ route('admin.locations') }}"><i class="fa fa-globe"></i> <span>Locations</span></a></li>
         <li class="header">SYSTEM</li>
         <li class="{{ starts_with(Route::currentRouteName(),'admin.settings')?'active':'' }}"><a href="{{ route('admin.settings') }}"><i class="fa fa-wrench"></i> <span>Settings</span></a></li>
+        <li class="{{ starts_with(Route::currentRouteName(),'admin.discord-bot')?'active':'' }}"><a href="{{ route('admin.discord-bot') }}"><i class="fa fa-comments"></i> <span>Discord Bot</span></a></li>
         <li class="{{ starts_with(Route::currentRouteName(),'admin.updates')?'active':'' }}"><a href="{{ route('admin.updates') }}"><i class="fa fa-cloud-download"></i> <span>Update Center</span></a></li>
         <li class="{{ starts_with(Route::currentRouteName(),'admin.diagnostics')?'active':'' }}"><a href="{{ route('admin.diagnostics') }}"><i class="fa fa-heartbeat"></i> <span>Diagnostics</span></a></li>
         <li class="{{ starts_with(Route::currentRouteName(),'admin.addons')?'active':'' }}"><a href="{{ route('admin.addons') }}"><i class="fa fa-puzzle-piece"></i> <span>Addons</span></a></li>
