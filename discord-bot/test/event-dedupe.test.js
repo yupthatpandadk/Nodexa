@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {first} from '../src/event-dedupe.js';test('same event is only accepted once',()=>{assert.equal(first('abc'),true);assert.equal(first('abc'),false)});
