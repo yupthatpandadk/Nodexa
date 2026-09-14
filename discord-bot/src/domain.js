@@ -1,0 +1,1 @@
+export function hostname(value){try{return new URL(value).hostname.toLowerCase().replace(/^www\./,'')}catch{return String(value||'').toLowerCase().replace(/^www\./,'')}}export function domainAllowed(host,allowed=[]){host=hostname(host);return allowed.some(x=>{const d=hostname(x);return host===d||host.endsWith('.'+d)})}
