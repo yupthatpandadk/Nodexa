@@ -12,11 +12,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: discord-bot/package-lock.json
       - working-directory: discord-bot
-        run: npm install --package-lock-only
-      - working-directory: discord-bot
-        run: npm ci
+        run: npm install
       - working-directory: discord-bot
         run: npm run check
+      - working-directory: discord-bot
+        run: npm test
