@@ -1,0 +1,22 @@
+name: Discord Runtime Check
+on:
+  push:
+    paths: ['discord-bot/**']
+  pull_request:
+    paths: ['discord-bot/**']
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: discord-bot/package-lock.json
+      - working-directory: discord-bot
+        run: npm install --package-lock-only
+      - working-directory: discord-bot
+        run: npm ci
+      - working-directory: discord-bot
+        run: npm run check
