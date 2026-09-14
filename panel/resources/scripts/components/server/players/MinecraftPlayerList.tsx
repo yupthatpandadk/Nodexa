@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ServerContext } from '@/state/server';
 import { SocketEvent } from '@/components/server/events';
 import { usePermissions } from '@/plugins/usePermissions';
+import getFileContents from '@/api/server/files/getFileContents';
 
 const clean = (value: string) => value.replace(/\u00a7[0-9A-FK-OR]/gi, '').replace(/\x1b\[[0-9;]*m/g, '').trim();
 const names = (value: string) => value.split(',').map(v => v.trim()).filter(v => /^[A-Za-z0-9_]{1,16}$/.test(v));
@@ -30,11 +31,19 @@ const parsePlayerEvent = (line: string): { type: 'join' | 'leave'; player: strin
     return null;
 };
 
+const parseMaxPlayers = (properties: string): number | null => {
+    const match = properties.match(/^\s*max[-_]players\s*=\s*(\d+)\s*$/im);
+    if (!match) return null;
+    const value = Number(match[1]);
+    return Number.isFinite(value) && value >= 0 ? value : null;
+};
+
 export interface MinecraftPlayerListProps { embedded?: boolean; }
 
 export default ({ embedded = false }: MinecraftPlayerListProps) => {
     const socket = ServerContext.useStoreState(state => state.socket.instance);
     const status = ServerContext.useStoreState(state => state.status.value);
+    const serverId = ServerContext.useStoreState(state => state.server.data!.id as string);
     const [canCommand] = usePermissions('control.console');
     const [players, setPlayers] = useState<string[]>([]);
     const [online, setOnline] = useState(0);
@@ -43,6 +52,15 @@ export default ({ embedded = false }: MinecraftPlayerListProps) => {
     const [updated, setUpdated] = useState<Date | null>(null);
     const refreshTimer = useRef<number | null>(null);
 
+    const loadMaxPlayers = useCallback(() => {
+        getFileContents(serverId, '/server.properties')
+            .then(contents => {
+                const configuredMax = parseMaxPlayers(contents);
+                if (configuredMax !== null) setMax(configuredMax);
+            })
+            .catch(() => undefined);
+    }, [serverId]);
+
     const send = useCallback((command: string) => {
         if (!socket || status !== 'running') return false;
         socket.send('send command', command);
@@ -50,15 +68,20 @@ export default ({ embedded = false }: MinecraftPlayerListProps) => {
     }, [socket, status]);
 
     const refresh = useCallback(() => {
+        loadMaxPlayers();
         if (!send('list')) return;
         setLoading(true);
         window.setTimeout(() => setLoading(false), 2500);
-    }, [send]);
+    }, [send, loadMaxPlayers]);
 
     const delayedRefresh = useCallback(() => {
         if (refreshTimer.current !== null) window.clearTimeout(refreshTimer.current);
         refreshTimer.current = window.setTimeout(() => { refreshTimer.current = null; refresh(); }, 600);
     }, [refresh]);
+
+    useEffect(() => {
+        loadMaxPlayers();
+    }, [loadMaxPlayers]);
 
     useEffect(() => {
         if (!socket) return;
@@ -67,7 +90,6 @@ export default ({ embedded = false }: MinecraftPlayerListProps) => {
             if (result) {
                 if (result.players.length > 0 || result.online === 0) setPlayers(result.players);
                 setOnline(result.online);
-                if (result.max !== null) setMax(result.max);
                 setUpdated(new Date());
                 setLoading(false);
                 return;
