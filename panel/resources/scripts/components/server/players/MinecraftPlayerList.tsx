@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ServerContext } from '@/state/server';
 import { SocketEvent, SocketRequest } from '@/components/server/events';
 import { usePermissions } from '@/plugins/usePermissions';
@@ -16,6 +16,15 @@ const parsePlayers = (line: string): { online: number; max: number | null; playe
     return null;
 };
 
+const isPlayerChange = (line: string) => {
+    const text = clean(line);
+    return /\bjoined the game\b/i.test(text)
+        || /\bleft the game\b/i.test(text)
+        || /\blost connection:\b/i.test(text)
+        || /\bdisconnected\b/i.test(text)
+        || /\bwas kicked\b/i.test(text);
+};
+
 export interface MinecraftPlayerListProps {
     embedded?: boolean;
 }
@@ -29,6 +38,7 @@ export default ({ embedded = false }: MinecraftPlayerListProps) => {
     const [max, setMax] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
     const [updated, setUpdated] = useState<Date | null>(null);
+    const refreshTimer = useRef<number | null>(null);
 
     const refresh = useCallback(() => {
         if (!socket || status !== 'running') return;
@@ -37,22 +47,38 @@ export default ({ embedded = false }: MinecraftPlayerListProps) => {
         window.setTimeout(() => setLoading(false), 2500);
     }, [socket, status]);
 
+    const refreshAfterPlayerChange = useCallback(() => {
+        if (refreshTimer.current !== null) window.clearTimeout(refreshTimer.current);
+        refreshTimer.current = window.setTimeout(() => {
+            refreshTimer.current = null;
+            refresh();
+        }, 350);
+    }, [refresh]);
+
     useEffect(() => {
         if (!socket) return;
         const listener = (line: string) => {
             const result = parsePlayers(line);
-            if (!result) return;
-            setPlayers(result.players);
-            setOnline(result.online);
-            if (result.max !== null) setMax(result.max);
-            setUpdated(new Date());
-            setLoading(false);
+            if (result) {
+                setPlayers(result.players);
+                setOnline(result.online);
+                if (result.max !== null) setMax(result.max);
+                setUpdated(new Date());
+                setLoading(false);
+                return;
+            }
+
+            if (isPlayerChange(line)) refreshAfterPlayerChange();
         };
         socket.on(SocketEvent.CONSOLE_OUTPUT, listener);
         refresh();
-        const timer = window.setInterval(refresh, 15000);
-        return () => { socket.removeListener(SocketEvent.CONSOLE_OUTPUT, listener); window.clearInterval(timer); };
-    }, [socket, refresh]);
+        const timer = window.setInterval(refresh, 30000);
+        return () => {
+            socket.removeListener(SocketEvent.CONSOLE_OUTPUT, listener);
+            window.clearInterval(timer);
+            if (refreshTimer.current !== null) window.clearTimeout(refreshTimer.current);
+        };
+    }, [socket, refresh, refreshAfterPlayerChange]);
 
     const command = (action: 'kick' | 'ban' | 'op' | 'deop' | 'whitelist add', player: string) => {
         if (!socket || !canCommand || !/^[A-Za-z0-9_]{1,16}$/.test(player)) return;
