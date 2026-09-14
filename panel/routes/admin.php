@@ -40,6 +40,12 @@ Route::group(['prefix' => 'settings'], function () {
     Route::patch('/advanced', [Admin\Settings\AdvancedController::class, 'update']);
 });
 
+Route::group(['prefix' => 'discord-bot'], function () {
+    Route::get('/', [Admin\DiscordBotController::class, 'index'])->name('admin.discord-bot');
+    Route::patch('/', [Admin\DiscordBotController::class, 'update'])->name('admin.discord-bot.update');
+    Route::post('/test', [Admin\DiscordBotController::class, 'test'])->name('admin.discord-bot.test');
+});
+
 Route::group(['prefix' => 'users'], function () {
     Route::get('/', [Admin\UserController::class, 'index'])->name('admin.users');
     Route::get('/accounts.json', [Admin\UserController::class, 'json'])->name('admin.users.json');
