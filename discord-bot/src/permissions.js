@@ -1,0 +1,1 @@
+export function canTarget(actor,target,bot){if(!actor||!target||!bot)return false;if(target.id===actor.id||target.id===target.guild.ownerId)return false;if(actor.id!==actor.guild.ownerId&&actor.roles.highest.comparePositionTo(target.roles.highest)<=0)return false;return bot.roles.highest.comparePositionTo(target.roles.highest)>0}
