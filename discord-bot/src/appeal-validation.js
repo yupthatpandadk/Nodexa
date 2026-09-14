@@ -1,0 +1,1 @@
+export function validateAppeal(caseId,reason){const id=String(caseId||'').trim().toUpperCase(),text=String(reason||'').trim();if(!/^CASE-\d{6}$/.test(id))throw new Error('Ugyldigt Case-ID');if(text.length<10)throw new Error('Appeal begrundelsen skal være mindst 10 tegn');return {caseId:id,reason:text.slice(0,1500)}}
