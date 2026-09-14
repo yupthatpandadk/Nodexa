@@ -1,0 +1,3 @@
+const joins=new Map();
+export function registerJoin(guildId,c){const now=Date.now(),windowMs=Number(c.raid_interval||30)*1000,key=guildId;const arr=(joins.get(key)||[]).filter(t=>now-t<windowMs);arr.push(now);joins.set(key,arr);return {count:arr.length,triggered:arr.length>=Number(c.raid_join_limit||10)}}
+export async function lockdown(guild,c,enabled=true){if(!c.auto_lockdown)return 0;let changed=0;for(const ch of guild.channels.cache.values()){if(!ch.isTextBased?.()||ch.isThread?.())continue;try{await ch.permissionOverwrites.edit(guild.roles.everyone,{SendMessages:enabled?false:null},enabled?'Nodexa Anti-Raid Lockdown':'Nodexa Anti-Raid restore');changed++}catch{}}return changed}
