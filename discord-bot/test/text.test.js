@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {normalize} from '../src/text.js';test('normalizes hidden chars and case',()=>assert.equal(normalize('FREE\u200B Nitro'),'free nitro'));
