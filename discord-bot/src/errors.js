@@ -1,0 +1,1 @@
+export function publicError(error){const code=error?.code;const known={50013:'Botten mangler Discord permissions.',50001:'Botten har ikke adgang til ressourcen.',10007:'Medlemmet findes ikke længere.'};return known[code]||'Handlingen kunne ikke udføres. Kontrollér bot-rolle og permissions.'}

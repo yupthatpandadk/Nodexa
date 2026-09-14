@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {backup} from '../src/backup.js';test('backup copies state',()=>{fs.writeFileSync('/tmp/nodexa-source.json','{}');const p=backup('/tmp/nodexa-source.json','/tmp/nodexa-backups');assert.ok(p&&fs.existsSync(p))});

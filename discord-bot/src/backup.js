@@ -1,0 +1,1 @@
+import fs from 'node:fs';import path from 'node:path';export function backup(source,destinationDir){if(!fs.existsSync(source))return null;fs.mkdirSync(destinationDir,{recursive:true});const dest=path.join(destinationDir,`${path.basename(source)}.${new Date().toISOString().replace(/[:.]/g,'-')}.bak`);fs.copyFileSync(source,dest);return dest}

@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {registerJoin} from '../src/raid.js';test('raid threshold triggers',()=>{const c={raid_interval:30,raid_join_limit:3};assert.equal(registerJoin('test-guild',c).triggered,false);assert.equal(registerJoin('test-guild',c).triggered,false);assert.equal(registerJoin('test-guild',c).triggered,true)});

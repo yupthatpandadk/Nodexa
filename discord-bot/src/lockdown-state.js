@@ -1,0 +1,1 @@
+const timers=new Map();export function scheduleRestore(guild,c,restore){const key=guild.id;if(timers.has(key))clearTimeout(timers.get(key));const minutes=Math.max(1,Number(c.raid_lockdown_minutes||10));const t=setTimeout(async()=>{timers.delete(key);await restore()},minutes*60000);timers.set(key,t);return minutes}

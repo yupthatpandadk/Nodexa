@@ -1,0 +1,1 @@
+import {SlashCommandBuilder} from 'discord.js';export const appealCommands=[new SlashCommandBuilder().setName('appeal').setDescription('Indsend en moderation appeal').addStringOption(o=>o.setName('case_id').setDescription('Case ID').setRequired(true)).addStringOption(o=>o.setName('reason').setDescription('Hvorfor skal sagen genovervejes?').setRequired(true)).toJSON()];

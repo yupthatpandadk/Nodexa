@@ -1,0 +1,1 @@
+const values={messages:0,automod_actions:0,commands:0,raids:0,errors:0};export const metric=(name,n=1)=>values[name]=(values[name]||0)+n;export const metrics=()=>({...values,uptime_seconds:Math.floor(process.uptime())});

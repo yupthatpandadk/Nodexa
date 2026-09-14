@@ -1,0 +1,1 @@
+{"conservative":{"spam_limit":6,"spam_interval":5,"mention_limit":5,"caps_percent":85,"raid_join_limit":15,"raid_interval":30},"strict":{"spam_limit":4,"spam_interval":5,"mention_limit":3,"caps_percent":70,"raid_join_limit":8,"raid_interval":30}}

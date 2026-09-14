@@ -1,0 +1,1 @@
+{"sequence":2,"cases":[{"id":"CASE-000001","type":"warn","user_id":"42","reason":"fixture","created_at":"2026-09-14T00:00:00.000Z"}],"warnings":{"42":[{"id":"CASE-000001","type":"warn","user_id":"42","reason":"fixture","created_at":"2026-09-14T00:00:00.000Z"}]}}

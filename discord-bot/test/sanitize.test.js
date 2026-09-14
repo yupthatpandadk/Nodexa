@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {safe} from '../src/sanitize.js';test('neutralizes mass mention text',()=>assert.equal(safe('@everyone test'),'@ everyone test'));

@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {lockdownMinutes} from '../src/lockdown.testable.js';test('lockdown cooldown defaults to ten minutes',()=>assert.equal(lockdownMinutes({}),10));test('lockdown cooldown has one minute minimum',()=>assert.equal(lockdownMinutes({raid_lockdown_minutes:0}),1));

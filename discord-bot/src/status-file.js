@@ -1,0 +1,1 @@
+import fs from 'node:fs';import path from 'node:path';export function writeStatus(status){const f=process.env.NODEXA_RUNTIME_STATUS||path.resolve('data/status.json');fs.mkdirSync(path.dirname(f),{recursive:true});fs.writeFileSync(f,JSON.stringify({...status,updated_at:new Date().toISOString()},null,2))}

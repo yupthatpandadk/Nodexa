@@ -1,0 +1,1 @@
+export function health(client,configPath){return {ok:client.isReady(),bot:client.user?.tag||null,guilds:client.guilds.cache.size,config:configPath,uptime_seconds:Math.floor(process.uptime()),timestamp:new Date().toISOString()}}

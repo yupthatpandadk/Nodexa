@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {allowed} from '../src/rate-limit.js';test('rate limiter blocks after threshold',()=>{assert.equal(allowed('x',2,10000),true);assert.equal(allowed('x',2,10000),true);assert.equal(allowed('x',2,10000),false)});
