@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {domainAllowed} from '../src/domain.js';test('domain allowlist supports subdomains',()=>{assert.equal(domainAllowed('https://docs.example.com/a',['example.com']),true);assert.equal(domainAllowed('evil-example.com',['example.com']),false)});
