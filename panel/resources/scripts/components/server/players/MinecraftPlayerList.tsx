@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ServerContext } from '@/state/server';
-import { SocketEvent, SocketRequest } from '@/components/server/events';
+import { SocketEvent } from '@/components/server/events';
 import { usePermissions } from '@/plugins/usePermissions';
 
 const clean = (value: string) => value.replace(/\u00a7[0-9A-FK-OR]/gi, '').replace(/\x1b\[[0-9;]*m/g, '').trim();
@@ -12,8 +12,6 @@ const parsePlayers = (line: string): { online: number; max: number | null; playe
     if (m) return { online: +m[1], max: +m[2], players: names(m[3]) };
     m = text.match(/There are\s+(\d+)\s*\/\s*(\d+)\s+players online:?\s*(.*)$/i);
     if (m) return { online: +m[1], max: +m[2], players: names(m[3]) };
-    m = text.match(/There are\s+(\d+)\s+of a max of\s+(\d+)\s+players online\.?$/i);
-    if (m) return { online: +m[1], max: +m[2], players: [] };
     m = text.match(/Online players\s*\((\d+)\)\s*:?\s*(.*)$/i);
     if (m) return { online: +m[1], max: null, players: names(m[2]) };
     return null;
@@ -47,7 +45,7 @@ export default ({ embedded = false }: MinecraftPlayerListProps) => {
 
     const send = useCallback((command: string) => {
         if (!socket || status !== 'running') return false;
-        socket.send(SocketRequest.SEND_COMMAND, command);
+        socket.send('send command', command);
         return true;
     }, [socket, status]);
 
@@ -100,10 +98,6 @@ export default ({ embedded = false }: MinecraftPlayerListProps) => {
     const command = (action: 'kick' | 'ban' | 'op' | 'deop' | 'whitelist add', player: string) => {
         if (!canCommand || !/^[A-Za-z0-9_]{1,16}$/.test(player)) return;
         if (!send(`${action} ${player}`)) return;
-        if (action === 'kick' || action === 'ban') {
-            setPlayers(current => current.filter(p => p.toLowerCase() !== player.toLowerCase()));
-            setOnline(current => Math.max(0, current - 1));
-        }
         window.setTimeout(refresh, 900);
     };
 
