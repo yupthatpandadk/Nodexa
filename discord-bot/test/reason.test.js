@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {reason} from '../src/reason.js';test('reason required',()=>assert.throws(()=>reason('',true)));test('reason accepted',()=>assert.equal(reason(' Regel 1 ',true),'Regel 1'));
