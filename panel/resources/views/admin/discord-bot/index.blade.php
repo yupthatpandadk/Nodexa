@@ -1,39 +1,45 @@
 @extends('layouts.admin')
 @section('title', 'Discord Bot')
 @section('content-header')
-    <h1>Discord Bot <small>Konfiguration og forbindelsesstatus</small></h1>
+<div class="discord-page-title"><div class="discord-icon"><i class="fa fa-comments"></i></div><div><h1>Discord Bot</h1><p>Forbind og administrér Nodexas Discord-integration.</p></div></div>
+@endsection
+@section('scripts')
+@parent
+<style>
+.discord-admin{--dc:#5865f2;--dc2:#7481ff;--card:#091820;--card2:#0c202a;--border:rgba(125,211,252,.12);--muted:#8ea6b0;max-width:1180px;margin:0 auto 28px}.discord-page-title{display:flex;align-items:center;gap:12px}.discord-page-title h1{font-size:24px!important;margin:0!important;color:#fff}.discord-page-title p{margin:4px 0 0;color:#8098a2;font-size:13px}.discord-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#5865f2,#7b61ff);color:#fff;font-size:19px;box-shadow:0 8px 25px rgba(88,101,242,.22)}
+.discord-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,.75fr);gap:18px}.discord-card{background:linear-gradient(145deg,var(--card2),var(--card));border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,.16);margin-bottom:18px}.discord-card-head{display:flex;align-items:center;justify-content:space-between;padding:17px 20px;border-bottom:1px solid var(--border)}.discord-card-head h3{font-size:15px;font-weight:700;margin:0;color:#f3f8fa}.discord-card-head p{font-size:11px;color:var(--muted);margin:4px 0 0}.discord-card-body{padding:20px}.discord-admin label{font-size:12px;color:#dbe8ec;margin-bottom:7px}.discord-admin .form-control{height:42px;background:#07151c!important;border:1px solid rgba(125,211,252,.14)!important;border-radius:9px!important;color:#edf8fb!important;box-shadow:none!important;padding:9px 12px}.discord-admin .form-control:focus{border-color:rgba(88,101,242,.75)!important;box-shadow:0 0 0 3px rgba(88,101,242,.1)!important}.discord-admin .form-group{margin-bottom:17px}.discord-help{font-size:11px;color:#718c97;margin-top:6px}.discord-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}.discord-toggle{display:flex;align-items:center;justify-content:space-between;padding:14px 15px;margin-bottom:20px;background:rgba(88,101,242,.07);border:1px solid rgba(88,101,242,.16);border-radius:11px}.discord-toggle strong{display:block;color:#fff;font-size:13px}.discord-toggle small{color:var(--muted)}.discord-switch{position:relative;width:46px;height:25px;margin:0}.discord-switch input{opacity:0;width:0;height:0}.discord-slider{position:absolute;inset:0;background:#263942;border-radius:99px;cursor:pointer;transition:.2s}.discord-slider:before{content:'';position:absolute;width:19px;height:19px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}.discord-switch input:checked+.discord-slider{background:var(--dc)}.discord-switch input:checked+.discord-slider:before{transform:translateX(21px)}.discord-actions{padding:15px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;background:rgba(0,0,0,.08)}.discord-save{border:0!important;border-radius:9px!important;background:linear-gradient(135deg,var(--dc),#6d5dfc)!important;color:#fff!important;font-weight:700!important;padding:10px 18px!important;box-shadow:0 7px 18px rgba(88,101,242,.2)}
+.bot-profile{text-align:center;padding:25px 20px 18px}.bot-avatar,.bot-avatar-placeholder{width:76px;height:76px;border-radius:22px;margin:0 auto 13px;box-shadow:0 8px 25px rgba(0,0,0,.25)}.bot-avatar-placeholder{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#5865f2,#7b61ff);font-size:28px;color:#fff}.bot-profile h3{font-size:16px;margin:0 0 8px;color:#fff}.status-pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:5px 10px;font-size:11px;font-weight:700}.status-pill:before{content:'';width:7px;height:7px;border-radius:50%}.status-online{background:rgba(35,165,90,.12);color:#57d68d}.status-online:before{background:#3ba55d}.status-offline{background:rgba(237,66,69,.1);color:#ef7779}.status-offline:before{background:#ed4245}.status-disabled{background:rgba(148,163,184,.1);color:#a7b5bc}.status-disabled:before{background:#7d9099}.bot-guild{margin:14px 0 0;color:var(--muted);font-size:12px}.test-wrap{padding:0 20px 20px}.test-btn{width:100%;height:41px;border-radius:9px!important;background:rgba(255,255,255,.035)!important;border:1px solid var(--border)!important;color:#dce8ec!important;font-weight:600}.feature-list{padding:8px 20px 15px}.feature-row{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid rgba(125,211,252,.07);font-size:12px;color:#cbdadd}.feature-row:last-child{border:0}.feature-check{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:rgba(66,233,166,.08);color:#42e9a6;font-size:11px}.discord-note{display:flex;gap:10px;padding:12px 14px;border-radius:9px;background:rgba(88,101,242,.07);color:#94aab3;font-size:11px;line-height:1.5;margin-top:4px}.discord-note i{color:#7f8cff;margin-top:2px}
+@media(max-width:991px){.discord-admin{max-width:none}.discord-grid{grid-template-columns:1fr}.discord-side{display:grid;grid-template-columns:1fr 1fr;gap:14px}.discord-side .discord-card{margin-bottom:0}}
+@media(max-width:600px){.discord-page-title p{display:none}.discord-page-title h1{font-size:20px!important}.discord-icon{width:37px;height:37px}.discord-grid{gap:12px}.discord-card{border-radius:12px;margin-bottom:12px}.discord-card-head,.discord-card-body{padding:15px}.discord-form-grid{grid-template-columns:1fr;gap:0}.discord-actions{padding:12px 15px}.discord-save{width:100%}.discord-side{display:block}.discord-side .discord-card{margin-bottom:12px}.discord-toggle{padding:12px}.bot-profile{padding-top:20px}.content-header{padding-bottom:12px!important}}
+</style>
 @endsection
 @section('content')
-<div class="row">
-    <div class="col-md-8">
-        <form action="{{ route('admin.discord-bot.update') }}" method="POST">
-            {!! csrf_field() !!}{!! method_field('PATCH') !!}
-            <div class="box box-primary">
-                <div class="box-header with-border"><h3 class="box-title"><i class="fa fa-discord"></i> Bot Configuration</h3></div>
-                <div class="box-body">
-                    <div class="form-group"><label><input type="checkbox" name="enabled" value="1" {{ !empty($bot['enabled']) ? 'checked' : '' }}> Aktivér Discord Bot</label><p class="text-muted small">Aktiverer bot-integration i Nodexa.</p></div>
-                    <div class="form-group"><label>Bot Token</label><input type="password" class="form-control" name="token" autocomplete="new-password" placeholder="{{ $hasToken ? 'Token er gemt — udfyld kun for at ændre det' : 'Indsæt Discord Bot Token' }}"><p class="text-muted small">Tokenet gemmes i serverens .env og vises ikke igen.</p></div>
-                    <div class="row"><div class="col-md-6"><div class="form-group"><label>Client / Application ID</label><input class="form-control" name="client_id" value="{{ old('client_id', $bot['client_id'] ?? '') }}"></div></div><div class="col-md-6"><div class="form-group"><label>Guild / Server ID</label><input class="form-control" name="guild_id" value="{{ old('guild_id', $bot['guild_id'] ?? '') }}"></div></div></div>
-                    <div class="row"><div class="col-md-6"><div class="form-group"><label>Status Channel ID</label><input class="form-control" name="status_channel_id" value="{{ old('status_channel_id', $bot['status_channel_id'] ?? '') }}" placeholder="Valgfri"></div></div><div class="col-md-6"><div class="form-group"><label>Automatisk rolle ID</label><input class="form-control" name="auto_role_id" value="{{ old('auto_role_id', $bot['auto_role_id'] ?? '') }}" placeholder="Valgfri"></div></div></div>
-                    <div class="form-group"><label>Bot Status / Presence</label><input class="form-control" name="presence" maxlength="128" value="{{ old('presence', $bot['presence'] ?? 'Nodexa Hosting') }}" placeholder="Nodexa Hosting"></div>
-                </div>
-                <div class="box-footer"><button class="btn btn-primary" type="submit"><i class="fa fa-save"></i> Gem indstillinger</button></div>
-            </div>
-        </form>
-    </div>
-    <div class="col-md-4">
-        <div class="box">
-            <div class="box-header with-border"><h3 class="box-title">Forbindelse</h3></div>
-            <div class="box-body text-center">
-                @if($status['avatar'])<img src="{{ $status['avatar'] }}" alt="Bot avatar" style="width:72px;height:72px;border-radius:50%;margin-bottom:12px">@endif
-                <h4>{{ $status['name'] ?: 'Discord Bot' }}</h4>
-                @if($status['connected'])<p><span class="label label-success">Forbundet</span></p>@elseif(!empty($bot['enabled']))<p><span class="label label-danger">Ikke forbundet</span></p>@else<p><span class="label label-default">Deaktiveret</span></p>@endif
-                @if($status['guild'])<p class="text-muted">Server: {{ $status['guild'] }}</p>@endif
-                @if($status['error'])<p class="text-danger small">{{ $status['error'] }}</p>@endif
-                <form action="{{ route('admin.discord-bot.test') }}" method="POST">{!! csrf_field() !!}<button class="btn btn-default btn-block" type="submit"><i class="fa fa-plug"></i> Test forbindelse</button></form>
-            </div>
-        </div>
-        <div class="box"><div class="box-header with-border"><h3 class="box-title">Bot funktioner</h3></div><div class="box-body"><p><i class="fa fa-check text-green"></i> Sikker token-lagring</p><p><i class="fa fa-check text-green"></i> Discord API-status</p><p><i class="fa fa-check text-green"></i> Guild-konfiguration</p><p><i class="fa fa-check text-green"></i> Statuskanal</p><p><i class="fa fa-check text-green"></i> Auto-role konfiguration</p></div></div>
-    </div>
+<div class="discord-admin"><div class="discord-grid">
+<div>
+<form action="{{ route('admin.discord-bot.update') }}" method="POST">{!! csrf_field() !!}{!! method_field('PATCH') !!}
+<div class="discord-card">
+<div class="discord-card-head"><div><h3>Bot konfiguration</h3><p>Grundlæggende forbindelse til din Discord-server</p></div><i class="fa fa-cog" style="color:#607985"></i></div>
+<div class="discord-card-body">
+<div class="discord-toggle"><div><strong>Aktivér Discord Bot</strong><small>Slå Nodexas Discord-integration til eller fra</small></div><label class="discord-switch"><input type="checkbox" name="enabled" value="1" {{ !empty($bot['enabled']) ? 'checked' : '' }}><span class="discord-slider"></span></label></div>
+<div class="form-group"><label>Bot Token</label><input type="password" class="form-control" name="token" autocomplete="new-password" placeholder="{{ $hasToken ? '••••••••••••••••••••••••  Token er gemt' : 'Indsæt Discord Bot Token' }}"><div class="discord-help"><i class="fa fa-lock"></i> Tokenet gemmes sikkert og vises aldrig igen.</div></div>
+<div class="discord-form-grid"><div class="form-group"><label>Application ID</label><input class="form-control" name="client_id" value="{{ old('client_id', $bot['client_id'] ?? '') }}" placeholder="Discord Application ID"></div><div class="form-group"><label>Discord Server ID</label><input class="form-control" name="guild_id" value="{{ old('guild_id', $bot['guild_id'] ?? '') }}" placeholder="Guild ID"></div></div>
+</div></div>
+<div class="discord-card"><div class="discord-card-head"><div><h3>Automatisering</h3><p>Kanaler, roller og bot-status</p></div><i class="fa fa-bolt" style="color:#607985"></i></div><div class="discord-card-body">
+<div class="discord-form-grid"><div class="form-group"><label>Status Channel ID</label><input class="form-control" name="status_channel_id" value="{{ old('status_channel_id', $bot['status_channel_id'] ?? '') }}" placeholder="Valgfri kanal"></div><div class="form-group"><label>Automatisk rolle ID</label><input class="form-control" name="auto_role_id" value="{{ old('auto_role_id', $bot['auto_role_id'] ?? '') }}" placeholder="Valgfri rolle"></div></div>
+<div class="form-group"><label>Bot Status / Presence</label><input class="form-control" name="presence" maxlength="128" value="{{ old('presence', $bot['presence'] ?? 'Nodexa Hosting') }}" placeholder="Nodexa Hosting"></div>
+<div class="discord-note"><i class="fa fa-info-circle"></i><span>Du kan finde Server-, Kanal- og Rolle-ID ved at aktivere Developer Mode i Discord og højreklikke på elementet.</span></div>
+</div><div class="discord-actions"><button class="btn discord-save" type="submit"><i class="fa fa-save"></i>&nbsp; Gem ændringer</button></div></div>
+</form>
 </div>
+<div class="discord-side">
+<div class="discord-card"><div class="discord-card-head"><div><h3>Forbindelsesstatus</h3><p>Live status fra Discord API</p></div></div><div class="bot-profile">
+@if($status['avatar'])<img class="bot-avatar" src="{{ $status['avatar'] }}" alt="Bot avatar">@else<div class="bot-avatar-placeholder"><i class="fa fa-comments"></i></div>@endif
+<h3>{{ $status['name'] ?: 'Discord Bot' }}</h3>
+@if($status['connected'])<span class="status-pill status-online">Forbundet</span>@elseif(!empty($bot['enabled']))<span class="status-pill status-offline">Ikke forbundet</span>@else<span class="status-pill status-disabled">Deaktiveret</span>@endif
+@if($status['guild'])<div class="bot-guild"><i class="fa fa-users"></i> {{ $status['guild'] }}</div>@endif
+@if($status['error'])<div class="text-danger small" style="margin-top:12px">{{ $status['error'] }}</div>@endif
+</div><div class="test-wrap"><form action="{{ route('admin.discord-bot.test') }}" method="POST">{!! csrf_field() !!}<button class="btn test-btn" type="submit"><i class="fa fa-plug"></i>&nbsp; Test forbindelse</button></form></div></div>
+<div class="discord-card"><div class="discord-card-head"><div><h3>Funktioner</h3><p>Aktive muligheder</p></div></div><div class="feature-list"><div class="feature-row"><span class="feature-check"><i class="fa fa-check"></i></span>Sikker token-lagring</div><div class="feature-row"><span class="feature-check"><i class="fa fa-check"></i></span>Discord API-status</div><div class="feature-row"><span class="feature-check"><i class="fa fa-check"></i></span>Guild-konfiguration</div><div class="feature-row"><span class="feature-check"><i class="fa fa-check"></i></span>Statuskanal</div><div class="feature-row"><span class="feature-check"><i class="fa fa-check"></i></span>Auto-role konfiguration</div></div></div>
+</div>
+</div></div>
 @endsection
