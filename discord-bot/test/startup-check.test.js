@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {startupCheck} from '../src/startup-check.js';test('startup reports missing secrets',()=>{const r=startupCheck({token:'',clientId:'',guildId:'',configPath:'/does/not/exist'});assert.equal(r.ok,false);assert.ok(r.missing.length>=4)});
