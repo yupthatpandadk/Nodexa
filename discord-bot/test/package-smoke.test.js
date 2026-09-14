@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';test('runtime helper modules load',async()=>{for(const f of ['../src/store.js','../src/policy.js','../src/raid.js','../src/appeals.js','../src/audit.js','../src/domain.js','../src/config.js','../src/metrics.js','../src/logger.js'])assert.ok(await import(f))});
