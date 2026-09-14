@@ -1,0 +1,1 @@
+import fs from 'node:fs';import path from 'node:path';const file=process.env.NODEXA_AUDIT_LOG||path.resolve('data/audit.ndjson');export function audit(event){fs.mkdirSync(path.dirname(file),{recursive:true});fs.appendFileSync(file,JSON.stringify({timestamp:new Date().toISOString(),...event})+'\n')}
