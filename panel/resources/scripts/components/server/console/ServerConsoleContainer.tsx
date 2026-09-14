@@ -10,6 +10,7 @@ import Console from '@/components/server/console/Console';
 import StatGraphs from '@/components/server/console/StatGraphs';
 import PowerButtons from '@/components/server/console/PowerButtons';
 import ServerDetailsBlock from '@/components/server/console/ServerDetailsBlock';
+import MinecraftPlayerList from '@/components/server/players/MinecraftPlayerList';
 import { Alert } from '@/components/elements/alert';
 import styles from './style.module.css';
 
@@ -20,12 +21,15 @@ const ServerConsoleContainer = () => {
     const description = ServerContext.useStoreState((state) => state.server.data!.description);
     const eggName = ServerContext.useStoreState((state) => state.server.data!.eggName);
     const eggIcon = ServerContext.useStoreState((state) => state.server.data!.eggIcon);
+    const minecraftPlayerList = ServerContext.useStoreState((state) => state.server.data!.addons.minecraftPlayerList || false);
     const status = ServerContext.useStoreState((state) => state.status.value);
     const isInstalling = ServerContext.useStoreState((state) => state.server.isInstalling);
     const isTransferring = ServerContext.useStoreState((state) => state.server.data!.isTransferring);
     const eggFeatures = ServerContext.useStoreState((state) => state.server.data!.eggFeatures, isEqual);
     const isNodeUnderMaintenance = ServerContext.useStoreState((state) => state.server.data!.isNodeUnderMaintenance);
     const [iconFailed, setIconFailed] = useState(false);
+    const isMinecraft = /minecraft|paper|purpur|spigot|bukkit|folia|velocity|waterfall|bungee|forge|fabric/i.test(eggName);
+    const showPlayers = isMinecraft && minecraftPlayerList;
 
     useEffect(() => setIconFailed(false), [eggIcon]);
 
@@ -70,7 +74,7 @@ const ServerConsoleContainer = () => {
                 </Can>
             </section>
 
-            <div className={'grid grid-cols-1 xl:grid-cols-[minmax(0,1.9fr)_minmax(360px,1fr)] gap-3 sm:gap-4 mb-4'}>
+            <div className={showPlayers ? 'grid grid-cols-1 xl:grid-cols-[minmax(0,1.65fr)_minmax(360px,1fr)] gap-3 sm:gap-4 mb-4' : 'grid grid-cols-1 gap-3 sm:gap-4 mb-4'}>
                 <section className={styles.console_panel}>
                     <div className={styles.console_header}>
                         <div className={'flex items-center gap-2'}>
@@ -86,11 +90,11 @@ const ServerConsoleContainer = () => {
                         <Console />
                     </Spinner.Suspense>
                 </section>
-
-                <ServerDetailsBlock />
+                {showPlayers && <MinecraftPlayerList embedded />}
             </div>
 
-            <div className={'grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4'}>
+            <ServerDetailsBlock />
+            <div className={'grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mt-4'}>
                 <Spinner.Suspense>
                     <StatGraphs />
                 </Spinner.Suspense>
