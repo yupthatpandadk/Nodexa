@@ -1,0 +1,1 @@
+import fs from 'node:fs';export function startupCheck({token,clientId,guildId,configPath}){const missing=[];if(!token)missing.push('DISCORD_TOKEN');if(!clientId)missing.push('DISCORD_CLIENT_ID');if(!guildId)missing.push('DISCORD_GUILD_ID');if(!fs.existsSync(configPath))missing.push(`config:${configPath}`);return {ok:missing.length===0,missing}}
