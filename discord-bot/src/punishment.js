@@ -1,0 +1,1 @@
+export function punishment(rule){const [action,raw]=String(rule||'').trim().toLowerCase().split(':');if(!['timeout','kick','ban','review'].includes(action))return null;const minutes=action==='timeout'?Math.max(1,Number(raw||30)):0;return {action,minutes}}
