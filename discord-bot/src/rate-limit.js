@@ -1,0 +1,1 @@
+const hits=new Map();export function allowed(key,limit=8,windowMs=10000){const now=Date.now(),a=(hits.get(key)||[]).filter(t=>now-t<windowMs);if(a.length>=limit){hits.set(key,a);return false}a.push(now);hits.set(key,a);return true}
