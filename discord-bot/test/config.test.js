@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readModerationConfig} from '../src/config.js';test('config loader normalizes moderation limits',()=>{const c=readModerationConfig(new URL('./config.sample.json',import.meta.url));assert.equal(c.enabled,true);assert.equal(c.spam_limit,5);assert.equal(c.caps_percent,75)});
