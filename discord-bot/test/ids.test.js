@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {isSnowflake} from '../src/ids.js';test('snowflake validation',()=>{assert.equal(isSnowflake('123456789012345678'),true);assert.equal(isSnowflake('abc'),false)});
