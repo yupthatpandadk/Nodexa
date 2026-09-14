@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {retained} from '../src/data-retention.js';test('retention removes old rows',()=>{const rows=[{created_at:'2000-01-01T00:00:00Z'},{created_at:new Date().toISOString()}];assert.equal(retained(rows,30).length,1)});
