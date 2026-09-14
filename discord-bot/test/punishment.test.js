@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {punishment} from '../src/punishment.js';test('timeout defaults to 30 minutes',()=>assert.deepEqual(punishment('timeout'),{action:'timeout',minutes:30}));test('invalid action rejected',()=>assert.equal(punishment('delete'),null));
