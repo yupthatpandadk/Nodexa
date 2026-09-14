@@ -9,7 +9,6 @@ import StartupContainer from '@/components/server/startup/StartupContainer';
 import FileManagerContainer from '@/components/server/files/FileManagerContainer';
 import MinecraftPluginManager from '@/components/server/plugins/MinecraftPluginManager';
 import MinecraftModManager from '@/components/server/mods/MinecraftModManager';
-import MinecraftPlayerList from '@/components/server/players/MinecraftPlayerList';
 import SettingsContainer from '@/components/server/settings/SettingsContainer';
 import AccountOverviewContainer from '@/components/dashboard/AccountOverviewContainer';
 import AccountApiContainer from '@/components/dashboard/AccountApiContainer';
@@ -33,7 +32,6 @@ export default {
     ],
     server: [
         { path: '/', permission: null, name: 'Console', component: ServerConsole, exact: true },
-        { path: '/players', permission: 'control.console', name: 'Players', component: MinecraftPlayerList, minecraftOnly: true, addon: 'minecraftPlayerList' },
         { path: '/files', permission: 'file.*', name: 'Files', component: FileManagerContainer },
         { path: '/plugins', permission: 'file.create', name: 'Plugins', component: MinecraftPluginManager, minecraftOnly: true, addon: 'minecraftPluginManager' },
         { path: '/mods', permission: 'file.create', name: 'Mods', component: MinecraftModManager, moddedOnly: true, addon: 'minecraftModManager' },
