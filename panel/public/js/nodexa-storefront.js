@@ -22,10 +22,7 @@
         profile.classList.toggle('open', open);
         profileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     };
-    profileToggle?.addEventListener('click', (event) => {
-        event.stopPropagation();
-        setProfile(!profile?.classList.contains('open'));
-    });
+    profileToggle?.addEventListener('click', (event) => { event.stopPropagation(); setProfile(!profile?.classList.contains('open')); });
     profileDropdown?.addEventListener('click', (event) => event.stopPropagation());
     document.addEventListener('click', () => setProfile(false));
 
@@ -34,36 +31,45 @@
     const trigger = document.querySelector('[data-theme-toggle]');
     const close = document.querySelector('[data-theme-close]');
     const custom = document.querySelector('[data-custom-accent]');
-
-    const setDrawer = (open) => {
-        if (!drawer || !backdrop) return;
-        drawer.classList.toggle('open', open);
-        backdrop.classList.toggle('open', open);
-        drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
-    };
-
+    const setDrawer = (open) => { if (!drawer || !backdrop) return; drawer.classList.toggle('open', open); backdrop.classList.toggle('open', open); drawer.setAttribute('aria-hidden', open ? 'false' : 'true'); };
     trigger?.addEventListener('click', () => setDrawer(true));
     close?.addEventListener('click', () => setDrawer(false));
     backdrop?.addEventListener('click', () => setDrawer(false));
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            setDrawer(false);
-            setProfile(false);
-        }
-    });
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { setDrawer(false); setProfile(false); } });
+
+    const syncLegacyAliases = () => {
+        const root = document.documentElement;
+        root.style.setProperty('--nx-accent', 'var(--nodexa-accent)');
+        root.style.setProperty('--nx-accent-rgb', 'var(--nodexa-accent-rgb)');
+        root.style.setProperty('--nx', 'var(--nodexa-accent)');
+        root.style.setProperty('--a', 'var(--nodexa-accent)');
+    };
+
+    const rewriteLegacyGreen = () => {
+        document.querySelectorAll('style:not([data-nodexa-accent-bridge])').forEach((style) => {
+            let css = style.textContent || '';
+            const next = css
+                .replace(/rgba\(\s*66\s*,\s*233\s*,\s*166\s*,\s*([^\)]+)\)/gi, 'rgba(var(--nodexa-accent-rgb), $1)')
+                .replace(/#6af1bc/gi, 'var(--nodexa-accent-2)')
+                .replace(/#42e9a6/gi, 'var(--nodexa-accent)');
+            if (next !== css) style.textContent = next;
+            style.dataset.nodexaAccentBridge = '1';
+        });
+    };
 
     const apply = (accent) => {
         if (window.NodexaTheme?.apply) {
             const applied = window.NodexaTheme.apply(accent);
+            syncLegacyAliases();
+            rewriteLegacyGreen();
             if (custom) custom.value = applied;
             window.dispatchEvent(new CustomEvent('nodexa:theme', { detail: { accent: applied } }));
         }
     };
 
-    document.querySelectorAll('[data-accent]').forEach((button) => {
-        button.addEventListener('click', () => apply(button.getAttribute('data-accent')));
-    });
+    syncLegacyAliases();
+    rewriteLegacyGreen();
+    document.querySelectorAll('[data-accent]').forEach((button) => button.addEventListener('click', () => apply(button.getAttribute('data-accent'))));
     custom?.addEventListener('input', () => apply(custom.value));
-
     if (custom && window.NodexaTheme?.get) custom.value = window.NodexaTheme.get();
 })();
