@@ -1,0 +1,4 @@
+@extends('layouts.admin')
+@section('title','Analytics')
+@section('content-header')<h1>Business Analytics <small>Omsætning og udvikling</small></h1>@endsection
+@section('content')<div class="box box-primary"><div class="box-header with-border"><h3 class="box-title"><i class="fa fa-line-chart"></i> Betalt omsætning · 6 måneder</h3></div><div class="box-body">@php($max=max(1,(float)$months->max('paid')))@foreach($months as $m)<div style="margin:15px 0"><div style="display:flex;justify-content:space-between"><strong>{{ $m['label'] }}</strong><span>{{ number_format($m['paid'],2,',','.') }}</span></div><div style="height:10px;background:rgba(255,255,255,.07);border-radius:20px;overflow:hidden;margin-top:6px"><div style="height:100%;width:{{ min(100,($m['paid']/$max)*100) }}%;background:var(--nodexa-accent)"></div></div></div>@endforeach</div></div>@endsection

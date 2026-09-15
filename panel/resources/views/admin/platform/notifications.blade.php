@@ -1,0 +1,4 @@
+@extends('layouts.admin')
+@section('title','Notification Center')
+@section('content-header')<h1>Notification Center <small>Alt der kræver din opmærksomhed</small></h1>@endsection
+@section('content')<div class="box box-primary"><div class="box-header with-border"><h3 class="box-title"><i class="fa fa-bell"></i> Aktuelle hændelser</h3><span class="badge pull-right">{{ $items->count() }}</span></div><div class="box-body">@forelse($items as $i)<div style="padding:14px 4px;border-bottom:1px solid rgba(66,233,166,.1);display:flex;gap:13px"><div><i class="fa {{ $i->type==='invoice'?'fa-file-text-o':($i->type==='ticket'?'fa-ticket':'fa-shopping-cart') }} fa-lg"></i></div><div><strong>{{ $i->title }}</strong><div class="text-muted">{{ $i->text }}</div><small class="text-muted">{{ $i->at }}</small></div></div>@empty<div class="alert alert-success"><i class="fa fa-check-circle"></i> Ingen hændelser kræver opmærksomhed.</div>@endforelse</div></div>@endsection
