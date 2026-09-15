@@ -15,5 +15,11 @@ class PlatformController extends Controller {
   $orderStatuses=$hasOrders?DB::table('billing_orders')->select('status',DB::raw('COUNT(*) as total'))->groupBy('status')->pluck('total','status'):collect();
   return view('admin.platform.analytics',compact('months','metrics','orderStatuses'));
  }
- public function status(){ $nodes=Schema::hasTable('nodes')?DB::table('nodes')->select('id','name','fqdn','maintenance_mode')->orderBy('name')->get():collect();$serverStats=['total'=>Schema::hasTable('servers')?DB::table('servers')->count():0,'suspended'=>Schema::hasTable('servers')?DB::table('servers')->where('status','suspended')->count():0,'failed'=>Schema::hasTable('servers')?DB::table('servers')->whereIn('status',['install_failed','reinstall_failed'])->count():0];return view('admin.platform.status',compact('nodes','serverStats')); }
+ public function status(){
+  $nodes=Schema::hasTable('nodes')?DB::table('nodes')->select('id','name','fqdn','scheme','daemonListen','maintenance_mode')->orderBy('name')->get():collect();
+  $nodes=$nodes->map(function($node){$node->reachable=null;$node->latency_ms=null;$host=trim((string)$node->fqdn);$port=(int)($node->daemonListen?:8080);if($host==='')return $node;$started=microtime(true);$errno=0;$errstr='';$socket=@stream_socket_client('tcp://'.$host.':'.$port,$errno,$errstr,0.45,STREAM_CLIENT_CONNECT);if(is_resource($socket)){$node->reachable=true;$node->latency_ms=(int)round((microtime(true)-$started)*1000);fclose($socket);}else{$node->reachable=false;}return $node;});
+  $serverStats=['total'=>Schema::hasTable('servers')?DB::table('servers')->count():0,'suspended'=>Schema::hasTable('servers')?DB::table('servers')->where('status','suspended')->count():0,'failed'=>Schema::hasTable('servers')?DB::table('servers')->whereIn('status',['install_failed','reinstall_failed'])->count():0];
+  $nodeHealth=['reachable'=>$nodes->where('reachable',true)->count(),'unreachable'=>$nodes->where('reachable',false)->count(),'checked'=>$nodes->whereNotNull('reachable')->count()];
+  return view('admin.platform.status',compact('nodes','serverStats','nodeHealth'));
+ }
 }
