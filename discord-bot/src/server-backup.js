@@ -1,0 +1,35 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {ChannelType, PermissionFlagsBits} from 'discord.js';
+
+const backupDir=process.env.NODEXA_DISCORD_BACKUP_DIR||path.resolve('data/server-backups');
+const ensureDir=()=>fs.mkdirSync(backupDir,{recursive:true});
+const safeName=v=>String(v||'backup').replace(/[^a-z0-9._-]+/gi,'-').replace(/^-+|-+$/g,'').slice(0,80)||'backup';
+const serializeOverwrites=channel=>channel.permissionOverwrites.cache.map(o=>({id:o.id,type:o.type,allow:o.allow.bitfield.toString(),deny:o.deny.bitfield.toString()}));
+const roleData=r=>({id:r.id,name:r.name,color:r.color,hoist:r.hoist,icon:r.icon||null,unicodeEmoji:r.unicodeEmoji||null,position:r.position,permissions:r.permissions.bitfield.toString(),mentionable:r.mentionable,managed:r.managed});
+const channelData=c=>({id:c.id,name:c.name,type:c.type,position:c.rawPosition??c.position??0,parentId:c.parentId||null,topic:'topic'in c?c.topic:null,nsfw:'nsfw'in c?!!c.nsfw:false,rateLimitPerUser:'rateLimitPerUser'in c?c.rateLimitPerUser:0,bitrate:'bitrate'in c?c.bitrate:null,userLimit:'userLimit'in c?c.userLimit:null,rtcRegion:'rtcRegion'in c?c.rtcRegion:null,videoQualityMode:'videoQualityMode'in c?c.videoQualityMode:null,permissionOverwrites:serializeOverwrites(c)});
+
+export function createServerBackup(guild,{includePermissions=true,includeChannels=true,includeRoles=true,name='manual'}={}){
+ ensureDir();
+ const roles=includeRoles?guild.roles.cache.filter(r=>r.id!==guild.id&&!r.managed).sort((a,b)=>a.position-b.position).map(roleData):[];
+ const channels=includeChannels?guild.channels.cache.sort((a,b)=>(a.rawPosition??0)-(b.rawPosition??0)).map(channelData):[];
+ if(!includePermissions)channels.forEach(c=>c.permissionOverwrites=[]);
+ const backup={schema:2,id:`${Date.now()}-${safeName(name)}`,createdAt:new Date().toISOString(),guild:{id:guild.id,name:guild.name,verificationLevel:guild.verificationLevel,defaultMessageNotifications:guild.defaultMessageNotifications,explicitContentFilter:guild.explicitContentFilter,afkTimeout:guild.afkTimeout},roles,channels};
+ const file=path.join(backupDir,`${safeName(guild.id)}-${backup.id}.json`);fs.writeFileSync(file,JSON.stringify(backup,null,2));return {backup,file};
+}
+export function listServerBackups(guildId){ensureDir();return fs.readdirSync(backupDir).filter(f=>f.startsWith(`${safeName(guildId)}-`)&&f.endsWith('.json')).sort().reverse();}
+export function loadServerBackup(guildId,fileName){ensureDir();const file=path.basename(fileName);if(!file.startsWith(`${safeName(guildId)}-`)||!file.endsWith('.json'))throw new Error('Ugyldig backup');return JSON.parse(fs.readFileSync(path.join(backupDir,file),'utf8'));}
+const editableChannelTypes=new Set([ChannelType.GuildText,ChannelType.GuildVoice,ChannelType.GuildCategory,ChannelType.GuildAnnouncement,ChannelType.GuildStageVoice,ChannelType.GuildForum]);
+function channelCreateOptions(c,parent){const o={name:c.name,type:c.type,parent:parent||undefined,reason:'Nodexa Server Backup restore'};if([ChannelType.GuildText,ChannelType.GuildAnnouncement,ChannelType.GuildForum].includes(c.type)){if(c.topic!=null)o.topic=c.topic;if(c.nsfw!=null)o.nsfw=c.nsfw;if(c.rateLimitPerUser!=null)o.rateLimitPerUser=c.rateLimitPerUser;}if([ChannelType.GuildVoice,ChannelType.GuildStageVoice].includes(c.type)){if(c.bitrate)o.bitrate=c.bitrate;if(c.userLimit!=null)o.userLimit=c.userLimit;if(c.rtcRegion)o.rtcRegion=c.rtcRegion;if(c.videoQualityMode)o.videoQualityMode=c.videoQualityMode;}return o;}
+function mapOverwrites(items,guild,roleMap,channelMap){return (items||[]).map(o=>{let id=o.id;if(o.id===guild.id)id=guild.id;else if(roleMap.has(o.id))id=roleMap.get(o.id);else if(channelMap.has(o.id))id=channelMap.get(o.id);else if(o.type===1)id=o.id;else return null;return {id,type:o.type,allow:BigInt(o.allow||0),deny:BigInt(o.deny||0)};}).filter(Boolean);}
+export async function restoreServerBackup(guild,backup,{clean=false,restorePermissions=true,restoreChannels=true,restoreRoles=true,onProgress=()=>{}}={}){
+ if(!guild.members.me?.permissions.has(PermissionFlagsBits.ManageGuild))throw new Error('Botten mangler Manage Server permission.');
+ const roleMap=new Map(),channelMap=new Map(),failures=[];let step=0;const tick=(phase,label)=>onProgress({step:++step,phase,label});
+ if(clean){tick('clean','Fjerner eksisterende kanaler');for(const c of [...guild.channels.cache.values()].sort((a,b)=>(b.rawPosition??0)-(a.rawPosition??0)))await c.delete('Nodexa clean restore').catch(e=>failures.push(`Kanal ${c.name}: ${e.message}`));tick('clean','Fjerner eksisterende roller');for(const r of [...guild.roles.cache.values()].filter(r=>r.id!==guild.id&&!r.managed).sort((a,b)=>b.position-a.position))await r.delete('Nodexa clean restore').catch(e=>failures.push(`Rolle ${r.name}: ${e.message}`));}
+ if(restoreRoles){for(const r of [...(backup.roles||[])].sort((a,b)=>a.position-b.position)){tick('roles',r.name);try{const created=await guild.roles.create({name:r.name,color:r.color,hoist:r.hoist,permissions:BigInt(r.permissions||0),mentionable:r.mentionable,reason:'Nodexa Server Backup restore'});roleMap.set(r.id,created.id);}catch(e){failures.push(`Rolle ${r.name}: ${e.message}`);}}}
+ if(restoreChannels){const categories=(backup.channels||[]).filter(c=>c.type===ChannelType.GuildCategory).sort((a,b)=>a.position-b.position);for(const c of categories){tick('categories',c.name);try{const created=await guild.channels.create(channelCreateOptions(c));channelMap.set(c.id,created.id);}catch(e){failures.push(`Kategori ${c.name}: ${e.message}`);}}const children=(backup.channels||[]).filter(c=>c.type!==ChannelType.GuildCategory&&editableChannelTypes.has(c.type)).sort((a,b)=>a.position-b.position);for(const c of children){tick('channels',c.name);try{const created=await guild.channels.create(channelCreateOptions(c,c.parentId?channelMap.get(c.parentId):null));channelMap.set(c.id,created.id);}catch(e){failures.push(`Kanal ${c.name}: ${e.message}`);}}}
+ if(restorePermissions){for(const c of backup.channels||[]){const id=channelMap.get(c.id);const created=id&&guild.channels.cache.get(id);if(!created)continue;tick('permissions',c.name);try{await created.permissionOverwrites.set(mapOverwrites(c.permissionOverwrites,guild,roleMap,channelMap),'Nodexa restore permissions');}catch(e){failures.push(`Permissions ${c.name}: ${e.message}`);}}}
+ if(restoreRoles&&roleMap.size){tick('ordering','Roller');const positions=[];for(const r of backup.roles||[]){const id=roleMap.get(r.id);if(id)positions.push({role:id,position:r.position});}if(positions.length)await guild.roles.setPositions(positions).catch(e=>failures.push(`Rolle-rækkefølge: ${e.message}`));}
+ if(restoreChannels&&channelMap.size){tick('ordering','Kanaler og kategorier');const positions=[];for(const c of backup.channels||[]){const id=channelMap.get(c.id);if(id)positions.push({channel:id,position:c.position});}if(positions.length)await guild.channels.setPositions(positions).catch(e=>failures.push(`Kanal-rækkefølge: ${e.message}`));}
+ tick('complete','Restore færdig');return {roles:roleMap.size,channels:channelMap.size,failures};
+}
