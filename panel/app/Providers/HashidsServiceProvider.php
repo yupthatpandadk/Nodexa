@@ -17,10 +17,24 @@ class HashidsServiceProvider extends ServiceProvider
             /** @var \Illuminate\Contracts\Config\Repository $config */
             $config = $this->app['config'];
 
+            // config()->get() returns null when HASHIDS_SALT exists in the
+            // configuration but has no value. The default argument therefore
+            // does not protect Hashids' strictly typed constructor. Prefer an
+            // explicit salt, then APP_KEY, and finally a stable Nodexa fallback
+            // so a missing optional environment variable can never crash a
+            // request during application bootstrap.
+            $salt = $config->get('hashids.salt');
+            if (!is_string($salt) || trim($salt) === '') {
+                $salt = $config->get('app.key');
+            }
+            if (!is_string($salt) || trim($salt) === '') {
+                $salt = 'nodexa-hashids';
+            }
+
             return new Hashids(
-                $config->get('hashids.salt', ''),
-                $config->get('hashids.length', 0),
-                $config->get('hashids.alphabet', 'abcdefghijkmlnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890')
+                $salt,
+                (int) $config->get('hashids.length', 8),
+                (string) $config->get('hashids.alphabet', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890')
             );
         });
 
