@@ -30,15 +30,24 @@
 <div class="nx-sidebar-backdrop" id="nodexaSidebarBackdrop"></div>
 <div class="content-wrapper"><section class="content-header">@yield('content-header')</section><section class="content">
 @if(count($errors)>0)<div class="alert alert-danger">@foreach($errors->all() as $error)<div>{{$error}}</div>@endforeach</div>@endif
-@php($nxSeenAlerts = [])
+@php
+$nxSeenAlerts = [];
+@endphp
 @foreach(Alert::getMessages() as $type=>$messages)
 @foreach($messages as $message)
-@php($nxAlertText = trim(preg_replace('/\s+/u', ' ', strip_tags((string) $message))))
-@php($nxAlertKey = md5(strtolower($nxAlertText)))
+@php
+$nxAlertText = trim(preg_replace('/\s+/u', ' ', strip_tags((string) $message)));
+$nxAlertKey = md5(strtolower($nxAlertText));
+@endphp
 @if(!isset($nxSeenAlerts[$nxAlertKey]))
-@php($nxSeenAlerts[$nxAlertKey] = true)
+@php
+$nxSeenAlerts[$nxAlertKey] = true;
+$nxCommitMatch = [];
+if (stripos($nxAlertText, 'Nodexa-opdatering er tilgængelig') !== false) {
+    preg_match('/GitHub\s+([0-9a-f]{7,40})/i', $nxAlertText, $nxCommitMatch);
+}
+@endphp
 @if(stripos($nxAlertText, 'Nodexa-opdatering er tilgængelig') !== false)
-@php(preg_match('/GitHub\s+([0-9a-f]{7,40})/i', $nxAlertText, $nxCommitMatch))
 <div class="nx-update-banner" role="status" aria-label="Ny Nodexa-opdatering">
 <div class="nx-update-icon"><i class="fa fa-cloud-download"></i></div>
 <div class="nx-update-copy"><div class="nx-update-eyebrow"><i class="fa fa-bolt"></i> Update klar</div><h3 class="nx-update-title">En ny Nodexa-version er klar</h3><div class="nx-update-meta">Opdatér platformen for at få de nyeste funktioner, forbedringer og fejlrettelser.</div><div class="nx-update-features"><span><i class="fa fa-check-circle"></i> Nye funktioner</span><span><i class="fa fa-shield"></i> Forbedringer</span><span><i class="fa fa-wrench"></i> Fejlrettelser</span></div></div>
