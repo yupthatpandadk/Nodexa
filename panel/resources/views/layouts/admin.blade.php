@@ -14,8 +14,8 @@
 {!!Theme::css('vendor/adminlte/colors/skin-blue.min.css?t={cache-version}')!!}
 {!!Theme::css('css/pterodactyl.css?t={cache-version}')!!}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-<link rel="stylesheet" href="{{asset('css/nodexa-ultimate.css')}}?v=0.16.23">
-<link rel="stylesheet" href="{{asset('css/nodexa-admin-shell.css')}}?v=0.16.23">
+<link rel="stylesheet" href="{{asset('css/nodexa-ultimate.css')}}?v={{$appVersion}}">
+<link rel="stylesheet" href="{{asset('css/nodexa-admin-shell.css')}}?v={{$appVersion}}">
 @show
 </head>
 <body class="hold-transition skin-blue fixed sidebar-mini">
@@ -34,15 +34,15 @@
 @foreach(Alert::getMessages() as $type=>$messages)
 @foreach($messages as $message)
 @php($nxAlertText = trim(preg_replace('/\s+/u', ' ', strip_tags((string) $message))))
-@php($nxAlertKey = md5(mb_strtolower($nxAlertText)))
+@php($nxAlertKey = md5(strtolower($nxAlertText)))
 @if(!isset($nxSeenAlerts[$nxAlertKey]))
 @php($nxSeenAlerts[$nxAlertKey] = true)
 @if(stripos($nxAlertText, 'Nodexa-opdatering er tilgængelig') !== false)
 @php(preg_match('/GitHub\s+([0-9a-f]{7,40})/i', $nxAlertText, $nxCommitMatch))
-<div class="nx-update-banner" role="status">
+<div class="nx-update-banner" role="status" aria-label="Ny Nodexa-opdatering">
 <div class="nx-update-icon"><i class="fa fa-cloud-download"></i></div>
-<div class="nx-update-copy"><div class="nx-update-eyebrow"><i class="fa fa-sparkles"></i> Ny opdatering</div><h3 class="nx-update-title">En ny Nodexa-version er klar</h3><div class="nx-update-meta">Få de nyeste funktioner, forbedringer og fejlrettelser.@if(!empty($nxCommitMatch[1])) &nbsp;·&nbsp; GitHub {{substr($nxCommitMatch[1],0,12)}}@endif</div></div>
-<div class="nx-update-actions"><a class="btn btn-primary" href="{{route('admin.updates')}}"><i class="fa fa-download"></i> Se opdatering</a><a class="btn btn-default" href="{{route('admin.updates')}}"><i class="fa fa-list-alt"></i> Changelog</a></div>
+<div class="nx-update-copy"><div class="nx-update-eyebrow"><i class="fa fa-bolt"></i> Update klar</div><h3 class="nx-update-title">En ny Nodexa-version er klar</h3><div class="nx-update-meta">Opdatér platformen for at få de nyeste funktioner, forbedringer og fejlrettelser.</div><div class="nx-update-features"><span><i class="fa fa-check-circle"></i> Nye funktioner</span><span><i class="fa fa-shield"></i> Forbedringer</span><span><i class="fa fa-wrench"></i> Fejlrettelser</span></div></div>
+<div class="nx-update-side"><div class="nx-update-version"><small>Installeret</small><strong>{{$appVersion}}</strong></div><div class="nx-update-arrow"><i class="fa fa-long-arrow-right"></i></div><div class="nx-update-version is-new"><small>Tilgængelig</small><strong>Ny version</strong></div><div class="nx-update-actions"><a class="btn btn-primary" href="{{route('admin.updates')}}"><i class="fa fa-cloud-download"></i> Se opdatering</a><a class="nx-change-link" href="{{route('admin.updates')}}"><i class="fa fa-list-alt"></i> Se changelog@if(!empty($nxCommitMatch[1])) · {{substr($nxCommitMatch[1],0,8)}}@endif</a></div></div>
 </div>
 @else
 <div class="alert alert-{{$type}}">{{$message}}</div>
