@@ -1,53 +1,44 @@
 @extends('layouts.admin')
 
 @section('title')
-    Administration
+    Dashboard
 @endsection
 
 @section('content-header')
-    <h1>Administrative Overview<small>A quick glance at your system.</small></h1>
+    <h1>Nodexa Control Center<small>Overblik over din infrastruktur.</small></h1>
     <ol class="breadcrumb">
-        <li><a href="{{ route('admin.index') }}">Admin</a></li>
-        <li class="active">Index</li>
+        <li><a href="{{ route('admin.index') }}">Nodexa</a></li>
+        <li class="active">Dashboard</li>
     </ol>
 @endsection
 
 @section('content')
 <div class="row">
-    <div class="col-xs-12">
-        <div class="box
-            @if($version->isLatestPanel())
-                box-success
-            @else
-                box-danger
-            @endif
-        ">
+    <div class="col-md-8">
+        <div class="box box-primary">
             <div class="box-header with-border">
-                <h3 class="box-title">System Information</h3>
+                <h3 class="box-title"><i class="fa fa-th-large"></i>&nbsp; Administration</h3>
             </div>
             <div class="box-body">
-                @if ($version->isLatestPanel())
-                    You are running Pterodactyl Panel version <code>{{ config('app.version') }}</code>. Your panel is up-to-date!
-                @else
-                    Your panel is <strong>not up-to-date!</strong> The latest version is <a href="https://github.com/Pterodactyl/Panel/releases/v{{ $version->getPanel() }}" target="_blank"><code>{{ $version->getPanel() }}</code></a> and you are currently running version <code>{{ config('app.version') }}</code>. You can find instructions on how to update your panel <a href="https://pterodactyl.io/panel/1.0/updating.html">here</a>.
-                @endif
+                <h3 style="margin-top:0;color:#f4f7fb;">Velkommen til Nodexa</h3>
+                <p>Administrér servere, nodes, brugere og platformens konfiguration fra ét samlet control center.</p>
+                <div style="margin-top:20px;">
+                    <a href="{{ route('admin.servers') }}" class="btn btn-primary"><i class="fa fa-server"></i> Servere</a>
+                    <a href="{{ route('admin.nodes') }}" class="btn btn-default"><i class="fa fa-sitemap"></i> Nodes</a>
+                    <a href="{{ route('admin.users') }}" class="btn btn-default"><i class="fa fa-users"></i> Brugere</a>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<div class="row">
-    <div class="col-xs-6 col-sm-3 text-center">
-        <a href="{{ $version->getDiscord() }}"><button class="btn btn-warning" style="width:100%;"><i class="fa fa-fw fa-support"></i> Get Help <small>(via Discord)</small></button></a>
-    </div>
-    <div class="col-xs-6 col-sm-3 text-center">
-        <a href="https://pterodactyl.io"><button class="btn btn-primary" style="width:100%;"><i class="fa fa-fw fa-link"></i> Documentation</button></a>
-    </div>
-    <div class="clearfix visible-xs-block">&nbsp;</div>
-    <div class="col-xs-6 col-sm-3 text-center">
-        <a href="https://github.com/pterodactyl/panel"><button class="btn btn-primary" style="width:100%;"><i class="fa fa-fw fa-support"></i> GitHub</button></a>
-    </div>
-    <div class="col-xs-6 col-sm-3 text-center">
-        <a href="{{ $version->getDonations() }}"><button class="btn btn-success" style="width:100%;"><i class="fa fa-fw fa-money"></i> Support the Project</button></a>
+    <div class="col-md-4">
+        <div class="box">
+            <div class="box-header with-border"><h3 class="box-title"><i class="fa fa-heartbeat"></i>&nbsp; Platform</h3></div>
+            <div class="box-body">
+                <p><strong>Nodexa Panel</strong></p>
+                <p class="text-muted">Game infrastructure management</p>
+                <a href="{{ route('admin.updates') }}" class="btn btn-default btn-block"><i class="fa fa-cloud-download"></i> Åbn Update Center</a>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
