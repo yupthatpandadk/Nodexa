@@ -13,6 +13,18 @@
 @endsection
 
 @section('content')
+@php
+    $nodexaReleases = [];
+    try {
+        $changelogResponse = \Illuminate\Support\Facades\Http::timeout(3)
+            ->get('https://raw.githubusercontent.com/yupthatpandadk/Nodexa/main/NODEXA_CHANGELOG.json');
+        if ($changelogResponse->successful()) {
+            $nodexaReleases = $changelogResponse->json('releases') ?: [];
+        }
+    } catch (\Throwable $e) {
+        $nodexaReleases = [];
+    }
+@endphp
 <div class="row">
     <div class="col-md-7">
         <div class="box box-primary">
@@ -52,6 +64,38 @@
             <div class="box-header with-border"><h3 class="box-title"><i class="fa fa-terminal"></i> Update log</h3></div>
             <div class="box-body">
                 <pre style="max-height:420px;overflow:auto;white-space:pre-wrap;">{{ $log ?: 'No update has been run yet.' }}</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if(count($nodexaReleases))
+<div class="row">
+    <div class="col-xs-12">
+        <div class="box">
+            <div class="box-header with-border">
+                <h3 class="box-title"><i class="fa fa-list-alt"></i> Release notes</h3>
+            </div>
+            <div class="box-body">
+                @foreach($nodexaReleases as $release)
+                    <div style="padding:16px 0;{{ !$loop->last ? 'border-bottom:1px solid #22304a;' : '' }}">
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            <strong style="font-size:17px;color:#f4f7fb;">Nodexa {{ $release['version'] ?? '?' }}</strong>
+                            @if(($release['version'] ?? null) === $installed)
+                                <span class="label label-success">Installeret</span>
+                            @elseif($latest && ($release['version'] ?? null) === $latest)
+                                <span class="label label-info">Nyeste</span>
+                            @endif
+                            <span class="text-muted">{{ $release['date'] ?? '' }}</span>
+                        </div>
+                        <div style="font-weight:600;margin:7px 0 8px;">{{ $release['title'] ?? '' }}</div>
+                        <ul style="margin-bottom:0;padding-left:20px;">
+                            @foreach(($release['changes'] ?? []) as $change)
+                                <li style="margin:4px 0;">{{ $change }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>
