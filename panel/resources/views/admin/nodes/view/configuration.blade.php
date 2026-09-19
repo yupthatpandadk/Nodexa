@@ -66,6 +66,16 @@
     @parent
     <script>
     (function () {
+        var tokenRequest = null;
+        var tokenTimer = null;
+
+        function resetGenerateButton(button) {
+            if (tokenTimer) {
+                clearTimeout(tokenTimer);
+                tokenTimer = null;
+            }
+            button.prop('disabled', false).html('<i class="fa fa-key"></i> Generate Configuration Token');
+        }
         function escapeHtml(value) {
             return $('<div/>').text(value == null ? '' : String(value)).html();
         }
@@ -103,7 +113,21 @@
             var button = $(this);
             button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Generating...');
 
-            $.ajax({
+            // Native watchdog: never leave the UI stuck even if jQuery's timeout
+            // does not fire because the browser/network stack stalls.
+            tokenTimer = setTimeout(function () {
+                if (tokenRequest && tokenRequest.readyState !== 4) {
+                    tokenRequest.abort();
+                }
+                resetGenerateButton(button);
+                swal({
+                    title: 'Auto-Deploy error',
+                    text: 'Token generation did not return within 15 seconds. Check storage/logs/laravel.log for the backend error.',
+                    type: 'error'
+                });
+            }, 15000);
+
+            tokenRequest = $.ajax({
                 method: 'POST',
                 url: '{{ route('admin.nodes.view.configuration.token', $node->id) }}',
                 dataType: 'json',
@@ -170,7 +194,8 @@
                     type: 'error'
                 });
             }).always(function () {
-                button.prop('disabled', false).html('<i class="fa fa-key"></i> Generate Configuration Token');
+                resetGenerateButton(button);
+                tokenRequest = null;
             });
         });
     })();
