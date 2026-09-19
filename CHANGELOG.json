@@ -1,59 +1,408 @@
 [
-  {"version":"0.16.26","type":"fixed","title":"Discord Restore – korrekt rækkefølge fra start","description":"Server Backup/Restore opretter nu Discord-strukturen i den gemte rækkefølge allerede under selve restore-processen. Roller oprettes efter hierarki, topniveau-kategorier og kanaler behandles i positionsrækkefølge, og hver kategoris underkanaler oprettes direkte under kategorien i deres oprindelige rækkefølge med permissions ved oprettelsen. En afsluttende positionssynkronisering bruges kun til at kompensere for Discord-managed objekter.","date":"2026-09-16"},
-  {"version":"0.16.23","type":"improved","title":"Professional Update Banner","description":"Adminpanelets update-notifikation er redesignet som ét professionelt, responsivt banner med tydelig status, GitHub commit, direkte adgang til Update Center og changelog. Identiske update-beskeder deduplikeres nu før rendering, så samme opdatering ikke længere vises to gange. Bannerets accentfarver følger Nodexas valgte tema.","date":"2026-09-16"},
-  {"version":"0.16.22","type":"changed","title":"Discord Module Boolean Sliders","description":"Alle Discord Bot Module-indstillinger markeret som 1/0 vises nu automatisk som rigtige Til/Fra-sliders i stedet for tekstfelter. UI'et viser den aktuelle status som Til eller Fra, gemmer fortsat kompatible 1/0-værdier til den eksisterende modulkonfiguration og gælder på tværs af de avancerede Discord-moduler.","date":"2026-09-16"},
-  {"version":"0.16.21","type":"changed","title":"Advanced Discord Module Controls","description":"Alle community-moduler i Discord Bot Suite er udvidet markant med modul-specifikke avancerede indstillinger samt fælles controls til permissions, kanaler, roller, rate limits, cooldowns, audit logs, notifikationer, privacy og driftstilstand. Kategorierne Moderation, Community, Automation, Engagement, Voice, Integrations og Utilities får desuden egne avancerede controls. Funktioner omfatter bl.a. anti-farm, giveaway requirements, suggestion workflows, voice ownership, economy limits, application review, scheduler/retries, anti-nuke thresholds, captcha controls, ModMail transcripts, event waitlists og AI safety controls. Indstillingerne gemmes i Module Manager og udgør konfigurationslaget for runtime-modulerne.","date":"2026-09-16"},
-  {"version":"0.16.20","type":"added","title":"Discord Ultimate Module Suite","description":"Discord Bot Module Manager er udvidet med et stort katalog af nye moduler til moderation, community, automation, engagement, voice, integrations og utilities. Nye moduler omfatter bl.a. Music, Temporary Bans, Voice Activity, Economy, Shop, Custom Commands, Applications, Forms, Auto Threads, Voice XP, Member Statistics, Server Backup/Restore, Twitch/YouTube Notifications, Scheduled Messages, Embed Builder, Role Menus, Join-to-Create Voice, AI Assistant, Anti-Nuke, Advanced Anti-Spam, Link/Invite Filter, Word Filter, Captcha/Anti-Bot, Mod Mail, Server Suggestions og Event Manager. Module Manager er samtidig opdelt i kategorier med modul- og aktivtælling. Modulerne har nu konfigurationsfundament i Admin; runtime-funktionalitet implementeres modulvist.","date":"2026-09-16"},
-  {"version":"0.16.19","type":"fixed","title":"Hashids bootstrap stability","description":"Hashids kan ikke længere crashe panelet, hvis HASHIDS_SALT mangler eller er tom. Nodexa bruger APP_KEY som sikker standard og har en sidste stabil fallback, så webrequests og databasehandlinger kan bootstrappe korrekt.","date":"2026-09-16"},
-  {"version":"0.16.12","type":"added","title":"Persistent Node Monitoring","description":"Nodexa overvåger nu nodes automatisk hvert femte minut via Laravel scheduler, gemmer reachability, latency, fejl og timestamps i en dedikeret historiktabel, beholder 30 dages checks og beregner 24 timers uptime pr. node i Status Center. Sidevisning udfører ikke længere selv netværkschecks.","date":"2026-09-15"},
-  {"version":"0.16.11","type":"added","title":"Live Node Health Checks","description":"Status Center udfører nu en aktiv TCP-connectivity-check mod hver Nodes konfigurerede Wings-port ved sidevisning. Dashboardet viser reachable/unreachable nodes, målt forbindelseslatency, maintenance-status og kombinerer live connectivity med eksisterende serverfejl og suspensioner uden at påstå fuld Wings API-health.","date":"2026-09-15"},
-  {"version":"0.16.10","type":"changed","title":"Status Center 2.0","description":"Status Center er redesignet som et professionelt infrastructure-dashboard med node fleet, maintenance-status, game-servere, suspensioner, installationsfejl og samlet infrastructure pulse baseret på Nodexas eksisterende databasefelter.","date":"2026-09-15"},
-  {"version":"0.16.9","type":"changed","title":"Notification Center 2.0","description":"Notification Center er redesignet til et professionelt operations-feed med KPI'er for forfaldne fakturaer, åbne support tickets og ordrer i provisioning-pipeline.","date":"2026-09-15"},
-  {"version":"0.16.8","type":"changed","title":"Business Analytics 2.0","description":"Analytics er udvidet til et business intelligence-dashboard med omsætning, vækst, kunder, hosting footprint, ordre-pipeline og fakturaoverblik.","date":"2026-09-15"},
-  {"version":"0.16.7","type":"changed","title":"Security Center 2.0","description":"Security Center er redesignet med databasebaserede KPI'er for administratorer, brugere, API keys og sessioner samt security checklist og adgangsprofil.","date":"2026-09-15"},
-  {"version":"0.16.6","type":"fixed","title":"Update Center 2.0 release consistency","description":"Update Center låser versionsnummer og changelog til samme GitHub commit.","date":"2026-09-15"},
-  {"version":"0.16.5","type":"changed","title":"Support Workspace 2.0","description":"Support-ticket workspace er opgraderet med samtalevisning, kundecontext, routing, svar-editor og forbedret mobilvisning.","date":"2026-09-15"},
-  {"version":"0.16.4","type":"changed","title":"Billing Center 2.0","description":"Billing er opgraderet til et samlet commerce control center med gateways, produktkatalog, kategorier og invoice monitor.","date":"2026-09-15"},
-  {"version":"0.16.3","type":"changed","title":"Order Operations 2.0","description":"Ordreadministrationen har fået operations-dashboard, provisioning-pipeline, søgning, filtrering og retry-handlinger.","date":"2026-09-15"},
-  {"version":"0.16.2","type":"changed","title":"VPS Control 2.0","description":"Kundens VPS-side er opgraderet med status, power controls, SSH/RDP-adgang, password reset og OS-geninstallation.","date":"2026-09-15"},
-  {"version":"0.16.1","type":"improved","title":"Ultimate UI Foundation","description":"Nodexa har fået et fælles professionelt UI-lag på tværs af Admin Area.","date":"2026-09-15"},
-  {"version":"0.16.0","type":"changed","title":"Nodexa Platform Visual Upgrade","description":"Nodexas visuelle platform er løftet til et sammenhængende cloud-design på tværs af Admin, Storefront og Client Area.","date":"2026-09-15"},
-  {"version":"0.15.9","type":"changed","title":"Client Area 2.0","description":"Kundeområdet er redesignet som et moderne hosting control center.","date":"2026-09-15"},
-  {"version":"0.15.8","type":"added","title":"Checkout 2.0","description":"Checkout er redesignet som et ordre → betaling → provisioning → klar-flow.","date":"2026-09-15"},
-  {"version":"0.15.7","type":"fixed","title":"Payment → Provisioning hardening","description":"Betalingsflowet er hardenet til sikker automatisk provisioning og retries.","date":"2026-09-15"},
-  {"version":"0.15.6","type":"added","title":"Payment Automation Foundation","description":"Centralt idempotent betalingsflow og signeret webhook-endpoint til betalingsgateways.","date":"2026-09-15"},
-  {"version":"0.15.5","type":"added","title":"Automatic VPS Provisioning","description":"Betalte VPS-ordrer kan automatisk oprette og følge VPS-service gennem provisioning-flowet.","date":"2026-09-15"},
-  {"version":"0.15.4","type":"added","title":"Nodexa Operations Suite","description":"Adminområdet er udvidet med Notification Center, Security Center, Business Analytics og Status Center.","date":"2026-09-15"},
-  {"version":"0.15.3","type":"added","title":"Dashboard 2.0","description":"Administration har fået et business- og infrastructure-dashboard med databasebaserede nøgletal.","date":"2026-09-15"},
-  {"version":"0.15.2","type":"added","title":"Discord Community Suite","description":"13 community-moduler er tilføjet som konfigurerbart fundament.","date":"2026-09-15"},
-  {"version":"0.15.1","type":"fixed","title":"Discord Bot admin-adgang rettet","description":"Rolle- og permissionsystemet genkender Discord Bot adminsektionen korrekt.","date":"2026-09-15"},
-  {"version":"0.15.0","type":"added","title":"Advanced Discord Moderation Runtime","description":"Discord moderation-runtime med staff-kommandoer, warnings, AutoMod, anti-raid, lockdown og logs.","date":"2026-09-14"},
-  {"version":"0.14.96","type":"added","title":"Ticket Templates","description":"Discord Bot Tickets har fået 9 færdige templates.","date":"2026-09-14"},
-  {"version":"0.14.95","type":"fixed","title":"Update Center bootstrap-fix","description":"Update Center-releasen er samlet, så VERSION og CHANGELOG peger på samme release.","date":"2026-09-14"},
-  {"version":"0.14.94","type":"fixed","title":"Ticket-variabler samlet ét sted","description":"Ticket-indstillinger viser understøttede variabler som én fælles sektion.","date":"2026-09-14"},
-  {"version":"0.14.90","type":"improved","title":"Discord kanal- og rollevælger","description":"Discord Bot-moduler henter kanaler, kategorier og roller fra den konfigurerede Discord-server.","date":"2026-09-14"},
-  {"version":"0.14.88","type":"added","title":"Discord Bot Module Manager","description":"Discord Bot har fået en modulær Module Manager i Admin Area.","date":"2026-09-14"},
-  {"version":"0.14.87","type":"fixed","title":"Changelog bevares efter opdateringer","description":"Update Center henter CHANGELOG.json fra GitHub som autoritativ historik.","date":"2026-09-14"},
-  {"version":"0.14.86","type":"added","title":"Discord Bot i Admin Area","description":"Nodexa har fået et Discord Bot-område i Admin.","date":"2026-09-14"},
-  {"version":"0.14.85","type":"improved","title":"Minecraft spillerstyring forbedret","description":"Spillerlisten på serverens Console-side er forbedret.","date":"2026-09-14"},
-  {"version":"0.14.83","type":"fixed","title":"Update Center læser direkte fra GitHub","description":"Update Center bruger GitHub main som autoritativ kilde.","date":"2026-09-13"},
-  {"version":"0.14.82","type":"added","title":"Discord-indstillinger i Admin","description":"Admin Settings har fået en separat Discord-fane.","date":"2026-09-13"},
-  {"version":"0.14.81","type":"added","title":"Log ind med Discord","description":"Nodexa understøtter Discord OAuth2-login.","date":"2026-09-13"},
-  {"version":"0.14.80","type":"fixed","title":"Profil-dropdown på www rettet","description":"Profilmenuen på storefront har fået korrekt mørk dropdown-styling.","date":"2026-09-13"},
-  {"version":"0.14.79","type":"changed","title":"Kundeområde og profilmenu på www","description":"Storefront-navbar er opdateret med Kunde område og profil-dropdown.","date":"2026-09-12"},
-  {"version":"0.14.78","type":"changed","title":"Client Area flyttet til www","description":"Client Area-ruterne er integreret direkte på storefront/www-domænet.","date":"2026-09-12"},
-  {"version":"0.14.77","type":"added","title":"WHMCS-lignende fakturasystem","description":"Nodexa har fået udvidet fakturastyring.","date":"2026-09-12"},
-  {"version":"0.14.76","type":"fixed","title":"Marketing design og mørke formularfelter","description":"Marketing er opdelt i separate faner og formularlayoutet forbedret.","date":"2026-09-12"},
-  {"version":"0.14.74","type":"changed","title":"Nyt Marketing design","description":"Marketing-administrationen er redesignet.","date":"2026-09-11"},
-  {"version":"0.14.73","type":"fixed","title":"Marketing i adminmenuen","description":"Marketing er tilføjet som et synligt menupunkt.","date":"2026-09-11"},
-  {"version":"0.14.72","type":"added","title":"Announcement Banner","description":"Nodexa har announcements med titel, besked, type, knap og tidsstyring.","date":"2026-09-11"},
-  {"version":"0.14.72","type":"added","title":"Rabatkoder og kampagner","description":"Nyt server-side rabatsystem.","date":"2026-09-11"},
-  {"version":"0.14.71","type":"fixed","title":"Mobil sidemenu kan åbnes igen","description":"Menu-knappen i adminpanelet har fået sikker mobil-toggle.","date":"2026-09-11"},
-  {"version":"0.14.70","type":"fixed","title":"Mobil viewport og breakpoint rettet","description":"Admin-layoutets viewport og responsive breakpoint er rettet.","date":"2026-09-11"},
-  {"version":"0.14.69","type":"fixed","title":"Rigtigt mobil-layout i Admin","description":"Adminpanelet bruger nu hele skærmbredden på mobil.","date":"2026-09-11"},
-  {"version":"0.14.68","type":"improved","title":"Forbedret VPS Hosting mobil-layout","description":"VPS Hosting har fået et mere mobilvenligt layout.","date":"2026-09-11"},
-  {"version":"0.14.67","type":"fixed","title":"Korrekt VPS-status fra Flax","description":"VPS Hosting viser nu kundevenlige statustekster.","date":"2026-09-11"},
-  {"version":"0.14.66","type":"fixed","title":"Stabil versionskontrol i Update Center","description":"Update Center henter versionsnummer og GitHub commit uafhængigt.","date":"2026-09-11"},
-  {"version":"0.14.65","type":"improved","title":"Fleksibel changelog-visning","description":"Update Center har fleksibel pagination og changelog-visning.","date":"2026-09-11"},
-  {"version":"0.14.64","type":"added","title":"Komplet opdateringshistorik","description":"Update Center kan hente historiske Nodexa-releases fra GitHub.","date":"2026-09-11"}
+  {
+    "version": "0.16.35",
+    "type": "fixed",
+    "title": "Updater frontend dependency fix",
+    "description": "Nodexa-updateren installerer nu eksplicit frontend devDependencies før build, nulstiller arbejdsstien efter panel-synkronisering og springer nginx-validering sikkert over på hosts uden nginx. Det forhindrer cross-env not found og uv_cwd-fejl under automatiske panelopdateringer.",
+    "date": "2026-09-19"
+  },
+  {
+    "version": "0.16.26",
+    "type": "fixed",
+    "title": "Discord Restore – korrekt rækkefølge fra start",
+    "description": "Server Backup/Restore opretter nu Discord-strukturen i den gemte rækkefølge allerede under selve restore-processen. Roller oprettes efter hierarki, topniveau-kategorier og kanaler behandles i positionsrækkefølge, og hver kategoris underkanaler oprettes direkte under kategorien i deres oprindelige rækkefølge med permissions ved oprettelsen. En afsluttende positionssynkronisering bruges kun til at kompensere for Discord-managed objekter.",
+    "date": "2026-09-16"
+  },
+  {
+    "version": "0.16.23",
+    "type": "improved",
+    "title": "Professional Update Banner",
+    "description": "Adminpanelets update-notifikation er redesignet som ét professionelt, responsivt banner med tydelig status, GitHub commit, direkte adgang til Update Center og changelog. Identiske update-beskeder deduplikeres nu før rendering, så samme opdatering ikke længere vises to gange. Bannerets accentfarver følger Nodexas valgte tema.",
+    "date": "2026-09-16"
+  },
+  {
+    "version": "0.16.22",
+    "type": "changed",
+    "title": "Discord Module Boolean Sliders",
+    "description": "Alle Discord Bot Module-indstillinger markeret som 1/0 vises nu automatisk som rigtige Til/Fra-sliders i stedet for tekstfelter. UI'et viser den aktuelle status som Til eller Fra, gemmer fortsat kompatible 1/0-værdier til den eksisterende modulkonfiguration og gælder på tværs af de avancerede Discord-moduler.",
+    "date": "2026-09-16"
+  },
+  {
+    "version": "0.16.21",
+    "type": "changed",
+    "title": "Advanced Discord Module Controls",
+    "description": "Alle community-moduler i Discord Bot Suite er udvidet markant med modul-specifikke avancerede indstillinger samt fælles controls til permissions, kanaler, roller, rate limits, cooldowns, audit logs, notifikationer, privacy og driftstilstand. Kategorierne Moderation, Community, Automation, Engagement, Voice, Integrations og Utilities får desuden egne avancerede controls. Funktioner omfatter bl.a. anti-farm, giveaway requirements, suggestion workflows, voice ownership, economy limits, application review, scheduler/retries, anti-nuke thresholds, captcha controls, ModMail transcripts, event waitlists og AI safety controls. Indstillingerne gemmes i Module Manager og udgør konfigurationslaget for runtime-modulerne.",
+    "date": "2026-09-16"
+  },
+  {
+    "version": "0.16.20",
+    "type": "added",
+    "title": "Discord Ultimate Module Suite",
+    "description": "Discord Bot Module Manager er udvidet med et stort katalog af nye moduler til moderation, community, automation, engagement, voice, integrations og utilities. Nye moduler omfatter bl.a. Music, Temporary Bans, Voice Activity, Economy, Shop, Custom Commands, Applications, Forms, Auto Threads, Voice XP, Member Statistics, Server Backup/Restore, Twitch/YouTube Notifications, Scheduled Messages, Embed Builder, Role Menus, Join-to-Create Voice, AI Assistant, Anti-Nuke, Advanced Anti-Spam, Link/Invite Filter, Word Filter, Captcha/Anti-Bot, Mod Mail, Server Suggestions og Event Manager. Module Manager er samtidig opdelt i kategorier med modul- og aktivtælling. Modulerne har nu konfigurationsfundament i Admin; runtime-funktionalitet implementeres modulvist.",
+    "date": "2026-09-16"
+  },
+  {
+    "version": "0.16.19",
+    "type": "fixed",
+    "title": "Hashids bootstrap stability",
+    "description": "Hashids kan ikke længere crashe panelet, hvis HASHIDS_SALT mangler eller er tom. Nodexa bruger APP_KEY som sikker standard og har en sidste stabil fallback, så webrequests og databasehandlinger kan bootstrappe korrekt.",
+    "date": "2026-09-16"
+  },
+  {
+    "version": "0.16.12",
+    "type": "added",
+    "title": "Persistent Node Monitoring",
+    "description": "Nodexa overvåger nu nodes automatisk hvert femte minut via Laravel scheduler, gemmer reachability, latency, fejl og timestamps i en dedikeret historiktabel, beholder 30 dages checks og beregner 24 timers uptime pr. node i Status Center. Sidevisning udfører ikke længere selv netværkschecks.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.16.11",
+    "type": "added",
+    "title": "Live Node Health Checks",
+    "description": "Status Center udfører nu en aktiv TCP-connectivity-check mod hver Nodes konfigurerede Wings-port ved sidevisning. Dashboardet viser reachable/unreachable nodes, målt forbindelseslatency, maintenance-status og kombinerer live connectivity med eksisterende serverfejl og suspensioner uden at påstå fuld Wings API-health.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.16.10",
+    "type": "changed",
+    "title": "Status Center 2.0",
+    "description": "Status Center er redesignet som et professionelt infrastructure-dashboard med node fleet, maintenance-status, game-servere, suspensioner, installationsfejl og samlet infrastructure pulse baseret på Nodexas eksisterende databasefelter.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.16.9",
+    "type": "changed",
+    "title": "Notification Center 2.0",
+    "description": "Notification Center er redesignet til et professionelt operations-feed med KPI'er for forfaldne fakturaer, åbne support tickets og ordrer i provisioning-pipeline.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.16.8",
+    "type": "changed",
+    "title": "Business Analytics 2.0",
+    "description": "Analytics er udvidet til et business intelligence-dashboard med omsætning, vækst, kunder, hosting footprint, ordre-pipeline og fakturaoverblik.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.16.7",
+    "type": "changed",
+    "title": "Security Center 2.0",
+    "description": "Security Center er redesignet med databasebaserede KPI'er for administratorer, brugere, API keys og sessioner samt security checklist og adgangsprofil.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.16.6",
+    "type": "fixed",
+    "title": "Update Center 2.0 release consistency",
+    "description": "Update Center låser versionsnummer og changelog til samme GitHub commit.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.16.5",
+    "type": "changed",
+    "title": "Support Workspace 2.0",
+    "description": "Support-ticket workspace er opgraderet med samtalevisning, kundecontext, routing, svar-editor og forbedret mobilvisning.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.16.4",
+    "type": "changed",
+    "title": "Billing Center 2.0",
+    "description": "Billing er opgraderet til et samlet commerce control center med gateways, produktkatalog, kategorier og invoice monitor.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.16.3",
+    "type": "changed",
+    "title": "Order Operations 2.0",
+    "description": "Ordreadministrationen har fået operations-dashboard, provisioning-pipeline, søgning, filtrering og retry-handlinger.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.16.2",
+    "type": "changed",
+    "title": "VPS Control 2.0",
+    "description": "Kundens VPS-side er opgraderet med status, power controls, SSH/RDP-adgang, password reset og OS-geninstallation.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.16.1",
+    "type": "improved",
+    "title": "Ultimate UI Foundation",
+    "description": "Nodexa har fået et fælles professionelt UI-lag på tværs af Admin Area.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.16.0",
+    "type": "changed",
+    "title": "Nodexa Platform Visual Upgrade",
+    "description": "Nodexas visuelle platform er løftet til et sammenhængende cloud-design på tværs af Admin, Storefront og Client Area.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.15.9",
+    "type": "changed",
+    "title": "Client Area 2.0",
+    "description": "Kundeområdet er redesignet som et moderne hosting control center.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.15.8",
+    "type": "added",
+    "title": "Checkout 2.0",
+    "description": "Checkout er redesignet som et ordre → betaling → provisioning → klar-flow.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.15.7",
+    "type": "fixed",
+    "title": "Payment → Provisioning hardening",
+    "description": "Betalingsflowet er hardenet til sikker automatisk provisioning og retries.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.15.6",
+    "type": "added",
+    "title": "Payment Automation Foundation",
+    "description": "Centralt idempotent betalingsflow og signeret webhook-endpoint til betalingsgateways.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.15.5",
+    "type": "added",
+    "title": "Automatic VPS Provisioning",
+    "description": "Betalte VPS-ordrer kan automatisk oprette og følge VPS-service gennem provisioning-flowet.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.15.4",
+    "type": "added",
+    "title": "Nodexa Operations Suite",
+    "description": "Adminområdet er udvidet med Notification Center, Security Center, Business Analytics og Status Center.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.15.3",
+    "type": "added",
+    "title": "Dashboard 2.0",
+    "description": "Administration har fået et business- og infrastructure-dashboard med databasebaserede nøgletal.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.15.2",
+    "type": "added",
+    "title": "Discord Community Suite",
+    "description": "13 community-moduler er tilføjet som konfigurerbart fundament.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.15.1",
+    "type": "fixed",
+    "title": "Discord Bot admin-adgang rettet",
+    "description": "Rolle- og permissionsystemet genkender Discord Bot adminsektionen korrekt.",
+    "date": "2026-09-15"
+  },
+  {
+    "version": "0.15.0",
+    "type": "added",
+    "title": "Advanced Discord Moderation Runtime",
+    "description": "Discord moderation-runtime med staff-kommandoer, warnings, AutoMod, anti-raid, lockdown og logs.",
+    "date": "2026-09-14"
+  },
+  {
+    "version": "0.14.96",
+    "type": "added",
+    "title": "Ticket Templates",
+    "description": "Discord Bot Tickets har fået 9 færdige templates.",
+    "date": "2026-09-14"
+  },
+  {
+    "version": "0.14.95",
+    "type": "fixed",
+    "title": "Update Center bootstrap-fix",
+    "description": "Update Center-releasen er samlet, så VERSION og CHANGELOG peger på samme release.",
+    "date": "2026-09-14"
+  },
+  {
+    "version": "0.14.94",
+    "type": "fixed",
+    "title": "Ticket-variabler samlet ét sted",
+    "description": "Ticket-indstillinger viser understøttede variabler som én fælles sektion.",
+    "date": "2026-09-14"
+  },
+  {
+    "version": "0.14.90",
+    "type": "improved",
+    "title": "Discord kanal- og rollevælger",
+    "description": "Discord Bot-moduler henter kanaler, kategorier og roller fra den konfigurerede Discord-server.",
+    "date": "2026-09-14"
+  },
+  {
+    "version": "0.14.88",
+    "type": "added",
+    "title": "Discord Bot Module Manager",
+    "description": "Discord Bot har fået en modulær Module Manager i Admin Area.",
+    "date": "2026-09-14"
+  },
+  {
+    "version": "0.14.87",
+    "type": "fixed",
+    "title": "Changelog bevares efter opdateringer",
+    "description": "Update Center henter CHANGELOG.json fra GitHub som autoritativ historik.",
+    "date": "2026-09-14"
+  },
+  {
+    "version": "0.14.86",
+    "type": "added",
+    "title": "Discord Bot i Admin Area",
+    "description": "Nodexa har fået et Discord Bot-område i Admin.",
+    "date": "2026-09-14"
+  },
+  {
+    "version": "0.14.85",
+    "type": "improved",
+    "title": "Minecraft spillerstyring forbedret",
+    "description": "Spillerlisten på serverens Console-side er forbedret.",
+    "date": "2026-09-14"
+  },
+  {
+    "version": "0.14.83",
+    "type": "fixed",
+    "title": "Update Center læser direkte fra GitHub",
+    "description": "Update Center bruger GitHub main som autoritativ kilde.",
+    "date": "2026-09-13"
+  },
+  {
+    "version": "0.14.82",
+    "type": "added",
+    "title": "Discord-indstillinger i Admin",
+    "description": "Admin Settings har fået en separat Discord-fane.",
+    "date": "2026-09-13"
+  },
+  {
+    "version": "0.14.81",
+    "type": "added",
+    "title": "Log ind med Discord",
+    "description": "Nodexa understøtter Discord OAuth2-login.",
+    "date": "2026-09-13"
+  },
+  {
+    "version": "0.14.80",
+    "type": "fixed",
+    "title": "Profil-dropdown på www rettet",
+    "description": "Profilmenuen på storefront har fået korrekt mørk dropdown-styling.",
+    "date": "2026-09-13"
+  },
+  {
+    "version": "0.14.79",
+    "type": "changed",
+    "title": "Kundeområde og profilmenu på www",
+    "description": "Storefront-navbar er opdateret med Kunde område og profil-dropdown.",
+    "date": "2026-09-12"
+  },
+  {
+    "version": "0.14.78",
+    "type": "changed",
+    "title": "Client Area flyttet til www",
+    "description": "Client Area-ruterne er integreret direkte på storefront/www-domænet.",
+    "date": "2026-09-12"
+  },
+  {
+    "version": "0.14.77",
+    "type": "added",
+    "title": "WHMCS-lignende fakturasystem",
+    "description": "Nodexa har fået udvidet fakturastyring.",
+    "date": "2026-09-12"
+  },
+  {
+    "version": "0.14.76",
+    "type": "fixed",
+    "title": "Marketing design og mørke formularfelter",
+    "description": "Marketing er opdelt i separate faner og formularlayoutet forbedret.",
+    "date": "2026-09-12"
+  },
+  {
+    "version": "0.14.74",
+    "type": "changed",
+    "title": "Nyt Marketing design",
+    "description": "Marketing-administrationen er redesignet.",
+    "date": "2026-09-11"
+  },
+  {
+    "version": "0.14.73",
+    "type": "fixed",
+    "title": "Marketing i adminmenuen",
+    "description": "Marketing er tilføjet som et synligt menupunkt.",
+    "date": "2026-09-11"
+  },
+  {
+    "version": "0.14.72",
+    "type": "added",
+    "title": "Announcement Banner",
+    "description": "Nodexa har announcements med titel, besked, type, knap og tidsstyring.",
+    "date": "2026-09-11"
+  },
+  {
+    "version": "0.14.72",
+    "type": "added",
+    "title": "Rabatkoder og kampagner",
+    "description": "Nyt server-side rabatsystem.",
+    "date": "2026-09-11"
+  },
+  {
+    "version": "0.14.71",
+    "type": "fixed",
+    "title": "Mobil sidemenu kan åbnes igen",
+    "description": "Menu-knappen i adminpanelet har fået sikker mobil-toggle.",
+    "date": "2026-09-11"
+  },
+  {
+    "version": "0.14.70",
+    "type": "fixed",
+    "title": "Mobil viewport og breakpoint rettet",
+    "description": "Admin-layoutets viewport og responsive breakpoint er rettet.",
+    "date": "2026-09-11"
+  },
+  {
+    "version": "0.14.69",
+    "type": "fixed",
+    "title": "Rigtigt mobil-layout i Admin",
+    "description": "Adminpanelet bruger nu hele skærmbredden på mobil.",
+    "date": "2026-09-11"
+  },
+  {
+    "version": "0.14.68",
+    "type": "improved",
+    "title": "Forbedret VPS Hosting mobil-layout",
+    "description": "VPS Hosting har fået et mere mobilvenligt layout.",
+    "date": "2026-09-11"
+  },
+  {
+    "version": "0.14.67",
+    "type": "fixed",
+    "title": "Korrekt VPS-status fra Flax",
+    "description": "VPS Hosting viser nu kundevenlige statustekster.",
+    "date": "2026-09-11"
+  },
+  {
+    "version": "0.14.66",
+    "type": "fixed",
+    "title": "Stabil versionskontrol i Update Center",
+    "description": "Update Center henter versionsnummer og GitHub commit uafhængigt.",
+    "date": "2026-09-11"
+  },
+  {
+    "version": "0.14.65",
+    "type": "improved",
+    "title": "Fleksibel changelog-visning",
+    "description": "Update Center har fleksibel pagination og changelog-visning.",
+    "date": "2026-09-11"
+  },
+  {
+    "version": "0.14.64",
+    "type": "added",
+    "title": "Komplet opdateringshistorik",
+    "description": "Update Center kan hente historiske Nodexa-releases fra GitHub.",
+    "date": "2026-09-11"
+  }
 ]
