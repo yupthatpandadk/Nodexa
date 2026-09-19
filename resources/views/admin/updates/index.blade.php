@@ -13,18 +13,6 @@
 @endsection
 
 @section('content')
-@php
-    $nodexaReleases = [];
-    try {
-        $changelogResponse = \Illuminate\Support\Facades\Http::timeout(3)
-            ->get('https://raw.githubusercontent.com/yupthatpandadk/Nodexa/main/NODEXA_CHANGELOG.json');
-        if ($changelogResponse->successful()) {
-            $nodexaReleases = $changelogResponse->json('releases') ?: [];
-        }
-    } catch (\Throwable $e) {
-        $nodexaReleases = [];
-    }
-@endphp
 <div class="row">
     <div class="col-md-7">
         <div class="box box-primary">
@@ -69,7 +57,7 @@
     </div>
 </div>
 
-@if(count($nodexaReleases))
+@if(count($releases))
 <div class="row">
     <div class="col-xs-12">
         <div class="box">
@@ -77,7 +65,7 @@
                 <h3 class="box-title"><i class="fa fa-list-alt"></i> Release notes</h3>
             </div>
             <div class="box-body">
-                @foreach($nodexaReleases as $release)
+                @foreach($releases as $release)
                     <div style="padding:16px 0;{{ !$loop->last ? 'border-bottom:1px solid #22304a;' : '' }}">
                         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                             <strong style="font-size:17px;color:#f4f7fb;">Nodexa {{ $release['version'] ?? '?' }}</strong>
