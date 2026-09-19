@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>{{ config('app.name', 'Pterodactyl') }} - @yield('title')</title>
+        <title>Nodexa — @yield('title')</title>
         <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
         <meta name="_token" content="{{ csrf_token() }}">
 
@@ -14,7 +14,7 @@
         <link rel="mask-icon" href="/favicons/safari-pinned-tab.svg" color="#bc6e3c">
         <link rel="shortcut icon" href="/favicons/favicon.ico">
         <meta name="msapplication-config" content="/favicons/browserconfig.xml">
-        <meta name="theme-color" content="#0e4688">
+        <meta name="theme-color" content="#0b1020">
 
         @include('layouts.scripts')
 
@@ -26,6 +26,7 @@
             {!! Theme::css('vendor/sweetalert/sweetalert.min.css?t={cache-version}') !!}
             {!! Theme::css('vendor/animate/animate.min.css?t={cache-version}') !!}
             {!! Theme::css('css/pterodactyl.css?t={cache-version}') !!}
+            {!! Theme::css('css/nodexa-admin.css?t={cache-version}') !!}
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css">
 
@@ -35,11 +36,11 @@
             <![endif]-->
         @show
     </head>
-    <body class="hold-transition skin-blue fixed sidebar-mini">
+    <body class="hold-transition skin-blue fixed sidebar-mini nodexa-admin">
         <div class="wrapper">
             <header class="main-header">
                 <a href="{{ route('index') }}" class="logo">
-                    <span>{{ config('app.name', 'Pterodactyl') }}</span>
+                    <span class="nodexa-brand"><span class="nodexa-brand-mark">N</span><strong>Nodexa</strong></span>
                 </a>
                 <nav class="navbar navbar-static-top">
                     <a href="#" class="sidebar-toggle" data-toggle="push-menu" role="button">
@@ -68,6 +69,7 @@
             </header>
             <aside class="main-sidebar">
                 <section class="sidebar">
+                    <div class="nodexa-sidebar-label">CONTROL CENTER</div>
                     <ul class="sidebar-menu">
                         <li class="header">BASIC ADMINISTRATION</li>
                         <li class="{{ Route::currentRouteName() !== 'admin.index' ?: 'active' }}">
@@ -131,6 +133,30 @@
                 </section>
             </aside>
             <div class="content-wrapper">
+                @php
+                    $nodexaInstalled = trim((string) @file_get_contents(base_path('NODEXA_VERSION'))) ?: 'dev';
+                    $nodexaLatest = null;
+                    try {
+                        $nodexaVersionResponse = \Illuminate\Support\Facades\Http::timeout(2)
+                            ->withHeaders(['Accept' => 'application/vnd.github+json'])
+                            ->get('https://api.github.com/repos/yupthatpandadk/Nodexa/contents/NODEXA_VERSION', ['ref' => 'main']);
+                        if ($nodexaVersionResponse->successful()) {
+                            $nodexaLatest = trim(base64_decode((string) $nodexaVersionResponse->json('content')));
+                        }
+                    } catch (\Throwable $e) {
+                        $nodexaLatest = null;
+                    }
+                @endphp
+                @if($nodexaLatest && version_compare($nodexaLatest, $nodexaInstalled, '>'))
+                    <div class="nodexa-update-banner">
+                        <div>
+                            <span class="nodexa-update-icon"><i class="fa fa-cloud-download"></i></span>
+                            <strong>Nodexa {{ $nodexaLatest }} er klar</strong>
+                            <span>Du kører {{ $nodexaInstalled }}. En ny opdatering kan installeres nu.</span>
+                        </div>
+                        <a href="{{ route('admin.updates') }}">Åbn Update Center <i class="fa fa-arrow-right"></i></a>
+                    </div>
+                @endif
                 <section class="content-header">
                     @yield('content-header')
                 </section>
@@ -164,7 +190,7 @@
                     <strong><i class="fa fa-fw {{ $appIsGit ? 'fa-git-square' : 'fa-code-fork' }}"></i></strong> {{ $appVersion }}<br />
                     <strong><i class="fa fa-fw fa-clock-o"></i></strong> {{ round(microtime(true) - LARAVEL_START, 3) }}s
                 </div>
-                Copyright &copy; 2015 - {{ date('Y') }} <a href="https://pterodactyl.io/">Pterodactyl Software</a>.
+                <strong>Nodexa</strong> &copy; {{ date('Y') }} <span class="text-muted">Game infrastructure control panel.</span>
             </footer>
         </div>
         @section('footer-scripts')
