@@ -1,6 +1,16 @@
 {
-  "latest": "1.0.3",
+  "latest": "1.0.4",
   "releases": [
+    {
+      "version": "1.0.4",
+      "date": "2026-09-20",
+      "type": "patch",
+      "title": "Update Center Blade fix",
+      "changes": [
+        "Rettet manglende @endif i Update Center-viewet.",
+        "Fjerner syntax error der gav HTTP 500 på /admin/updates."
+      ]
+    },
     {
       "version": "1.0.3",
       "date": "2026-09-20",
