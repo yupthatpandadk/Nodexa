@@ -18,6 +18,7 @@ if [[ -d "$PANEL_DIR" ]]; then
  if [[ ! -f "$PANEL_DIR/public/index.php" || ! -f "$PANEL_DIR/artisan" || ! -f "$PANEL_DIR/bootstrap/app.php" ]]; then repair_laravel_skeleton; fi
  log "Updating panel files without touching local configuration or data..."
  rsync -a --delete --exclude='.env' --exclude='storage/' --exclude='bootstrap/cache/' --exclude='vendor/' --exclude='node_modules/' --exclude='public/build/' "$SOURCE_ROOT/panel/" "$PANEL_DIR/"
+ cd /
  cd "$PANEL_DIR"
  install -d -o www-data -g www-data storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
  chown -R www-data:www-data storage bootstrap/cache; chmod -R 775 storage bootstrap/cache; ensure_panel_app_key
@@ -30,7 +31,10 @@ if [[ -d "$PANEL_DIR" ]]; then
  sudo -u www-data php artisan optimize:clear
  rm -f storage/framework/views/*.php 2>/dev/null || true
  bash "$SOURCE_ROOT/deploy/optimize-frontend-source.sh"; bash "$SOURCE_ROOT/deploy/enable-managed-server-templates.sh"; bash "$SOURCE_ROOT/deploy/enable-runtime-modules.sh"; bash "$SOURCE_ROOT/deploy/enable-server-configuration-modules.sh"; bash "$SOURCE_ROOT/deploy/enable-realtime-console.sh"; bash "$SOURCE_ROOT/deploy/fix-installer-ready-ui.sh"; bash "$SOURCE_ROOT/deploy/enable-power-feedback.sh"; bash "$SOURCE_ROOT/deploy/optimize-frontend-delivery-source.sh"; bash "$SOURCE_ROOT/deploy/dedupe-update-center-menu.sh"
- npm install; rm -rf public/build; npm run build
+ log "Installing frontend build dependencies..."
+ npm install --include=dev
+ rm -rf public/build
+ npm run build
  sudo -u www-data php artisan config:cache; sudo -u www-data php artisan route:cache || true; sudo -u www-data php artisan view:cache || true
  chmod 755 /var/www /var/www/nodexa "$PANEL_DIR" "$PANEL_DIR/public" 2>/dev/null || true; find "$PANEL_DIR/public" -type d -exec chmod 755 {} + 2>/dev/null || true; find "$PANEL_DIR/public" -type f -exec chmod 644 {} + 2>/dev/null || true; chown -R www-data:www-data storage bootstrap/cache; chmod -R 775 storage bootstrap/cache
  while read -r svc; do [[ -n "$svc" ]] && systemctl restart "$svc" 2>/dev/null || true; done < <(systemctl list-unit-files --type=service --no-legend 'php*-fpm.service' 2>/dev/null | awk '{print $1}')
@@ -52,5 +56,6 @@ PY
 fi
 bash "$SOURCE_ROOT/deploy/setup-updater.sh"
 if [[ -d "$PANEL_DIR" ]]; then bash "$SOURCE_ROOT/deploy/setup-diagnostics.sh"; bash "$SOURCE_ROOT/deploy/setup-scheduler.sh"; bash "$SOURCE_ROOT/deploy/setup-upload-limits.sh"; bash "$SOURCE_ROOT/deploy/optimize-panel-runtime.sh"; bash "$SOURCE_ROOT/deploy/setup-storefront.sh"; bash "$SOURCE_ROOT/deploy/setup-storefront-sync.sh"; bash "$SOURCE_ROOT/deploy/optimize-web-assets.sh"; fi
-systemctl restart nodexa-queue 2>/dev/null || true; systemctl restart nodexa-monitor.timer 2>/dev/null || true; nginx -t; systemctl reload nginx
+systemctl restart nodexa-queue 2>/dev/null || true; systemctl restart nodexa-monitor.timer 2>/dev/null || true
+if command -v nginx >/dev/null 2>&1; then nginx -t && systemctl reload nginx; else warn "nginx is not installed on this host; skipping nginx validation/reload."; fi
 log "Update complete. Local .env, storage, Node configuration and server data were preserved."
