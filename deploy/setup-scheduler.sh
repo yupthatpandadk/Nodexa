@@ -4,6 +4,20 @@ set -Eeuo pipefail
 PANEL_DIR="${NODEXA_PANEL_DIR:-/var/www/nodexa/panel}"
 [[ -f "$PANEL_DIR/artisan" ]] || exit 0
 
+cd "$PANEL_DIR"
+install -d -o www-data -g www-data storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache
+chmod -R ug+rwX storage bootstrap/cache
+
+# Never install a timer for a command that is not actually shipped by the panel.
+if ! sudo -u www-data /usr/bin/php artisan list --raw 2>/dev/null | awk '{print $1}' | grep -qx 'nodexa:schedules:run'; then
+  echo '[Nodexa] nodexa:schedules:run is not available; disabling stale Nodexa scheduler timer.'
+  systemctl disable --now nodexa-scheduler.timer 2>/dev/null || true
+  rm -f /etc/systemd/system/nodexa-scheduler.timer /etc/systemd/system/nodexa-scheduler.service
+  systemctl daemon-reload
+  exit 0
+fi
+
 cat > /etc/systemd/system/nodexa-scheduler.service <<EOF
 [Unit]
 Description=Nodexa Server Schedule Dispatcher
