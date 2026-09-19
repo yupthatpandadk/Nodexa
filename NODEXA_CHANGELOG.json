@@ -1,6 +1,17 @@
 {
-  "latest": "1.1.1",
+  "latest": "1.1.2",
   "releases": [
+    {
+      "version": "1.1.2",
+      "date": "2026-09-20",
+      "type": "patch",
+      "title": "Nodexa dashboard redesign",
+      "changes": [
+        "Redesignet client dashboard til Nodexa.",
+        "Tilføjet nyt Nodexa dashboard-headerområde og moderne empty-state.",
+        "Forbedret mobil-layout og fjernet rester af det gamle dashboard-udtryk."
+      ]
+    },
     {
       "version": "1.1.1",
       "date": "2026-09-20",
