@@ -106,10 +106,17 @@
             $.ajax({
                 method: 'POST',
                 url: '{{ route('admin.nodes.view.configuration.token', $node->id) }}',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                dataType: 'json',
+                timeout: 15000,
+                cache: false,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
             }).done(function (data) {
                 var token = String(data.token || '');
-                var command = "curl -fsSL https://raw.githubusercontent.com/yupthatpandadk/Nodexa/pterodactyl-core/install.sh -o /tmp/nodexa-install.sh && NODEXA_BRANCH=pterodactyl-core NODEXA_AGENT_TOKEN='" + token + "' NODEXA_PANEL_URL='{{ config('app.url') }}' NODEXA_NODE_ID='" + data.node + "' NODEXA_AGENT_FQDN='{{ $node->fqdn }}' NODEXA_AGENT_PORT='{{ $node->daemonListen }}' NODEXA_SFTP_PORT='{{ $node->daemonSFTP }}' bash /tmp/nodexa-install.sh node";
+                var command = "curl -fsSL https://raw.githubusercontent.com/yupthatpandadk/Nodexa/main/node/install.sh -o /tmp/nodexa-install.sh && NODEXA_BRANCH=main NODEXA_AGENT_TOKEN='" + token + "' NODEXA_PANEL_URL='{{ config('app.url') }}' NODEXA_NODE_ID='" + data.node + "' NODEXA_AGENT_FQDN='{{ $node->fqdn }}' NODEXA_AGENT_PORT='{{ $node->daemonListen }}' NODEXA_SFTP_PORT='{{ $node->daemonSFTP }}' bash /tmp/nodexa-install.sh node";
 
                 var html = '' +
                     '<div style="text-align:left;margin-top:8px;">' +
@@ -142,10 +149,24 @@
                 $('#copyNodexaNodeCommand').on('click', function () {
                     copyValue(document.getElementById('nodexaNodeCommand'), $(this));
                 });
-            }).fail(function () {
+            }).fail(function (xhr, textStatus) {
+                var message = 'Something went wrong creating your token.';
+
+                if (textStatus === 'timeout') {
+                    message = 'The request timed out after 15 seconds. Check the panel log and try again.';
+                } else if (xhr.status === 419) {
+                    message = 'Your session/CSRF token has expired. Refresh this page and try again.';
+                } else if (xhr.status === 401 || xhr.status === 403) {
+                    message = 'Your admin session is no longer authorized. Refresh the page and sign in again.';
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                } else if (xhr.status) {
+                    message = 'Token generation failed (HTTP ' + xhr.status + ').';
+                }
+
                 swal({
-                    title: 'Error',
-                    text: 'Something went wrong creating your token.',
+                    title: 'Auto-Deploy error',
+                    text: message,
                     type: 'error'
                 });
             }).always(function () {
