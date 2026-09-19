@@ -8,6 +8,7 @@ Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
 
 // Nodexa Update Center
 Route::get('/updates', [Admin\UpdateController::class, 'index'])->name('admin.updates');
+Route::get('/updates/progress', [Admin\UpdateController::class, 'progress'])->name('admin.updates.progress');
 Route::post('/updates/install', [Admin\UpdateController::class, 'install'])->name('admin.updates.install');
 
 /*
