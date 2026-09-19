@@ -2,6 +2,41 @@
 
 @section('title')
     Update Center
+<script>
+(function () {
+    var wrap = document.getElementById('nodexa-update-progress');
+    var bar = document.getElementById('nodexa-progress-bar');
+    var percent = document.getElementById('nodexa-progress-percent');
+    var step = document.getElementById('nodexa-progress-step');
+    var running = {{ $running ? 'true' : 'false' }};
+
+    function pollProgress() {
+        fetch('{{ route('admin.updates.progress') }}', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                var value = Math.max(0, Math.min(100, parseInt(data.percent || 0, 10)));
+                if (data.running || data.status === 'completed' || data.status === 'failed') wrap.style.display = 'block';
+                bar.style.width = value + '%';
+                percent.textContent = value + '%';
+                step.textContent = data.step || 'Updating Nodexa…';
+
+                if (data.status === 'failed') {
+                    bar.style.background = '#ef4444';
+                    percent.style.color = '#ef4444';
+                    return;
+                }
+                if (data.status === 'completed' && !data.running) {
+                    setTimeout(function () { window.location.reload(); }, 1200);
+                    return;
+                }
+                if (data.running) setTimeout(pollProgress, 1000);
+            })
+            .catch(function () { if (running) setTimeout(pollProgress, 2000); });
+    }
+
+    if (running) pollProgress();
+})();
+</script>
 @endsection
 
 @section('content-header')
@@ -37,7 +72,16 @@
                 @if($error)<div class="alert alert-warning" style="margin-top:15px;">{{ $error }}</div>@endif
             </div>
             <div class="box-footer">
-                <form method="POST" action="{{ route('admin.updates.install') }}" onsubmit="return confirm('Install the latest Nodexa update from GitHub?');">
+                <div id="nodexa-update-progress" style="display:{{ $running ? 'block' : 'none' }};margin-bottom:16px;">
+                    <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:7px;">
+                        <strong id="nodexa-progress-step">{{ $running ? 'Updating Nodexa…' : 'Preparing update…' }}</strong>
+                        <span id="nodexa-progress-percent" style="font-weight:700;color:#8b5cf6;">{{ $running ? '5%' : '0%' }}</span>
+                    </div>
+                    <div style="height:12px;background:#111827;border-radius:999px;overflow:hidden;border:1px solid #263149;">
+                        <div id="nodexa-progress-bar" style="height:100%;width:{{ $running ? '5%' : '0%' }};border-radius:999px;background:linear-gradient(90deg,#6366f1,#8b5cf6,#0ea5e9);transition:width .45s ease;box-shadow:0 0 18px rgba(99,102,241,.4);"></div>
+                    </div>
+                </div>
+                <form id="nodexa-update-form" method="POST" action="{{ route('admin.updates.install') }}" onsubmit="return confirm('Install the latest Nodexa update from GitHub?');">
                     {!! csrf_field() !!}
                     <button class="btn btn-primary" {{ $running ? 'disabled' : '' }}>
                         <i class="fa fa-download"></i> {{ $running ? 'Update running…' : 'Install latest update' }}
