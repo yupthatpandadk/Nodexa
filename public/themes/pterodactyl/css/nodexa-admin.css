@@ -1,0 +1,47 @@
+/* Nodexa Admin UI */
+:root{--nx-bg:#080d18;--nx-panel:#101827;--nx-panel2:#151f31;--nx-border:#22304a;--nx-text:#e8eef8;--nx-muted:#8d9bb0;--nx-accent:#7c5cff;--nx-accent2:#22c58b;--nx-danger:#ff5f73}
+body.nodexa-admin{background:var(--nx-bg);color:var(--nx-text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.nodexa-admin .wrapper,.nodexa-admin .content-wrapper,.nodexa-admin .main-footer{background:var(--nx-bg)}
+.nodexa-admin .main-header{box-shadow:0 1px 0 rgba(255,255,255,.06)}
+.nodexa-admin .main-header .logo{background:#0c1321!important;color:#fff!important;height:64px;line-height:64px;text-align:left;padding:0 22px;border-right:1px solid var(--nx-border)}
+.nodexa-brand{display:flex;align-items:center;gap:10px;font-size:20px;letter-spacing:-.4px}
+.nodexa-brand-mark{display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:9px;background:linear-gradient(135deg,var(--nx-accent),#9d7cff);font-size:16px;font-weight:800;box-shadow:0 8px 24px rgba(124,92,255,.28)}
+.nodexa-admin .main-header .navbar{background:#0c1321!important;min-height:64px}
+.nodexa-admin .main-header .sidebar-toggle{padding:22px 18px}
+.nodexa-admin .main-header .navbar .nav>li>a{padding-top:20px;padding-bottom:20px;color:#b8c3d4}
+.nodexa-admin .main-sidebar{background:#0c1321!important;padding-top:64px;border-right:1px solid var(--nx-border)}
+.nodexa-sidebar-label{padding:24px 22px 8px;color:#66748b;font-size:10px;font-weight:800;letter-spacing:1.8px}
+.nodexa-admin .sidebar-menu>li.header{background:transparent!important;color:#59677e!important;font-size:10px;font-weight:800;letter-spacing:1.3px;padding:22px 22px 8px}
+.nodexa-admin .sidebar-menu>li>a{color:#9eabc0!important;margin:3px 12px;padding:12px 13px;border-radius:9px;border-left:0!important;transition:.15s ease}
+.nodexa-admin .sidebar-menu>li>a i{width:24px;color:#738199}
+.nodexa-admin .sidebar-menu>li:hover>a{background:#131e30!important;color:#fff!important}
+.nodexa-admin .sidebar-menu>li.active>a{background:rgba(124,92,255,.15)!important;color:#fff!important;box-shadow:inset 0 0 0 1px rgba(124,92,255,.24)}
+.nodexa-admin .sidebar-menu>li.active>a i{color:#9b86ff}
+.nodexa-admin .content-wrapper{padding-top:64px}
+.nodexa-admin .content-header{padding:28px 30px 10px}
+.nodexa-admin .content-header>h1{color:#f4f7fb;font-size:25px;font-weight:700;letter-spacing:-.5px}
+.nodexa-admin .content-header>h1>small{color:var(--nx-muted);font-size:13px;margin-left:9px}
+.nodexa-admin .breadcrumb{background:transparent!important}
+.nodexa-admin .breadcrumb a,.nodexa-admin .breadcrumb>.active{color:#77869c}
+.nodexa-admin .content{padding:16px 30px 30px}
+.nodexa-admin .box{background:var(--nx-panel);border:1px solid var(--nx-border);border-radius:13px;box-shadow:0 12px 35px rgba(0,0,0,.18);overflow:hidden}
+.nodexa-admin .box.box-primary,.nodexa-admin .box.box-success,.nodexa-admin .box.box-danger,.nodexa-admin .box.box-warning{border-top:1px solid var(--nx-border)}
+.nodexa-admin .box-header{border-bottom:1px solid var(--nx-border)!important;padding:16px 18px}
+.nodexa-admin .box-title{font-weight:700;color:#eef3fb}
+.nodexa-admin .box-body{padding:18px;color:#b9c5d6}
+.nodexa-admin .box-footer{background:#0d1523;border-top:1px solid var(--nx-border);padding:14px 18px}
+.nodexa-admin .table>tbody>tr>td,.nodexa-admin .table>thead>tr>th{border-color:var(--nx-border);color:#b9c5d6}
+.nodexa-admin code{background:#0a1120;color:#a994ff;border:1px solid #202d44;border-radius:5px}
+.nodexa-admin .btn{border-radius:8px;font-weight:600;border:0;padding:8px 14px}
+.nodexa-admin .btn-primary{background:var(--nx-accent)}
+.nodexa-admin .btn-success{background:var(--nx-accent2)}
+.nodexa-admin .btn-default{background:#1a2639;color:#dbe4f0;border:1px solid #2b3a53}
+.nodexa-admin .form-control,.nodexa-admin .select2-container--default .select2-selection--single{background:#0b1321;border:1px solid #2a3850;color:#e4ebf5;border-radius:8px}
+.nodexa-admin .main-footer{border-top:1px solid var(--nx-border);color:#738199;padding:17px 30px}
+.nodexa-update-banner{margin:20px 30px 0;background:linear-gradient(110deg,rgba(124,92,255,.22),rgba(34,197,139,.12));border:1px solid rgba(139,118,255,.38);border-radius:13px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:18px;box-shadow:0 12px 30px rgba(0,0,0,.15)}
+.nodexa-update-banner>div{display:flex;align-items:center;gap:11px;color:#aebbd0;flex-wrap:wrap}
+.nodexa-update-banner strong{color:#fff}
+.nodexa-update-icon{width:34px;height:34px;border-radius:9px;background:var(--nx-accent);display:inline-flex;align-items:center;justify-content:center;color:#fff}
+.nodexa-update-banner>a{white-space:nowrap;color:#fff;background:var(--nx-accent);padding:9px 13px;border-radius:8px;font-weight:700}
+.nodexa-update-banner>a:hover{background:#8d73ff;color:#fff}
+@media(max-width:767px){.nodexa-admin .content-header,.nodexa-admin .content{padding-left:16px;padding-right:16px}.nodexa-update-banner{margin:14px 16px 0;align-items:flex-start;flex-direction:column}.nodexa-update-banner>a{width:100%;text-align:center}.nodexa-admin .main-header .logo{height:50px;line-height:50px}.nodexa-admin .content-wrapper{padding-top:50px}}
