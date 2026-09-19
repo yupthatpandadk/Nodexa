@@ -1,6 +1,17 @@
 {
-  "latest": "1.0.2",
+  "latest": "1.0.3",
   "releases": [
+    {
+      "version": "1.0.3",
+      "date": "2026-09-20",
+      "type": "patch",
+      "title": "Update Center stabilitetsfix",
+      "changes": [
+        "Flyttede GitHub changelog-hentning ud af Blade-viewet og ind i controlleren.",
+        "Release notes er nu valgfrie og kan ikke længere få Update Center til at gå ned.",
+        "Forbedret fejltolerance ved GitHub-forbindelsesfejl."
+      ]
+    },
     {
       "version": "1.0.2",
       "date": "2026-09-20",
