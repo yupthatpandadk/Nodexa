@@ -1,6 +1,18 @@
 {
-  "latest": "1.1.0",
+  "latest": "1.1.1",
   "releases": [
+    {
+      "version": "1.1.1",
+      "date": "2026-09-20",
+      "type": "patch",
+      "title": "Live updater progress",
+      "changes": [
+        "Tilføjet live progress bar til Update Center.",
+        "Updateren viser procent og aktuelt trin under installationen.",
+        "Progress opdateres automatisk uden manuel refresh.",
+        "Fejl markeres direkte i progress baren."
+      ]
+    },
     {
       "version": "1.1.0",
       "date": "2026-09-20",
