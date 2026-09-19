@@ -4,14 +4,28 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOCK="$ROOT/storage/app/nodexa-update.lock"
 LOG="$ROOT/storage/logs/nodexa-update.log"
+PROGRESS="$ROOT/storage/app/nodexa-update-progress.json"
 BACKUP="$ROOT/storage/app/nodexa-update-backup-$(date +%Y%m%d-%H%M%S)"
 
+progress() {
+    local percent="$1"
+    local step="$2"
+    local status="${3:-running}"
+    printf '{"percent":%s,"step":"%s","status":"%s","updated_at":"%s"}\n' "$percent" "$step" "$status" "$(date -Is)" > "$PROGRESS"
+}
+
 finish() {
+    code=$?
+    if [ "$code" -ne 0 ]; then
+        progress 100 "Update failed — check the update log." "failed"
+        php artisan up >/dev/null 2>&1 || true
+    fi
     rm -f "$LOCK"
 }
 trap finish EXIT
 
 cd "$ROOT"
+progress 5 "Preparing Nodexa update…"
 echo "[$(date -Is)] Starting Nodexa update"
 mkdir -p "$BACKUP"
 cp -a .env "$BACKUP/.env" 2>/dev/null || true
@@ -27,24 +41,31 @@ if [ ! -w .git ] || [ ! -w "$ROOT" ]; then
     exit 1
 fi
 
+progress 15 "Enabling maintenance mode…"
 php artisan down --retry=15 || true
 
+progress 25 "Downloading latest version from GitHub…"
 echo "Fetching main from GitHub..."
 git fetch https://github.com/yupthatpandadk/Nodexa.git main
 git reset --hard FETCH_HEAD
 
+progress 45 "Installing PHP dependencies…"
 echo "Installing PHP dependencies..."
 composer install --no-dev --optimize-autoloader --no-interaction
 
+progress 65 "Running database migrations…"
 echo "Running database migrations..."
 php artisan migrate --force
 
+progress 80 "Refreshing application caches…"
 echo "Refreshing caches..."
 php artisan optimize:clear
 php artisan view:clear
 php artisan config:clear
 
+progress 92 "Finalizing permissions and services…"
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 php artisan up || true
 
+progress 100 "Nodexa is up to date." "completed"
 echo "[$(date -Is)] Nodexa update completed."
