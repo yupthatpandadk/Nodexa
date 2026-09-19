@@ -172,7 +172,38 @@ class Node extends Model implements Identifiable
      */
     public function getYamlConfiguration(): string
     {
-        return Yaml::dump($this->getConfiguration(), 4, 2, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE);
+        try {
+            return Yaml::dump($this->getConfiguration(), 4, 2, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE);
+        } catch (DecryptException $exception) {
+            // Do not crash the admin configuration page if APP_KEY changed and
+            // an existing node daemon token can no longer be decrypted.
+            Log::warning('Unable to decrypt daemon token while rendering node configuration.', [
+                'node_id' => $this->id,
+            ]);
+
+            return Yaml::dump([
+                'debug' => false,
+                'uuid' => $this->uuid,
+                'token_id' => $this->daemon_token_id,
+                'token' => 'REGENERATE_NODE_CREDENTIALS',
+                'api' => [
+                    'host' => '0.0.0.0',
+                    'port' => $this->daemonListen,
+                    'ssl' => [
+                        'enabled' => (!$this->behind_proxy && $this->scheme === 'https'),
+                        'cert' => '/etc/letsencrypt/live/' . Str::lower($this->fqdn) . '/fullchain.pem',
+                        'key' => '/etc/letsencrypt/live/' . Str::lower($this->fqdn) . '/privkey.pem',
+                    ],
+                    'upload_limit' => $this->upload_size,
+                ],
+                'system' => [
+                    'data' => $this->daemonBase,
+                    'sftp' => ['bind_port' => $this->daemonSFTP],
+                ],
+                'allowed_mounts' => $this->mounts->pluck('source')->toArray(),
+                'remote' => route('index'),
+            ], 4, 2, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE);
+        }
     }
 
     /**
