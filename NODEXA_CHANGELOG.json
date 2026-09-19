@@ -1,0 +1,37 @@
+{
+  "latest": "1.0.2",
+  "releases": [
+    {
+      "version": "1.0.2",
+      "date": "2026-09-20",
+      "type": "patch",
+      "title": "Changelog i Update Center",
+      "changes": [
+        "Update Center viser nu release notes direkte fra GitHub.",
+        "Versionshistorik viser tidligere Nodexa-opdateringer.",
+        "Update-banneret fortsætter med at sammenligne installeret version med GitHub-versionen."
+      ]
+    },
+    {
+      "version": "1.0.1",
+      "date": "2026-09-20",
+      "type": "patch",
+      "title": "Nodexa Admin redesign",
+      "changes": [
+        "Nyt Nodexa-design til Admin Area.",
+        "Nyt Nodexa Control Center dashboard.",
+        "Banner i toppen når en nyere version er tilgængelig."
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-09-20",
+      "type": "major",
+      "title": "Første Nodexa-version",
+      "changes": [
+        "Første version af Nodexa update-systemet.",
+        "GitHub-baseret versionskontrol."
+      ]
+    }
+  ]
+}
