@@ -16,6 +16,7 @@ class UpdateController extends Controller
         $installed = trim((string) @file_get_contents(base_path('NODEXA_VERSION'))) ?: 'dev';
         $latest = null;
         $error = null;
+        $releases = [];
 
         try {
             $response = Http::timeout(10)->withHeaders(['Accept' => 'application/vnd.github+json'])
@@ -30,6 +31,19 @@ class UpdateController extends Controller
             $error = $exception->getMessage();
         }
 
+        try {
+            $changelog = Http::timeout(5)->get('https://raw.githubusercontent.com/' . self::REPOSITORY . '/main/NODEXA_CHANGELOG.json');
+            if ($changelog->successful()) {
+                $decoded = $changelog->json();
+                $releases = is_array($decoded) && isset($decoded['releases']) && is_array($decoded['releases'])
+                    ? $decoded['releases']
+                    : [];
+            }
+        } catch (\Throwable $exception) {
+            // Release notes are optional and must never break the Update Center.
+            $releases = [];
+        }
+
         $log = storage_path('logs/nodexa-update.log');
         $running = file_exists(storage_path('app/nodexa-update.lock'));
 
@@ -38,6 +52,7 @@ class UpdateController extends Controller
             'latest' => $latest,
             'error' => $error,
             'running' => $running,
+            'releases' => $releases,
             'log' => file_exists($log) ? implode("\n", array_slice(file($log, FILE_IGNORE_NEW_LINES) ?: [], -80)) : null,
         ]);
     }
