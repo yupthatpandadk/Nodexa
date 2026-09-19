@@ -6,37 +6,36 @@ import { faCogs, faLayerGroup, faSignOutAlt } from '@fortawesome/free-solid-svg-
 import { useStoreState } from 'easy-peasy';
 import { ApplicationStore } from '@/state';
 import SearchContainer from '@/components/dashboard/search/SearchContainer';
-import tw, { theme } from 'twin.macro';
+import tw from 'twin.macro';
 import styled from 'styled-components/macro';
 import http from '@/api/http';
 import SpinnerOverlay from '@/components/elements/SpinnerOverlay';
 import Tooltip from '@/components/elements/tooltip/Tooltip';
 import Avatar from '@/components/Avatar';
 
+const Bar = styled.div`
+    ${tw`w-full sticky top-0 z-50`};
+    background: rgba(8, 12, 24, .92);
+    border-bottom: 1px solid rgba(148, 163, 184, .12);
+    backdrop-filter: blur(18px);
+`;
 const RightNavigation = styled.div`
-    & > a,
-    & > button,
-    & > .navigation-link {
-        ${tw`flex items-center h-full no-underline text-neutral-300 px-6 cursor-pointer transition-all duration-150`};
-
-        &:active,
-        &:hover {
-            ${tw`text-neutral-100 bg-black`};
-        }
-
-        &:active,
-        &:hover,
-        &.active {
-            box-shadow: inset 0 -2px ${theme`colors.cyan.600`.toString()};
-        }
+    & > a, & > button, & > .navigation-link {
+        ${tw`flex items-center h-10 w-10 justify-center no-underline text-neutral-300 cursor-pointer transition-all duration-150 rounded-lg mx-1`};
+        background: rgba(255,255,255,.035);
+        border: 1px solid rgba(255,255,255,.06);
+        &:hover, &.active { color: #fff; background: rgba(99,102,241,.18); border-color: rgba(99,102,241,.35); }
     }
+`;
+const BrandMark = styled.span`
+    display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px;
+    border-radius:11px; margin-right:10px; font-weight:800; color:white;
+    background: linear-gradient(135deg,#6366f1,#8b5cf6); box-shadow:0 8px 25px rgba(99,102,241,.25);
 `;
 
 export default () => {
-    const name = useStoreState((state: ApplicationStore) => state.settings.data!.name);
     const rootAdmin = useStoreState((state: ApplicationStore) => state.user.data!.rootAdmin);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
-
     const onTriggerLogout = () => {
         setIsLoggingOut(true);
         http.post('/auth/logout').finally(() => {
@@ -44,49 +43,23 @@ export default () => {
             window.location = '/';
         });
     };
-
     return (
-        <div className={'w-full bg-neutral-900 shadow-md overflow-x-auto'}>
+        <Bar>
             <SpinnerOverlay visible={isLoggingOut} />
-            <div className={'mx-auto w-full flex items-center h-[3.5rem] max-w-[1200px]'}>
+            <div className={'mx-auto w-full flex items-center h-16 max-w-[1280px] px-3 sm:px-6'}>
                 <div id={'logo'} className={'flex-1'}>
-                    <Link
-                        to={'/'}
-                        className={
-                            'text-2xl font-header font-medium px-4 no-underline text-neutral-200 hover:text-neutral-100 transition-colors duration-150'
-                        }
-                    >
-                        {name}
+                    <Link to={'/'} className={'inline-flex items-center text-xl font-header font-semibold no-underline text-white'}>
+                        <BrandMark>N</BrandMark><span>Nodexa</span>
                     </Link>
                 </div>
                 <RightNavigation className={'flex h-full items-center justify-center'}>
                     <SearchContainer />
-                    <Tooltip placement={'bottom'} content={'Dashboard'}>
-                        <NavLink to={'/'} exact>
-                            <FontAwesomeIcon icon={faLayerGroup} />
-                        </NavLink>
-                    </Tooltip>
-                    {rootAdmin && (
-                        <Tooltip placement={'bottom'} content={'Admin'}>
-                            <a href={'/admin'} rel={'noreferrer'}>
-                                <FontAwesomeIcon icon={faCogs} />
-                            </a>
-                        </Tooltip>
-                    )}
-                    <Tooltip placement={'bottom'} content={'Account Settings'}>
-                        <NavLink to={'/account'}>
-                            <span className={'flex items-center w-5 h-5'}>
-                                <Avatar.User />
-                            </span>
-                        </NavLink>
-                    </Tooltip>
-                    <Tooltip placement={'bottom'} content={'Sign Out'}>
-                        <button onClick={onTriggerLogout}>
-                            <FontAwesomeIcon icon={faSignOutAlt} />
-                        </button>
-                    </Tooltip>
+                    <Tooltip placement={'bottom'} content={'Dashboard'}><NavLink to={'/'} exact><FontAwesomeIcon icon={faLayerGroup} /></NavLink></Tooltip>
+                    {rootAdmin && <Tooltip placement={'bottom'} content={'Admin'}><a href={'/admin'} rel={'noreferrer'}><FontAwesomeIcon icon={faCogs} /></a></Tooltip>}
+                    <Tooltip placement={'bottom'} content={'Account Settings'}><NavLink to={'/account'}><span className={'flex items-center w-5 h-5'}><Avatar.User /></span></NavLink></Tooltip>
+                    <Tooltip placement={'bottom'} content={'Sign Out'}><button onClick={onTriggerLogout}><FontAwesomeIcon icon={faSignOutAlt} /></button></Tooltip>
                 </RightNavigation>
             </div>
-        </div>
+        </Bar>
     );
 };
