@@ -6,6 +6,10 @@ use Pterodactyl\Http\Middleware\Admin\Servers\ServerInstalled;
 
 Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
 
+// Nodexa Update Center
+Route::get('/updates', [Admin\UpdateController::class, 'index'])->name('admin.updates');
+Route::post('/updates/install', [Admin\UpdateController::class, 'install'])->name('admin.updates.install');
+
 /*
 |--------------------------------------------------------------------------
 | Location Controller Routes
