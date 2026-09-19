@@ -1,6 +1,19 @@
 {
-  "latest": "1.0.4",
+  "latest": "1.1.0",
   "releases": [
+    {
+      "version": "1.1.0",
+      "date": "2026-09-20",
+      "type": "minor",
+      "title": "Nodexa Client Panel redesign",
+      "changes": [
+        "Nyt Nodexa-design på bruger/client-panelet.",
+        "Ny Nodexa topbar og branding.",
+        "Nyt mørkt Nodexa farvetema og forbedret mobil-layout.",
+        "Synlig Pterodactyl-branding fjernet fra client-panelets header og footer.",
+        "Browser-titler bruger nu Nodexa."
+      ]
+    },
     {
       "version": "1.0.4",
       "date": "2026-09-20",
