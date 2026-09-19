@@ -93,7 +93,7 @@
     </div>
     <div class="col-sm-4">
         <form action="{{ route('admin.nodes.view.allocation', $node->id) }}" method="POST">
-            <div class="box box-success">
+            <div class="box box-success nodexa-allocation-form">
                 <div class="box-header with-border">
                     <h3 class="box-title">Assign New Allocations</h3>
                 </div>
@@ -162,6 +162,29 @@
 </div>
 @endsection
 
+@section('scripts')
+    @parent
+    <style>
+        /* Keep Select2/touch controls interactive inside Nodexa's overflow-hidden cards. */
+        .nodexa-allocation-form { overflow: visible !important; position: relative; z-index: 20; }
+        .nodexa-allocation-form .box-body,
+        .nodexa-allocation-form .form-group { overflow: visible !important; }
+        .nodexa-allocation-form .select2-container { width: 100% !important; position: relative; z-index: 21; pointer-events: auto !important; }
+        .nodexa-allocation-form .select2-selection,
+        .nodexa-allocation-form .select2-search,
+        .nodexa-allocation-form .select2-search__field,
+        .nodexa-allocation-form input,
+        .nodexa-allocation-form textarea { pointer-events: auto !important; touch-action: manipulation; }
+        .select2-container--open,
+        .select2-dropdown { z-index: 2000 !important; pointer-events: auto !important; }
+        @media (max-width: 767px) {
+            .nodexa-allocation-form .select2-selection--multiple { min-height: 54px !important; }
+            .nodexa-allocation-form .select2-search__field { min-height: 42px !important; font-size: 16px !important; }
+            .nodexa-allocation-form input.form-control { min-height: 44px !important; font-size: 16px !important; }
+        }
+    </style>
+@endsection
+
 @section('footer-scripts')
     @parent
     <script>
@@ -182,6 +205,7 @@
     });
 
     $('#pAllocationIP').select2({
+        width: '100%',
         tags: true,
         maximumSelectionLength: 1,
         selectOnClose: true,
@@ -189,6 +213,7 @@
     });
 
     $('#pAllocationPorts').select2({
+        width: '100%',
         tags: true,
         selectOnClose: true,
         tokenSeparators: [',', ' '],
