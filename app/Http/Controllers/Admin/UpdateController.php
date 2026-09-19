@@ -2,6 +2,7 @@
 
 namespace Pterodactyl\Http\Controllers\Admin;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
@@ -55,6 +56,24 @@ class UpdateController extends Controller
             'releases' => $releases,
             'log' => file_exists($log) ? implode("\n", array_slice(file($log, FILE_IGNORE_NEW_LINES) ?: [], -80)) : null,
         ]);
+    }
+
+    public function progress(): JsonResponse
+    {
+        $progressFile = storage_path('app/nodexa-update-progress.json');
+        $running = file_exists(storage_path('app/nodexa-update.lock'));
+        $progress = ['percent' => $running ? 5 : 100, 'step' => $running ? 'Starting update…' : 'Idle', 'status' => $running ? 'running' : 'idle'];
+
+        if (is_file($progressFile)) {
+            $decoded = json_decode((string) @file_get_contents($progressFile), true);
+            if (is_array($decoded)) {
+                $progress = array_merge($progress, $decoded);
+            }
+        }
+
+        $progress['running'] = $running;
+
+        return response()->json($progress);
     }
 
     public function install(): RedirectResponse
