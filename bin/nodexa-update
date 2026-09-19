@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+LOCK="$ROOT/storage/app/nodexa-update.lock"
+LOG="$ROOT/storage/logs/nodexa-update.log"
+BACKUP="$ROOT/storage/app/nodexa-update-backup-$(date +%Y%m%d-%H%M%S)"
+
+finish() {
+    rm -f "$LOCK"
+}
+trap finish EXIT
+
+cd "$ROOT"
+echo "[$(date -Is)] Starting Nodexa update"
+mkdir -p "$BACKUP"
+cp -a .env "$BACKUP/.env" 2>/dev/null || true
+
+if [ ! -d .git ]; then
+    echo "ERROR: This installation is not a Git checkout."
+    exit 1
+fi
+
+if [ ! -w .git ] || [ ! -w "$ROOT" ]; then
+    echo "ERROR: The web/update user cannot write to the Nodexa checkout."
+    echo "Fix ownership/permissions for $ROOT before using one-click updates."
+    exit 1
+fi
+
+php artisan down --retry=15 || true
+
+echo "Fetching main from GitHub..."
+git fetch https://github.com/yupthatpandadk/Nodexa.git main
+git reset --hard FETCH_HEAD
+
+echo "Installing PHP dependencies..."
+composer install --no-dev --optimize-autoloader --no-interaction
+
+echo "Running database migrations..."
+php artisan migrate --force
+
+echo "Refreshing caches..."
+php artisan optimize:clear
+php artisan view:clear
+php artisan config:clear
+
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+php artisan up || true
+
+echo "[$(date -Is)] Nodexa update completed."
