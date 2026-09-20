@@ -29,9 +29,9 @@ const IconDescription = styled.p<{ $alarm: boolean }>`
 
 const StatusIndicatorBox = styled(GreyRowBox)<{ $status: ServerPowerState | undefined }>`
     ${tw`grid grid-cols-12 gap-4 relative`};
-    border-radius: 14px; border: 1px solid rgba(148,163,184,.10); background: rgba(15,23,42,.48);
+    border-radius: 11px; border: 1px solid #22304a; background: #151f31;
     transition: transform .15s ease, border-color .15s ease, background .15s ease;
-    &:hover { transform: translateY(-1px); border-color: rgba(139,92,246,.26); background: rgba(15,23,42,.68); }
+    &:hover { transform: translateY(-1px); border-color: rgba(124,92,255,.45); background: #182338; }
 
     & .status-bar {
         ${tw`w-1 bg-red-500 absolute right-0 z-20 rounded-full m-1 opacity-50 transition-all duration-150`};
