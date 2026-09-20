@@ -1,6 +1,19 @@
 {
-  "latest": "1.2.0",
+  "latest": "1.2.1",
   "releases": [
+    {
+      "version": "1.2.1",
+      "date": "2026-09-20",
+      "type": "patch",
+      "title": "Public customer registration",
+      "changes": [
+        "Besøgende kan nu oprette deres egen Nodexa-konto.",
+        "Ny /auth/register-side med navn, brugernavn, email og adgangskode.",
+        "Login-siden linker nu direkte til oprettelse af konto.",
+        "Nye konti oprettes som almindelige kunder uden administratorrettigheder.",
+        "Tilføjet validering af unikt brugernavn/email og bekræftelse af adgangskode."
+      ]
+    },
     {
       "version": "1.2.0",
       "date": "2026-09-20",
