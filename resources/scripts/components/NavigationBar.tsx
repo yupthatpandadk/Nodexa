@@ -15,15 +15,15 @@ import Avatar from '@/components/Avatar';
 
 const Bar = styled.div`
     ${tw`w-full sticky top-0 z-50`};
-    background: #0a2035;
-    border-bottom: 1px solid #173553;
+    background: #0a0f19;
+    border-bottom: 1px solid #202b3a;
     backdrop-filter: blur(20px); box-shadow: 0 6px 24px rgba(0,0,0,.14);
 `;
 const RightNavigation = styled.div`
     & > a, & > button, & > .navigation-link {
         ${tw`flex items-center h-9 w-9 justify-center no-underline text-neutral-300 cursor-pointer transition-all duration-150 rounded-lg mx-1`};
-        background: #102a44;
-        border: 1px solid #1b4167;
+        background: #111927;
+        border: 1px solid #263244;
         &:hover, &.active { color: #fff; background: rgba(99,102,241,.18); border-color: rgba(99,102,241,.35); }
     }
 `;
@@ -35,7 +35,7 @@ const BrandMark = styled.span`
 
 const ThemeMenu = styled.div`
     position:absolute; right:0; top:46px; width:210px; padding:12px; border-radius:12px;
-    background:#0d1b2c; border:1px solid #23415f; box-shadow:0 18px 45px rgba(0,0,0,.38);
+    background:#0d1420; border:1px solid #263244; box-shadow:0 18px 45px rgba(0,0,0,.38);
 `;
 const Swatch = styled.button<{ $color: string }>`
     width:28px!important; height:28px!important; min-width:28px; margin:0!important; border-radius:8px!important;
