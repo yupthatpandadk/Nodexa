@@ -22,7 +22,7 @@ const Bar = styled.div`
 const RightNavigation = styled.div`
     & > a, & > button, & > .navigation-link {
         ${tw`flex items-center justify-center no-underline text-neutral-300 cursor-pointer transition-all duration-150 rounded-lg`};
-        width:38px; height:38px; min-width:38px; margin-left:8px;
+        width:38px; height:38px; min-width:38px; margin-left:4px;
         background: #111927;
         border: 1px solid #263244;
         box-shadow: 0 3px 10px rgba(0,0,0,.16);
@@ -76,11 +76,11 @@ export default () => {
                         <BrandMark>N</BrandMark><span className={'leading-tight'}>Nodexa<small className={'hidden sm:block text-neutral-500 uppercase tracking-widest'} style={{fontSize:'8px'}}>Game Server Cloud</small></span>
                     </Link>
                 </div>
-                <RightNavigation className={'flex h-full items-center justify-end flex-nowrap gap-1 sm:gap-2'}>
+                <RightNavigation className={'flex h-full items-center justify-end flex-nowrap gap-0.5 sm:gap-1'}>
                     <SearchContainer />
                     <Tooltip placement={'bottom'} content={'Dashboard'}><NavLink to={'/'} exact><FontAwesomeIcon icon={faLayerGroup} /></NavLink></Tooltip>
                     {rootAdmin && <Tooltip placement={'bottom'} content={'Admin'}><a href={'/admin'} rel={'noreferrer'}><FontAwesomeIcon icon={faCogs} /></a></Tooltip>}
-                    <div className={'relative flex items-center'}>
+                    <div className={'relative flex items-center navigation-link'}>
                         <Tooltip placement={'bottom'} content={'Tema'}><button onClick={() => setThemeOpen((v) => !v)}><FontAwesomeIcon icon={faPalette} /></button></Tooltip>
                         {themeOpen && <ThemeMenu>
                             <div className={'text-xs font-semibold text-white mb-2'}>Tema</div>
