@@ -60,21 +60,34 @@ echo "Fetching main from GitHub..."
 git fetch https://github.com/yupthatpandadk/Nodexa.git main
 git reset --hard FETCH_HEAD
 
-progress 45 "Installing PHP dependencies…"
+progress 42 "Installing PHP dependencies…"
 echo "Installing PHP dependencies..."
 composer install --no-dev --optimize-autoloader --no-interaction
 
-progress 65 "Running database migrations…"
+progress 55 "Building Nodexa client interface…"
+echo "Building Nodexa client assets..."
+if command -v yarn >/dev/null 2>&1; then
+    yarn install --frozen-lockfile
+    yarn build:production
+elif command -v npm >/dev/null 2>&1; then
+    npm install
+    npm run build:production
+else
+    echo "ERROR: Node.js package manager (yarn or npm) is required to build the Nodexa client."
+    exit 1
+fi
+
+progress 72 "Running database migrations…"
 echo "Running database migrations..."
 php artisan migrate --force
 
-progress 80 "Refreshing application caches…"
+progress 84 "Refreshing application caches…"
 echo "Refreshing caches..."
 php artisan optimize:clear
 php artisan view:clear
 php artisan config:clear
 
-progress 92 "Finalizing permissions and services…"
+progress 94 "Finalizing permissions and services…"
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 php artisan up || true
 
