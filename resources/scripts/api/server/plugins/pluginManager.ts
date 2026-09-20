@@ -15,14 +15,15 @@ export interface ModrinthPlugin {
     categories: string[];
 }
 
-interface ModrinthVersionFile {
+export interface ModrinthVersionFile {
     url: string;
     filename: string;
     primary: boolean;
 }
 
-interface ModrinthVersion {
+export interface ModrinthVersion {
     id: string;
+    project_id: string;
     version_number: string;
     game_versions: string[];
     loaders: string[];
@@ -36,30 +37,44 @@ const modrinth = axios.create({
     headers: { Accept: 'application/json' },
 });
 
-export const searchPlugins = async (query: string): Promise<ModrinthPlugin[]> => {
-    const facets = JSON.stringify([
-        ['all_project_types:plugin'],
-        ['environment:server_only', 'environment:server_only_client_optional', 'environment:client_and_server', 'environment:client_or_server'],
-    ]);
+export const searchPlugins = async (query: string, minecraftVersion?: string, loader?: string): Promise<ModrinthPlugin[]> => {
+    const facets: string[][] = [['project_type:plugin']];
+    if (minecraftVersion) facets.push([`versions:${minecraftVersion}`]);
+    if (loader) facets.push([`categories:${loader}`]);
+
     const { data } = await modrinth.get('/search', {
-        params: { query, facets, limit: 24, index: query ? 'relevance' : 'downloads' },
+        params: { query, facets: JSON.stringify(facets), limit: 24, index: query ? 'relevance' : 'downloads' },
     });
     return data.hits || [];
 };
 
-export const getPluginVersions = async (projectId: string): Promise<ModrinthVersion[]> => {
-    const { data } = await modrinth.get(`/project/${projectId}/version`, {
-        params: { include_changelog: false },
-    });
+export const getPluginVersions = async (
+    projectId: string,
+    minecraftVersion?: string,
+    loader?: string
+): Promise<ModrinthVersion[]> => {
+    const params: Record<string, string> = {};
+    if (minecraftVersion) params.game_versions = JSON.stringify([minecraftVersion]);
+    if (loader) params.loaders = JSON.stringify([loader]);
+
+    const { data } = await modrinth.get(`/project/${projectId}/version`, { params });
     return (data || []).filter((version: ModrinthVersion) =>
-        version.files?.length && version.loaders?.some((loader) => ['paper', 'spigot', 'purpur', 'bukkit', 'folia'].includes(loader.toLowerCase()))
+        version.files?.length &&
+        version.loaders?.some((value) => ['paper', 'spigot', 'purpur', 'bukkit', 'folia'].includes(value.toLowerCase()))
     );
 };
 
-export const installPlugin = async (serverId: string, projectId: string): Promise<string> => {
-    const versions = await getPluginVersions(projectId);
-    const version = versions.find((item) => item.version_type === 'release') || versions[0];
-    if (!version) throw new Error('Der blev ikke fundet en kompatibel Paper/Spigot/Purpur-version af dette plugin.');
+const chooseVersion = (versions: ModrinthVersion[]): ModrinthVersion | undefined =>
+    versions.find((item) => item.version_type === 'release') || versions[0];
+
+export const installPlugin = async (
+    serverId: string,
+    projectId: string,
+    minecraftVersion?: string,
+    loader?: string
+): Promise<{ filename: string; version: string }> => {
+    const version = chooseVersion(await getPluginVersions(projectId, minecraftVersion, loader));
+    if (!version) throw new Error('Der blev ikke fundet en kompatibel plugin-version til denne Minecraft-server.');
 
     const file = version.files.find((item) => item.primary) || version.files[0];
     if (!file || !file.filename.toLowerCase().endsWith('.jar')) throw new Error('Plugin-versionen indeholder ikke en gyldig JAR-fil.');
@@ -70,7 +85,7 @@ export const installPlugin = async (serverId: string, projectId: string): Promis
         filename: file.filename,
         foreground: true,
     });
-    return file.filename;
+    return { filename: file.filename, version: version.version_number };
 };
 
 export const installedPlugins = async (serverId: string): Promise<FileObject[]> => {
@@ -83,3 +98,17 @@ export const installedPlugins = async (serverId: string): Promise<FileObject[]> 
 
 export const uninstallPlugin = (serverId: string, filename: string): Promise<void> =>
     deleteFiles(serverId, '/plugins', [filename]);
+
+export const updatePlugin = async (
+    serverId: string,
+    projectId: string,
+    oldFilename: string,
+    minecraftVersion?: string,
+    loader?: string
+): Promise<{ filename: string; version: string }> => {
+    const result = await installPlugin(serverId, projectId, minecraftVersion, loader);
+    if (result.filename !== oldFilename) {
+        await uninstallPlugin(serverId, oldFilename);
+    }
+    return result;
+};
