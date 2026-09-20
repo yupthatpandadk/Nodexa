@@ -8,6 +8,7 @@ use Pterodactyl\Models\Subuser;
 use League\Fractal\Resource\Item;
 use Pterodactyl\Models\Allocation;
 use Pterodactyl\Models\Permission;
+use Pterodactyl\Models\Addon;
 use Illuminate\Container\Container;
 use Pterodactyl\Models\EggVariable;
 use League\Fractal\Resource\Collection;
@@ -35,6 +36,16 @@ class ServerTransformer extends BaseClientTransformer
         $service = Container::getInstance()->make(StartupCommandService::class);
 
         $user = $this->request->user();
+
+        $pluginManager = Addon::query()->where('name', 'minecraft-plugin-manager')->first();
+        $pluginManagerEnabled = false;
+        if ($pluginManager?->enabled && $pluginManager->egg_ids) {
+            $allowedEggs = collect(explode(',', $pluginManager->egg_ids))
+                ->map(fn ($id) => (int) trim($id))
+                ->filter()
+                ->all();
+            $pluginManagerEnabled = in_array((int) $server->egg_id, $allowedEggs, true);
+        }
 
         return [
             'server_owner' => $user->id === $server->owner_id,
@@ -68,6 +79,8 @@ class ServerTransformer extends BaseClientTransformer
             'invocation' => $service->handle($server, !$user->can(Permission::ACTION_STARTUP_READ, $server)),
             'docker_image' => $server->image,
             'egg_features' => $server->egg->inherit_features,
+            'egg_id' => $server->egg_id,
+            'plugin_manager_enabled' => $pluginManagerEnabled,
             'feature_limits' => [
                 'databases' => $server->database_limit,
                 'allocations' => $server->allocation_limit,
