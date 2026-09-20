@@ -6,6 +6,10 @@ use Pterodactyl\Http\Middleware\Admin\Servers\ServerInstalled;
 
 Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
 
+// Nodexa Mail Center
+Route::get('/mail', [Admin\MailCenterController::class, 'index'])->name('admin.mail');
+Route::post('/mail/send', [Admin\MailCenterController::class, 'send'])->name('admin.mail.send');
+
 // Nodexa Update Center
 Route::get('/updates', [Admin\UpdateController::class, 'index'])->name('admin.updates');
 Route::get('/updates/progress', [Admin\UpdateController::class, 'progress'])->name('admin.updates.progress');
