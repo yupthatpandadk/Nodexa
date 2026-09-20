@@ -57,7 +57,17 @@ export default () => {
         localStorage.setItem('nodexa:accent', accent);
     }, [accent]);
     useEffect(() => {
+        const themes: Record<string, Record<string, string>> = {
+            midnight: { bg:'#07101d', surface:'#0b1423', elevated:'#101b2d', border:'#1d2b40', tint:'#0a2238' },
+            ocean: { bg:'#061923', surface:'#082431', elevated:'#0b3040', border:'#14506a', tint:'#07354a' },
+            obsidian: { bg:'#090b10', surface:'#101319', elevated:'#171b22', border:'#2b313b', tint:'#151922' },
+            aurora: { bg:'#071914', surface:'#0b241d', elevated:'#102e26', border:'#1d5142', tint:'#0b352b' },
+            carbon: { bg:'#121416', surface:'#191c1f', elevated:'#22262a', border:'#353b40', tint:'#252a2f' },
+        };
+        const theme = themes[themeMode] || themes.midnight;
+        Object.entries(theme).forEach(([key, value]) => document.documentElement.style.setProperty('--nodexa-' + key, value));
         document.documentElement.setAttribute('data-nodexa-theme', themeMode);
+        document.body.style.background = theme.bg;
         localStorage.setItem('nodexa:theme', themeMode);
     }, [themeMode]);
     const onTriggerLogout = () => {
