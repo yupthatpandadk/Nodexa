@@ -36,7 +36,7 @@
     <div class="col-md-8">
         @foreach($roles as $role)
             <div class="box">
-                <form method="POST" action="{{ route('admin.roles.update', $role) }}">
+                <form method="POST" action="{{ route('admin.roles.update', ['role' => $role->id]) }}">
                     @csrf @method('PATCH')
                     <div class="box-header with-border">
                         <h3 class="box-title"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ $role->color }}"></span> {{ $role->name }} <small>{{ $role->users_count }} bruger(e)</small></h3>
@@ -63,7 +63,7 @@
                         <button type="submit" form="delete-role-{{ $role->id }}" class="btn btn-danger btn-sm pull-right" onclick="return confirm('Slet rollen {{ $role->name }}?')">Slet</button>
                     </div>
                 </form>
-                <form id="delete-role-{{ $role->id }}" method="POST" action="{{ route('admin.roles.delete', $role) }}">@csrf @method('DELETE')</form>
+                <form id="delete-role-{{ $role->id }}" method="POST" action="{{ route('admin.roles.delete', ['role' => $role->id]) }}">@csrf @method('DELETE')</form>
             </div>
         @endforeach
     </div>
