@@ -87,6 +87,11 @@
                                 <i class="fa fa-gamepad"></i> <span>Application API</span>
                             </a>
                         </li>
+                        <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.mail') ?: 'active' }}">
+                            <a href="{{ route('admin.mail') }}">
+                                <i class="fa fa-envelope"></i> <span>Mail Center</span>
+                            </a>
+                        </li>
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.updates') ?: 'active' }}">
                             <a href="{{ route('admin.updates') }}">
                                 <i class="fa fa-cloud-download"></i> <span>Update Center</span>
