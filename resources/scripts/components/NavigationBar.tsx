@@ -21,7 +21,8 @@ const Bar = styled.div`
 `;
 const RightNavigation = styled.div`
     & > a, & > button, & > .navigation-link {
-        ${tw`flex items-center h-9 w-9 justify-center no-underline text-neutral-300 cursor-pointer transition-all duration-150 rounded-lg mx-1`};
+        ${tw`flex items-center justify-center no-underline text-neutral-300 cursor-pointer transition-all duration-150 rounded-lg`};
+        width:36px; height:36px; min-width:36px; margin-left:4px;
         background: #111927;
         border: 1px solid #263244;
         &:hover, &.active { color: #fff; background: rgba(99,102,241,.18); border-color: rgba(99,102,241,.35); }
@@ -68,17 +69,17 @@ export default () => {
     return (
         <Bar>
             <SpinnerOverlay visible={isLoggingOut} />
-            <div className={'mx-auto w-full flex items-center h-14 sm:h-16 max-w-[1280px] px-4 sm:px-6'}>
+            <div className={'mx-auto w-full flex items-center h-14 sm:h-16 max-w-[1280px] px-3 sm:px-6'}>
                 <div id={'logo'} className={'flex-1'}>
                     <Link to={'/'} className={'inline-flex items-center text-base sm:text-lg font-header font-semibold tracking-tight no-underline text-white'}>
                         <BrandMark>N</BrandMark><span className={'leading-tight'}>Nodexa<small className={'hidden sm:block text-neutral-500 uppercase tracking-widest'} style={{fontSize:'8px'}}>Game Server Cloud</small></span>
                     </Link>
                 </div>
-                <RightNavigation className={'flex h-full items-center justify-center'}>
+                <RightNavigation className={'flex h-full items-center justify-end flex-nowrap'}>
                     <SearchContainer />
                     <Tooltip placement={'bottom'} content={'Dashboard'}><NavLink to={'/'} exact><FontAwesomeIcon icon={faLayerGroup} /></NavLink></Tooltip>
                     {rootAdmin && <Tooltip placement={'bottom'} content={'Admin'}><a href={'/admin'} rel={'noreferrer'}><FontAwesomeIcon icon={faCogs} /></a></Tooltip>}
-                    <div className={'relative'}>
+                    <div className={'relative flex items-center'}>
                         <Tooltip placement={'bottom'} content={'Tema'}><button onClick={() => setThemeOpen((v) => !v)}><FontAwesomeIcon icon={faPalette} /></button></Tooltip>
                         {themeOpen && <ThemeMenu>
                             <div className={'text-xs font-semibold text-white mb-2'}>Tema</div>
