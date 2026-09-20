@@ -32,6 +32,7 @@ export default () => {
     const uuid = ServerContext.useStoreState((state) => state.server.data?.uuid);
     const inConflictState = ServerContext.useStoreState((state) => state.server.inConflictState);
     const serverId = ServerContext.useStoreState((state) => state.server.data?.internalId);
+    const pluginManagerEnabled = ServerContext.useStoreState((state) => state.server.data?.pluginManagerEnabled ?? false);
     const getServer = ServerContext.useStoreActions((actions) => actions.server.getServer);
     const clearServerState = ServerContext.useStoreActions((actions) => actions.clearServerState);
 
@@ -77,7 +78,7 @@ export default () => {
                         <SubNavigation>
                             <div>
                                 {routes.server
-                                    .filter((route) => !!route.name)
+                                    .filter((route) => !!route.name && (route.path !== '/plugins' || pluginManagerEnabled))
                                     .map((route) =>
                                         route.permission ? (
                                             <Can key={route.path} action={route.permission} matchAny>
@@ -109,7 +110,7 @@ export default () => {
                         <ErrorBoundary>
                             <TransitionRouter>
                                 <Switch location={location}>
-                                    {routes.server.map(({ path, permission, component: Component }) => (
+                                    {routes.server.filter((route) => route.path !== '/plugins' || pluginManagerEnabled).map(({ path, permission, component: Component }) => (
                                         <PermissionRoute key={path} permission={permission} path={to(path)} exact>
                                             <Spinner.Suspense>
                                                 <Component />
