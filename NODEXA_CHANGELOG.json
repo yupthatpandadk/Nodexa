@@ -1,6 +1,18 @@
 {
-  "latest": "1.1.6",
+  "latest": "1.1.7",
   "releases": [
+    {
+      "version": "1.1.7",
+      "date": "2026-09-20",
+      "type": "patch",
+      "title": "Update check HTTP 403 fix",
+      "changes": [
+        "Update Center henter nu versionsnummeret via raw GitHub som primær metode.",
+        "Tilføjet korrekt User-Agent og fallback til GitHub Contents API.",
+        "Understøtter valgfri NODEXA_GITHUB_TOKEN ved GitHub rate limiting.",
+        "HTTP 403 fra GitHub API blokerer ikke længere normalt update-check for det offentlige Nodexa repository."
+      ]
+    },
     {
       "version": "1.1.6",
       "date": "2026-09-20",
