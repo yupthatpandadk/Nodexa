@@ -163,4 +163,5 @@ export default () => {
                 </Section>
             </DashboardShell>
         </PageContentBlock>
+    );
 };
