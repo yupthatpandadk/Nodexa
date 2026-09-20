@@ -47,6 +47,13 @@ class ServerTransformer extends BaseClientTransformer
             $pluginManagerEnabled = in_array((int) $server->egg_id, $allowedEggs, true);
         }
 
+        $modManager = Addon::query()->where('name', 'minecraft-mod-manager')->first();
+        $modManagerEnabled = false;
+        if ($modManager?->enabled && $modManager->egg_ids) {
+            $allowedModEggs = collect(explode(',', $modManager->egg_ids))->map(fn ($id) => (int) trim($id))->filter()->all();
+            $modManagerEnabled = in_array((int) $server->egg_id, $allowedModEggs, true);
+        }
+
         return [
             'server_owner' => $user->id === $server->owner_id,
             'identifier' => config('pterodactyl.features.new_server_identifiers')
@@ -81,6 +88,7 @@ class ServerTransformer extends BaseClientTransformer
             'egg_features' => $server->egg->inherit_features,
             'egg_id' => $server->egg_id,
             'plugin_manager_enabled' => $pluginManagerEnabled,
+            'mod_manager_enabled' => $modManagerEnabled,
             'feature_limits' => [
                 'databases' => $server->database_limit,
                 'allocations' => $server->allocation_limit,
