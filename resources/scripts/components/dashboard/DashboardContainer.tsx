@@ -16,29 +16,32 @@ import { useLocation } from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 const Hero = styled.div`
-    background: linear-gradient(135deg, rgba(99,102,241,.16), rgba(139,92,246,.08) 55%, rgba(14,165,233,.10));
-    border: 1px solid rgba(148,163,184,.13);
-    border-radius: 18px;
-    padding: 26px;
+    background: radial-gradient(circle at top right, rgba(124,58,237,.22), transparent 34%), linear-gradient(135deg,#101827,#0b1220);
+    border: 1px solid rgba(139,92,246,.22);
+    border-radius: 22px;
+    padding: 28px;
     margin-bottom: 22px;
-    box-shadow: 0 18px 50px rgba(0,0,0,.18);
+    box-shadow: 0 24px 60px rgba(0,0,0,.28);
+`;
+const ServerPanel = styled.div`
+    background: rgba(10,18,32,.72);
+    border: 1px solid rgba(148,163,184,.11);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.16);
 `;
 const EmptyState = styled.div`
-    min-height: 310px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 32px 20px;
-    border-radius: 18px;
-    border: 1px dashed rgba(148,163,184,.20);
-    background: rgba(15,23,42,.45);
+    min-height: 330px;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    padding:36px 20px; border-radius:18px;
+    border:1px dashed rgba(139,92,246,.28);
+    background:linear-gradient(145deg,rgba(15,23,42,.72),rgba(17,24,39,.44));
 `;
 const EmptyIcon = styled.div`
-    width: 62px; height: 62px; margin: 0 auto 18px; border-radius: 18px;
-    display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:800;
-    color:#fff; background:linear-gradient(135deg,#6366f1,#8b5cf6);
-    box-shadow:0 12px 34px rgba(99,102,241,.28);
+    width:68px;height:68px;margin:0 auto 18px;border-radius:20px;
+    display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;
+    color:#fff;background:linear-gradient(135deg,#7c3aed,#8b5cf6);
+    box-shadow:0 14px 38px rgba(124,58,237,.32);
 `;
 
 export default () => {
@@ -84,12 +87,12 @@ export default () => {
             <Hero>
                 <div css={tw`flex items-center justify-between flex-wrap`}>
                     <div>
-                        <div css={tw`uppercase text-xs font-semibold tracking-wider text-indigo-300 mb-2`}>Nodexa Control Panel</div>
-                        <h1 css={tw`text-2xl sm:text-3xl font-bold text-white mb-2`}>Dine servere</h1>
-                        <p css={tw`text-sm text-neutral-400 m-0`}>Administrér, overvåg og åbn dine servere fra ét samlet dashboard.</p>
+                        <div css={tw`uppercase text-xs font-semibold tracking-wider text-purple-300 mb-2`}>Nodexa Cloud</div>
+                        <h1 css={tw`text-2xl sm:text-3xl font-bold text-white mb-2`}>Serveroversigt</h1>
+                        <p css={tw`text-sm text-neutral-400 m-0`}>Alt du behøver for at administrere dine servere samlet ét sted.</p>
                     </div>
-                    <div css={tw`mt-4 sm:mt-0 text-xs text-neutral-400`}>
-                        <span css={tw`inline-flex items-center px-3 py-2 rounded-lg bg-neutral-900 bg-opacity-50`}>Nodexa • Online</span>
+                    <div css={tw`mt-4 sm:mt-0 flex items-center`}>
+                        <span css={tw`inline-flex items-center px-4 py-2 rounded-lg bg-neutral-900 bg-opacity-50 text-xs text-green-300`}>● System online</span>
                     </div>
                 </div>
             </Hero>
@@ -105,6 +108,14 @@ export default () => {
                     />
                 </div>
             )}
+            <ServerPanel>
+            <div css={tw`flex items-center justify-between mb-4`}>
+                <div>
+                    <h2 css={tw`text-lg font-semibold text-white m-0`}>Mine servere</h2>
+                    <p css={tw`text-xs text-neutral-500 mt-1 m-0`}>Status og ressourceforbrug opdateres automatisk.</p>
+                </div>
+                {servers && <span css={tw`text-xs text-neutral-400 px-3 py-2 rounded-lg bg-neutral-900 bg-opacity-50`}>{servers.pagination.total} server(e)</span>}
+            </div>
             {!servers ? (
                 <Spinner centered size={'large'} />
             ) : (
@@ -132,6 +143,7 @@ export default () => {
                     }
                 </Pagination>
             )}
+            </ServerPanel>
         </PageContentBlock>
     );
 };
