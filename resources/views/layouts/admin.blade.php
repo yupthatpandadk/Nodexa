@@ -97,6 +97,13 @@
                                 <i class="fa fa-cloud-download"></i> <span>Update Center</span>
                             </a>
                         </li>
+                        @if(Auth::user()->hasPermission('roles.view'))
+                        <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.roles') ?: 'active' }}">
+                            <a href="{{ route('admin.roles') }}">
+                                <i class="fa fa-shield"></i> <span>Roles & Permissions</span>
+                            </a>
+                        </li>
+                        @endif
                         <li class="header">MANAGEMENT</li>
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.databases') ?: 'active' }}">
                             <a href="{{ route('admin.databases') }}">
