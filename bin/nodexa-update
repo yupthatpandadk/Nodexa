@@ -25,6 +25,14 @@ finish() {
 trap finish EXIT
 
 cd "$ROOT"
+
+# The updater is started by the web server user. Mark the checkout safe for
+# Git without depending on a writable global user configuration.
+export GIT_CONFIG_COUNT=1
+export GIT_CONFIG_KEY_0=safe.directory
+export GIT_CONFIG_VALUE_0="$ROOT"
+export GIT_TERMINAL_PROMPT=0
+
 progress 5 "Preparing Nodexa update…"
 echo "[$(date -Is)] Starting Nodexa update"
 mkdir -p "$BACKUP"
@@ -36,7 +44,10 @@ if [ ! -d .git ]; then
 fi
 
 if [ ! -w .git ] || [ ! -w "$ROOT" ]; then
-    echo "ERROR: The web/update user cannot write to the Nodexa checkout."
+    echo "ERROR: The updater user ($(id -un)) cannot write to the Nodexa checkout."
+    echo "ROOT=$ROOT"
+    echo "ROOT owner: $(stat -c '%U:%G %a' "$ROOT" 2>/dev/null || true)"
+    echo ".git owner: $(stat -c '%U:%G %a' .git 2>/dev/null || true)"
     echo "Fix ownership/permissions for $ROOT before using one-click updates."
     exit 1
 fi
