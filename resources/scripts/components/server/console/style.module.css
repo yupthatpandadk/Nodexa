@@ -1,15 +1,21 @@
 .stat_block {
-    @apply flex items-center rounded-lg relative overflow-hidden border border-gray-700 bg-gray-800 bg-opacity-60;
+    @apply flex items-center rounded-xl relative overflow-hidden border border-gray-700 bg-gray-800 bg-opacity-50;
     @apply col-span-3 md:col-span-2 lg:col-span-2;
-    @apply px-3 py-3 md:p-4;
-    min-height: 76px;
+    @apply px-4 py-4;
+    min-height: 82px;
+    transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease;
+
+    &:hover {
+        @apply border-gray-600 bg-opacity-70;
+        transform: translateY(-1px);
+    }
 
     & > .status_bar {
-        @apply w-1 h-full absolute left-0 top-0 rounded-l;
+        @apply w-1 h-full absolute left-0 top-0;
     }
 
     & > .icon {
-        @apply flex flex-shrink-0 items-center justify-center rounded-lg w-10 h-10 mr-3 bg-gray-700;
+        @apply flex flex-shrink-0 items-center justify-center rounded-xl w-11 h-11 mr-3;
         @apply transition-colors duration-500;
 
         & > svg {
@@ -19,15 +25,15 @@
 }
 
 .terminal {
-    @apply flex flex-col w-full overflow-hidden rounded-lg;
+    @apply flex flex-col w-full overflow-hidden rounded-xl;
 
     & .overflows_container {
         @apply w-full ml-0;
     }
 
     & > .container {
-        @apply p-2 sm:p-3 bg-black min-h-[22rem] sm:min-h-[28rem] flex-1 font-mono text-sm;
-        background: #0b111b;
+        @apply p-3 sm:p-4 min-h-[24rem] sm:min-h-[30rem] flex-1 font-mono text-sm;
+        background: #080e17;
 
         & #terminal {
             @apply h-full;
@@ -38,11 +44,11 @@
     }
 
     & .command_icon {
-        @apply flex items-center top-0 left-0 absolute z-10 select-none h-full px-3 transition-colors duration-100;
+        @apply flex items-center top-0 left-0 absolute z-10 select-none h-full px-4 transition-colors duration-100;
     }
 
     & .command_input {
-        @apply relative bg-gray-800 px-2 text-gray-100 pl-10 pr-4 py-3 w-full font-mono text-sm;
+        @apply relative bg-gray-800 text-gray-100 pl-11 pr-4 py-3 w-full font-mono text-sm;
         @apply focus:ring-0 outline-none focus-visible:outline-none;
         @apply border-0 border-t border-gray-700 transition-colors duration-100;
         @apply active:border-cyan-500 focus:border-cyan-500;
@@ -50,6 +56,12 @@
 }
 
 .chart_container {
-    @apply bg-gray-800 bg-opacity-60 rounded-lg shadow-lg pt-2 border border-gray-700 relative overflow-hidden;
-    min-height: 220px;
+    @apply bg-gray-800 bg-opacity-50 rounded-xl shadow-lg border border-gray-700 relative overflow-hidden;
+    min-height: 230px;
+    transition: border-color 150ms ease, transform 150ms ease;
+
+    &:hover {
+        @apply border-gray-600;
+        transform: translateY(-1px);
+    }
 }
