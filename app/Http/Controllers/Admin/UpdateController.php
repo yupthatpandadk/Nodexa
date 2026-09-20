@@ -5,6 +5,7 @@ namespace Pterodactyl\Http\Controllers\Admin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\Response;
 use Illuminate\View\View;
 use Pterodactyl\Http\Controllers\Controller;
 
@@ -19,17 +20,39 @@ class UpdateController extends Controller
         $error = null;
         $releases = [];
 
+        // Prefer raw.githubusercontent.com for this tiny public version file. The
+        // GitHub Contents API is rate limited per server IP and can return HTTP 403
+        // on shared/datacenter addresses even though the repository is public.
         try {
-            $response = Http::timeout(10)->withHeaders(['Accept' => 'application/vnd.github+json'])
-                ->get('https://api.github.com/repos/' . self::REPOSITORY . '/contents/NODEXA_VERSION', ['ref' => 'main']);
+            $response = Http::timeout(10)
+                ->withHeaders(['User-Agent' => 'Nodexa-Update-Center'])
+                ->get('https://raw.githubusercontent.com/' . self::REPOSITORY . '/main/NODEXA_VERSION');
 
             if ($response->successful()) {
-                $latest = trim(base64_decode((string) $response->json('content')));
+                $latest = trim((string) $response->body());
             } else {
-                $error = 'GitHub returned HTTP ' . $response->status() . '.';
+                // Fallback to the GitHub API. This also supports an optional token
+                // without requiring one for public installations.
+                $request = Http::timeout(10)->withHeaders([
+                    'Accept' => 'application/vnd.github+json',
+                    'User-Agent' => 'Nodexa-Update-Center',
+                    'X-GitHub-Api-Version' => '2022-11-28',
+                ]);
+
+                if ($token = env('NODEXA_GITHUB_TOKEN')) {
+                    $request = $request->withToken($token);
+                }
+
+                $api = $request->get('https://api.github.com/repos/' . self::REPOSITORY . '/contents/NODEXA_VERSION', ['ref' => 'main']);
+
+                if ($api->successful()) {
+                    $latest = trim(base64_decode((string) $api->json('content')));
+                } else {
+                    $error = 'Could not check for updates (raw HTTP ' . $response->status() . ', GitHub HTTP ' . $api->status() . ').';
+                }
             }
         } catch (\Throwable $exception) {
-            $error = $exception->getMessage();
+            $error = 'Could not check for updates: ' . $exception->getMessage();
         }
 
         try {
