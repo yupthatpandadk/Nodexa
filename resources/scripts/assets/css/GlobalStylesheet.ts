@@ -10,9 +10,10 @@ export default createGlobalStyle`
         ${tw`font-sans text-neutral-200`};
         letter-spacing:.01em; margin:0;
         background:
-          radial-gradient(circle at 15% -10%, rgba(99,102,241,.16), transparent 34rem),
-          radial-gradient(circle at 90% 10%, rgba(14,165,233,.08), transparent 30rem),
-          #080c18;
+          radial-gradient(circle at 15% -10%, rgba(59,130,246,.18), transparent 34rem),
+          radial-gradient(circle at 90% 10%, rgba(14,165,233,.12), transparent 30rem),
+          linear-gradient(180deg, #13283b 0%, #10263a 38%, #0c2032 100%);
+        background-attachment: fixed;
     }
     h1,h2,h3,h4,h5,h6 { ${tw`font-medium tracking-normal font-header`}; color:#f8fafc; }
     p { ${tw`text-neutral-200 leading-snug font-sans`}; }
