@@ -22,14 +22,15 @@ const Bar = styled.div`
 const RightNavigation = styled.div`
     & > a, & > button, & > .navigation-link {
         ${tw`flex items-center justify-center no-underline text-neutral-300 cursor-pointer transition-all duration-150 rounded-lg`};
-        width:36px; height:36px; min-width:36px; margin-left:4px;
+        width:38px; height:38px; min-width:38px; margin-left:8px;
         background: #111927;
         border: 1px solid #263244;
+        box-shadow: 0 3px 10px rgba(0,0,0,.16);
         &:hover, &.active { color: #fff; background: rgba(99,102,241,.18); border-color: rgba(99,102,241,.35); }
     }
 `;
 const BrandMark = styled.span`
-    display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px;
+    display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px;
     border-radius:9px; margin-right:9px; font-weight:800; color:white;
     background: linear-gradient(135deg,var(--nodexa-user-accent,#4f8cff),color-mix(in srgb,var(--nodexa-user-accent,#4f8cff) 65%,white)); box-shadow:0 8px 25px rgba(99,102,241,.25);
 `;
@@ -69,13 +70,13 @@ export default () => {
     return (
         <Bar>
             <SpinnerOverlay visible={isLoggingOut} />
-            <div className={'mx-auto w-full flex items-center h-14 sm:h-16 max-w-[1280px] px-3 sm:px-6'}>
+            <div className={'mx-auto w-full flex items-center h-16 sm:h-16 max-w-[1280px] px-4 sm:px-6 gap-3'}>
                 <div id={'logo'} className={'flex-1'}>
                     <Link to={'/'} className={'inline-flex items-center text-base sm:text-lg font-header font-semibold tracking-tight no-underline text-white'}>
                         <BrandMark>N</BrandMark><span className={'leading-tight'}>Nodexa<small className={'hidden sm:block text-neutral-500 uppercase tracking-widest'} style={{fontSize:'8px'}}>Game Server Cloud</small></span>
                     </Link>
                 </div>
-                <RightNavigation className={'flex h-full items-center justify-end flex-nowrap'}>
+                <RightNavigation className={'flex h-full items-center justify-end flex-nowrap gap-1 sm:gap-2'}>
                     <SearchContainer />
                     <Tooltip placement={'bottom'} content={'Dashboard'}><NavLink to={'/'} exact><FontAwesomeIcon icon={faLayerGroup} /></NavLink></Tooltip>
                     {rootAdmin && <Tooltip placement={'bottom'} content={'Admin'}><a href={'/admin'} rel={'noreferrer'}><FontAwesomeIcon icon={faCogs} /></a></Tooltip>}
