@@ -16,6 +16,7 @@ Route::post('/roles/user/{user}', [Admin\RoleController::class, 'assign'])->name
 
 // Nodexa Addon Manager
 Route::get('/addons', [Admin\AddonController::class, 'index'])->name('admin.addons');
+Route::get('/addons/{addon}', [Admin\AddonController::class, 'show'])->name('admin.addons.show');
 Route::patch('/addons/{addon}', [Admin\AddonController::class, 'update'])->name('admin.addons.update');
 
 // Nodexa Mail Center
