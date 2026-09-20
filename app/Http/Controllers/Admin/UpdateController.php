@@ -113,6 +113,29 @@ class UpdateController extends Controller
 
     public function install(): RedirectResponse
     {
+        // Never allow a reinstall when this installation already reports the
+        // newest published Nodexa version. This is enforced server-side as well
+        // as in the UI so a manual POST cannot bypass the disabled button.
+        $installed = trim((string) @file_get_contents(base_path('NODEXA_VERSION'))) ?: 'dev';
+
+        try {
+            $versionResponse = Http::timeout(10)
+                ->withHeaders(['User-Agent' => 'Nodexa-Update-Center'])
+                ->get('https://raw.githubusercontent.com/' . self::REPOSITORY . '/main/NODEXA_VERSION');
+
+            if (!$versionResponse->successful()) {
+                return redirect()->route('admin.updates')->with('error', 'Could not verify the latest Nodexa version. Try Check again.');
+            }
+
+            $latest = trim((string) $versionResponse->body());
+
+            if ($latest === '' || $installed === $latest || ($installed !== 'dev' && version_compare($installed, $latest, '>='))) {
+                return redirect()->route('admin.updates')->with('success', 'Nodexa is already up to date. A new update must be available before updating again.');
+            }
+        } catch (\Throwable $exception) {
+            return redirect()->route('admin.updates')->with('error', 'Could not verify the latest Nodexa version: ' . $exception->getMessage());
+        }
+
         $lock = storage_path('app/nodexa-update.lock');
         $pidFile = storage_path('app/nodexa-update.pid');
         if ($this->isUpdaterRunning($lock, $pidFile)) {
