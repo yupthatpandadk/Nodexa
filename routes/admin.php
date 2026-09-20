@@ -10,6 +10,8 @@ Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
 Route::get('/mail', [Admin\MailCenterController::class, 'index'])->name('admin.mail');
 Route::post('/mail/send', [Admin\MailCenterController::class, 'send'])->name('admin.mail.send');
 Route::post('/mail/test', [Admin\MailCenterController::class, 'test'])->name('admin.mail.test');
+Route::post('/mail/resend-welcome/{user}', [Admin\MailCenterController::class, 'resendWelcome'])->name('admin.mail.resend-welcome');
+Route::post('/mail/resend-server/{server}', [Admin\MailCenterController::class, 'resendServer'])->name('admin.mail.resend-server');
 
 // Nodexa Update Center
 Route::get('/updates', [Admin\UpdateController::class, 'index'])->name('admin.updates');
