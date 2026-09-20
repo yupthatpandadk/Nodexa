@@ -136,6 +136,13 @@
                                 <i class="fa fa-magic"></i> <span>Mounts</span>
                             </a>
                         </li>
+                        @if(Auth::user()->hasPermission('addons.view'))
+                        <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.addons') ?: 'active' }}">
+                            <a href="{{ route('admin.addons') }}">
+                                <i class="fa fa-puzzle-piece"></i> <span>Addon Manager</span>
+                            </a>
+                        </li>
+                        @endif
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.nests') ?: 'active' }}">
                             <a href="{{ route('admin.nests') }}">
                                 <i class="fa fa-th-large"></i> <span>Nests</span>
