@@ -21,25 +21,25 @@ const DashboardShell = styled.div`
 const Hero = styled.section`
     position: relative; overflow: hidden; min-height: 156px;
     display: flex; align-items: center;
-    background: linear-gradient(120deg, rgba(17,24,39,.98), rgba(12,18,32,.98));
-    border: 1px solid rgba(148,163,184,.13); border-radius: 18px; padding: 26px 28px;
-    box-shadow: 0 12px 32px rgba(0,0,0,.16);
+    background: #101827;
+    border: 1px solid #22304a; border-radius: 13px; padding: 24px 26px;
+    box-shadow: 0 12px 35px rgba(0,0,0,.18);
     &:before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,rgba(124,58,237,.12),transparent 42%,rgba(14,165,233,.07)); pointer-events:none; }
     @media(max-width:640px){ min-height:0; padding:20px; border-radius:16px; }
 `;
 const Eyebrow = styled.div`
-    display:inline-flex; align-items:center; gap:7px; color:#a78bfa; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-    &:before { content:''; width:7px; height:7px; border-radius:999px; background:#8b5cf6; box-shadow:0 0 0 4px rgba(139,92,246,.10); }
+    display:inline-flex; align-items:center; gap:7px; color:#9b86ff; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    &:before { content:''; width:7px; height:7px; border-radius:999px; background:#7c5cff; box-shadow:0 0 0 4px rgba(139,92,246,.10); }
 `;
 const Stats = styled.div`
     display:grid; grid-template-columns:repeat(2,minmax(108px,1fr)); gap:10px;
     @media(max-width:640px){ width:100%; margin-top:18px; }
 `;
 const StatCard = styled.div`
-    padding:12px 14px; border-radius:12px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.07);
+    padding:12px 14px; border-radius:10px; background:#151f31; border:1px solid #22304a;
 `;
 const Section = styled.section`
-    background:rgba(8,14,27,.72); border:1px solid rgba(148,163,184,.11); border-radius:18px; padding:18px;
+    background:#101827; border:1px solid #22304a; border-radius:13px; padding:18px;
     box-shadow:0 10px 28px rgba(0,0,0,.12); @media(max-width:640px){ padding:14px; border-radius:16px; }
 `;
 const SectionHeader = styled.div`
@@ -50,11 +50,11 @@ const CountBadge = styled.span`
 `;
 const EmptyState = styled.div`
     min-height:190px; display:flex; align-items:center; justify-content:center; text-align:center; padding:28px 20px; border-radius:14px;
-    background:rgba(15,23,42,.26); border:1px solid rgba(148,163,184,.08);
+    background:#0d1523; border:1px solid #22304a;
 `;
 const EmptyIcon = styled.div`
     width:48px;height:48px;margin:0 auto 14px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;color:#fff;
-    background:linear-gradient(135deg,#7c3aed,#6366f1); box-shadow:0 9px 24px rgba(99,102,241,.20);
+    background:linear-gradient(135deg,#7c5cff,#9d7cff); box-shadow:0 9px 24px rgba(99,102,241,.20);
 `;
 const AdminFilter = styled.div`
     display:flex; justify-content:flex-end; align-items:center; min-height:28px;
