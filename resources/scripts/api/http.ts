@@ -1,6 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
 import { store } from '@/state';
 
+const csrfToken = (): string | undefined =>
+    document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
+
 const http: AxiosInstance = axios.create({
     withCredentials: true,
     timeout: 20000,
@@ -12,6 +15,17 @@ const http: AxiosInstance = axios.create({
 });
 
 http.interceptors.request.use((req) => {
+    // Laravel validates unsafe requests against the CSRF token stored in the
+    // current session. Always attach the token rendered for that same session.
+    const method = (req.method || 'get').toLowerCase();
+    if (['post', 'put', 'patch', 'delete'].includes(method)) {
+        const token = csrfToken();
+        if (token) {
+            req.headers = req.headers || {};
+            req.headers['X-CSRF-TOKEN'] = token;
+        }
+    }
+
     if (!req.url?.endsWith('/resources')) {
         store.getActions().progress.startContinuous();
     }
