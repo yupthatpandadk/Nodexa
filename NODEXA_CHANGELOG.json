@@ -1,6 +1,18 @@
 {
-  "latest": "1.1.7",
+  "latest": "1.2.0",
   "releases": [
+    {
+      "version": "1.2.0",
+      "date": "2026-09-20",
+      "type": "minor",
+      "title": "Customer dashboard redesign",
+      "changes": [
+        "Nyt Nodexa-layout på kundesidens serveroversigt.",
+        "Ny velkomst-header med serverantal og platformstatus.",
+        "Nyt moderne serverområde og forbedret empty-state.",
+        "Forbedret mobil-layout og tydeligere Nodexa-branding."
+      ]
+    },
     {
       "version": "1.1.7",
       "date": "2026-09-20",
