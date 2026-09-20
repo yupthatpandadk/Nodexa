@@ -52,6 +52,32 @@ update_panel() {
   if command -v composer >/dev/null && [[ -f composer.json ]]; then
     composer install --no-dev --optimize-autoloader --no-interaction
   fi
+
+  # Frontend source changes are not visible until the production bundle is rebuilt.
+  if [[ -f package.json ]]; then
+    info "Bygger Nodexa frontend..."
+    if command -v corepack >/dev/null 2>&1; then
+      corepack enable >/dev/null 2>&1 || true
+    fi
+    if command -v yarn >/dev/null 2>&1; then
+      yarn install --frozen-lockfile || yarn install
+      if ! yarn build:production; then
+        if ! yarn production; then
+          yarn build
+        fi
+      fi
+    elif command -v npm >/dev/null 2>&1; then
+      if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
+      if ! npm run build:production; then
+        if ! npm run production; then
+          npm run build
+        fi
+      fi
+    else
+      fail "Node/Yarn/NPM mangler. Frontend kan derfor ikke bygges."
+    fi
+  fi
+
   php artisan migrate --force
   php artisan optimize:clear || true
   chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
