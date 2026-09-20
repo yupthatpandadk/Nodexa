@@ -47,7 +47,7 @@ class AddonController extends Controller
 
         return view('admin.addons.show', [
             'addon' => $addon,
-            'eggs' => Egg::query()->with('nest')->orderBy('name')->get(),
+            'eggs' => Egg::query()->with('nest')->get()->sortBy('name')->values(),
         ]);
     }
 
