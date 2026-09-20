@@ -26,6 +26,7 @@ class RoleController extends Controller
         'Mounts' => ['mounts.view', 'mounts.manage'],
         'Nests & Eggs' => ['nests.view', 'nests.manage'],
         'Roles & Permissions' => ['roles.view', 'roles.manage'],
+        'Addon Manager' => ['addons.view', 'addons.manage'],
     ];
 
     public function __construct(private AlertsMessageBag $alert)
