@@ -47,12 +47,17 @@ export default () => {
     const rootAdmin = useStoreState((state: ApplicationStore) => state.user.data!.rootAdmin);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [themeOpen, setThemeOpen] = useState(false);
+    const [themeMode, setThemeMode] = useState(() => localStorage.getItem('nodexa:theme') || 'ocean');
     const [accent, setAccent] = useState(() => localStorage.getItem('nodexa:accent') || '#4f8cff');
     const accents = ['#4f8cff', '#7c5cff', '#14b8a6', '#22c55e', '#f59e0b', '#ef476f'];
     useEffect(() => {
         document.documentElement.style.setProperty('--nodexa-user-accent', accent);
         localStorage.setItem('nodexa:accent', accent);
     }, [accent]);
+    useEffect(() => {
+        document.documentElement.setAttribute('data-nodexa-theme', themeMode);
+        localStorage.setItem('nodexa:theme', themeMode);
+    }, [themeMode]);
     const onTriggerLogout = () => {
         setIsLoggingOut(true);
         http.post('/auth/logout').finally(() => {
@@ -76,6 +81,10 @@ export default () => {
                     <div className={'relative'}>
                         <Tooltip placement={'bottom'} content={'Tema'}><button onClick={() => setThemeOpen((v) => !v)}><FontAwesomeIcon icon={faPalette} /></button></Tooltip>
                         {themeOpen && <ThemeMenu>
+                            <div className={'text-xs font-semibold text-white mb-2'}>Tema</div>
+                            <div className={'grid grid-cols-3 gap-1 mb-3'}>
+                                {['ocean','midnight','slate'].map((mode) => <button key={mode} onClick={() => setThemeMode(mode)} className={'text-xs px-2 py-2 rounded'} style={{width:'auto',height:'auto',background:themeMode===mode?'var(--nodexa-user-accent)':'#182235'}}>{mode === 'ocean' ? 'Ocean' : mode === 'midnight' ? 'Midnight' : 'Slate'}</button>)}
+                            </div>
                             <div className={'text-xs font-semibold text-white mb-2'}>Accentfarve</div>
                             <div className={'text-xs text-neutral-500 mb-3'}>Gemmes automatisk på denne enhed.</div>
                             <div className={'flex items-center justify-between'}>{accents.map((color) => <Swatch key={color} $color={color} onClick={() => setAccent(color)} aria-label={'Vælg accentfarve'} />)}</div>
