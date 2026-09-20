@@ -63,6 +63,7 @@ export default () => {
             obsidian: { bg:'#090b10', surface:'#101319', elevated:'#171b22', border:'#2b313b', tint:'#151922' },
             aurora: { bg:'#071914', surface:'#0b241d', elevated:'#102e26', border:'#1d5142', tint:'#0b352b' },
             carbon: { bg:'#121416', surface:'#191c1f', elevated:'#22262a', border:'#353b40', tint:'#252a2f' },
+            crimson: { bg:'#19090d', surface:'#241015', elevated:'#30151c', border:'#5a2632', tint:'#3a1019' },
         };
         const theme = themes[themeMode] || themes.midnight;
         Object.entries(theme).forEach(([key, value]) => document.documentElement.style.setProperty('--nodexa-' + key, value));
@@ -95,7 +96,7 @@ export default () => {
                         {themeOpen && <ThemeMenu>
                             <div className={'text-xs font-semibold text-white mb-2'}>Tema</div>
                             <div className={'grid grid-cols-2 gap-1 mb-3'}>
-                                {['midnight','ocean','obsidian','aurora','carbon'].map((mode) => <button key={mode} onClick={() => setThemeMode(mode)} className={'text-xs px-2 py-2 rounded'} style={{width:'auto',height:'auto',background:themeMode===mode?'var(--nodexa-user-accent)':'#182235'}}>{mode === 'midnight' ? 'Midnight' : mode === 'ocean' ? 'Ocean' : mode === 'obsidian' ? 'Obsidian' : mode === 'aurora' ? 'Aurora' : 'Carbon'}</button>)}
+                                {['midnight','ocean','obsidian','aurora','carbon','crimson'].map((mode) => <button key={mode} onClick={() => setThemeMode(mode)} className={'text-xs px-2 py-2 rounded'} style={{width:'auto',height:'auto',background:themeMode===mode?'var(--nodexa-user-accent)':'#182235'}}>{mode === 'midnight' ? 'Midnight' : mode === 'ocean' ? 'Ocean' : mode === 'obsidian' ? 'Obsidian' : mode === 'aurora' ? 'Aurora' : mode === 'carbon' ? 'Carbon' : 'Crimson'}</button>)}
                             </div>
                             <div className={'text-xs font-semibold text-white mb-2'}>Accentfarve</div>
                             <div className={'text-xs text-neutral-500 mb-3'}>Gemmes automatisk på denne enhed.</div>
