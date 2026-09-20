@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 use Pterodactyl\Http\Controllers\Controller;
 use Pterodactyl\Models\User;
+use Pterodactyl\Models\Server;
 
 class MailCenterController extends Controller
 {
@@ -16,7 +17,36 @@ class MailCenterController extends Controller
         return view('admin.mail.index', [
             'users' => User::query()->orderBy('email')->get(['id', 'email', 'username', 'name_first', 'name_last']),
             'templates' => config('nodexa-mail.templates', []),
+            'recentServers' => Server::query()->with('user')->latest('id')->limit(50)->get(),
         ]);
+    }
+
+    public function resendWelcome(User $user): RedirectResponse
+    {
+        $name = trim(($user->name_first ?? '') . ' ' . ($user->name_last ?? '')) ?: $user->username;
+        $body = "Hi {$name},\n\nWelcome to Nodexa. Your account is ready.\n\nUsername: {$user->username}\nEmail: {$user->email}\nPanel: " . url('/') . "\n\nRegards,\nThe Nodexa Team";
+
+        Mail::send('emails.nodexa-message', ['recipient' => $name, 'body' => $body], function ($mail) use ($user) {
+            $mail->to($user->email)->subject('Welcome to Nodexa');
+        });
+
+        return redirect()->route('admin.mail')->with('success', 'Welcome email resent to ' . $user->email . '.');
+    }
+
+    public function resendServer(Server $server): RedirectResponse
+    {
+        $server->loadMissing(['user', 'allocation', 'node']);
+        $user = $server->user;
+        $name = trim(($user->name_first ?? '') . ' ' . ($user->name_last ?? '')) ?: $user->username;
+        $address = $server->allocation ? ($server->allocation->ip_alias ?: $server->allocation->ip) . ':' . $server->allocation->port : 'Not assigned';
+        $node = $server->node ? $server->node->name : 'Unknown';
+        $body = "Hi {$name},\n\nA game server has been assigned to your Nodexa account.\n\nServer: {$server->name}\nServer ID: {$server->id}\nServer UUID: {$server->uuid}\nNode: {$node}\nAddress: {$address}\nMemory: {$server->memory} MB\nDisk: {$server->disk} MB\nCPU limit: {$server->cpu}%\n\nOpen panel: " . url('/server/' . $server->uuidShort) . "\n\nRegards,\nThe Nodexa Team";
+
+        Mail::send('emails.nodexa-message', ['recipient' => $name, 'body' => $body], function ($mail) use ($user, $server) {
+            $mail->to($user->email)->subject('Your Nodexa server is ready: ' . $server->name);
+        });
+
+        return redirect()->route('admin.mail')->with('success', 'Server assignment email resent to ' . $user->email . '.');
     }
 
     public function test(Request $request): RedirectResponse
