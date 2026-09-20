@@ -6,6 +6,14 @@ use Pterodactyl\Http\Middleware\Admin\Servers\ServerInstalled;
 
 Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
 
+
+// Nodexa Roles & Permissions
+Route::get('/roles', [Admin\RoleController::class, 'index'])->name('admin.roles');
+Route::post('/roles', [Admin\RoleController::class, 'store'])->name('admin.roles.store');
+Route::patch('/roles/{role}', [Admin\RoleController::class, 'update'])->name('admin.roles.update');
+Route::delete('/roles/{role}', [Admin\RoleController::class, 'delete'])->name('admin.roles.delete');
+Route::post('/roles/user/{user}', [Admin\RoleController::class, 'assign'])->name('admin.roles.assign');
+
 // Nodexa Mail Center
 Route::get('/mail', [Admin\MailCenterController::class, 'index'])->name('admin.mail');
 Route::post('/mail/send', [Admin\MailCenterController::class, 'send'])->name('admin.mail.send');
