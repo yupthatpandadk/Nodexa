@@ -102,6 +102,26 @@
             </div>
         </div>
     </form>
+    <div class="col-md-6">
+        <div class="box box-primary">
+            <div class="box-header with-border"><h3 class="box-title">Nodexa Roles</h3></div>
+            <form action="{{ route('admin.roles.assign', $user) }}" method="POST">
+                @csrf
+                <div class="box-body">
+                    <p class="text-muted small">Owner/root admin har altid fuld adgang. Andre brugere får admin-adgang gennem rollerne herunder.</p>
+                    @foreach($roles as $role)
+                        <label style="display:block;padding:7px 0">
+                            <input type="checkbox" name="roles[]" value="{{ $role->id }}" {{ $user->roles->contains($role->id) ? 'checked' : '' }}>
+                            <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:{{ $role->color }};margin:0 6px"></span>
+                            <strong>{{ $role->name }}</strong>
+                            @if($role->description)<small class="text-muted"> — {{ $role->description }}</small>@endif
+                        </label>
+                    @endforeach
+                </div>
+                <div class="box-footer"><button class="btn btn-primary btn-sm">Gem roller</button></div>
+            </form>
+        </div>
+    </div>
     <div class="col-xs-12">
         <div class="box box-danger">
             <div class="box-header with-border">
