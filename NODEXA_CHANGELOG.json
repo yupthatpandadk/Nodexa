@@ -1,6 +1,18 @@
 {
-  "latest": "1.2.1",
+  "latest": "1.3.0",
   "releases": [
+    {
+      "version": "1.3.0",
+      "date": "2026-09-20",
+      "type": "minor",
+      "title": "Nodexa authentication redesign",
+      "changes": [
+        "Komplet nyt Nodexa-design på login- og registreringsområdet.",
+        "Fjernet synlig Pterodactyl-branding og gammel maskot fra auth-siderne.",
+        "Nyt responsivt split-layout optimeret til mobil og desktop.",
+        "Login, registrering og konto-navigation følger nu Nodexa-branding."
+      ]
+    },
     {
       "version": "1.2.1",
       "date": "2026-09-20",

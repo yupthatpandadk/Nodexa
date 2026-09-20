@@ -29,7 +29,7 @@ const RegisterContainer = ({ history }: RouteComponentProps) => {
             password:string().min(8,'Mindst 8 tegn.').required('Adgangskode er påkrævet.'),
             password_confirmation:string().oneOf([ref('password')],'Adgangskoderne matcher ikke.').required('Gentag adgangskoden.'),
         })}>
-        {({isSubmitting}) => <LoginFormContainer title={'Opret Nodexa-konto'} css={tw`w-full flex`}>
+        {({isSubmitting}) => <LoginFormContainer title={'Opret din konto'} css={tw`w-full flex`}>
             <div css={tw`grid grid-cols-2 gap-3`}><Field light name={'name_first'} label={'Fornavn'} disabled={isSubmitting}/><Field light name={'name_last'} label={'Efternavn'} disabled={isSubmitting}/></div>
             <div css={tw`mt-4`}><Field light name={'username'} label={'Brugernavn'} disabled={isSubmitting}/></div>
             <div css={tw`mt-4`}><Field light type={'email'} name={'email'} label={'Email'} disabled={isSubmitting}/></div>

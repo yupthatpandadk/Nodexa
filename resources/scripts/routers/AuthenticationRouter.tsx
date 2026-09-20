@@ -14,7 +14,7 @@ export default () => {
     const { path } = useRouteMatch();
 
     return (
-        <div className={'pt-8 xl:pt-32'}>
+        <div className={'min-h-screen flex items-center py-10 md:py-16'}>
             <Switch location={location}>
                 <Route path={`${path}/login`} component={LoginContainer} exact />
                 <Route path={`${path}/register`} component={RegisterContainer} exact />
@@ -22,9 +22,7 @@ export default () => {
                 <Route path={`${path}/password`} component={ForgotPasswordContainer} exact />
                 <Route path={`${path}/password/reset/:token`} component={ResetPasswordContainer} />
                 <Route path={`${path}/checkpoint`} />
-                <Route path={'*'}>
-                    <NotFound onBack={() => history.push('/auth/login')} />
-                </Route>
+                <Route path={'*'}><NotFound onBack={() => history.push('/auth/login')} /></Route>
             </Switch>
         </div>
     );
