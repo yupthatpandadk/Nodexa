@@ -2,94 +2,121 @@
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-LOCK="$ROOT/storage/app/nodexa-update.lock"
+STATE_DIR="$ROOT/storage/app"
 LOG="$ROOT/storage/logs/nodexa-update.log"
-PROGRESS="$ROOT/storage/app/nodexa-update-progress.json"
-BACKUP="$ROOT/storage/app/nodexa-update-backup-$(date +%Y%m%d-%H%M%S)"
+PROGRESS="$STATE_DIR/nodexa-update-progress.json"
+LOCK="$STATE_DIR/nodexa-update.lock"
+PIDFILE="$STATE_DIR/nodexa-update.pid"
+BACKUP="$STATE_DIR/nodexa-update-backup-$(date +%Y%m%d-%H%M%S)"
+REMOTE="https://github.com/yupthatpandadk/Nodexa.git"
+
+mkdir -p "$STATE_DIR" "$(dirname "$LOG")"
+touch "$LOG"
+
+json_escape() {
+    php -r 'echo json_encode($argv[1], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);' "$1"
+}
 
 progress() {
-    local percent="$1"
-    local step="$2"
-    local status="${3:-running}"
-    printf '{"percent":%s,"step":"%s","status":"%s","updated_at":"%s"}\n' "$percent" "$step" "$status" "$(date -Is)" > "$PROGRESS"
+    local percent="$1" step="$2" status="${3:-running}"
+    printf '{"percent":%s,"step":%s,"status":%s,"updated_at":%s,"pid":%s}\n' \
+        "$percent" "$(json_escape "$step")" "$(json_escape "$status")" "$(json_escape "$(date -Is)")" "$$" > "$PROGRESS"
 }
 
-finish() {
-    code=$?
-    if [ "$code" -ne 0 ]; then
-        progress 100 "Update failed — check the update log." "failed"
-        php artisan up >/dev/null 2>&1 || true
-    fi
-    rm -f "$LOCK"
+log() { echo "[$(date -Is)] $*"; }
+
+fail() {
+    local line="${1:-?}" code="${2:-1}"
+    log "ERROR: update failed at line $line (exit $code)."
+    progress 100 "Update failed. See update log." failed
+    php artisan up >/dev/null 2>&1 || true
 }
-trap finish EXIT
+
+cleanup() {
+    local code=$?
+    if [ "$code" -ne 0 ]; then fail "${BASH_LINENO[0]:-?}" "$code"; fi
+    rm -f "$LOCK" "$PIDFILE"
+}
+trap cleanup EXIT
+trap 'exit 130' INT TERM
 
 cd "$ROOT"
+echo "$$" > "$PIDFILE"
+printf '%s\n' "$(date -Is)" > "$LOCK"
 
-# The updater is started by the web server user. Mark the checkout safe for
-# Git without depending on a writable global user configuration.
+export HOME="${HOME:-/tmp}"
+export COMPOSER_HOME="${COMPOSER_HOME:-/tmp/composer}"
+export GIT_TERMINAL_PROMPT=0
 export GIT_CONFIG_COUNT=1
 export GIT_CONFIG_KEY_0=safe.directory
 export GIT_CONFIG_VALUE_0="$ROOT"
-export GIT_TERMINAL_PROMPT=0
 
-progress 5 "Preparing Nodexa update…"
-echo "[$(date -Is)] Starting Nodexa update"
+progress 3 "Running pre-flight checks…"
+log "Starting Nodexa update as $(id -un) (pid $$)."
+
+[ -d .git ] || { log "ERROR: $ROOT is not a Git checkout."; exit 1; }
+command -v git >/dev/null || { log "ERROR: git is missing."; exit 1; }
+command -v php >/dev/null || { log "ERROR: php is missing."; exit 1; }
+command -v composer >/dev/null || { log "ERROR: composer is missing."; exit 1; }
+[ -w "$ROOT" ] && [ -w .git ] || { log "ERROR: $(id -un) cannot write to $ROOT/.git."; exit 1; }
+
+progress 8 "Checking GitHub connection…"
+git ls-remote "$REMOTE" refs/heads/main >/dev/null
+
+progress 12 "Creating rollback backup…"
 mkdir -p "$BACKUP"
 cp -a .env "$BACKUP/.env" 2>/dev/null || true
+git rev-parse HEAD > "$BACKUP/previous-commit"
+cp -a public/assets "$BACKUP/assets" 2>/dev/null || true
 
-if [ ! -d .git ]; then
-    echo "ERROR: This installation is not a Git checkout."
-    exit 1
+progress 18 "Downloading Nodexa update…"
+git fetch --prune "$REMOTE" main
+TARGET="$(git rev-parse FETCH_HEAD)"
+CURRENT="$(git rev-parse HEAD)"
+log "Current commit: $CURRENT"
+log "Target commit:  $TARGET"
+
+if [ "$CURRENT" = "$TARGET" ]; then
+    progress 100 "Nodexa is already up to date." completed
+    exit 0
 fi
 
-if [ ! -w .git ] || [ ! -w "$ROOT" ]; then
-    echo "ERROR: The updater user ($(id -un)) cannot write to the Nodexa checkout."
-    echo "ROOT=$ROOT"
-    echo "ROOT owner: $(stat -c '%U:%G %a' "$ROOT" 2>/dev/null || true)"
-    echo ".git owner: $(stat -c '%U:%G %a' .git 2>/dev/null || true)"
-    echo "Fix ownership/permissions for $ROOT before using one-click updates."
-    exit 1
-fi
-
-progress 15 "Enabling maintenance mode…"
+progress 25 "Enabling maintenance mode…"
 php artisan down --retry=15 || true
 
-progress 25 "Downloading latest version from GitHub…"
-echo "Fetching main from GitHub..."
-git fetch https://github.com/yupthatpandadk/Nodexa.git main
-git reset --hard FETCH_HEAD
+progress 32 "Installing update files…"
+git reset --hard "$TARGET"
 
-progress 42 "Installing PHP dependencies…"
-echo "Installing PHP dependencies..."
-composer install --no-dev --optimize-autoloader --no-interaction
+progress 43 "Installing PHP dependencies…"
+composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-progress 55 "Building Nodexa client interface…"
-echo "Building Nodexa client assets..."
+progress 56 "Installing frontend dependencies…"
 if command -v yarn >/dev/null 2>&1; then
     yarn install --frozen-lockfile
-    yarn build:production
 elif command -v npm >/dev/null 2>&1; then
-    npm install
-    npm run build:production
+    if [ -f package-lock.json ]; then npm ci; else npm install; fi
 else
-    echo "ERROR: Node.js package manager (yarn or npm) is required to build the Nodexa client."
+    log "ERROR: yarn or npm is required."
     exit 1
 fi
 
-progress 72 "Running database migrations…"
-echo "Running database migrations..."
+progress 68 "Building Nodexa interface…"
+if command -v yarn >/dev/null 2>&1; then yarn build:production; else npm run build:production; fi
+[ -s public/assets/manifest.json ] || { log "ERROR: frontend build did not create public/assets/manifest.json."; exit 1; }
+
+progress 79 "Running database migrations…"
 php artisan migrate --force
 
-progress 84 "Refreshing application caches…"
-echo "Refreshing caches..."
+progress 87 "Refreshing application cache…"
 php artisan optimize:clear
-php artisan view:clear
-php artisan config:clear
+php artisan config:cache || true
 
-progress 94 "Finalizing permissions and services…"
-chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+progress 93 "Finalizing permissions…"
+chown -R www-data:www-data storage bootstrap/cache public/assets 2>/dev/null || true
+chmod -R ug+rwX storage bootstrap/cache 2>/dev/null || true
+
+progress 97 "Bringing Nodexa online…"
 php artisan up || true
 
-progress 100 "Nodexa is up to date." "completed"
-echo "[$(date -Is)] Nodexa update completed."
+progress 100 "Nodexa update completed." completed
+log "Nodexa update completed successfully."
