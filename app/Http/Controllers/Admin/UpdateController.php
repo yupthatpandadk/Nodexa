@@ -61,8 +61,10 @@ class UpdateController extends Controller
     public function progress(): JsonResponse
     {
         $progressFile = storage_path('app/nodexa-update-progress.json');
-        $running = file_exists(storage_path('app/nodexa-update.lock'));
-        $progress = ['percent' => $running ? 5 : 100, 'step' => $running ? 'Starting update…' : 'Idle', 'status' => $running ? 'running' : 'idle'];
+        $lock = storage_path('app/nodexa-update.lock');
+        $pidFile = storage_path('app/nodexa-update.pid');
+        $running = $this->isUpdaterRunning($lock, $pidFile);
+        $progress = ['percent' => $running ? 1 : 100, 'step' => $running ? 'Starting update…' : 'Idle', 'status' => $running ? 'running' : 'idle'];
 
         if (is_file($progressFile)) {
             $decoded = json_decode((string) @file_get_contents($progressFile), true);
@@ -79,16 +81,19 @@ class UpdateController extends Controller
     public function install(): RedirectResponse
     {
         $lock = storage_path('app/nodexa-update.lock');
-        if (file_exists($lock)) {
+        $pidFile = storage_path('app/nodexa-update.pid');
+        if ($this->isUpdaterRunning($lock, $pidFile)) {
             return redirect()->route('admin.updates')->with('error', 'An update is already running.');
         }
+
+        @unlink($lock);
+        @unlink($pidFile);
 
         $script = base_path('bin/nodexa-update');
         if (!is_file($script)) {
             return redirect()->route('admin.updates')->with('error', 'Updater script is missing.');
         }
 
-        @touch($lock);
         $progressFile = storage_path('app/nodexa-update-progress.json');
         @file_put_contents($progressFile, json_encode([
             'percent' => 1,
@@ -102,7 +107,7 @@ class UpdateController extends Controller
         // Git safe.directory so Git does not stall/fail because the checkout belongs
         // to another user. Append stderr/stdout to the live update log.
         $command = sprintf(
-            'HOME=/tmp GIT_TERMINAL_PROMPT=0 nohup bash %s >> %s 2>&1 < /dev/null & echo $!',
+            'HOME=/tmp COMPOSER_HOME=/tmp/composer GIT_TERMINAL_PROMPT=0 nohup bash %s >> %s 2>&1 < /dev/null & echo $!',
             escapeshellarg($script),
             escapeshellarg($log)
         );
@@ -111,7 +116,7 @@ class UpdateController extends Controller
         $exitCode = 0;
         exec($command, $output, $exitCode);
 
-        if ($exitCode !== 0 || empty($output)) {
+        if ($exitCode !== 0 || empty($output) || !ctype_digit(trim((string) $output[0]))) {
             @unlink($lock);
             @file_put_contents($progressFile, json_encode([
                 'percent' => 100,
@@ -123,6 +128,31 @@ class UpdateController extends Controller
             return redirect()->route('admin.updates')->with('error', 'Could not start the Nodexa updater process.');
         }
 
-        return redirect()->route('admin.updates')->with('success', 'Nodexa update started. Refresh this page to follow progress.');
+        $pid = trim((string) $output[0]);
+        @file_put_contents($pidFile, $pid);
+
+        return redirect()->route('admin.updates')->with('success', 'Nodexa update started. Progress updates automatically.');
+    }
+
+    private function isUpdaterRunning(string $lock, string $pidFile): bool
+    {
+        if (!is_file($lock) && !is_file($pidFile)) {
+            return false;
+        }
+
+        $pid = is_file($pidFile) ? trim((string) @file_get_contents($pidFile)) : '';
+        if ($pid !== '' && ctype_digit($pid) && is_dir('/proc/' . $pid)) {
+            return true;
+        }
+
+        // A stale lock/PID must never leave Update Center stuck forever.
+        if (is_file($lock) && (time() - (int) @filemtime($lock)) < 30) {
+            return true;
+        }
+
+        @unlink($lock);
+        @unlink($pidFile);
+
+        return false;
     }
 }
