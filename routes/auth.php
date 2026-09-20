@@ -23,6 +23,9 @@ Route::get('/password/reset/{token}', [Auth\LoginController::class, 'index'])->n
 //
 // @see \Pterodactyl\Providers\RouteServiceProvider
 Route::middleware(['throttle:authentication'])->group(function () {
+    // Public account registration.
+    Route::post('/register', Auth\\RegisterController::class)->name('auth.post.register')->middleware('recaptcha');
+
     // Login endpoints.
     Route::post('/login', [Auth\LoginController::class, 'login'])->middleware('recaptcha');
     Route::post('/login/checkpoint', Auth\LoginCheckpointController::class)->name('auth.login-checkpoint');
