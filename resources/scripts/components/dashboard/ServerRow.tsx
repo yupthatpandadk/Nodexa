@@ -29,9 +29,12 @@ const IconDescription = styled.p<{ $alarm: boolean }>`
 
 const StatusIndicatorBox = styled(GreyRowBox)<{ $status: ServerPowerState | undefined }>`
     ${tw`grid grid-cols-12 gap-4 relative`};
+    border-radius: 14px; border: 1px solid rgba(148,163,184,.10); background: rgba(15,23,42,.48);
+    transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    &:hover { transform: translateY(-1px); border-color: rgba(139,92,246,.26); background: rgba(15,23,42,.68); }
 
     & .status-bar {
-        ${tw`w-2 bg-red-500 absolute right-0 z-20 rounded-full m-1 opacity-50 transition-all duration-150`};
+        ${tw`w-1 bg-red-500 absolute right-0 z-20 rounded-full m-1 opacity-50 transition-all duration-150`};
         height: calc(100% - 0.5rem);
 
         ${({ $status }) =>
@@ -95,9 +98,9 @@ export default ({ server, className }: { server: Server; className?: string }) =
                     <FontAwesomeIcon icon={faServer} />
                 </div>
                 <div>
-                    <p css={tw`text-lg break-words`}>{server.name}</p>
+                    <p css={tw`text-base sm:text-lg font-semibold break-words`}>{server.name}</p>
                     {!!server.description && (
-                        <p css={tw`text-sm text-neutral-300 break-words line-clamp-2`}>{server.description}</p>
+                        <p css={tw`text-sm text-neutral-400 break-words line-clamp-2`}>{server.description}</p>
                     )}
                 </div>
             </div>
