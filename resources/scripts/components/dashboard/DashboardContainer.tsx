@@ -21,15 +21,15 @@ const DashboardShell = styled.div`
 `;
 const Hero = styled.section`
     position: relative; overflow: hidden; min-height: 138px; display:flex; align-items:center;
-    background: linear-gradient(110deg, #0d2a43 0%, #0b2238 58%, #0b1b2d 100%);
-    border: 1px solid color-mix(in srgb, var(--nodexa-accent) 30%, #22304a);
+    background: linear-gradient(115deg, #111827 0%, #0d1422 58%, #0b111d 100%);
+    border: 1px solid #263244;
     border-radius: 16px; padding: 24px;
     box-shadow: 0 14px 38px rgba(0,0,0,.22);
     &:after { content:''; position:absolute; right:-60px; top:-100px; width:260px; height:260px; border-radius:999px; border:1px solid rgba(255,255,255,.035); box-shadow:0 0 0 44px rgba(255,255,255,.012); }
     @media(max-width:640px){ min-height:0; padding:20px; }
 `;
 const Eyebrow = styled.div`
-    display:inline-flex; align-items:center; gap:7px; color:#75a7ff; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    display:inline-flex; align-items:center; gap:7px; color:var(--nodexa-accent); font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
     &:before { content:''; width:7px; height:7px; border-radius:999px; background:var(--nodexa-accent); box-shadow:0 0 0 4px rgba(139,92,246,.10); }
 `;
 const Stats = styled.div`
@@ -37,7 +37,7 @@ const Stats = styled.div`
     @media(max-width:640px){ width:100%; margin-top:18px; }
 `;
 const StatCard = styled.div`
-    padding:12px 14px; border-radius:10px; background:#151f31; border:1px solid #22304a;
+    padding:12px 14px; border-radius:10px; background:#121a28; border:1px solid #263244;
 `;
 const Section = styled.section`
     background:transparent; border:0; border-radius:0; padding:0;
@@ -51,7 +51,7 @@ const CountBadge = styled.span`
 `;
 const EmptyState = styled.div`
     min-height:190px; display:flex; align-items:center; justify-content:center; text-align:center; padding:28px 20px; border-radius:14px;
-    background:#0d1523; border:1px solid #22304a;
+    background:#0d1420; border:1px solid #263244;
 `;
 const EmptyIcon = styled.div`
     width:48px;height:48px;margin:0 auto 14px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;color:#fff;
