@@ -62,6 +62,16 @@ class UpdateController extends Controller
                 $releases = is_array($decoded) && isset($decoded['releases']) && is_array($decoded['releases'])
                     ? $decoded['releases']
                     : [];
+
+                // If direct NODEXA_VERSION checks are blocked (common on datacenter IPs),
+                // use the signed-in repository changelog as a public version fallback.
+                if (!$latest && is_array($decoded)) {
+                    $fallback = trim((string) ($decoded['latest'] ?? ($releases[0]['version'] ?? '')));
+                    if ($fallback !== '') {
+                        $latest = $fallback;
+                        $error = null;
+                    }
+                }
             }
         } catch (\Throwable $exception) {
             // Release notes are optional and must never break the Update Center.
