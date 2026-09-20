@@ -19,6 +19,30 @@ class MailCenterController extends Controller
         ]);
     }
 
+    public function test(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'test_email' => 'required|email',
+            'subject' => 'required|string|max:191',
+            'message' => 'required|string|max:20000',
+        ]);
+
+        $admin = $request->user();
+        $name = trim(($admin->name_first ?? '') . ' ' . ($admin->name_last ?? '')) ?: ($admin->username ?? 'Nodexa Admin');
+        $body = strtr($data['message'], [
+            '{{name}}' => $name,
+            '{{username}}' => $admin->username ?? 'admin',
+            '{{email}}' => $data['test_email'],
+            '{{app_name}}' => config('app.name', 'Nodexa'),
+        ]);
+
+        Mail::send('emails.nodexa-message', ['recipient' => $name, 'body' => $body], function ($mail) use ($data) {
+            $mail->to($data['test_email'])->subject('[TEST] ' . $data['subject']);
+        });
+
+        return redirect()->route('admin.mail')->with('success', 'Test email sent to ' . $data['test_email'] . '.');
+    }
+
     public function send(Request $request): RedirectResponse
     {
         $data = $request->validate([
