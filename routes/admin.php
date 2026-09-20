@@ -15,10 +15,10 @@ Route::delete('/roles/{role}', [Admin\RoleController::class, 'delete'])->name('a
 Route::post('/roles/user/{user}', [Admin\RoleController::class, 'assign'])->name('admin.roles.assign');
 
 // Nodexa Addon Manager
-Route::get('/addons', [Admin\\AddonController::class, 'index'])->name('admin.addons');
-Route::post('/addons', [Admin\\AddonController::class, 'store'])->name('admin.addons.store');
-Route::patch('/addons/{addon}', [Admin\\AddonController::class, 'update'])->name('admin.addons.update');
-Route::delete('/addons/{addon}', [Admin\\AddonController::class, 'delete'])->name('admin.addons.delete');
+Route::get('/addons', [Admin\AddonController::class, 'index'])->name('admin.addons');
+Route::post('/addons', [Admin\AddonController::class, 'store'])->name('admin.addons.store');
+Route::patch('/addons/{addon}', [Admin\AddonController::class, 'update'])->name('admin.addons.update');
+Route::delete('/addons/{addon}', [Admin\AddonController::class, 'delete'])->name('admin.addons.delete');
 
 // Nodexa Mail Center
 Route::get('/mail', [Admin\MailCenterController::class, 'index'])->name('admin.mail');
