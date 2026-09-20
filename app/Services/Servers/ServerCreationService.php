@@ -9,6 +9,7 @@ use Pterodactyl\Models\User;
 use Webmozart\Assert\Assert;
 use Pterodactyl\Models\Server;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Mail;
 use Pterodactyl\Models\Allocation;
 use Illuminate\Database\ConnectionInterface;
 use Pterodactyl\Models\Objects\DeploymentObject;
@@ -101,6 +102,24 @@ class ServerCreationService
             $this->serverDeletionService->withForce()->handle($server);
 
             throw $exception;
+        }
+
+        // Send the owner a Nodexa server assignment email only after Wings accepted the server.
+        try {
+            $server->loadMissing(['user', 'allocation', 'node']);
+            $user = $server->user;
+            if ($user) {
+                $name = trim(($user->name_first ?? '') . ' ' . ($user->name_last ?? '')) ?: $user->username;
+                $address = $server->allocation ? ($server->allocation->ip_alias ?: $server->allocation->ip) . ':' . $server->allocation->port : 'Not assigned';
+                $node = $server->node ? $server->node->name : 'Unknown';
+                $body = "Hi {$name},\n\nA game server has been assigned to your Nodexa account.\n\nServer: {$server->name}\nServer ID: {$server->id}\nServer UUID: {$server->uuid}\nNode: {$node}\nAddress: {$address}\nMemory: {$server->memory} MB\nDisk: {$server->disk} MB\nCPU limit: {$server->cpu}%\n\nOpen panel: " . url('/server/' . $server->uuidShort) . "\n\nRegards,\nThe Nodexa Team";
+
+                Mail::send('emails.nodexa-message', ['recipient' => $name, 'body' => $body], function ($mail) use ($user, $server) {
+                    $mail->to($user->email)->subject('Your Nodexa server is ready: ' . $server->name);
+                });
+            }
+        } catch (\Throwable $exception) {
+            report($exception);
         }
 
         return $server;
