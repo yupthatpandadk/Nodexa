@@ -15,21 +15,21 @@ import Avatar from '@/components/Avatar';
 
 const Bar = styled.div`
     ${tw`w-full sticky top-0 z-50`};
-    background: rgba(8, 12, 24, .92);
-    border-bottom: 1px solid rgba(148, 163, 184, .12);
-    backdrop-filter: blur(18px);
+    background: rgba(7, 11, 22, .96);
+    border-bottom: 1px solid rgba(148, 163, 184, .10);
+    backdrop-filter: blur(20px); box-shadow: 0 8px 30px rgba(0,0,0,.12);
 `;
 const RightNavigation = styled.div`
     & > a, & > button, & > .navigation-link {
-        ${tw`flex items-center h-10 w-10 justify-center no-underline text-neutral-300 cursor-pointer transition-all duration-150 rounded-lg mx-1`};
+        ${tw`flex items-center h-9 w-9 justify-center no-underline text-neutral-300 cursor-pointer transition-all duration-150 rounded-lg mx-1`};
         background: rgba(255,255,255,.035);
         border: 1px solid rgba(255,255,255,.06);
         &:hover, &.active { color: #fff; background: rgba(99,102,241,.18); border-color: rgba(99,102,241,.35); }
     }
 `;
 const BrandMark = styled.span`
-    display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px;
-    border-radius:11px; margin-right:10px; font-weight:800; color:white;
+    display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px;
+    border-radius:10px; margin-right:10px; font-weight:800; color:white;
     background: linear-gradient(135deg,#6366f1,#8b5cf6); box-shadow:0 8px 25px rgba(99,102,241,.25);
 `;
 
@@ -46,9 +46,9 @@ export default () => {
     return (
         <Bar>
             <SpinnerOverlay visible={isLoggingOut} />
-            <div className={'mx-auto w-full flex items-center h-16 max-w-[1280px] px-3 sm:px-6'}>
+            <div className={'mx-auto w-full flex items-center h-16 max-w-[1280px] px-4 sm:px-6'}>
                 <div id={'logo'} className={'flex-1'}>
-                    <Link to={'/'} className={'inline-flex items-center text-xl font-header font-semibold no-underline text-white'}>
+                    <Link to={'/'} className={'inline-flex items-center text-lg font-header font-semibold tracking-tight no-underline text-white'}>
                         <BrandMark>N</BrandMark><span>Nodexa</span>
                     </Link>
                 </div>
