@@ -20,6 +20,25 @@ const Tab = tw.button`px-4 py-2 rounded-md text-sm font-semibold transition-colo
 
 export default () => {
     const id = ServerContext.useStoreState((state) => state.server.data!.id);
+    const variables = ServerContext.useStoreState((state) => state.server.data!.variables);
+    const dockerImage = ServerContext.useStoreState((state) => state.server.data!.dockerImage);
+    const invocation = ServerContext.useStoreState((state) => state.server.data!.invocation);
+
+    const variableValue = (names: string[]): string | undefined => {
+        const match = variables.find((variable) => names.includes(variable.envVariable.toUpperCase()));
+        return match?.serverValue || match?.defaultValue || undefined;
+    };
+
+    const detectedVersion =
+        variableValue(['MINECRAFT_VERSION', 'MC_VERSION', 'VERSION', 'SERVER_VERSION'])?.replace(/^v/i, '') || undefined;
+
+    const source = `${dockerImage} ${invocation} ${variableValue(['SERVER_JARFILE', 'SERVER_TYPE']) || ''}`.toLowerCase();
+    const detectedLoader =
+        source.includes('purpur') ? 'purpur' :
+        source.includes('paper') ? 'paper' :
+        source.includes('spigot') ? 'spigot' :
+        source.includes('folia') ? 'folia' :
+        source.includes('bukkit') ? 'bukkit' : undefined;
     const [tab, setTab] = useState<'browse' | 'installed'>('browse');
     const [query, setQuery] = useState('');
     const [plugins, setPlugins] = useState<ModrinthPlugin[]>([]);
@@ -34,7 +53,7 @@ export default () => {
         setLoading(true);
         setMessage(null);
         try {
-            setPlugins(await searchPlugins(value.trim()));
+            setPlugins(await searchPlugins(value.trim(), detectedVersion, detectedLoader));
         } catch (error) {
             setMessage({ type: 'error', text: httpErrorToHuman(error) });
         } finally {
@@ -51,7 +70,8 @@ export default () => {
         setBusy(plugin.project_id);
         setMessage(null);
         try {
-            const filename = await installPlugin(id, plugin.project_id);
+            const result = await installPlugin(id, plugin.project_id, detectedVersion, detectedLoader);
+            const filename = result.filename;
             await refreshInstalled();
             setMessage({ type: 'ok', text: `${plugin.title} blev installeret som ${filename}. Genstart serveren for at indlæse pluginet.` });
         } catch (error) {
@@ -83,6 +103,10 @@ export default () => {
                     <div>
                         <h1 css={tw`text-xl font-bold text-neutral-50`}>Minecraft Plugin Manager</h1>
                         <p css={tw`mt-1 text-sm text-neutral-400`}>Find og installer server-plugins direkte fra Modrinth.</p>
+                        <div css={tw`mt-2 flex flex-wrap gap-2 text-xs`}>
+                            <span css={tw`rounded bg-neutral-900 px-2 py-1 text-cyan-300`}>Minecraft: {detectedVersion || 'Auto/ukendt'}</span>
+                            <span css={tw`rounded bg-neutral-900 px-2 py-1 text-cyan-300`}>Loader: {detectedLoader || 'Plugin-loader'}</span>
+                        </div>
                     </div>
                     <div css={tw`flex gap-2 rounded-lg bg-neutral-900 p-1`}>
                         <Tab css={tab === 'browse' ? tw`bg-cyan-600 text-white` : tw`text-neutral-300 hover:bg-neutral-700`} onClick={() => setTab('browse')}>Find plugins</Tab>
