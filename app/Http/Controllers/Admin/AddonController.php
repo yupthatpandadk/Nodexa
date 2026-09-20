@@ -41,6 +41,16 @@ class AddonController extends Controller
         ]);
     }
 
+    public function show(Addon $addon): View
+    {
+        abort_unless($addon->name === self::MINECRAFT_PLUGIN_MANAGER, 404);
+
+        return view('admin.addons.show', [
+            'addon' => $addon,
+            'eggs' => Egg::query()->with('nest')->orderBy('name')->get(),
+        ]);
+    }
+
     public function update(Request $request, Addon $addon): RedirectResponse
     {
         abort_unless($addon->name === self::MINECRAFT_PLUGIN_MANAGER, 404);
@@ -57,6 +67,6 @@ class AddonController extends Controller
 
         $this->alert->success('Minecraft Plugin Manager er opdateret.')->flash();
 
-        return redirect()->route('admin.addons');
+        return redirect()->route('admin.addons.show', $addon);
     }
 }
