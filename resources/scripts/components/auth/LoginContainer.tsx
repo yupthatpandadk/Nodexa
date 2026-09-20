@@ -107,6 +107,9 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
                             Forgot password?
                         </Link>
                     </div>
+                    <div css={tw`mt-4 text-center text-sm text-neutral-400`}>
+                        Ny hos Nodexa? <Link to={'/auth/register'} css={tw`text-purple-400 no-underline hover:text-purple-300`}>Opret konto</Link>
+                    </div>
                 </LoginFormContainer>
             )}
         </Formik>
