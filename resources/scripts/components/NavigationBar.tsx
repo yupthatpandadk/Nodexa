@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCogs, faLayerGroup, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { faCogs, faLayerGroup, faSignOutAlt, faPalette } from '@fortawesome/free-solid-svg-icons';
 import { useStoreState } from 'easy-peasy';
 import { ApplicationStore } from '@/state';
 import SearchContainer from '@/components/dashboard/search/SearchContainer';
@@ -15,27 +15,44 @@ import Avatar from '@/components/Avatar';
 
 const Bar = styled.div`
     ${tw`w-full sticky top-0 z-50`};
-    background: #0c1321;
-    border-bottom: 1px solid #22304a;
+    background: #0a2035;
+    border-bottom: 1px solid #173553;
     backdrop-filter: blur(20px); box-shadow: 0 6px 24px rgba(0,0,0,.14);
 `;
 const RightNavigation = styled.div`
     & > a, & > button, & > .navigation-link {
         ${tw`flex items-center h-9 w-9 justify-center no-underline text-neutral-300 cursor-pointer transition-all duration-150 rounded-lg mx-1`};
-        background: #151f31;
-        border: 1px solid #22304a;
+        background: #102a44;
+        border: 1px solid #1b4167;
         &:hover, &.active { color: #fff; background: rgba(99,102,241,.18); border-color: rgba(99,102,241,.35); }
     }
 `;
 const BrandMark = styled.span`
     display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px;
     border-radius:9px; margin-right:9px; font-weight:800; color:white;
-    background: linear-gradient(135deg,#7c5cff,#9d7cff); box-shadow:0 8px 25px rgba(99,102,241,.25);
+    background: linear-gradient(135deg,var(--nodexa-user-accent,#4f8cff),color-mix(in srgb,var(--nodexa-user-accent,#4f8cff) 65%,white)); box-shadow:0 8px 25px rgba(99,102,241,.25);
+`;
+
+const ThemeMenu = styled.div`
+    position:absolute; right:0; top:46px; width:210px; padding:12px; border-radius:12px;
+    background:#0d1b2c; border:1px solid #23415f; box-shadow:0 18px 45px rgba(0,0,0,.38);
+`;
+const Swatch = styled.button<{ $color: string }>`
+    width:28px!important; height:28px!important; min-width:28px; margin:0!important; border-radius:8px!important;
+    background:${({ $color }) => $color}!important; border:2px solid rgba(255,255,255,.12)!important;
+    &:hover { transform:scale(1.08); border-color:white!important; }
 `;
 
 export default () => {
     const rootAdmin = useStoreState((state: ApplicationStore) => state.user.data!.rootAdmin);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [themeOpen, setThemeOpen] = useState(false);
+    const [accent, setAccent] = useState(() => localStorage.getItem('nodexa:accent') || '#4f8cff');
+    const accents = ['#4f8cff', '#7c5cff', '#14b8a6', '#22c55e', '#f59e0b', '#ef476f'];
+    useEffect(() => {
+        document.documentElement.style.setProperty('--nodexa-user-accent', accent);
+        localStorage.setItem('nodexa:accent', accent);
+    }, [accent]);
     const onTriggerLogout = () => {
         setIsLoggingOut(true);
         http.post('/auth/logout').finally(() => {
@@ -49,13 +66,21 @@ export default () => {
             <div className={'mx-auto w-full flex items-center h-14 sm:h-16 max-w-[1280px] px-4 sm:px-6'}>
                 <div id={'logo'} className={'flex-1'}>
                     <Link to={'/'} className={'inline-flex items-center text-base sm:text-lg font-header font-semibold tracking-tight no-underline text-white'}>
-                        <BrandMark>N</BrandMark><span>Nodexa</span>
+                        <BrandMark>N</BrandMark><span className={'leading-tight'}>Nodexa<small className={'hidden sm:block text-neutral-500 uppercase tracking-widest'} style={{fontSize:'8px'}}>Game Server Cloud</small></span>
                     </Link>
                 </div>
                 <RightNavigation className={'flex h-full items-center justify-center'}>
                     <SearchContainer />
                     <Tooltip placement={'bottom'} content={'Dashboard'}><NavLink to={'/'} exact><FontAwesomeIcon icon={faLayerGroup} /></NavLink></Tooltip>
                     {rootAdmin && <Tooltip placement={'bottom'} content={'Admin'}><a href={'/admin'} rel={'noreferrer'}><FontAwesomeIcon icon={faCogs} /></a></Tooltip>}
+                    <div className={'relative'}>
+                        <Tooltip placement={'bottom'} content={'Tema'}><button onClick={() => setThemeOpen((v) => !v)}><FontAwesomeIcon icon={faPalette} /></button></Tooltip>
+                        {themeOpen && <ThemeMenu>
+                            <div className={'text-xs font-semibold text-white mb-2'}>Accentfarve</div>
+                            <div className={'text-xs text-neutral-500 mb-3'}>Gemmes automatisk på denne enhed.</div>
+                            <div className={'flex items-center justify-between'}>{accents.map((color) => <Swatch key={color} $color={color} onClick={() => setAccent(color)} aria-label={'Vælg accentfarve'} />)}</div>
+                        </ThemeMenu>}
+                    </div>
                     <Tooltip placement={'bottom'} content={'Account Settings'}><NavLink to={'/account'}><span className={'flex items-center w-5 h-5'}><Avatar.User /></span></NavLink></Tooltip>
                     <Tooltip placement={'bottom'} content={'Sign Out'}><button onClick={onTriggerLogout}><FontAwesomeIcon icon={faSignOutAlt} /></button></Tooltip>
                 </RightNavigation>
