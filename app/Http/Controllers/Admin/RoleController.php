@@ -93,7 +93,7 @@ class RoleController extends Controller
         $slug = Str::slug($validated['name']);
         $base = $slug ?: 'role';
         $i = 2;
-        while (Role::query()->where('slug', $slug)->when($role, fn ($q) => $q->whereKeyNot($role->id))->exists()) {
+        while (Role::query()->where('slug', $slug)->when($role, fn ($q) => $q->where('id', '!=', $role->id))->exists()) {
             $slug = $base . '-' . $i++;
         }
 
