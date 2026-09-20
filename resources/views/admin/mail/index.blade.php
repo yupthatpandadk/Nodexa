@@ -70,6 +70,41 @@
   </div>
  </div>
 </div>
+
+<div class="row">
+ <div class="col-md-6">
+  <div class="box box-success">
+   <div class="box-header with-border"><h3 class="box-title"><i class="fa fa-repeat"></i> Resend welcome email</h3></div>
+   <div class="box-body">
+    <p class="text-muted">Choose a customer to resend their Nodexa welcome email.</p>
+    @foreach($users as $user)
+     <form method="POST" action="{{ route('admin.mail.resend-welcome', $user->id) }}" style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      {!! csrf_field() !!}
+      <span style="flex:1"><strong>{{ $user->username }}</strong><br><small>{{ $user->email }}</small></span>
+      <button class="btn btn-default btn-sm"><i class="fa fa-repeat"></i> Resend</button>
+     </form>
+    @endforeach
+   </div>
+  </div>
+ </div>
+ <div class="col-md-6">
+  <div class="box box-warning">
+   <div class="box-header with-border"><h3 class="box-title"><i class="fa fa-server"></i> Resend server email</h3></div>
+   <div class="box-body">
+    <p class="text-muted">Resend server details to the owner. Showing the 50 newest servers.</p>
+    @forelse($recentServers as $server)
+     <form method="POST" action="{{ route('admin.mail.resend-server', $server->id) }}" style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      {!! csrf_field() !!}
+      <span style="flex:1"><strong>#{{ $server->id }} · {{ $server->name }}</strong><br><small>{{ $server->user ? $server->user->email : 'No owner' }}</small></span>
+      <button class="btn btn-default btn-sm" @if(!$server->user) disabled @endif><i class="fa fa-repeat"></i> Resend</button>
+     </form>
+    @empty
+     <p class="text-muted">No servers found.</p>
+    @endforelse
+   </div>
+  </div>
+ </div>
+</div>
 @endsection
 
 @section('footer-scripts')
