@@ -28,7 +28,7 @@
       </div>
      </div>
      <div class="form-group"><label>Subject</label><input class="form-control" name="subject" maxlength="191" required placeholder="Important update from Nodexa"></div>
-     <div class="form-group"><label>Message</label><textarea class="form-control" name="message" rows="12" required placeholder="Hello {{name}},&#10;&#10;Write your message here..."></textarea>
+     <div class="form-group"><label>Message</label><textarea class="form-control" name="message" rows="12" required placeholder="Hello @{{name}},&#10;&#10;Write your message here..."></textarea>
       <p class="help-block">Variables: <code>@{{name}}</code> <code>@{{username}}</code> <code>@{{email}}</code> <code>@{{app_name}}</code></p>
      </div>
     </div>
