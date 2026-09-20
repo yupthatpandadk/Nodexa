@@ -18,6 +18,7 @@ use Illuminate\Foundation\Auth\Access\Authorizable;
 use Pterodactyl\Models\Traits\HasRealtimeIdentifier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
@@ -239,6 +240,25 @@ class User extends Model implements
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany<\Pterodactyl\Models\Server, $this>
      */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'role_user')->withTimestamps();
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        if ($this->root_admin) {
+            return true;
+        }
+
+        return $this->roles()->get()->contains(fn (Role $role) => $role->hasPermission($permission));
+    }
+
+    public function hasAdminAccess(): bool
+    {
+        return $this->root_admin || $this->roles()->exists();
+    }
+
     public function servers(): HasMany
     {
         return $this->hasMany(Server::class, 'owner_id');
