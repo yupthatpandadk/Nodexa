@@ -16,20 +16,21 @@ import { useLocation } from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 const DashboardShell = styled.div`
-    display: grid; gap: 18px;
+    display: grid; gap: 16px;
+    --nodexa-accent: var(--nodexa-user-accent, #4f8cff);
 `;
 const Hero = styled.section`
-    position: relative; overflow: hidden; min-height: 156px;
-    display: flex; align-items: center;
-    background: #101827;
-    border: 1px solid #22304a; border-radius: 13px; padding: 24px 26px;
-    box-shadow: 0 12px 35px rgba(0,0,0,.18);
-    &:before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,rgba(124,58,237,.12),transparent 42%,rgba(14,165,233,.07)); pointer-events:none; }
-    @media(max-width:640px){ min-height:0; padding:20px; border-radius:16px; }
+    position: relative; overflow: hidden; min-height: 138px; display:flex; align-items:center;
+    background: linear-gradient(110deg, #0d2a43 0%, #0b2238 58%, #0b1b2d 100%);
+    border: 1px solid color-mix(in srgb, var(--nodexa-accent) 30%, #22304a);
+    border-radius: 16px; padding: 24px;
+    box-shadow: 0 14px 38px rgba(0,0,0,.22);
+    &:after { content:''; position:absolute; right:-60px; top:-100px; width:260px; height:260px; border-radius:999px; border:1px solid rgba(255,255,255,.035); box-shadow:0 0 0 44px rgba(255,255,255,.012); }
+    @media(max-width:640px){ min-height:0; padding:20px; }
 `;
 const Eyebrow = styled.div`
-    display:inline-flex; align-items:center; gap:7px; color:#9b86ff; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-    &:before { content:''; width:7px; height:7px; border-radius:999px; background:#7c5cff; box-shadow:0 0 0 4px rgba(139,92,246,.10); }
+    display:inline-flex; align-items:center; gap:7px; color:#75a7ff; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    &:before { content:''; width:7px; height:7px; border-radius:999px; background:var(--nodexa-accent); box-shadow:0 0 0 4px rgba(139,92,246,.10); }
 `;
 const Stats = styled.div`
     display:grid; grid-template-columns:repeat(2,minmax(108px,1fr)); gap:10px;
@@ -39,11 +40,11 @@ const StatCard = styled.div`
     padding:12px 14px; border-radius:10px; background:#151f31; border:1px solid #22304a;
 `;
 const Section = styled.section`
-    background:#101827; border:1px solid #22304a; border-radius:13px; padding:18px;
-    box-shadow:0 10px 28px rgba(0,0,0,.12); @media(max-width:640px){ padding:14px; border-radius:16px; }
+    background:transparent; border:0; border-radius:0; padding:0;
+    box-shadow:none; @media(max-width:640px){ padding:0; }
 `;
 const SectionHeader = styled.div`
-    display:flex; align-items:center; justify-content:space-between; gap:16px; padding:1px 2px 15px; border-bottom:1px solid rgba(148,163,184,.08); margin-bottom:14px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; padding:1px 0 10px; border-bottom:0; margin-bottom:4px;
 `;
 const CountBadge = styled.span`
     white-space:nowrap; font-size:11px; font-weight:600; color:#a3a3a3; padding:6px 9px; border-radius:8px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.055);
@@ -54,7 +55,7 @@ const EmptyState = styled.div`
 `;
 const EmptyIcon = styled.div`
     width:48px;height:48px;margin:0 auto 14px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;color:#fff;
-    background:linear-gradient(135deg,#7c5cff,#9d7cff); box-shadow:0 9px 24px rgba(99,102,241,.20);
+    background:linear-gradient(135deg,var(--nodexa-accent),color-mix(in srgb,var(--nodexa-accent) 68%,white)); box-shadow:0 9px 24px rgba(99,102,241,.20);
 `;
 const AdminFilter = styled.div`
     display:flex; justify-content:flex-end; align-items:center; min-height:28px;
@@ -104,17 +105,17 @@ export default () => {
                 <Hero>
                     <div css={tw`relative z-10 w-full flex items-center justify-between flex-wrap`}>
                         <div css={tw`max-w-xl`}>
-                            <Eyebrow>Nodexa Control Panel</Eyebrow>
-                            <h1 css={tw`text-2xl sm:text-3xl font-bold tracking-tight text-white mt-3 mb-2`}>Velkommen tilbage</h1>
-                            <p css={tw`text-sm text-neutral-400 leading-relaxed m-0`}>Administrér dine servere, ressourcer og tjenester fra ét samlet kontrolpanel.</p>
+                            <Eyebrow>Nodexa Control</Eyebrow>
+                            <h1 css={tw`text-2xl sm:text-3xl font-bold tracking-tight text-white mt-3 mb-2`}>Godt at se dig.</h1>
+                            <p css={tw`text-sm text-neutral-400 leading-relaxed m-0`}>Administrér dine game servers, ressourcer og drift fra ét samlet kontrolpanel.</p>
                         </div>
                         <Stats>
                             <StatCard>
-                                <div css={tw`text-xs text-neutral-500 mb-1`}>Servere</div>
+                                <div css={tw`text-xs text-neutral-500 mb-1`}>Serveroversigt</div>
                                 <div css={tw`text-xl text-white font-semibold`}>{servers ? servers.pagination.total : '—'}</div>
                             </StatCard>
                             <StatCard>
-                                <div css={tw`text-xs text-neutral-500 mb-1`}>Systemstatus</div>
+                                <div css={tw`text-xs text-neutral-500 mb-1`}>Platform</div>
                                 <div css={tw`text-sm text-green-300 font-semibold`}>● Online</div>
                             </StatCard>
                         </Stats>
@@ -131,8 +132,8 @@ export default () => {
                 <Section>
                     <SectionHeader>
                         <div>
-                            <h2 css={tw`text-base font-semibold text-white m-0`}>Dine servere</h2>
-                            <p css={tw`text-xs text-neutral-500 mt-1 m-0`}>Status, ressourcer og hurtig adgang til dine servere.</p>
+                            <h2 css={tw`text-base font-semibold text-white m-0`}>Alle servere</h2>
+                            <p css={tw`text-xs text-neutral-500 mt-1 m-0`}>Live adgang til konsol, filer, databaser, backups og serverindstillinger.</p>
                         </div>
                         {servers && <CountBadge>{servers.pagination.total} {servers.pagination.total === 1 ? 'server' : 'servere'}</CountBadge>}
                     </SectionHeader>
