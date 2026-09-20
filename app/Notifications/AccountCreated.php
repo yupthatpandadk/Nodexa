@@ -4,44 +4,43 @@ namespace Pterodactyl\Notifications;
 
 use Pterodactyl\Models\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 
 class AccountCreated extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * Create a new notification instance.
-     */
     public function __construct(public User $user, public ?string $token = null)
     {
     }
 
-    /**
-     * Get the notification's delivery channels.
-     */
     public function via(): array
     {
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
-    public function toMail(): MailMessage
+    public function toMail()
     {
-        $message = (new MailMessage())
-            ->greeting('Hello ' . $this->user->name . '!')
-            ->line('You are receiving this email because an account has been created for you on ' . config('app.name') . '.')
-            ->line('Username: ' . $this->user->username)
-            ->line('Email: ' . $this->user->email);
+        $name = trim(($this->user->name_first ?? '') . ' ' . ($this->user->name_last ?? '')) ?: $this->user->username;
+
+        $body = "Hej {$name},\n\nVelkommen til Nodexa. Din konto er nu oprettet og klar til brug.\n\nBrugernavn: {$this->user->username}\nE-mail: {$this->user->email}";
 
         if (!is_null($this->token)) {
-            return $message->action('Setup Your Account', url('/auth/password/reset/' . $this->token . '?email=' . urlencode($this->user->email)));
+            $body .= "\n\nAktivér din konto og opret din adgangskode her:\n" .
+                url('/auth/password/reset/' . $this->token . '?email=' . urlencode($this->user->email));
+        } else {
+            $body .= "\n\nÅbn Nodexa Control Panel:\n" . url('/');
         }
 
-        return $message;
+        $body .= "\n\nHar du spørgsmål eller brug for hjælp, er du altid velkommen til at kontakte os.\n\nMed venlig hilsen,\nNodexa";
+
+        return (new \Illuminate\Notifications\Messages\MailMessage())
+            ->subject('Velkommen til Nodexa')
+            ->view('emails.nodexa-message', [
+                'recipient' => $name,
+                'body' => $body,
+            ]);
     }
 }
