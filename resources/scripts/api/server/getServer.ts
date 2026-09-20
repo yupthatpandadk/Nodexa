@@ -54,6 +54,7 @@ export interface Server {
     eggFeatures: string[];
     eggId: number;
     pluginManagerEnabled: boolean;
+    modManagerEnabled: boolean;
     featureLimits: {
         databases: number;
         allocations: number;
@@ -86,6 +87,7 @@ export const rawDataToServerObject = ({ attributes: data }: FractalResponseData)
     eggFeatures: data.egg_features || [],
     eggId: data.egg_id,
     pluginManagerEnabled: Boolean(data.plugin_manager_enabled),
+    modManagerEnabled: Boolean(data.mod_manager_enabled),
     featureLimits: { ...data.feature_limits },
     isTransferring: data.is_transferring,
     skipScripts: data.skip_scripts,
