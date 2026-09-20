@@ -81,10 +81,15 @@
                         <div id="nodexa-progress-bar" style="height:100%;width:{{ $running ? '5%' : '0%' }};border-radius:999px;background:linear-gradient(90deg,#6366f1,#8b5cf6,#0ea5e9);transition:width .45s ease;box-shadow:0 0 18px rgba(99,102,241,.4);"></div>
                     </div>
                 </div>
+                @php
+                    $updateAvailable = $latest && $installed !== 'dev' && version_compare($latest, $installed, '>');
+                    $canUpdate = !$running && $updateAvailable;
+                @endphp
                 <form id="nodexa-update-form" method="POST" action="{{ route('admin.updates.install') }}" onsubmit="return confirm('Install the latest Nodexa update from GitHub?');">
                     {!! csrf_field() !!}
-                    <button class="btn btn-primary" {{ $running ? 'disabled' : '' }}>
-                        <i class="fa fa-download"></i> {{ $running ? 'Update running…' : 'Install latest update' }}
+                    <button class="btn btn-primary" {{ $canUpdate ? '' : 'disabled' }} title="{{ !$updateAvailable ? 'Nodexa is already on the latest version' : '' }}">
+                        <i class="fa {{ $running ? 'fa-spinner fa-spin' : ($updateAvailable ? 'fa-download' : 'fa-check') }}"></i>
+                        {{ $running ? 'Update running…' : ($updateAvailable ? 'Install latest update' : 'Up to date') }}
                     </button>
                     <a class="btn btn-default" href="{{ route('admin.updates') }}"><i class="fa fa-refresh"></i> Check again</a>
                 </form>
