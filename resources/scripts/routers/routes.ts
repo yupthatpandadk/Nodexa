@@ -14,6 +14,7 @@ import AccountSSHContainer from '@/components/dashboard/ssh/AccountSSHContainer'
 import ActivityLogContainer from '@/components/dashboard/activity/ActivityLogContainer';
 import ServerActivityLogContainer from '@/components/server/ServerActivityLogContainer';
 import PluginManagerContainer from '@/components/server/plugins/PluginManagerContainer';
+import ModManagerContainer from '@/components/server/mods/ModManagerContainer';
 
 // Each of the router files is already code split out appropriately — so
 // all of the items above will only be loaded in when that router is loaded.
@@ -80,6 +81,12 @@ export default {
             permission: 'file.*',
             name: 'Plugins',
             component: PluginManagerContainer,
+        },
+        {
+            path: '/mods',
+            permission: 'file.*',
+            name: 'Mods',
+            component: ModManagerContainer,
         },
         {
             path: '/files',
