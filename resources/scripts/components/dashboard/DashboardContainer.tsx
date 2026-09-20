@@ -15,32 +15,49 @@ import Pagination from '@/components/elements/Pagination';
 import { useLocation } from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-const Hero = styled.div`
-    position: relative; overflow: hidden;
-    background: linear-gradient(135deg, rgba(124,58,237,.18), rgba(8,14,27,.97) 52%, rgba(14,165,233,.09));
-    border: 1px solid rgba(139,92,246,.20); border-radius: 20px; padding: 26px 28px; margin-bottom: 18px;
-    box-shadow: 0 16px 44px rgba(0,0,0,.18);
-    &:after { content: ''; position:absolute; width:220px; height:220px; right:-70px; top:-120px; border-radius:999px; background:rgba(56,189,248,.08); pointer-events:none; }
-    @media (max-width: 640px) { padding: 21px 19px; border-radius: 17px; }
+const DashboardShell = styled.div`
+    display: grid; gap: 18px;
+`;
+const Hero = styled.section`
+    position: relative; overflow: hidden; min-height: 156px;
+    display: flex; align-items: center;
+    background: linear-gradient(120deg, rgba(17,24,39,.98), rgba(12,18,32,.98));
+    border: 1px solid rgba(148,163,184,.13); border-radius: 18px; padding: 26px 28px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.16);
+    &:before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,rgba(124,58,237,.12),transparent 42%,rgba(14,165,233,.07)); pointer-events:none; }
+    @media(max-width:640px){ min-height:0; padding:20px; border-radius:16px; }
+`;
+const Eyebrow = styled.div`
+    display:inline-flex; align-items:center; gap:7px; color:#a78bfa; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    &:before { content:''; width:7px; height:7px; border-radius:999px; background:#8b5cf6; box-shadow:0 0 0 4px rgba(139,92,246,.10); }
+`;
+const Stats = styled.div`
+    display:grid; grid-template-columns:repeat(2,minmax(108px,1fr)); gap:10px;
+    @media(max-width:640px){ width:100%; margin-top:18px; }
 `;
 const StatCard = styled.div`
-    min-width: 112px; padding: 11px 14px; border-radius: 12px; background: rgba(255,255,255,.045);
-    border: 1px solid rgba(255,255,255,.07); backdrop-filter: blur(8px);
+    padding:12px 14px; border-radius:12px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.07);
 `;
-const ServerPanel = styled.div`
-    background: rgba(8,14,27,.76); border: 1px solid rgba(148,163,184,.11); border-radius: 18px;
-    padding: 18px; box-shadow: 0 12px 34px rgba(0,0,0,.14);
-    @media (max-width: 640px) { padding: 14px; border-radius: 16px; }
+const Section = styled.section`
+    background:rgba(8,14,27,.72); border:1px solid rgba(148,163,184,.11); border-radius:18px; padding:18px;
+    box-shadow:0 10px 28px rgba(0,0,0,.12); @media(max-width:640px){ padding:14px; border-radius:16px; }
+`;
+const SectionHeader = styled.div`
+    display:flex; align-items:center; justify-content:space-between; gap:16px; padding:1px 2px 15px; border-bottom:1px solid rgba(148,163,184,.08); margin-bottom:14px;
+`;
+const CountBadge = styled.span`
+    white-space:nowrap; font-size:11px; font-weight:600; color:#a3a3a3; padding:6px 9px; border-radius:8px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.055);
 `;
 const EmptyState = styled.div`
-    min-height: 230px; display:flex; align-items:center; justify-content:center; text-align:center;
-    padding: 28px 20px; border-radius: 15px; border: 1px dashed rgba(139,92,246,.22);
-    background: radial-gradient(circle at 50% 0%,rgba(124,58,237,.09),transparent 46%), rgba(15,23,42,.26);
+    min-height:190px; display:flex; align-items:center; justify-content:center; text-align:center; padding:28px 20px; border-radius:14px;
+    background:rgba(15,23,42,.26); border:1px solid rgba(148,163,184,.08);
 `;
 const EmptyIcon = styled.div`
-    width: 56px; height: 56px; margin: 0 auto 15px; border-radius: 16px; display:flex; align-items:center;
-    justify-content:center; font-size:22px; font-weight:800; color:#fff;
-    background:linear-gradient(135deg,#7c3aed,#6366f1); box-shadow:0 10px 28px rgba(124,58,237,.24);
+    width:48px;height:48px;margin:0 auto 14px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,#7c3aed,#6366f1); box-shadow:0 9px 24px rgba(99,102,241,.20);
+`;
+const AdminFilter = styled.div`
+    display:flex; justify-content:flex-end; align-items:center; min-height:28px;
 `;
 
 export default () => {
@@ -83,67 +100,67 @@ export default () => {
 
     return (
         <PageContentBlock title={'Mine servere'} showFlashKey={'dashboard'}>
-            <Hero>
-                <div css={tw`relative z-10 flex items-center justify-between flex-wrap`}>
-                    <div>
-                        <div css={tw`uppercase text-xs font-semibold tracking-wider text-purple-300 mb-2`}>Nodexa Control Panel</div>
-                        <h1 css={tw`text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2`}>Velkommen tilbage</h1>
-                        <p css={tw`text-sm text-neutral-400 m-0`}>Administrér servere, status og ressourcer fra ét samlet dashboard.</p>
+            <DashboardShell>
+                <Hero>
+                    <div css={tw`relative z-10 w-full flex items-center justify-between flex-wrap`}>
+                        <div css={tw`max-w-xl`}>
+                            <Eyebrow>Nodexa Control Panel</Eyebrow>
+                            <h1 css={tw`text-2xl sm:text-3xl font-bold tracking-tight text-white mt-3 mb-2`}>Velkommen tilbage</h1>
+                            <p css={tw`text-sm text-neutral-400 leading-relaxed m-0`}>Administrér dine servere, ressourcer og tjenester fra ét samlet kontrolpanel.</p>
+                        </div>
+                        <Stats>
+                            <StatCard>
+                                <div css={tw`text-xs text-neutral-500 mb-1`}>Servere</div>
+                                <div css={tw`text-xl text-white font-semibold`}>{servers ? servers.pagination.total : '—'}</div>
+                            </StatCard>
+                            <StatCard>
+                                <div css={tw`text-xs text-neutral-500 mb-1`}>Systemstatus</div>
+                                <div css={tw`text-sm text-green-300 font-semibold`}>● Online</div>
+                            </StatCard>
+                        </Stats>
                     </div>
-                    <div css={tw`mt-5 sm:mt-0 flex gap-2`}>
-                        <StatCard><div css={tw`text-xs text-neutral-500 mb-1`}>Servere</div><div css={tw`text-lg text-white font-semibold`}>{servers ? servers.pagination.total : '—'}</div></StatCard>
-                        <StatCard><div css={tw`text-xs text-neutral-500 mb-1`}>Platform</div><div css={tw`text-sm text-green-300 font-semibold`}>● Online</div></StatCard>
-                    </div>
-                </div>
-            </Hero>
-            {rootAdmin && (
-                <div css={tw`mb-4 flex justify-end items-center px-1`}>
-                    <p css={tw`text-xs text-neutral-400 mr-2`}>
-                        {showOnlyAdmin ? "Viser alle servere" : 'Kun dine servere'}
-                    </p>
-                    <Switch
-                        name={'show_all_servers'}
-                        defaultChecked={showOnlyAdmin}
-                        onChange={() => setShowOnlyAdmin((s) => !s)}
-                    />
-                </div>
-            )}
-            <ServerPanel>
-            <div css={tw`flex items-center justify-between mb-4`}>
-                <div>
-                    <h2 css={tw`text-base sm:text-lg font-semibold text-white m-0`}>Dine servere</h2>
-                    <p css={tw`text-xs text-neutral-500 mt-1 m-0`}>Åbn en server for console, filer, backups og indstillinger.</p>
-                </div>
-                {servers && <span css={tw`text-xs text-neutral-400 px-3 py-2 rounded-lg bg-neutral-900 bg-opacity-50`}>{servers.pagination.total} server(e)</span>}
-            </div>
-            {!servers ? (
-                <Spinner centered size={'large'} />
-            ) : (
-                <Pagination data={servers} onPageSelect={setPage}>
-                    {({ items }) =>
-                        items.length > 0 ? (
-                            items.map((server, index) => (
-                                <ServerRow key={server.uuid} server={server} css={index > 0 ? tw`mt-2` : undefined} />
-                            ))
-                        ) : (
-                            <EmptyState>
-                                <div>
-                                    <EmptyIcon>N</EmptyIcon>
-                                    <h2 css={tw`text-xl font-semibold text-white mb-2`}>
-                                        {showOnlyAdmin ? 'Ingen andre servere' : 'Ingen servere endnu'}
-                                    </h2>
-                                    <p css={tw`text-sm text-neutral-400 max-w-md m-0`}>
-                                        {showOnlyAdmin
-                                            ? 'Der er ingen andre servere at vise lige nu.'
-                                            : 'Der er endnu ingen servere tilknyttet din konto. Når en server bliver oprettet, vises den her.'}
-                                    </p>
-                                </div>
-                            </EmptyState>
-                        )
-                    }
-                </Pagination>
-            )}
-            </ServerPanel>
+                </Hero>
+
+                {rootAdmin && (
+                    <AdminFilter>
+                        <p css={tw`text-xs text-neutral-500 mr-2 m-0`}>{showOnlyAdmin ? 'Viser alle servere' : 'Kun dine servere'}</p>
+                        <Switch name={'show_all_servers'} defaultChecked={showOnlyAdmin} onChange={() => setShowOnlyAdmin((s) => !s)} />
+                    </AdminFilter>
+                )}
+
+                <Section>
+                    <SectionHeader>
+                        <div>
+                            <h2 css={tw`text-base font-semibold text-white m-0`}>Dine servere</h2>
+                            <p css={tw`text-xs text-neutral-500 mt-1 m-0`}>Status, ressourcer og hurtig adgang til dine servere.</p>
+                        </div>
+                        {servers && <CountBadge>{servers.pagination.total} {servers.pagination.total === 1 ? 'server' : 'servere'}</CountBadge>}
+                    </SectionHeader>
+
+                    {!servers ? (
+                        <Spinner centered size={'large'} />
+                    ) : (
+                        <Pagination data={servers} onPageSelect={setPage}>
+                            {({ items }) =>
+                                items.length > 0 ? (
+                                    items.map((server, index) => (
+                                        <ServerRow key={server.uuid} server={server} css={index > 0 ? tw`mt-2` : undefined} />
+                                    ))
+                                ) : (
+                                    <EmptyState>
+                                        <div>
+                                            <EmptyIcon>N</EmptyIcon>
+                                            <h2 css={tw`text-lg font-semibold text-white mb-2`}>{showOnlyAdmin ? 'Ingen andre servere' : 'Ingen servere endnu'}</h2>
+                                            <p css={tw`text-sm text-neutral-500 max-w-md m-0 leading-relaxed`}>
+                                                {showOnlyAdmin ? 'Der er ingen andre servere at vise.' : 'Når din første server bliver oprettet, vises den her med status og ressourceforbrug.'}
+                                            </p>
+                                        </div>
+                                    </EmptyState>
+                                )
+                            }
+                        </Pagination>
+                    )}
+                </Section>
+            </DashboardShell>
         </PageContentBlock>
-    );
 };
