@@ -1,6 +1,17 @@
 {
-  "latest": "1.1.4",
+  "latest": "1.1.5",
   "releases": [
+    {
+      "version": "1.1.5",
+      "date": "2026-09-20",
+      "type": "patch",
+      "title": "Nodexa client design deployment fix",
+      "changes": [
+        "Updateren bygger nu React/client assets automatisk efter GitHub-opdateringer.",
+        "Det nye Nodexa serverliste-design og Nodexa navigation bliver nu kompileret til public/assets.",
+        "Tilføjet build-progress til Update Center mellem dependencies og migrations."
+      ]
+    },
     {
       "version": "1.1.4",
       "date": "2026-09-20",
