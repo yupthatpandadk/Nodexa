@@ -12,4 +12,9 @@ class Addon extends Model
     ];
 
     protected $casts = ['enabled' => 'boolean'];
+
+    public function getRouteKeyName(): string
+    {
+        return 'id';
+    }
 }
