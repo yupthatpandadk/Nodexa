@@ -45,3 +45,58 @@ body.nodexa-admin{background:var(--nx-bg);color:var(--nx-text);font-family:Inter
 .nodexa-update-banner>a{white-space:nowrap;color:#fff;background:var(--nx-accent);padding:9px 13px;border-radius:8px;font-weight:700}
 .nodexa-update-banner>a:hover{background:#8d73ff;color:#fff}
 @media(max-width:767px){.nodexa-admin .content-header,.nodexa-admin .content{padding-left:16px;padding-right:16px}.nodexa-update-banner{margin:14px 16px 0;align-items:flex-start;flex-direction:column}.nodexa-update-banner>a{width:100%;text-align:center}.nodexa-admin .main-header .logo{height:50px;line-height:50px}.nodexa-admin .content-wrapper{padding-top:50px}}
+
+
+/* Nodexa 1.3 — polished node/server detail pages */
+.nodexa-admin .nav-tabs-custom.nav-tabs-floating{background:transparent;box-shadow:none;margin-bottom:22px}
+.nodexa-admin .nav-tabs-custom>.nav-tabs{display:flex;gap:7px;flex-wrap:wrap;background:#101827;border:1px solid var(--nx-border);border-radius:12px;padding:6px}
+.nodexa-admin .nav-tabs-custom>.nav-tabs>li{margin:0;border:0}
+.nodexa-admin .nav-tabs-custom>.nav-tabs>li>a{margin:0;border:0!important;border-radius:8px;color:#8f9db2;padding:10px 16px;background:transparent;transition:.15s ease}
+.nodexa-admin .nav-tabs-custom>.nav-tabs>li>a:hover{background:#172338;color:#fff}
+.nodexa-admin .nav-tabs-custom>.nav-tabs>li.active>a{background:rgba(124,92,255,.16)!important;color:#fff!important;box-shadow:inset 0 0 0 1px rgba(124,92,255,.28)}
+.nodexa-admin .table-hover>tbody>tr{transition:.12s ease}
+.nodexa-admin .table-hover>tbody>tr:hover{background:#131e30}
+.nodexa-admin .table>tbody>tr>td{padding:13px 16px;vertical-align:middle}
+.nodexa-admin .table>tbody>tr>td:first-child{color:#8492a8;font-weight:600;width:42%}
+.nodexa-admin .table>tbody>tr>td:last-child{color:#e3eaf5}
+.nodexa-admin .label{border-radius:6px;padding:5px 8px;font-weight:600}
+.nodexa-admin .label-default{background:#253147;color:#c9d3e2}
+.nodexa-admin .alert{border:1px solid transparent;border-radius:11px;box-shadow:none}
+.nodexa-admin .alert-success{background:rgba(34,197,139,.11)!important;border-color:rgba(34,197,139,.28)!important;color:#8be2bf!important}
+.nodexa-admin .info-box,.nodexa-admin .small-box{border-radius:11px;overflow:hidden;box-shadow:none;border:1px solid rgba(255,255,255,.08);margin-bottom:12px}
+.nodexa-admin .info-box{min-height:96px}
+.nodexa-admin .info-box-icon{width:82px;background:rgba(0,0,0,.14)}
+.nodexa-admin .info-box-content{margin-left:82px!important}
+.nodexa-admin .info-box-text{font-size:11px;letter-spacing:.6px;opacity:.8}
+.nodexa-admin .info-box-number{font-size:18px;line-height:1.35}
+.nodexa-admin .small-box{background:#151f31!important;color:#e8eef8!important;min-height:112px}
+.nodexa-admin .small-box>.inner{padding:18px}
+.nodexa-admin .small-box h3{font-size:22px;font-weight:700}
+.nodexa-admin .small-box p{color:#8d9bb0}
+.nodexa-admin .small-box .icon{top:12px;right:14px;color:#52627b;font-size:64px}
+.nodexa-admin .small-box>.small-box-footer{background:#0d1523;color:#9dacbf;padding:8px}
+.nodexa-admin .small-box>.small-box-footer:hover{background:#172338;color:#fff}
+.nodexa-admin .small-box.bg-blue{background:linear-gradient(135deg,#173d78,#1557a0)!important}
+.nodexa-admin .small-box.bg-yellow{background:linear-gradient(135deg,#765b17,#9b7213)!important}
+.nodexa-admin .box-danger .box-header{border-left:3px solid var(--nx-danger)}
+.nodexa-admin .btn-danger{background:#dc4d5e;color:#fff}
+.nodexa-admin .btn-danger:hover{background:#ed5b6d;color:#fff}
+.nodexa-admin pre{background:#0a1120;border:1px solid var(--nx-border);color:#c9d3e2;border-radius:8px}
+.nodexa-admin .content>.row>.col-sm-8>.row>.col-xs-12>.box,
+.nodexa-admin .content>.row>.col-sm-4>.box{margin-bottom:18px}
+
+@media(min-width:1200px){
+ .nodexa-admin .content{max-width:1420px;margin:0 auto}
+ .nodexa-admin .content-header{max-width:1420px;margin-left:auto;margin-right:auto}
+}
+@media(max-width:767px){
+ .nodexa-admin .content-header>h1{font-size:22px}
+ .nodexa-admin .content-header>h1>small{display:block;margin:6px 0 0;line-height:1.4}
+ .nodexa-admin .breadcrumb{position:static!important;float:none!important;margin-top:10px!important;padding:0!important}
+ .nodexa-admin .nav-tabs-custom>.nav-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .nodexa-admin .nav-tabs-custom>.nav-tabs>li>a{text-align:center;padding:10px 8px}
+ .nodexa-admin .table>tbody>tr>td{padding:11px 12px}
+ .nodexa-admin .table>tbody>tr>td:first-child{width:45%}
+ .nodexa-admin .box-header{padding:14px 15px}
+ .nodexa-admin .box-body{padding:15px}
+}
