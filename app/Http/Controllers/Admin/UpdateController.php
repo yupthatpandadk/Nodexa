@@ -89,14 +89,39 @@ class UpdateController extends Controller
         }
 
         @touch($lock);
+        $progressFile = storage_path('app/nodexa-update-progress.json');
+        @file_put_contents($progressFile, json_encode([
+            'percent' => 1,
+            'step' => 'Starting Nodexa updater…',
+            'status' => 'running',
+            'updated_at' => now()->toIso8601String(),
+        ]));
+
         $log = storage_path('logs/nodexa-update.log');
+        // The panel normally runs as www-data. Run the updater with explicit HOME and
+        // Git safe.directory so Git does not stall/fail because the checkout belongs
+        // to another user. Append stderr/stdout to the live update log.
         $command = sprintf(
-            'nohup bash %s > %s 2>&1 < /dev/null &',
+            'HOME=/tmp GIT_TERMINAL_PROMPT=0 nohup bash %s >> %s 2>&1 < /dev/null & echo $!',
             escapeshellarg($script),
             escapeshellarg($log)
         );
 
-        exec($command);
+        $output = [];
+        $exitCode = 0;
+        exec($command, $output, $exitCode);
+
+        if ($exitCode !== 0 || empty($output)) {
+            @unlink($lock);
+            @file_put_contents($progressFile, json_encode([
+                'percent' => 100,
+                'step' => 'Could not start updater process.',
+                'status' => 'failed',
+                'updated_at' => now()->toIso8601String(),
+            ]));
+
+            return redirect()->route('admin.updates')->with('error', 'Could not start the Nodexa updater process.');
+        }
 
         return redirect()->route('admin.updates')->with('success', 'Nodexa update started. Refresh this page to follow progress.');
     }
