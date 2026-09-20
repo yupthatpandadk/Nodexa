@@ -15,6 +15,15 @@
    <form method="POST" action="{{ route('admin.mail.send') }}">
     {!! csrf_field() !!}
     <div class="box-body">
+     <div class="form-group">
+      <label>Mail template</label>
+      <select class="form-control" id="mail-template">
+       @foreach($templates as $key => $template)
+        <option value="{{ $key }}" data-subject="{{ $template['subject'] }}" data-message="{{ $template['message'] }}">{{ $template['name'] }}</option>
+       @endforeach
+      </select>
+      <p class="help-block">Choose a template and customize it before sending.</p>
+     </div>
      <div class="row">
       <div class="form-group col-md-6"><label>Recipients</label>
        <select class="form-control" name="audience" id="audience">
@@ -27,8 +36,8 @@
        </select>
       </div>
      </div>
-     <div class="form-group"><label>Subject</label><input class="form-control" name="subject" maxlength="191" required placeholder="Important update from Nodexa"></div>
-     <div class="form-group"><label>Message</label><textarea class="form-control" name="message" rows="12" required placeholder="Hello @{{name}},&#10;&#10;Write your message here..."></textarea>
+     <div class="form-group"><label>Subject</label><input class="form-control" id="mail-subject" name="subject" maxlength="191" required placeholder="Important update from Nodexa"></div>
+     <div class="form-group"><label>Message</label><textarea class="form-control" id="mail-message" name="message" rows="12" required placeholder="Hello @{{name}},&#10;&#10;Write your message here..."></textarea>
       <p class="help-block">Variables: <code>@{{name}}</code> <code>@{{username}}</code> <code>@{{email}}</code> <code>@{{app_name}}</code></p>
      </div>
     </div>
@@ -45,6 +54,20 @@
     <a href="{{ route('admin.settings.mail') }}" class="btn btn-default btn-block"><i class="fa fa-cog"></i> SMTP & Mail Settings</a>
    </div>
   </div>
+  <div class="box box-info">
+   <div class="box-header with-border"><h3 class="box-title"><i class="fa fa-flask"></i> Send test email</h3></div>
+   <form method="POST" action="{{ route('admin.mail.test') }}" id="test-mail-form">
+    {!! csrf_field() !!}
+    <div class="box-body">
+     <p class="text-muted">Send the current subject and message to one email address without contacting customers.</p>
+     <div class="form-group"><label>Test recipient</label><input type="email" class="form-control" name="test_email" value="{{ auth()->user()->email }}" required></div>
+     <input type="hidden" name="subject" id="test-subject">
+     <input type="hidden" name="message" id="test-message">
+    </div>
+    <div class="box-footer"><button class="btn btn-info btn-block"><i class="fa fa-paper-plane-o"></i> Send test</button></div>
+   </form>
+  </div>
+  </div>
  </div>
 </div>
 @endsection
@@ -55,6 +78,17 @@
 $(function(){
  function audience(){ $('#user-select').toggle($('#audience').val()==='single'); }
  $('#audience').on('change', audience); audience();
+
+ $('#mail-template').on('change', function(){
+   var option = $(this).find(':selected');
+   $('#mail-subject').val(option.data('subject') || '');
+   $('#mail-message').val(option.data('message') || '');
+ }).trigger('change');
+
+ $('#test-mail-form').on('submit', function(){
+   $('#test-subject').val($('#mail-subject').val());
+   $('#test-message').val($('#mail-message').val());
+ });
 });
 </script>
 @endsection
