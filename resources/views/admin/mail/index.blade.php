@@ -24,6 +24,17 @@
       </select>
       <p class="help-block">Choose a template and customize it before sending.</p>
      </div>
+     <div class="row" id="maintenance-window" style="display:none">
+      <div class="form-group col-md-6">
+       <label>Maintenance from</label>
+       <input type="datetime-local" class="form-control" id="maintenance-from">
+      </div>
+      <div class="form-group col-md-6">
+       <label>Maintenance to</label>
+       <input type="datetime-local" class="form-control" id="maintenance-to">
+      </div>
+      <div class="col-md-12"><p class="help-block">The selected period is automatically inserted into the planned maintenance email.</p></div>
+     </div>
      <div class="row">
       <div class="form-group col-md-6"><label>Recipients</label>
        <select class="form-control" name="audience" id="audience">
@@ -111,14 +122,45 @@
 @parent
 <script>
 $(function(){
+ var templateBaseMessage = '';
+
+ function formatMaintenanceDate(value) {
+   if (!value) return '';
+   var date = new Date(value);
+   if (isNaN(date.getTime())) return value;
+   return new Intl.DateTimeFormat('da-DK', {
+     day: '2-digit', month: '2-digit', year: 'numeric',
+     hour: '2-digit', minute: '2-digit'
+   }).format(date);
+ }
+
+ function updateMaintenanceMessage() {
+   if ($('#mail-template').val() !== 'maintenance') return;
+   var from = formatMaintenanceDate($('#maintenance-from').val());
+   var to = formatMaintenanceDate($('#maintenance-to').val());
+   var period = '';
+   if (from && to) period = '\n\nMaintenance window: ' + from + ' - ' + to;
+   else if (from) period = '\n\nMaintenance starts: ' + from;
+   else if (to) period = '\n\nMaintenance is expected to end: ' + to;
+   $('#mail-message').val(templateBaseMessage.replace('[[MAINTENANCE_WINDOW]]', period));
+ }
+
  function audience(){ $('#user-select').toggle($('#audience').val()==='single'); }
  $('#audience').on('change', audience); audience();
 
  $('#mail-template').on('change', function(){
    var option = $(this).find(':selected');
    $('#mail-subject').val(option.data('subject') || '');
-   $('#mail-message').val(option.data('message') || '');
+   templateBaseMessage = option.data('message') || '';
+   $('#maintenance-window').toggle($(this).val() === 'maintenance');
+   if ($(this).val() === 'maintenance') {
+     updateMaintenanceMessage();
+   } else {
+     $('#mail-message').val(templateBaseMessage);
+   }
  }).trigger('change');
+
+ $('#maintenance-from, #maintenance-to').on('change input', updateMaintenanceMessage);
 
  $('#test-mail-form').on('submit', function(){
    $('#test-subject').val($('#mail-subject').val());
