@@ -79,6 +79,7 @@ class UserController extends Controller
         return view('admin.users.view', [
             'user' => $user,
             'languages' => $this->getAvailableLanguages(true),
+            'roles' => \Pterodactyl\Models\Role::query()->orderBy('name')->get(),
         ]);
     }
 
