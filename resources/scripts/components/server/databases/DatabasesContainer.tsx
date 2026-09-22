@@ -52,13 +52,12 @@ export default () => {
                     <>
                         {databases.length > 0 ? (
                             databases.map((database, index) => (
-                                <div key={database.id} onClick={() => setSelectedDatabase(database)} style={{ cursor: 'pointer' }}>
                                 <DatabaseRow
                                     key={database.id}
                                     database={database}
                                     className={index > 0 ? 'mt-1' : undefined}
+                                    onManage={() => setSelectedDatabase(database)}
                                 />
-                                </div>
                             ))
                         ) : (
                             <p css={tw`text-center text-sm text-neutral-300`}>
