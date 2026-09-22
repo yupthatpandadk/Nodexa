@@ -13,6 +13,15 @@ class StorefrontController extends Controller
         return view('store.index', ['products'=>StoreProduct::where('enabled',true)->orderByDesc('featured')->orderBy('price_monthly')->get()]);
     }
 
+    public function hosting()
+    {
+        return view('store.hosting', ['products'=>StoreProduct::where('enabled',true)->orderByDesc('featured')->orderBy('price_monthly')->get()]);
+    }
+
+    public function features() { return view('store.features'); }
+    public function about() { return view('store.about'); }
+    public function support() { return view('store.support'); }
+
     public function show(StoreProduct $product)
     {
         abort_unless($product->enabled,404);
