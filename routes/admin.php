@@ -11,6 +11,7 @@ Route::get('/tickets', [Admin\SupportTicketController::class, 'index'])->name('a
 Route::get('/tickets/{ticket}', [Admin\SupportTicketController::class, 'show'])->name('admin.tickets.show');
 Route::post('/tickets/{ticket}/reply', [Admin\SupportTicketController::class, 'reply'])->name('admin.tickets.reply');
 Route::patch('/tickets/{ticket}', [Admin\SupportTicketController::class, 'update'])->name('admin.tickets.update');
+Route::get('/tickets/{ticket}/attachments/{attachment}', [Admin\SupportTicketController::class, 'attachment'])->name('admin.tickets.attachment');
 
 // Nodexa Storefront & Billing
 Route::get('/store', [Admin\StoreController::class, 'index'])->name('admin.store');
