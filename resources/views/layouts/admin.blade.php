@@ -131,6 +131,11 @@
                             </a>
                         </li>
                         <li class="header">SERVICE MANAGEMENT</li>
+                        <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.store') ?: 'active' }}">
+                            <a href="{{ route('admin.store') }}">
+                                <i class="fa fa-shopping-cart"></i> <span>Storefront & Billing</span>
+                            </a>
+                        </li>
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.mounts') ?: 'active' }}">
                             <a href="{{ route('admin.mounts') }}">
                                 <i class="fa fa-magic"></i> <span>Mounts</span>
