@@ -29,10 +29,11 @@ class StorefrontController extends Controller
             ->latest()
             ->get();
 
-        return view('store.dashboard', [
+        return view('store.client.index', [
             'orders' => $orders,
             'activeServers' => $orders->filter(fn ($order) => $order->server !== null),
             'pendingOrders' => $orders->where('status', 'awaiting_payment'),
+            'user' => $request->user(),
         ]);
     }
 
