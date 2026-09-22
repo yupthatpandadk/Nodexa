@@ -23,9 +23,10 @@ import CopyOnClick from '@/components/elements/CopyOnClick';
 interface Props {
     database: ServerDatabase;
     className?: string;
+    onManage?: () => void;
 }
 
-export default ({ database, className }: Props) => {
+export default ({ database, className, onManage }: Props) => {
     const uuid = ServerContext.useStoreState((state) => state.server.data!.uuid);
     const { addError, clearFlashes } = useFlash();
     const [visible, setVisible] = useState(false);
@@ -164,7 +165,12 @@ export default ({ database, className }: Props) => {
                     </CopyOnClick>
                     <p css={tw`mt-1 text-2xs text-neutral-500 uppercase select-none`}>Username</p>
                 </div>
-                <div css={tw`ml-8`}>
+                <div css={tw`ml-8 flex items-center`}>
+                    {onManage && (
+                        <Button css={tw`mr-2`} onClick={(event: React.MouseEvent) => { event.stopPropagation(); onManage(); }}>
+                            Manage
+                        </Button>
+                    )}
                     <Button isSecondary css={tw`mr-2`} onClick={() => setConnectionVisible(true)}>
                         <FontAwesomeIcon icon={faEye} fixedWidth />
                     </Button>
