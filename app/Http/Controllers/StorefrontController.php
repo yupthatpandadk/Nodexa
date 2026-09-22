@@ -36,6 +36,32 @@ class StorefrontController extends Controller
         ]);
     }
 
+    public function clientServers(Request $request)
+    {
+        $orders = StoreOrder::with(['product','server'])
+            ->where('user_id', $request->user()->id)
+            ->whereNotNull('server_id')
+            ->latest()
+            ->get();
+
+        return view('store.client.servers', compact('orders'));
+    }
+
+    public function clientBilling(Request $request)
+    {
+        $orders = StoreOrder::with(['product','server'])
+            ->where('user_id', $request->user()->id)
+            ->latest()
+            ->get();
+
+        return view('store.client.billing', compact('orders'));
+    }
+
+    public function clientProfile(Request $request)
+    {
+        return view('store.client.profile', ['user' => $request->user()]);
+    }
+
     public function show(StoreProduct $product)
     {
         abort_unless($product->enabled,404);
