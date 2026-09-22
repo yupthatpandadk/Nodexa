@@ -22,10 +22,28 @@ class StorefrontController extends Controller
     public function order(Request $request, StoreProduct $product)
     {
         abort_unless($product->enabled,404);
+        $data=$request->validate(['server_name'=>'required|string|min:3|max:100']);
         $order=StoreOrder::create([
-            'user_id'=>$request->user()->id,'product_id'=>$product->id,'status'=>'pending',
-            'amount'=>$product->price_monthly,'currency'=>'DKK',
+            'user_id'=>$request->user()->id,
+            'product_id'=>$product->id,
+            'status'=>'awaiting_payment',
+            'amount'=>$product->price_monthly,
+            'currency'=>'DKK',
+            'server_name'=>$data['server_name'],
         ]);
-        return redirect()->route('store.product',$product)->with('success',"Ordre #{$order->id} er oprettet. Betaling/provisionering afventer.");
+
+        return redirect()->route('store.checkout',$order);
+    }
+
+    public function checkout(Request $request, StoreOrder $order)
+    {
+        abort_unless($order->user_id === $request->user()->id,403);
+        $order->load('product');
+        return view('store.checkout',compact('order'));
+    }
+
+    public function orders(Request $request)
+    {
+        return view('store.orders',['orders'=>StoreOrder::with(['product','server'])->where('user_id',$request->user()->id)->latest()->get()]);
     }
 }
