@@ -11,6 +11,7 @@ Route::get('/support', [StorefrontController::class, 'support'])->name('store.su
 Route::get('/store', [StorefrontController::class, 'hosting'])->name('store.index');
 Route::get('/store/{product:slug}', [StorefrontController::class, 'show'])->name('store.product');
 Route::middleware('auth.session')->group(function () {
+    Route::get('/account', [StorefrontController::class, 'dashboard'])->name('store.dashboard');
     Route::post('/store/{product:slug}/order', [StorefrontController::class, 'order'])->name('store.order');
     Route::get('/billing/orders', [StorefrontController::class, 'orders'])->name('store.orders');
     Route::get('/billing/orders/{order}/checkout', [StorefrontController::class, 'checkout'])->name('store.checkout');
