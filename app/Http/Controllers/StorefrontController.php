@@ -22,6 +22,20 @@ class StorefrontController extends Controller
     public function about() { return view('store.about'); }
     public function support() { return view('store.support'); }
 
+    public function dashboard(Request $request)
+    {
+        $orders = StoreOrder::with(['product','server'])
+            ->where('user_id', $request->user()->id)
+            ->latest()
+            ->get();
+
+        return view('store.dashboard', [
+            'orders' => $orders,
+            'activeServers' => $orders->filter(fn ($order) => $order->server !== null),
+            'pendingOrders' => $orders->where('status', 'awaiting_payment'),
+        ]);
+    }
+
     public function show(StoreProduct $product)
     {
         abort_unless($product->enabled,404);
