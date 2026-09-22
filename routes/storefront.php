@@ -22,6 +22,7 @@ Route::middleware('auth.session')->group(function () {
     Route::get('/client/tickets/{ticket}', [SupportTicketController::class, 'show'])->name('store.client.tickets.show');
     Route::post('/client/tickets/{ticket}/reply', [SupportTicketController::class, 'reply'])->name('store.client.tickets.reply');
     Route::post('/client/tickets/{ticket}/close', [SupportTicketController::class, 'close'])->name('store.client.tickets.close');
+    Route::get('/client/tickets/{ticket}/attachments/{attachment}', [SupportTicketController::class, 'attachment'])->name('store.client.tickets.attachment');
     Route::get('/account', [StorefrontController::class, 'dashboard'])->name('store.dashboard');
     Route::post('/store/{product:slug}/order', [StorefrontController::class, 'order'])->name('store.order');
     Route::get('/billing/orders', [StorefrontController::class, 'orders'])->name('store.orders');
