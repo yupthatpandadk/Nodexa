@@ -6,6 +6,14 @@ use Pterodactyl\Http\Middleware\Admin\Servers\ServerInstalled;
 
 Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
 
+// Nodexa Storefront & Billing
+Route::get('/store', [Admin\StoreController::class, 'index'])->name('admin.store');
+Route::post('/store/products', [Admin\StoreController::class, 'store'])->name('admin.store.products.store');
+Route::patch('/store/products/{product}', [Admin\StoreController::class, 'update'])->name('admin.store.products.update');
+Route::delete('/store/products/{product}', [Admin\StoreController::class, 'destroy'])->name('admin.store.products.destroy');
+Route::post('/store/coupons', [Admin\StoreController::class, 'coupon'])->name('admin.store.coupons.store');
+Route::patch('/store/orders/{order}/status', [Admin\StoreController::class, 'orderStatus'])->name('admin.store.orders.status');
+
 
 // Nodexa Roles & Permissions
 Route::get('/roles', [Admin\RoleController::class, 'index'])->name('admin.roles');
