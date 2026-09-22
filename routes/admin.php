@@ -8,6 +8,8 @@ Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
 
 // Nodexa Support Tickets
 Route::get('/tickets', [Admin\SupportTicketController::class, 'index'])->name('admin.tickets');
+Route::get('/tickets/settings', [Admin\SupportTicketController::class, 'settings'])->name('admin.tickets.settings');
+Route::post('/tickets/settings', [Admin\SupportTicketController::class, 'saveSettings'])->name('admin.tickets.settings.save');
 Route::get('/tickets/{ticket}', [Admin\SupportTicketController::class, 'show'])->name('admin.tickets.show');
 Route::post('/tickets/{ticket}/reply', [Admin\SupportTicketController::class, 'reply'])->name('admin.tickets.reply');
 Route::patch('/tickets/{ticket}', [Admin\SupportTicketController::class, 'update'])->name('admin.tickets.update');
