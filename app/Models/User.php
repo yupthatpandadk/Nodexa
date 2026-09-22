@@ -259,6 +259,11 @@ class User extends Model implements
         return $this->root_admin || $this->roles()->exists();
     }
 
+    public function assignedSupportTickets(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class, 'assigned_to');
+    }
+
     public function servers(): HasMany
     {
         return $this->hasMany(Server::class, 'owner_id');
