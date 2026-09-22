@@ -22,7 +22,7 @@ class DatabaseBrowserController extends ClientApiController
     private function pdo(Database $database): PDO
     {
         $host = $database->host;
-        $password = Crypt::decryptString($database->password);
+        $password = $database->password;
         $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host->host, $host->port, $database->database);
 
         return new PDO($dsn, $database->username, $password, [
