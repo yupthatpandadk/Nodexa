@@ -12,6 +12,7 @@ import tw from 'twin.macro';
 import Fade from '@/components/elements/Fade';
 import ServerContentBlock from '@/components/elements/ServerContentBlock';
 import { useDeepMemoize } from '@/plugins/useDeepMemoize';
+import DatabaseBrowser from '@/components/server/databases/DatabaseBrowser';
 
 export default () => {
     const uuid = ServerContext.useStoreState((state) => state.server.data!.uuid);
@@ -19,6 +20,7 @@ export default () => {
 
     const { addError, clearFlashes } = useFlash();
     const [loading, setLoading] = useState(true);
+    const [selectedDatabase, setSelectedDatabase] = useState<any | null>(null);
 
     const databases = useDeepMemoize(ServerContext.useStoreState((state) => state.databases.data));
     const setDatabases = ServerContext.useStoreActions((state) => state.databases.setDatabases);
@@ -36,6 +38,10 @@ export default () => {
             .then(() => setLoading(false));
     }, []);
 
+    if (selectedDatabase) {
+        return <ServerContentBlock title={'Database Manager'}><DatabaseBrowser database={selectedDatabase} onBack={() => setSelectedDatabase(null)} /></ServerContentBlock>;
+    }
+
     return (
         <ServerContentBlock title={'Databases'}>
             <FlashMessageRender byKey={'databases'} css={tw`mb-4`} />
@@ -46,11 +52,13 @@ export default () => {
                     <>
                         {databases.length > 0 ? (
                             databases.map((database, index) => (
+                                <div key={database.id} onClick={() => setSelectedDatabase(database)} style={{ cursor: 'pointer' }}>
                                 <DatabaseRow
                                     key={database.id}
                                     database={database}
                                     className={index > 0 ? 'mt-1' : undefined}
                                 />
+                                </div>
                             ))
                         ) : (
                             <p css={tw`text-center text-sm text-neutral-300`}>
