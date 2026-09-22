@@ -6,6 +6,12 @@ use Pterodactyl\Http\Middleware\Admin\Servers\ServerInstalled;
 
 Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
 
+// Nodexa Support Tickets
+Route::get('/tickets', [Admin\SupportTicketController::class, 'index'])->name('admin.tickets');
+Route::get('/tickets/{ticket}', [Admin\SupportTicketController::class, 'show'])->name('admin.tickets.show');
+Route::post('/tickets/{ticket}/reply', [Admin\SupportTicketController::class, 'reply'])->name('admin.tickets.reply');
+Route::patch('/tickets/{ticket}', [Admin\SupportTicketController::class, 'update'])->name('admin.tickets.update');
+
 // Nodexa Storefront & Billing
 Route::get('/store', [Admin\StoreController::class, 'index'])->name('admin.store');
 Route::post('/store/products', [Admin\StoreController::class, 'store'])->name('admin.store.products.store');
