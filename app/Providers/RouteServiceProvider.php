@@ -38,7 +38,7 @@ class RouteServiceProvider extends ServiceProvider
 
         $this->routes(function () {
             Route::middleware('web')->group(function () {
-                Route::group(base_path('routes/storefront.php'));
+                Route::group([], base_path('routes/storefront.php'));
 
                 Route::middleware(['auth.session', RequireTwoFactorAuthentication::class])
                     ->group(base_path('routes/base.php'));
