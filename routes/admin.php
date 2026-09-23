@@ -6,6 +6,10 @@ use Pterodactyl\Http\Middleware\Admin\Servers\ServerInstalled;
 
 Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
 
+// Nodexa Error Center
+Route::get('/errors', [Admin\ErrorCenterController::class, 'index'])->name('admin.errors');
+Route::post('/errors/repair', [Admin\ErrorCenterController::class, 'repair'])->name('admin.errors.repair');
+
 // Nodexa Support Tickets
 Route::get('/tickets', [Admin\SupportTicketController::class, 'index'])->name('admin.tickets');
 Route::get('/tickets/settings', [Admin\SupportTicketController::class, 'settings'])->name('admin.tickets.settings');
