@@ -55,26 +55,38 @@ class ErrorCenterController extends Controller {
  }
  public function repair(Request $r){
   $action=$r->validate(['action'=>'required|in:clear_cache'])['action'];
+
   if($action==='clear_cache'){
-   // A web request must never clear the cache/session store it is currently
-   // using. File-based Laravel caches can safely be removed directly.
-   $targets=[
-    storage_path('framework/views'),
-    base_path('bootstrap/cache'),
-   ];
-   $removed=0;
-   foreach($targets as $dir){
-    if(!is_dir($dir)) continue;
-    foreach(new \FilesystemIterator($dir, \FilesystemIterator::SKIP_DOTS) as $file){
-     if(!$file->isFile()) continue;
-     $name=$file->getFilename();
-     if($name==='.gitignore') continue;
-     if($dir===base_path('bootstrap/cache') && !str_ends_with($name,'.php')) continue;
-     if(@unlink($file->getPathname())) $removed++;
+   try {
+    // Only compiled Blade views are safe to remove from a live authenticated
+    // request. Do not touch bootstrap/cache, config, routes or the cache/session
+    // store here: doing so can break the running Laravel process.
+    $dir=storage_path('framework/views');
+    $removed=0;
+    if(is_dir($dir)){
+     foreach(new \FilesystemIterator($dir, \FilesystemIterator::SKIP_DOTS) as $file){
+      if(!$file->isFile() || $file->getFilename()==='.gitignore') continue;
+      if(@unlink($file->getPathname())) $removed++;
+     }
     }
+
+    Log::info('Nodexa Error Center: compiled views cleared',[
+     'user'=>$r->user()->id,
+     'files'=>$removed,
+    ]);
+
+    return back()->with('success',"Compiled Laravel views blev ryddet ({$removed} filer). Login/session blev ikke berørt.");
+   } catch(\Throwable $e){
+    Log::error('Nodexa Error Center repair failed',[
+     'user'=>$r->user()->id,
+     'action'=>$action,
+     'error'=>$e->getMessage(),
+    ]);
+
+    return back()->with('error','Quick Repair kunne ikke gennemføres: '.$e->getMessage());
    }
-   Log::info('Nodexa Error Center: safe file caches cleared',['user'=>$r->user()->id,'files'=>$removed]);
-   return redirect()->route('admin.errors')->with('success',"Laravel file-cache blev ryddet ({$removed} filer). Sessionen blev bevaret.");
   }
+
+  return back()->with('error','Ukendt repair-handling.');
  }
 }
