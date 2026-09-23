@@ -92,6 +92,11 @@
                                 <i class="fa fa-envelope"></i> <span>Mail Center</span>
                             </a>
                         </li>
+                        <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.errors') ?: 'active' }}">
+                            <a href="{{ route('admin.errors') }}">
+                                <i class="fa fa-exclamation-triangle"></i> <span>Error Center</span>
+                            </a>
+                        </li>
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.updates') ?: 'active' }}">
                             <a href="{{ route('admin.updates') }}">
                                 <i class="fa fa-cloud-download"></i> <span>Update Center</span>
