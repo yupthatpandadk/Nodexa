@@ -54,39 +54,22 @@ class ErrorCenterController extends Controller {
   return 'Se den fulde Laravel-log og den berørte komponent før der ændres konfiguration.';
  }
  public function repair(Request $r){
+  // Intentionally do not mutate Laravel's runtime caches from an HTTP request.
+  // On this installation doing so can invalidate files/classes needed to finish
+  // the current request and causes a 500 response.
   $action=$r->validate(['action'=>'required|in:clear_cache'])['action'];
 
   if($action==='clear_cache'){
-   try {
-    // Only compiled Blade views are safe to remove from a live authenticated
-    // request. Do not touch bootstrap/cache, config, routes or the cache/session
-    // store here: doing so can break the running Laravel process.
-    $dir=storage_path('framework/views');
-    $removed=0;
-    if(is_dir($dir)){
-     foreach(new \FilesystemIterator($dir, \FilesystemIterator::SKIP_DOTS) as $file){
-      if(!$file->isFile() || $file->getFilename()==='.gitignore') continue;
-      if(@unlink($file->getPathname())) $removed++;
-     }
-    }
+   Log::info('Nodexa Error Center: cache repair requested',[
+    'user'=>$r->user()->id,
+   ]);
 
-    Log::info('Nodexa Error Center: compiled views cleared',[
-     'user'=>$r->user()->id,
-     'files'=>$removed,
-    ]);
-
-    return back()->with('success',"Compiled Laravel views blev ryddet ({$removed} filer). Login/session blev ikke berørt.");
-   } catch(\Throwable $e){
-    Log::error('Nodexa Error Center repair failed',[
-     'user'=>$r->user()->id,
-     'action'=>$action,
-     'error'=>$e->getMessage(),
-    ]);
-
-    return back()->with('error','Quick Repair kunne ikke gennemføres: '.$e->getMessage());
-   }
+   return redirect()->route('admin.errors')->with(
+    'success',
+    'Web repair-test OK. Cache blev ikke ændret. Brug CLI til egentlig Laravel cache-oprydning.'
+   );
   }
 
-  return back()->with('error','Ukendt repair-handling.');
+  return redirect()->route('admin.errors');
  }
 }
