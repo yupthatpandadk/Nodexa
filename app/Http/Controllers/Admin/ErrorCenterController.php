@@ -1,7 +1,6 @@
 <?php
 namespace Pterodactyl\Http\Controllers\Admin;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Pterodactyl\Http\Controllers\Controller;
@@ -56,6 +55,28 @@ class ErrorCenterController extends Controller {
  }
  public function repair(Request $r){
   $action=$r->validate(['action'=>'required|in:clear_cache'])['action'];
-  if($action==='clear_cache'){Artisan::call('optimize:clear');Log::info('Nodexa Error Center: cache cleared',['user'=>$r->user()->id]);return back()->with('success','Laravel cache blev ryddet.');}
+  if($action==='clear_cache'){
+   try {
+    // Do not run optimize:clear from inside the active HTTP request.
+    // Clearing compiled/config/route caches while Laravel is serving this
+    // request can invalidate framework state and result in 419/500 responses.
+    $paths=[
+     base_path('bootstrap/cache/config.php'),
+     base_path('bootstrap/cache/routes-v7.php'),
+     base_path('bootstrap/cache/routes.php'),
+     base_path('bootstrap/cache/events.php'),
+     base_path('bootstrap/cache/packages.php'),
+     base_path('bootstrap/cache/services.php'),
+    ];
+    $removed=0;
+    foreach($paths as $path){if(is_file($path)&&@unlink($path))$removed++;}
+    foreach(glob(storage_path('framework/views').'/*.php')?:[] as $view){if(@unlink($view))$removed++;}
+    Log::info('Nodexa Error Center: safe cache cleanup completed',['user'=>$r->user()->id,'files_removed'=>$removed]);
+    return redirect()->route('admin.errors')->with('success','Laravel cache blev ryddet sikkert. '.$removed.' cachefiler blev fjernet.');
+   } catch(\Throwable $e) {
+    Log::error('Nodexa Error Center cache cleanup failed',['user'=>$r->user()->id,'error'=>$e->getMessage()]);
+    return redirect()->route('admin.errors')->withErrors(['cache'=>'Cache cleanup fejlede: '.$e->getMessage()]);
+   }
+  }
  }
 }
