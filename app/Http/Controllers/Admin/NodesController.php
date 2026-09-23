@@ -12,6 +12,8 @@ use Prologue\Alerts\AlertsMessageBag;
 use Illuminate\View\Factory as ViewFactory;
 use Pterodactyl\Http\Controllers\Controller;
 use Pterodactyl\Services\Nodes\NodeUpdateService;
+use Pterodactyl\Repositories\Wings\DaemonConfigurationRepository;
+use Pterodactyl\Exceptions\Http\Connection\DaemonConnectionException;
 use Illuminate\Cache\Repository as CacheRepository;
 use Pterodactyl\Services\Nodes\NodeCreationService;
 use Pterodactyl\Services\Nodes\NodeDeletionService;
@@ -45,7 +47,34 @@ class NodesController extends Controller
         protected NodeUpdateService $updateService,
         protected SoftwareVersionService $versionService,
         protected ViewFactory $view,
+        protected DaemonConfigurationRepository $daemonConfigurationRepository,
     ) {
+    }
+
+    /**
+     * Server-side Wings health check used by the admin node list.
+     * Keeping this request on the panel avoids browser CORS/mixed-content
+     * false negatives when Wings itself is healthy.
+     */
+    public function health(Node $node): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $data = $this->daemonConfigurationRepository
+                ->setNode($node)
+                ->getSystemInformation();
+
+            return response()->json([
+                'online' => true,
+                'version' => $data['version'] ?? null,
+            ]);
+        } catch (DaemonConnectionException|\Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'online' => false,
+                'message' => 'Panel could not reach Wings.',
+            ], 503);
+        }
     }
 
     /**
