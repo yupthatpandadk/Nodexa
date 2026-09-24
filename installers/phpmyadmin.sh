@@ -42,11 +42,11 @@ PMA_DIR="/usr/share/phpmyadmin"
 [[ -S /run/php/php8.3-fpm.sock ]] || die "PHP 8.3 FPM socket mangler."
 
 CONF="/etc/nginx/sites-available/nodexa-phpmyadmin.conf"
-cat > "$CONF" <<EOF
+cat > "$CONF" <<'NGINX'
 server {
     listen 80;
     listen [::]:80;
-    server_name $FQDN;
+    server_name __FQDN__;
 
     root /usr/share/phpmyadmin;
     index index.php;
@@ -67,7 +67,8 @@ server {
         deny all;
     }
 }
-EOF
+NGINX
+sed -i "s/__FQDN__/$FQDN/g" "$CONF"
 
 ln -sfn "$CONF" /etc/nginx/sites-enabled/nodexa-phpmyadmin.conf
 
