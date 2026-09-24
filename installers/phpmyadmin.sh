@@ -8,96 +8,93 @@ die(){ printf '\033[1;31m[Nodexa]\033[0m %s\n' "$*" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || die "Kør installeren som root."
 export DEBIAN_FRONTEND=noninteractive
 
-log "Installerer phpMyAdmin..."
+# Nodexa phpMyAdmin installer.
+# Based on the proven standalone-vhost approach used by guldkage/Pterodactyl-Installer.
+# It deliberately does NOT edit the Pterodactyl vhost and never stores backup files
+# in sites-enabled, because nginx includes every file in that directory.
+
+read -rp "phpMyAdmin domæne [pma.nordicnode.org]: " FQDN
+FQDN="${FQDN:-pma.nordicnode.org}"
+FQDN="$(printf '%s' "$FQDN" | tr '[:upper:]' '[:lower:]')"
+[[ "$FQDN" =~ ^[a-z0-9.-]+$ ]] || die "Ugyldigt domæne."
+
+read -rp "Brug HTTPS/Let's Encrypt? [Y/n]: " USE_SSL
+USE_SSL="${USE_SSL:-Y}"
+
+if [[ "$USE_SSL" =~ ^[Yy]$ ]]; then
+    read -rp "E-mail til Let's Encrypt: " LE_EMAIL
+    [[ "$LE_EMAIL" == *@*.* ]] || die "Ugyldig e-mail."
+fi
+
+log "Rydder gamle Nodexa/phpMyAdmin Nginx-rester..."
+mkdir -p /etc/nginx/nodexa-backups
+find /etc/nginx/sites-enabled -maxdepth 1 -type f \( -name '*.nodexa-pma.bak' -o -name '*.before-phpmyadmin' -o -name '*.bak' \) -exec mv -t /etc/nginx/nodexa-backups/ {} + 2>/dev/null || true
+rm -f /etc/nginx/sites-enabled/phpmyadmin.conf /etc/nginx/sites-available/phpmyadmin.conf
+
+log "Installerer phpMyAdmin og PHP 8.3 moduler..."
 apt-get update
-apt-get install -y phpmyadmin php-mbstring php-zip php-gd php-curl
-
-# Pterodactyl/Nodexa runs on PHP 8.3. Do not use the system default PHP version:
-# newer CLI packages may be installed alongside it.
-PHPV="8.3"
-FPM_SOCK="/run/php/php8.3-fpm.sock"
-[[ -S "$FPM_SOCK" ]] || die "PHP 8.3 FPM socket blev ikke fundet: $FPM_SOCK"
-
-phpenmod -v "$PHPV" mbstring 2>/dev/null || true
-systemctl restart php8.3-fpm
+apt-get install -y nginx curl ca-certificates phpmyadmin php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-curl php8.3-zip php8.3-gd
+phpenmod -v 8.3 mbstring 2>/dev/null || true
+systemctl enable --now php8.3-fpm
 
 PMA_DIR="/usr/share/phpmyadmin"
-[[ -f "$PMA_DIR/index.php" ]] || die "phpMyAdmin blev ikke fundet efter installation."
+[[ -f "$PMA_DIR/index.php" ]] || die "phpMyAdmin blev ikke fundet i $PMA_DIR."
+[[ -S /run/php/php8.3-fpm.sock ]] || die "PHP 8.3 FPM socket mangler."
 
-SNIPPET="/etc/nginx/snippets/nodexa-phpmyadmin.conf"
-mkdir -p /etc/nginx/snippets
-cat > "$SNIPPET" <<'EOF'
-location = /phpmyadmin {
-    return 301 /phpmyadmin/;
-}
+CONF="/etc/nginx/sites-available/nodexa-phpmyadmin.conf"
+cat > "$CONF" <<EOF
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $FQDN;
 
-location ^~ /phpmyadmin/ {
-    alias /usr/share/phpmyadmin/;
+    root /usr/share/phpmyadmin;
     index index.php;
 
-    location ~ ^/phpmyadmin/(.+\.php)$ {
-        alias /usr/share/phpmyadmin/$1;
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME /usr/share/phpmyadmin/$1;
-        fastcgi_param SCRIPT_NAME /phpmyadmin/$1;
+    client_max_body_size 100m;
+
+    location / {
+        try_files \\$uri \\$uri/ /index.php?\\$query_string;
+    }
+
+    location ~ \\.php$ {
+        include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_param PHP_VALUE "upload_max_filesize=100M \\n post_max_size=100M";
+    }
+
+    location ~ /\\. {
+        deny all;
     }
 }
 EOF
 
-SITE=""
-for link in /etc/nginx/sites-enabled/*; do
-    [[ -e "$link" ]] || continue
-    target="$(readlink -f "$link" 2>/dev/null || printf '%s' "$link")"
-    [[ -f "$target" ]] || continue
-    if grep -Eq 'server_name[[:space:]].*(panel\.)?nordicnode\.org|root[[:space:]]+/var/www/pterodactyl/public' "$target"; then
-        SITE="$target"
-        break
-    fi
-done
-[[ -n "$SITE" ]] || die "Kunne ikke finde Nodexa/Pterodactyl Nginx-vhost."
+ln -sfn "$CONF" /etc/nginx/sites-enabled/nodexa-phpmyadmin.conf
 
-# Clean up the broken include accidentally inserted into a previous backup file.
-# Nginx loads every regular file/symlink in sites-enabled via wildcard.
-# Older installer versions created *.nodexa-pma.bak there, so move all such
-# backups completely out of sites-enabled before nginx -t.
-BACKUP_DIR="/etc/nginx/nodexa-backups"
-mkdir -p "$BACKUP_DIR"
-for old in /etc/nginx/sites-enabled/*.nodexa-pma.bak /etc/nginx/sites-enabled/*.before-phpmyadmin; do
-    [[ -e "$old" ]] || continue
-    old_real="$(readlink -f "$old" 2>/dev/null || printf '%s' "$old")"
-    rm -f "$old"
-    if [[ -f "$old_real" && "$old_real" == /etc/nginx/sites-enabled/* ]]; then
-        mv "$old_real" "$BACKUP_DIR/$(basename "$old_real").$(date +%s)"
-    fi
-done
-
-# Also remove legacy backup files next to the canonical vhost if sites-enabled
-# points directly at that directory.
-for old in "${SITE}.nodexa-pma.bak" "${SITE}.before-phpmyadmin"; do
-    [[ -f "$old" ]] || continue
-    case "$old" in
-        /etc/nginx/sites-enabled/*) mv "$old" "$BACKUP_DIR/$(basename "$old").$(date +%s)" ;;
-    esac
-done
-
-# Make a clean backup before editing.
-BACKUP="$BACKUP_DIR/$(basename "$SITE").before-phpmyadmin.$(date +%s)"
-cp -a "$SITE" "$BACKUP"
-
-if ! grep -Fq "include $SNIPPET;" "$SITE"; then
-    # Insert in the active server block immediately before its final closing brace.
-    last_line="$(grep -n '^[[:space:]]*}' "$SITE" | tail -1 | cut -d: -f1)"
-    [[ -n "$last_line" ]] || die "Kunne ikke finde slutningen på Nginx serverblokken."
-    sed -i "${last_line}i\    include $SNIPPET;" "$SITE"
-fi
-
+log "Validerer Nginx før ændringer aktiveres..."
 if ! nginx -t; then
-    cp -f "$BACKUP" "$SITE"
-    nginx -t >/dev/null 2>&1 || true
-    die "Nginx-validering fejlede. Den aktive vhost er rullet tilbage."
+    rm -f /etc/nginx/sites-enabled/nodexa-phpmyadmin.conf
+    die "Nginx-konfigurationen fejlede. phpMyAdmin-vhost blev fjernet igen."
+fi
+systemctl reload nginx
+
+if [[ "$USE_SSL" =~ ^[Yy]$ ]]; then
+    log "Installerer certbot og opretter SSL..."
+    apt-get install -y certbot python3-certbot-nginx
+    certbot --nginx --redirect --non-interactive --agree-tos --no-eff-email --email "$LE_EMAIL" -d "$FQDN" || {
+        warn "SSL kunne ikke oprettes. HTTP-konfigurationen er bevaret."
+        warn "Kontrollér at $FQDN peger på denne servers offentlige IP, og at port 80/443 er åbne."
+        exit 1
+    }
 fi
 
+nginx -t
 systemctl reload nginx
-log "phpMyAdmin er installeret og Nginx er valideret."
-log "Åbn https://panel.nordicnode.org/phpmyadmin/"
+systemctl restart php8.3-fpm
+
+SCHEME="http"
+[[ "$USE_SSL" =~ ^[Yy]$ ]] && SCHEME="https"
+
+log "phpMyAdmin er installeret."
+log "Adresse: ${SCHEME}://$FQDN"
+log "Log ind med en eksisterende MariaDB/MySQL-bruger."
