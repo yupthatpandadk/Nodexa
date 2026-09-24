@@ -16,6 +16,12 @@ export default ({ database, onBack }: Props) => {
     const [primary, setPrimary] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+    const [mode, setMode] = useState<'browse' | 'sql' | 'import'>('browse');
+    const [sql, setSql] = useState('SELECT * FROM ');
+    const [sqlResult, setSqlResult] = useState<any>(null);
+    const [sqlError, setSqlError] = useState('');
+    const [runningSql, setRunningSql] = useState(false);
+    const [importing, setImporting] = useState(false);
 
     const base = `/api/client/servers/${uuid}/databases/${database.id}/browser`;
     const loadTables = () => { setLoading(true); http.get(`${base}/tables`).then(r => setTables(r.data.data || [])).finally(() => setLoading(false)); };
@@ -28,6 +34,29 @@ export default ({ database, onBack }: Props) => {
     };
     useEffect(loadTables, []);
     useEffect(() => { if (table) loadRows(table); }, [table]);
+
+    const runSql = async () => {
+        if (!sql.trim()) return;
+        setRunningSql(true); setSqlError(''); setSqlResult(null);
+        try {
+            const r = await http.post(`${base}/sql`, { sql });
+            setSqlResult(r.data);
+            loadTables();
+        } catch (e: any) {
+            setSqlError(e?.response?.data?.error || e?.response?.data?.message || 'SQL kunne ikke køres.');
+        } finally { setRunningSql(false); }
+    };
+    const importSql = async (file?: File) => {
+        if (!file) return;
+        setImporting(true); setSqlError(''); setSqlResult(null);
+        const form = new FormData(); form.append('file', file);
+        try {
+            const r = await http.post(`${base}/import`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+            setSqlResult(r.data); loadTables();
+        } catch (e: any) {
+            setSqlError(e?.response?.data?.error || e?.response?.data?.message || 'SQL-filen kunne ikke importeres.');
+        } finally { setImporting(false); }
+    };
 
     const edit = async (row: any) => {
         if (!primary) return alert('Tabellen har ingen primary key og kan derfor ikke redigeres sikkert.');
@@ -69,7 +98,23 @@ export default ({ database, onBack }: Props) => {
                 {tables.map(t => <button key={t.name} onClick={()=>setTable(t.name)} style={{width:'100%',textAlign:'left',marginTop:5,padding:10,borderRadius:9,border:'1px solid '+(table===t.name?'#22d3ee':'#26384f'),background:table===t.name?'#123149':'#0c1727',color:'#dbeafe'}}>{t.name}<small style={{display:'block',opacity:.55}}>{t.rows} rækker</small></button>)}
             </aside>
             <main style={{background:'#101c2d',border:'1px solid #243650',borderRadius:16,padding:14,minWidth:0}}>
-                {!table ? <div style={{padding:30,textAlign:'center',color:'#8294ad'}}>{loading?'Indlæser…':'Vælg en tabel til venstre'}</div> : <>
+                <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:14}}>
+                    <button onClick={()=>setMode('browse')} style={{background:mode==='browse'?'#0891b2':'#18283d',border:'1px solid #30445e',borderRadius:9,padding:'9px 13px',color:'#fff'}}>Tabeldata</button>
+                    <button onClick={()=>setMode('sql')} style={{background:mode==='sql'?'#6d4aff':'#18283d',border:'1px solid #30445e',borderRadius:9,padding:'9px 13px',color:'#fff'}}>SQL Editor</button>
+                    <button onClick={()=>setMode('import')} style={{background:mode==='import'?'#6d4aff':'#18283d',border:'1px solid #30445e',borderRadius:9,padding:'9px 13px',color:'#fff'}}>Importér .sql</button>
+                </div>
+                {mode==='sql' ? <div>
+                    <div style={{color:'#fff',fontWeight:700,fontSize:16,marginBottom:8}}>SQL Editor</div>
+                    <textarea value={sql} onChange={e=>setSql(e.target.value)} spellCheck={false} style={{width:'100%',minHeight:220,resize:'vertical',boxSizing:'border-box',background:'#050b13',border:'1px solid #30445e',borderRadius:10,padding:14,color:'#dbeafe',fontFamily:'monospace',fontSize:13}} />
+                    <div style={{display:'flex',gap:8,marginTop:10}}><button disabled={runningSql} onClick={runSql} style={{background:'#6d4aff',border:0,borderRadius:9,padding:'10px 16px',color:'#fff'}}>{runningSql?'Kører…':'▶ Kør SQL'}</button><button onClick={()=>setSql('')} style={{background:'#18283d',border:'1px solid #30445e',borderRadius:9,padding:'10px 16px',color:'#fff'}}>Ryd</button></div>
+                    {sqlError && <div style={{marginTop:12,padding:12,borderRadius:9,background:'#3a1420',border:'1px solid #7f1d35',color:'#fecdd3',whiteSpace:'pre-wrap'}}>{sqlError}</div>}
+                    {sqlResult && <div style={{marginTop:12,padding:12,borderRadius:9,background:'#0a1724',border:'1px solid #28405d',color:'#cbd5e1',overflowX:'auto'}}><b style={{color:'#86efac'}}>SQL udført</b> · {sqlResult.meta?.affected_rows ?? 0} påvirket · {sqlResult.meta?.duration_ms ?? 0} ms{sqlResult.data?.length>0 && <table style={{width:'100%',marginTop:12,borderCollapse:'collapse',fontSize:12}}><thead><tr>{Object.keys(sqlResult.data[0]).map(k=><th key={k} style={{textAlign:'left',padding:8,borderBottom:'1px solid #30445e'}}>{k}</th>)}</tr></thead><tbody>{sqlResult.data.map((r:any,i:number)=><tr key={i}>{Object.keys(r).map(k=><td key={k} style={{padding:8,borderBottom:'1px solid #1c2b3f',whiteSpace:'nowrap'}}>{r[k]===null?'NULL':String(r[k])}</td>)}</tr>)}</tbody></table>}</div>}
+                </div> : mode==='import' ? <div>
+                    <div style={{color:'#fff',fontWeight:700,fontSize:16}}>Importér SQL-fil</div><div style={{color:'#8294ad',fontSize:12,margin:'6px 0 16px'}}>Vælg en .sql-fil på op til 10 MB. Den køres kun mod denne database.</div>
+                    <label style={{display:'block',padding:28,border:'1px dashed #3b526f',borderRadius:12,textAlign:'center',color:'#dbeafe',background:'#0a1422',cursor:'pointer'}}>{importing?'Importerer…':'Vælg .sql-fil'}<input disabled={importing} type="file" accept=".sql,text/sql,application/sql" onChange={e=>importSql(e.target.files?.[0])} style={{display:'none'}} /></label>
+                    {sqlError && <div style={{marginTop:12,padding:12,borderRadius:9,background:'#3a1420',border:'1px solid #7f1d35',color:'#fecdd3',whiteSpace:'pre-wrap'}}>{sqlError}</div>}
+                    {sqlResult && <div style={{marginTop:12,padding:12,borderRadius:9,background:'#0b2a21',border:'1px solid #166534',color:'#bbf7d0'}}>Import gennemført{sqlResult.meta?.filename?' · '+sqlResult.meta.filename:''}{sqlResult.meta?.duration_ms!=null?' · '+sqlResult.meta.duration_ms+' ms':''}</div>}
+                </div> : !table ? <div style={{padding:30,textAlign:'center',color:'#8294ad'}}>{loading?'Indlæser…':'Vælg en tabel til venstre'}</div> : <>
                     <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
                         <input value={search} onChange={e=>setSearch(e.target.value)} onKeyDown={e=>e.key==='Enter'&&loadRows()} placeholder="Søg i tabellen…" style={{flex:1,minWidth:180,background:'#0a1422',border:'1px solid #30445e',borderRadius:9,padding:'10px 12px',color:'#fff'}} />
                         <button onClick={()=>loadRows()} style={{background:'#0891b2',border:0,borderRadius:9,padding:'10px 15px',color:'#fff'}}>Søg</button>
