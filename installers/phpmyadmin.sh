@@ -86,7 +86,7 @@ server {
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/run/php/php8.3-fpm.sock;
-        fastcgi_param PHP_VALUE "upload_max_filesize=100M \n post_max_size=100M";
+        fastcgi_param PHP_VALUE "upload_max_filesize=100M; post_max_size=100M;";
     }
 
     location ~ /\. {
