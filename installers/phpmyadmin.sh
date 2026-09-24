@@ -58,13 +58,31 @@ done
 [[ -n "$SITE" ]] || die "Kunne ikke finde Nodexa/Pterodactyl Nginx-vhost."
 
 # Clean up the broken include accidentally inserted into a previous backup file.
-BROKEN="${SITE}.nodexa-pma.bak"
-if [[ -f "$BROKEN" ]]; then
-    sed -i '/^[[:space:]]*include \/etc\/nginx\/snippets\/nodexa-phpmyadmin\.conf;[[:space:]]*$/d' "$BROKEN" || true
-fi
+# Nginx loads every regular file/symlink in sites-enabled via wildcard.
+# Older installer versions created *.nodexa-pma.bak there, so move all such
+# backups completely out of sites-enabled before nginx -t.
+BACKUP_DIR="/etc/nginx/nodexa-backups"
+mkdir -p "$BACKUP_DIR"
+for old in /etc/nginx/sites-enabled/*.nodexa-pma.bak /etc/nginx/sites-enabled/*.before-phpmyadmin; do
+    [[ -e "$old" ]] || continue
+    old_real="$(readlink -f "$old" 2>/dev/null || printf '%s' "$old")"
+    rm -f "$old"
+    if [[ -f "$old_real" && "$old_real" == /etc/nginx/sites-enabled/* ]]; then
+        mv "$old_real" "$BACKUP_DIR/$(basename "$old_real").$(date +%s)"
+    fi
+done
+
+# Also remove legacy backup files next to the canonical vhost if sites-enabled
+# points directly at that directory.
+for old in "${SITE}.nodexa-pma.bak" "${SITE}.before-phpmyadmin"; do
+    [[ -f "$old" ]] || continue
+    case "$old" in
+        /etc/nginx/sites-enabled/*) mv "$old" "$BACKUP_DIR/$(basename "$old").$(date +%s)" ;;
+    esac
+done
 
 # Make a clean backup before editing.
-BACKUP="${SITE}.before-phpmyadmin"
+BACKUP="$BACKUP_DIR/$(basename "$SITE").before-phpmyadmin.$(date +%s)"
 cp -a "$SITE" "$BACKUP"
 
 if ! grep -Fq "include $SNIPPET;" "$SITE"; then
