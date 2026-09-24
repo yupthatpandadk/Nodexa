@@ -18,6 +18,20 @@ FQDN="${FQDN:-pma.nordicnode.org}"
 FQDN="$(printf '%s' "$FQDN" | tr '[:upper:]' '[:lower:]')"
 [[ "$FQDN" =~ ^[a-z0-9.-]+$ ]] || die "Ugyldigt domæne."
 
+while true; do
+    read -rp "SQL admin-brugernavn [nodexa_sql]: " SQL_USER
+    SQL_USER="${SQL_USER:-nodexa_sql}"
+    [[ "$SQL_USER" =~ ^[A-Za-z0-9_]{1,32}$ ]] && break
+    warn "Brug kun bogstaver, tal og underscore (maks. 32 tegn)."
+done
+
+while true; do
+    read -rsp "SQL adgangskode (min. 12 tegn): " SQL_PASSWORD
+    echo
+    [[ ${#SQL_PASSWORD} -ge 12 ]] && break
+    warn "Adgangskoden skal være mindst 12 tegn."
+done
+
 read -rp "Brug HTTPS/Let's Encrypt? [Y/n]: " USE_SSL
 USE_SSL="${USE_SSL:-Y}"
 
@@ -31,11 +45,23 @@ mkdir -p /etc/nginx/nodexa-backups
 find /etc/nginx/sites-enabled -maxdepth 1 -type f \( -name '*.nodexa-pma.bak' -o -name '*.before-phpmyadmin' -o -name '*.bak' \) -exec mv -t /etc/nginx/nodexa-backups/ {} + 2>/dev/null || true
 rm -f /etc/nginx/sites-enabled/phpmyadmin.conf /etc/nginx/sites-available/phpmyadmin.conf
 
-log "Installerer phpMyAdmin og PHP 8.3 moduler..."
+log "Installerer phpMyAdmin, MariaDB og PHP 8.3 moduler..."
 apt-get update
-apt-get install -y nginx curl ca-certificates phpmyadmin php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-curl php8.3-zip php8.3-gd
+apt-get install -y nginx curl ca-certificates mariadb-server phpmyadmin php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-curl php8.3-zip php8.3-gd
 phpenmod -v 8.3 mbstring 2>/dev/null || true
 systemctl enable --now php8.3-fpm
+systemctl enable --now mariadb
+
+log "Opretter SQL-kontoen $SQL_USER..."
+SQL_USER_ESCAPED="${SQL_USER//\'/\'\'}"
+SQL_PASSWORD_ESCAPED="${SQL_PASSWORD//\'/\'\'}"
+mariadb --protocol=socket -u root <<SQL
+CREATE USER IF NOT EXISTS '${SQL_USER_ESCAPED}'@'localhost' IDENTIFIED BY '${SQL_PASSWORD_ESCAPED}';
+ALTER USER '${SQL_USER_ESCAPED}'@'localhost' IDENTIFIED BY '${SQL_PASSWORD_ESCAPED}';
+GRANT ALL PRIVILEGES ON *.* TO '${SQL_USER_ESCAPED}'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+SQL
+unset SQL_PASSWORD SQL_PASSWORD_ESCAPED
 
 PMA_DIR="/usr/share/phpmyadmin"
 [[ -f "$PMA_DIR/index.php" ]] || die "phpMyAdmin blev ikke fundet i $PMA_DIR."
@@ -98,4 +124,5 @@ SCHEME="http"
 
 log "phpMyAdmin er installeret."
 log "Adresse: ${SCHEME}://$FQDN"
-log "Log ind med en eksisterende MariaDB/MySQL-bruger."
+log "SQL-konto oprettet: $SQL_USER"
+log "Brug denne konto til at logge ind i phpMyAdmin."
