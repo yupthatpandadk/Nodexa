@@ -47,7 +47,7 @@ rm -f /etc/nginx/sites-enabled/phpmyadmin.conf /etc/nginx/sites-available/phpmya
 
 log "Installerer phpMyAdmin, MariaDB og PHP 8.3 moduler..."
 apt-get update
-apt-get install -y nginx curl ca-certificates mariadb-server phpmyadmin php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-curl php8.3-zip php8.3-gd
+apt-get install -y nginx curl ca-certificates tar mariadb-server php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-curl php8.3-zip php8.3-gd
 phpenmod -v 8.3 mbstring 2>/dev/null || true
 systemctl enable --now php8.3-fpm
 systemctl enable --now mariadb
@@ -63,8 +63,33 @@ FLUSH PRIVILEGES;
 SQL
 unset SQL_PASSWORD SQL_PASSWORD_ESCAPED
 
-PMA_DIR="/usr/share/phpmyadmin"
-[[ -f "$PMA_DIR/index.php" ]] || die "phpMyAdmin blev ikke fundet i $PMA_DIR."
+PMA_DIR="/var/www/phpmyadmin"
+PMA_VERSION="5.2.2"
+log "Installerer en ren phpMyAdmin ${PMA_VERSION}..."
+rm -rf "$PMA_DIR"
+mkdir -p "$PMA_DIR"
+TMP_PMA="$(mktemp -d)"
+trap 'rm -rf "$TMP_PMA"' EXIT
+curl -fL --retry 3 -o "$TMP_PMA/phpmyadmin.tar.gz" "https://files.phpmyadmin.net/phpMyAdmin/${PMA_VERSION}/phpMyAdmin-${PMA_VERSION}-all-languages.tar.gz"
+tar -xzf "$TMP_PMA/phpmyadmin.tar.gz" -C "$TMP_PMA"
+cp -a "$TMP_PMA/phpMyAdmin-${PMA_VERSION}-all-languages/." "$PMA_DIR/"
+mkdir -p "$PMA_DIR/tmp"
+chown -R root:www-data "$PMA_DIR"
+chown -R www-data:www-data "$PMA_DIR/tmp"
+chmod 750 "$PMA_DIR/tmp"
+BLOWFISH="$(openssl rand -base64 48 | tr -d '\n' | cut -c1-32)"
+cat > "$PMA_DIR/config.inc.php" <<PMA_CONFIG
+<?php
+\$cfg['blowfish_secret'] = '${BLOWFISH}';
+\$i = 0;
+++\$i;
+\$cfg['Servers'][\$i]['auth_type'] = 'cookie';
+\$cfg['Servers'][\$i]['host'] = 'localhost';
+\$cfg['Servers'][\$i]['compress'] = false;
+\$cfg['Servers'][\$i]['AllowNoPassword'] = false;
+\$cfg['TempDir'] = '/var/www/phpmyadmin/tmp';
+PMA_CONFIG
+[[ -f "$PMA_DIR/index.php" ]] || die "Den rene phpMyAdmin-installation mislykkedes."
 [[ -S /run/php/php8.3-fpm.sock ]] || die "PHP 8.3 FPM socket mangler."
 
 CONF="/etc/nginx/sites-available/nodexa-phpmyadmin.conf"
@@ -74,7 +99,7 @@ server {
     listen [::]:80;
     server_name __FQDN__;
 
-    root /usr/share/phpmyadmin;
+    root /var/www/phpmyadmin;
     index index.php;
 
     client_max_body_size 100m;
