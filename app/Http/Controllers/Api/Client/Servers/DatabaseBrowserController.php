@@ -122,4 +122,91 @@ class DatabaseBrowserController extends ClientApiController
         $stmt->execute([$request->input('key_value')]);
         return ['success' => true];
     }
+
+    public function executeSql(Request $request, Server $server, Database $database): array
+    {
+        $database = $this->database($server, $database);
+        $sql = trim((string) $request->input('sql', ''));
+        abort_if($sql === '', 422, 'SQL query is required.');
+        abort_if(strlen($sql) > 1024 * 1024, 413, 'SQL query is too large.');
+
+        $pdo = $this->pdo($database);
+        $started = microtime(true);
+
+        try {
+            $statement = $pdo->prepare($sql);
+            $statement->execute();
+
+            $rows = [];
+            $columns = [];
+            if ($statement->columnCount() > 0) {
+                $rows = $statement->fetchAll();
+                if (count($rows) > 500) {
+                    $rows = array_slice($rows, 0, 500);
+                }
+                $columns = count($rows) ? array_keys($rows[0]) : [];
+            }
+
+            return [
+                'success' => true,
+                'data' => $rows,
+                'meta' => [
+                    'columns' => $columns,
+                    'affected_rows' => $statement->rowCount(),
+                    'returned_rows' => count($rows),
+                    'truncated' => count($rows) >= 500,
+                    'duration_ms' => round((microtime(true) - $started) * 1000, 2),
+                ],
+            ];
+        } catch (\Throwable $exception) {
+            return response()->json([
+                'success' => false,
+                'error' => $exception->getMessage(),
+            ], 422)->getData(true);
+        }
+    }
+
+    public function importSql(Request $request, Server $server, Database $database): array
+    {
+        $database = $this->database($server, $database);
+        $request->validate([
+            'file' => ['required', 'file', 'max:10240'],
+        ]);
+
+        $file = $request->file('file');
+        abort_unless($file && $file->isValid(), 422, 'Invalid SQL file.');
+        abort_unless(strtolower($file->getClientOriginalExtension()) === 'sql', 422, 'Only .sql files are supported.');
+
+        $sql = file_get_contents($file->getRealPath());
+        abort_if($sql === false || trim($sql) === '', 422, 'The SQL file is empty.');
+
+        $pdo = $this->pdo($database);
+        $started = microtime(true);
+
+        try {
+            $pdo->beginTransaction();
+            $pdo->exec($sql);
+            if ($pdo->inTransaction()) {
+                $pdo->commit();
+            }
+
+            return [
+                'success' => true,
+                'meta' => [
+                    'filename' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'duration_ms' => round((microtime(true) - $started) * 1000, 2),
+                ],
+            ];
+        } catch (\Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            return response()->json([
+                'success' => false,
+                'error' => $exception->getMessage(),
+            ], 422)->getData(true);
+        }
+    }
+
 }
