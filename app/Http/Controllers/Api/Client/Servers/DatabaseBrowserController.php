@@ -3,6 +3,7 @@
 namespace Pterodactyl\Http\Controllers\Api\Client\Servers;
 
 use Illuminate\Http\Request;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
 use PDO;
 use Pterodactyl\Models\Database;
@@ -22,7 +23,17 @@ class DatabaseBrowserController extends ClientApiController
     private function pdo(Database $database): PDO
     {
         $host = $database->host;
-        $password = $database->password;
+        // Pterodactyl stores database credentials encrypted at rest. The model
+        // intentionally does not cast/decrypt this attribute, so using it directly
+        // sends the encrypted Laravel payload to MariaDB and results in error 1045.
+        try {
+            $password = Crypt::decryptString((string) $database->password);
+        } catch (DecryptException $exception) {
+            // Older installations may have used Encrypter::encrypt(), which can
+            // contain non-string scalar values. decrypt() handles both formats.
+            $password = Crypt::decrypt((string) $database->password);
+        }
+
         $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host->host, $host->port, $database->database);
 
         return new PDO($dsn, $database->username, $password, [
