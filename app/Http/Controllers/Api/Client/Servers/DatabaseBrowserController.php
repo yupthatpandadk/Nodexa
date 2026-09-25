@@ -42,14 +42,31 @@ class DatabaseBrowserController extends ClientApiController
     {
         $database = $this->database($server, $database);
         $pdo = $this->pdo($database);
-        $tables = $pdo->query('SHOW TABLE STATUS')->fetchAll();
+        // Query information_schema explicitly for the database selected by the
+        // connection. This is more reliable than SHOW TABLE STATUS across
+        // MariaDB/MySQL versions and avoids depending on column-name casing.
+        $currentDatabase = (string) $pdo->query('SELECT DATABASE()')->fetchColumn();
+        abort_if($currentDatabase === '', 422, 'No database is selected.');
 
-        return ['data' => array_map(fn ($row) => [
-            'name' => $row['Name'],
-            'rows' => (int) ($row['Rows'] ?? 0),
-            'engine' => $row['Engine'] ?? null,
-            'collation' => $row['Collation'] ?? null,
-        ], $tables)];
+        $statement = $pdo->prepare(
+            'SELECT TABLE_NAME AS name, TABLE_ROWS AS row_count, ENGINE AS engine, TABLE_COLLATION AS collation '
+            . 'FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME'
+        );
+        $statement->execute([$currentDatabase]);
+        $tables = $statement->fetchAll();
+
+        return [
+            'data' => array_map(fn ($row) => [
+                'name' => (string) $row['name'],
+                'rows' => (int) ($row['row_count'] ?? 0),
+                'engine' => $row['engine'] ?? null,
+                'collation' => $row['collation'] ?? null,
+            ], $tables),
+            'meta' => [
+                'database' => $currentDatabase,
+                'table_count' => count($tables),
+            ],
+        ];
     }
 
     public function table(Request $request, Server $server, Database $database, string $table): array
