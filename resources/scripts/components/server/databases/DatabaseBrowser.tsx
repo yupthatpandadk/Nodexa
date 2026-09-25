@@ -22,9 +22,20 @@ export default ({ database, onBack }: Props) => {
     const [sqlError, setSqlError] = useState('');
     const [runningSql, setRunningSql] = useState(false);
     const [importing, setImporting] = useState(false);
+    const [tablesError, setTablesError] = useState('');
 
     const base = `/api/client/servers/${uuid}/databases/${database.id}/browser`;
-    const loadTables = () => { setLoading(true); http.get(`${base}/tables`).then(r => setTables(r.data.data || [])).finally(() => setLoading(false)); };
+    const loadTables = () => {
+        setLoading(true);
+        setTablesError('');
+        http.get(`${base}/tables`)
+            .then(r => setTables(Array.isArray(r.data?.data) ? r.data.data : []))
+            .catch((e: any) => {
+                setTables([]);
+                setTablesError(e?.response?.data?.message || e?.response?.data?.error || 'Kunne ikke hente tabeller.');
+            })
+            .finally(() => setLoading(false));
+    };
     const loadRows = (name = table) => {
         if (!name) return;
         setLoading(true);
@@ -95,6 +106,9 @@ export default ({ database, onBack }: Props) => {
         <div style={{display:'grid',gridTemplateColumns:'minmax(180px,240px) minmax(0,1fr)',gap:16}}>
             <aside style={{background:'#101c2d',border:'1px solid #243650',borderRadius:16,padding:12}}>
                 <div style={{fontWeight:700,color:'#fff',padding:8}}>Tabeller</div>
+                {loading && tables.length === 0 && <div style={{padding:8,color:'#8294ad',fontSize:12}}>Indlæser tabeller…</div>}
+                {tablesError && <div style={{margin:'6px 0',padding:9,borderRadius:8,background:'#3a1420',border:'1px solid #7f1d35',color:'#fecdd3',fontSize:11,wordBreak:'break-word'}}>{tablesError}<button onClick={loadTables} style={{display:'block',marginTop:7,background:'#18283d',border:'1px solid #30445e',borderRadius:7,padding:'6px 9px',color:'#fff'}}>Prøv igen</button></div>}
+                {!loading && !tablesError && tables.length === 0 && <div style={{padding:8,color:'#8294ad',fontSize:12}}>Ingen tabeller fundet i databasen.</div>}
                 {tables.map(t => <button key={t.name} onClick={()=>setTable(t.name)} style={{width:'100%',textAlign:'left',marginTop:5,padding:10,borderRadius:9,border:'1px solid '+(table===t.name?'#22d3ee':'#26384f'),background:table===t.name?'#123149':'#0c1727',color:'#dbeafe'}}>{t.name}<small style={{display:'block',opacity:.55}}>{t.rows} rækker</small></button>)}
             </aside>
             <main style={{background:'#101c2d',border:'1px solid #243650',borderRadius:16,padding:14,minWidth:0}}>
