@@ -145,19 +145,19 @@ export default ({ database, onBack }: Props) => {
             <div style={{marginTop:14,fontSize:22,fontWeight:700,color:'#fff'}}>{database.name}</div>
             <div style={{color:'#8294ad',fontSize:12,marginTop:4}}>{database.connectionString} · Database Manager</div>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'minmax(180px,240px) minmax(0,1fr)',gap:16}}>
-            <aside style={{background:'#101c2d',border:'1px solid #243650',borderRadius:16,padding:12}}>
+        <div style={{display:'grid',gridTemplateColumns:mobile?'minmax(0,1fr)':'minmax(180px,240px) minmax(0,1fr)',gap:16,minWidth:0}}>
+            <aside style={{background:'#101c2d',border:'1px solid #243650',borderRadius:16,padding:12,minWidth:0,maxHeight:mobile?320:'none',overflowY:mobile?'auto':'visible'}}>
                 <div style={{fontWeight:700,color:'#fff',padding:8}}>Tabeller</div>
                 {loading && tables.length === 0 && <div style={{padding:8,color:'#8294ad',fontSize:12}}>Indlæser tabeller…</div>}
                 {tablesError && <div style={{margin:'6px 0',padding:9,borderRadius:8,background:'#3a1420',border:'1px solid #7f1d35',color:'#fecdd3',fontSize:11,wordBreak:'break-word'}}>{tablesError}<button onClick={loadTables} style={{display:'block',marginTop:7,background:'#18283d',border:'1px solid #30445e',borderRadius:7,padding:'6px 9px',color:'#fff'}}>Prøv igen</button></div>}
                 {!loading && !tablesError && tables.length === 0 && <div style={{padding:8,color:'#8294ad',fontSize:12}}>Ingen tabeller fundet i databasen.</div>}
                 {tables.map(t => <button key={t.name} onClick={()=>setTable(t.name)} style={{width:'100%',textAlign:'left',marginTop:5,padding:10,borderRadius:9,border:'1px solid '+(table===t.name?'#22d3ee':'#26384f'),background:table===t.name?'#123149':'#0c1727',color:'#dbeafe'}}>{t.name}<small style={{display:'block',opacity:.55}}>{t.rows} rækker</small></button>)}
             </aside>
-            <main style={{background:'#101c2d',border:'1px solid #243650',borderRadius:16,padding:14,minWidth:0}}>
-                <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:14}}>
-                    <button onClick={()=>setMode('browse')} style={{background:mode==='browse'?'#0891b2':'#18283d',border:'1px solid #30445e',borderRadius:9,padding:'9px 13px',color:'#fff'}}>Tabeldata</button>
-                    <button onClick={()=>setMode('sql')} style={{background:mode==='sql'?'#6d4aff':'#18283d',border:'1px solid #30445e',borderRadius:9,padding:'9px 13px',color:'#fff'}}>SQL Editor</button>
-                    <button onClick={()=>setMode('import')} style={{background:mode==='import'?'#6d4aff':'#18283d',border:'1px solid #30445e',borderRadius:9,padding:'9px 13px',color:'#fff'}}>Importér .sql</button>
+            <main style={{background:'#101c2d',border:'1px solid #243650',borderRadius:16,padding:mobile?10:14,minWidth:0,width:'100%',boxSizing:'border-box'}}>
+                <div style={{display:'grid',gridTemplateColumns:mobile?'repeat(3,minmax(0,1fr))':'repeat(3,max-content)',gap:8,marginBottom:14,width:'100%'}}>
+                    <button onClick={()=>setMode('browse')} style={{background:mode==='browse'?'#0891b2':'#18283d',border:'1px solid #30445e',borderRadius:9,padding:mobile?'9px 6px':'9px 13px',color:'#fff',fontSize:mobile?11:13,whiteSpace:'nowrap'}}>Tabeldata</button>
+                    <button onClick={()=>setMode('sql')} style={{background:mode==='sql'?'#6d4aff':'#18283d',border:'1px solid #30445e',borderRadius:9,padding:mobile?'9px 6px':'9px 13px',color:'#fff',fontSize:mobile?11:13,whiteSpace:'nowrap'}}>SQL Editor</button>
+                    <button onClick={()=>setMode('import')} style={{background:mode==='import'?'#6d4aff':'#18283d',border:'1px solid #30445e',borderRadius:9,padding:mobile?'9px 6px':'9px 13px',color:'#fff',fontSize:mobile?11:13,whiteSpace:'nowrap'}}>Importér .sql</button>
                 </div>
                 {mode==='sql' ? <div>
                     <div style={{color:'#fff',fontWeight:700,fontSize:16,marginBottom:8}}>SQL Editor</div>
