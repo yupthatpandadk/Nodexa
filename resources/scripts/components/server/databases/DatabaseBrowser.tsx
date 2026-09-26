@@ -23,6 +23,9 @@ export default ({ database, onBack }: Props) => {
     const [runningSql, setRunningSql] = useState(false);
     const [importing, setImporting] = useState(false);
     const [tablesError, setTablesError] = useState('');
+    const [editingRow, setEditingRow] = useState<any | null>(null);
+    const [editValues, setEditValues] = useState<Record<string, string>>({});
+    const [savingEdit, setSavingEdit] = useState(false);
 
     const base = `/api/client/servers/${uuid}/databases/${database.id}/browser`;
     const loadTables = () => {
@@ -69,16 +72,21 @@ export default ({ database, onBack }: Props) => {
         } finally { setImporting(false); }
     };
 
-    const edit = async (row: any) => {
+    const edit = (row: any) => {
         if (!primary) return alert('Tabellen har ingen primary key og kan derfor ikke redigeres sikkert.');
-        const values: any = {};
-        for (const c of columns) {
-            const v = window.prompt(c.Field, row[c.Field] == null ? '' : String(row[c.Field]));
-            if (v === null) return;
-            values[c.Field] = v;
-        }
-        await http.put(`${base}/tables/${encodeURIComponent(table)}/rows`, { key: primary, key_value: row[primary], values });
-        loadRows();
+        const values: Record<string, string> = {};
+        columns.forEach(c => { values[c.Field] = row[c.Field] == null ? '' : String(row[c.Field]); });
+        setEditValues(values);
+        setEditingRow(row);
+    };
+    const saveEdit = async () => {
+        if (!editingRow || !primary) return;
+        setSavingEdit(true);
+        try {
+            await http.put(base + '/tables/' + encodeURIComponent(table) + '/rows', { key: primary, key_value: editingRow[primary], values: editValues });
+            setEditingRow(null);
+            loadRows();
+        } finally { setSavingEdit(false); }
     };
     const remove = async (row: any) => {
         if (!primary || !window.confirm('Slet denne række permanent?')) return;
@@ -98,6 +106,7 @@ export default ({ database, onBack }: Props) => {
     };
 
     return <div style={{display:'grid',gap:16}}>
+        {editingRow && <div onClick={()=>!savingEdit&&setEditingRow(null)} style={{position:'fixed',inset:0,zIndex:10000,background:'rgba(2,6,23,.78)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}><div onClick={e=>e.stopPropagation()} style={{width:'min(760px,100%)',maxHeight:'86vh',overflow:'auto',background:'#101c2d',border:'1px solid #30445e',borderRadius:16,boxShadow:'0 24px 80px rgba(0,0,0,.55)'}}><div style={{padding:'18px 20px',borderBottom:'1px solid #243650'}}><div style={{fontSize:18,fontWeight:800,color:'#fff'}}>Rediger række</div><div style={{marginTop:4,fontSize:12,color:'#8294ad'}}>Rediger alle felter på én gang og gem derefter ændringerne.</div></div><div style={{padding:20,display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:14}}>{columns.map(c=><label key={c.Field} style={{display:'grid',gap:6,minWidth:0}}><span style={{color:'#dbeafe',fontSize:12,fontWeight:700}}>{c.Field} <small style={{color:'#64748b',fontWeight:400}}>{c.Type}</small></span><input value={editValues[c.Field] ?? ''} onChange={e=>setEditValues(v=>({...v,[c.Field]:e.target.value}))} disabled={c.Extra?.includes('auto_increment')} style={{width:'100%',boxSizing:'border-box',background:'#0a1422',border:'1px solid #30445e',borderRadius:9,padding:'10px 11px',color:'#fff',opacity:c.Extra?.includes('auto_increment')?.6:1}} /></label>)}</div><div style={{padding:'14px 20px 20px',display:'flex',justifyContent:'flex-end',gap:8}}><button disabled={savingEdit} onClick={()=>setEditingRow(null)} style={{background:'#18283d',border:'1px solid #30445e',borderRadius:9,padding:'10px 16px',color:'#dbeafe'}}>Annuller</button><button disabled={savingEdit} onClick={saveEdit} style={{background:'#2563eb',border:'1px solid #3b82f6',borderRadius:9,padding:'10px 18px',color:'#fff',fontWeight:800}}>{savingEdit?'Gemmer…':'Gem alle ændringer'}</button></div></div></div>}
         <div style={{background:'#101c2d',border:'1px solid #243650',borderRadius:16,padding:18}}>
             <button onClick={onBack} style={{background:'#18283d',border:'1px solid #31445e',borderRadius:9,padding:'9px 13px',color:'#dbeafe'}}>← Databaser</button>
             <div style={{marginTop:14,fontSize:22,fontWeight:700,color:'#fff'}}>{database.name}</div>
