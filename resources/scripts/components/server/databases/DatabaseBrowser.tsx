@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import styled from 'styled-components';
 import http from '@/api/http';
 import { ServerContext } from '@/state/server';
 import { ServerDatabase } from '@/api/server/databases/getServerDatabases';
@@ -6,6 +7,76 @@ import { ServerDatabase } from '@/api/server/databases/getServerDatabases';
 interface Props { database: ServerDatabase; onBack: () => void; }
 interface TableInfo { name: string; rows: number; engine?: string; }
 interface Column { Field: string; Type: string; Null: string; Key: string; Default: any; Extra: string; }
+
+const ManagerGrid = styled.div`
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+    gap: 16px;
+
+    @media (max-width: 768px) {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+    }
+`;
+
+const TablesPanel = styled.aside`
+    background: #101c2d;
+    border: 1px solid #243650;
+    border-radius: 16px;
+    padding: 12px;
+
+    @media (max-width: 768px) {
+        max-height: 270px;
+        overflow-y: auto;
+    }
+`;
+
+const ModeTabs = styled.div`
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+
+    @media (max-width: 520px) {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+
+        > button {
+            width: 100%;
+            min-width: 0;
+            padding: 9px 6px !important;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+    }
+`;
+
+const EditorModal = styled.div`
+    width: min(760px, 100%);
+    max-height: 86vh;
+    overflow: auto;
+    background: #101c2d;
+    border: 1px solid #30445e;
+    border-radius: 16px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, .55);
+
+    @media (max-width: 520px) {
+        max-height: 92vh;
+        border-radius: 14px;
+    }
+`;
+
+const EditorFields = styled.div`
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+
+    @media (max-width: 520px) {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 14px;
+    }
+`;
 
 export default ({ database, onBack }: Props) => {
     const uuid = ServerContext.useStoreState((state) => state.server.data!.uuid);
@@ -132,7 +203,7 @@ export default ({ database, onBack }: Props) => {
     };
 
     return <div style={{display:'grid',gap:16}}>
-        {editingRow && <div onClick={()=>!savingEdit&&setEditingRow(null)} style={{position:'fixed',inset:0,zIndex:10000,background:'rgba(2,6,23,.78)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}><div onClick={e=>e.stopPropagation()} style={{width:'min(760px,100%)',maxHeight:'86vh',overflow:'auto',background:'#101c2d',border:'1px solid #30445e',borderRadius:16,boxShadow:'0 24px 80px rgba(0,0,0,.55)'}}><div style={{padding:'18px 20px',borderBottom:'1px solid #243650'}}><div style={{fontSize:18,fontWeight:800,color:'#fff'}}>Rediger række</div><div style={{marginTop:4,fontSize:12,color:'#8294ad'}}>Rediger alle felter på én gang og gem derefter ændringerne.</div></div><div style={{padding:20,display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:14}}>{columns.map(c=><label key={c.Field} style={{display:'grid',gap:6,minWidth:0}}><span style={{color:'#dbeafe',fontSize:12,fontWeight:700}}>{c.Field} <small style={{color:'#64748b',fontWeight:400}}>{c.Type}</small></span><input value={editValues[c.Field] ?? ''} onChange={e=>{ const value = e.currentTarget.value; setEditValues(v=>({...v,[c.Field]:value})); }} disabled={c.Extra?.includes('auto_increment')} style={{width:'100%',boxSizing:'border-box',background:'#0a1422',border:'1px solid #30445e',borderRadius:9,padding:'10px 11px',color:'#fff',opacity:c.Extra?.includes('auto_increment') ? .6 : 1}} /></label>)}</div><div style={{padding:'14px 20px 20px',display:'flex',justifyContent:'flex-end',gap:8}}><button disabled={savingEdit} onClick={()=>setEditingRow(null)} style={{background:'#18283d',border:'1px solid #30445e',borderRadius:9,padding:'10px 16px',color:'#dbeafe'}}>Annuller</button><button disabled={savingEdit} onClick={saveEdit} style={{background:'#2563eb',border:'1px solid #3b82f6',borderRadius:9,padding:'10px 18px',color:'#fff',fontWeight:800}}>{savingEdit?'Gemmer…':'Gem alle ændringer'}</button></div></div></div>}
+        {editingRow && <div onClick={()=>!savingEdit&&setEditingRow(null)} style={{position:'fixed',inset:0,zIndex:10000,background:'rgba(2,6,23,.78)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}><EditorModal onClick={e=>e.stopPropagation()}><div style={{padding:'18px 20px',borderBottom:'1px solid #243650'}}><div style={{fontSize:18,fontWeight:800,color:'#fff'}}>Rediger række</div><div style={{marginTop:4,fontSize:12,color:'#8294ad'}}>Rediger alle felter på én gang og gem derefter ændringerne.</div></div><EditorFields>{columns.map(c=><label key={c.Field} style={{display:'grid',gap:6,minWidth:0}}><span style={{color:'#dbeafe',fontSize:12,fontWeight:700}}>{c.Field} <small style={{color:'#64748b',fontWeight:400}}>{c.Type}</small></span><input value={editValues[c.Field] ?? ''} onChange={e=>{ const value = e.currentTarget.value; setEditValues(v=>({...v,[c.Field]:value})); }} disabled={c.Extra?.includes('auto_increment')} style={{width:'100%',boxSizing:'border-box',background:'#0a1422',border:'1px solid #30445e',borderRadius:9,padding:'10px 11px',color:'#fff',opacity:c.Extra?.includes('auto_increment') ? .6 : 1}} /></label>)}</EditorFields><div style={{padding:'14px 20px 20px',display:'flex',justifyContent:'flex-end',gap:8}}><button disabled={savingEdit} onClick={()=>setEditingRow(null)} style={{background:'#18283d',border:'1px solid #30445e',borderRadius:9,padding:'10px 16px',color:'#dbeafe'}}>Annuller</button><button disabled={savingEdit} onClick={saveEdit} style={{background:'#2563eb',border:'1px solid #3b82f6',borderRadius:9,padding:'10px 18px',color:'#fff',fontWeight:800}}>{savingEdit?'Gemmer…':'Gem alle ændringer'}</button></div></div></div>}
         <div style={{background:'#101c2d',border:'1px solid #243650',borderRadius:16,padding:18}}>
             <button onClick={onBack} style={{background:'#18283d',border:'1px solid #31445e',borderRadius:9,padding:'9px 13px',color:'#dbeafe'}}>← Databaser</button>
             <div style={{marginTop:14,fontSize:22,fontWeight:700,color:'#fff'}}>{database.name}</div>
