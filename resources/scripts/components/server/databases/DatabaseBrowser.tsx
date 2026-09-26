@@ -81,9 +81,33 @@ export default ({ database, onBack }: Props) => {
     };
     const saveEdit = async () => {
         if (!editingRow || !primary) return;
+
+        // Only submit fields the user actually changed. Converting every NULL
+        // value to an empty string made MySQL reject otherwise unrelated rows
+        // (for example nullable numeric/date columns in strict SQL mode).
+        const values: Record<string, string> = {};
+        columns.forEach(column => {
+            const original = editingRow[column.Field];
+            const current = editValues[column.Field] ?? '';
+            const originalForInput = original == null ? '' : String(original);
+
+            if (current !== originalForInput) {
+                values[column.Field] = current;
+            }
+        });
+
+        if (Object.keys(values).length === 0) {
+            setEditingRow(null);
+            return;
+        }
+
         setSavingEdit(true);
         try {
-            await http.put(base + '/tables/' + encodeURIComponent(table) + '/rows', { key: primary, key_value: editingRow[primary], values: editValues });
+            await http.put(base + '/tables/' + encodeURIComponent(table) + '/rows', {
+                key: primary,
+                key_value: editingRow[primary],
+                values,
+            });
             setEditingRow(null);
             loadRows();
         } catch (e: any) {
