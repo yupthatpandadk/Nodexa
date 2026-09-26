@@ -137,7 +137,28 @@ export default ({ database, onBack }: Props) => {
                     <div style={{overflowX:'auto'}}>
                         <table style={{width:'100%',borderCollapse:'collapse',fontSize:12,color:'#cbd5e1'}}>
                             <thead><tr>{columns.map(c=><th key={c.Field} style={{textAlign:'left',padding:10,borderBottom:'1px solid #30445e'}}>{c.Field}<small style={{display:'block',opacity:.45}}>{c.Type}</small></th>)}<th/></tr></thead>
-                            <tbody>{rows.map((row,i)=><tr key={i}>{columns.map(c=><td key={c.Field} style={{padding:10,borderBottom:'1px solid #1c2b3f',whiteSpace:'nowrap',maxWidth:240,overflow:'hidden',textOverflow:'ellipsis'}}>{row[c.Field]===null?<i>NULL</i>:String(row[c.Field])}</td>)}<td style={{whiteSpace:'nowrap'}}><button onClick={()=>edit(row)}>✎</button> <button onClick={()=>remove(row)}>🗑</button></td></tr>)}</tbody>
+                            <tbody>{rows.map((row,i)=><tr key={i}>{columns.map(c=><td key={c.Field} style={{padding:10,borderBottom:'1px solid #1c2b3f',whiteSpace:'nowrap',maxWidth:240,overflow:'hidden',textOverflow:'ellipsis'}}>{row[c.Field]===null?<i>NULL</i>:String(row[c.Field])}</td>)}<td style={{whiteSpace:'nowrap',padding:'7px 8px',borderBottom:'1px solid #1c2b3f'}}>
+                                    <div style={{display:'flex',gap:6,alignItems:'center',justifyContent:'flex-end'}}>
+                                        <button
+                                            onClick={()=>edit(row)}
+                                            title="Rediger række"
+                                            aria-label="Rediger række"
+                                            disabled={!primary}
+                                            style={{display:'inline-flex',alignItems:'center',justifyContent:'center',gap:6,minWidth:74,height:32,padding:'0 10px',borderRadius:8,border:'1px solid #2563eb',background:'#172554',color:'#bfdbfe',fontSize:11,fontWeight:700,cursor:primary?'pointer':'not-allowed',opacity:primary?1:.45}}
+                                        >
+                                            <span style={{fontSize:13}}>✎</span><span>Rediger</span>
+                                        </button>
+                                        <button
+                                            onClick={()=>remove(row)}
+                                            title="Slet række"
+                                            aria-label="Slet række"
+                                            disabled={!primary}
+                                            style={{display:'inline-flex',alignItems:'center',justifyContent:'center',gap:6,minWidth:62,height:32,padding:'0 10px',borderRadius:8,border:'1px solid #7f1d1d',background:'#3a1420',color:'#fecaca',fontSize:11,fontWeight:700,cursor:primary?'pointer':'not-allowed',opacity:primary?1:.45}}
+                                        >
+                                            <span style={{fontSize:13}}>🗑</span><span>Slet</span>
+                                        </button>
+                                    </div>
+                                </td></tr>)}</tbody>
                         </table>
                     </div>
                 </>}
