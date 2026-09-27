@@ -17,7 +17,7 @@
 @section('content')
 @include('admin.servers.partials.navigation')
 <div class="row">
-    <div class="col-sm-7">
+    <div class="col-xs-12 col-lg-7">
         <div class="alert alert-info">
             Database passwords can be viewed when <a href="/server/{{ $server->uuidShort }}/databases">visiting this server</a> on the front-end.
         </div>
@@ -25,8 +25,8 @@
             <div class="box-header with-border">
                 <h3 class="box-title">Active Databases</h3>
             </div>
-            <div class="box-body table-responsible no-padding">
-                <table class="table table-hover">
+            <div class="box-body table-responsive no-padding">
+                <table class="table table-hover nodexa-database-table">
                     <tr>
                         <th>Database</th>
                         <th>Username</th>
@@ -56,7 +56,7 @@
             </div>
         </div>
     </div>
-    <div class="col-sm-5">
+    <div class="col-xs-12 col-lg-5">
         <div class="box box-success">
             <div class="box-header with-border">
                 <h3 class="box-title">Create New Database</h3>
@@ -100,6 +100,40 @@
     </div>
 </div>
 @endsection
+
+<style>
+/* Keep the database administration usable on phones without clipping columns. */
+.nodexa-database-table {
+    min-width: 820px;
+    margin-bottom: 0;
+}
+.box-body.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 767px) {
+    .content { padding-left: 10px; padding-right: 10px; }
+    .alert { overflow-wrap: anywhere; }
+    .box-body.table-responsive {
+        display: block;
+        border: 0;
+    }
+    .nodexa-database-table th,
+    .nodexa-database-table td {
+        white-space: nowrap;
+        vertical-align: middle !important;
+    }
+    .nodexa-database-table td:last-child {
+        min-width: 82px;
+    }
+    .box-footer .btn.pull-right {
+        float: none !important;
+        width: 100%;
+        margin-top: 12px;
+    }
+}
+</style>
 
 @section('footer-scripts')
     @parent
