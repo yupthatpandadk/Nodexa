@@ -46,7 +46,7 @@ chmod 700 "$BACKUP"
 # Unknown sites are never rewritten: a panel vhost must remain intact.
 PMA="pma.$DOMAIN"
 NGINX_FILES=()
-for active in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
+for active in /etc/nginx/nginx.conf /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
     [[ -f "$active" ]] || continue
     target="$(readlink -f "$active")"
     [[ "$target" == "$CONF" ]] && continue
