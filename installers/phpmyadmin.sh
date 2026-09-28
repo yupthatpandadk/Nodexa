@@ -17,6 +17,11 @@ read -rp "phpMyAdmin domæne [pma.nordicnode.org]: " FQDN
 FQDN="${FQDN:-pma.nordicnode.org}"
 FQDN="$(printf '%s' "$FQDN" | tr '[:upper:]' '[:lower:]')"
 [[ "$FQDN" =~ ^[a-z0-9.-]+$ ]] || die "Ugyldigt domæne."
+case "$FQDN" in
+    nordicnode.org|www.nordicnode.org|panel.nordicnode.org)
+        die "phpMyAdmin skal have eget subdomæne, fx pma.nordicnode.org (ikke Storefront eller panelet)."
+        ;;
+esac
 
 while true; do
     read -rp "SQL admin-brugernavn [nodexa_sql]: " SQL_USER
