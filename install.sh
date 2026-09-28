@@ -113,9 +113,10 @@ menu() {
     echo "  8) Remove PHPMyAdmin"
     echo "  9) Remove Wings"
     echo " 10) Remove Nodexa Panel"
+    echo " 11) Fix www/Storefront domain"
     echo "  0) Exit"
     echo
-    read -r -p "Vælg [0-10]: " choice
+    read -r -p "Vælg [0-11]: " choice
     echo
     case "$choice" in
       1) run_remote panel.sh; pause ;;
@@ -128,6 +129,7 @@ menu() {
       8) run_remote remove_phpmyadmin.sh; pause ;;
       9) run_remote remove_wings.sh; pause ;;
       10) run_remote remove_panel.sh; pause ;;
+      11) run_remote fix_storefront_domain.sh; pause ;;
       0) exit 0 ;;
       *) warn "Ugyldigt valg."; sleep 1 ;;
     esac
