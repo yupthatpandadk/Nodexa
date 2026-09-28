@@ -179,7 +179,11 @@ fi
 restore() {
     warn "Gendanner Nginx-konfigurationen fra før forsøget."
     if [[ -f "$BACKUP/changed-vhosts.tsv" ]]; then
-        while IFS=
+        while read -r target saved; do
+            [[ -f "$saved" ]] && cp -a "$saved" "$target"
+        done < "$BACKUP/changed-vhosts.tsv"
+    fi
+    rm -f "$LINK"
     if [[ -n "$OLD_LINK" ]]; then ln -s "$OLD_LINK" "$LINK"; fi
     if [[ "$OLD_CONF" -eq 1 ]]; then
         cp -a "$BACKUP/nodexa-storefront.conf" "$CONF"
