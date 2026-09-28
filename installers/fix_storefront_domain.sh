@@ -51,13 +51,13 @@ for active in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
     target="$(readlink -f "$active")"
     [[ "$target" == "$CONF" ]] && continue
     duplicate=0
-    for previous in "\${NGINX_FILES[@]}"; do
+    for previous in "${NGINX_FILES[@]}"; do
         if [[ "$previous" == "$target" ]]; then duplicate=1; break; fi
     done
     if [[ "$duplicate" == 0 ]]; then NGINX_FILES+=("$target"); fi
 done
 
-python3 - "$DOMAIN" "$WWW" "$PMA" "$BACKUP" "\${NGINX_FILES[@]}" <<'PY'
+python3 - "$DOMAIN" "$WWW" "$PMA" "$BACKUP" "${NGINX_FILES[@]}" <<'PY'
 import hashlib
 import pathlib
 import re
