@@ -1,0 +1,7 @@
+@extends('store.layout')
+@section('title','Søg · Vidensbase')
+@push('styles')@include('store.knowledgebase.partials.styles')@endpush
+@section('content')
+<section class="kbHero"><div class="container"><div class="eyebrow">VIDENSBASE / SØG</div><h1>Søg i vidensbasen</h1><form class="kbSearch" action="{{ route('knowledgebase.search') }}" method="GET"><input type="search" name="q" value="{{ $term }}" placeholder="Hvad leder du efter?" autofocus><button class="btn primary">Søg</button></form></div></section>
+<section class="kbShell"><div class="container"><div class="kbBreadcrumbs"><a href="{{ route('knowledgebase.index') }}">Vidensbase</a><span>›</span><span>Søg</span></div><h2 class="kbResultsTitle">@if($term)Resultater for “{{ $term }}”@else Alle artikler @endif</h2>@if($articles->isNotEmpty())<div class="kbArticleList">@foreach($articles as $article)<a class="kbArticleRow" href="{{ route('knowledgebase.article',$article) }}"><div><strong>{{ $article->title }}</strong><small>{{ $article->summary ?: $article->category->name }}</small></div><div class="kbMeta"><span>{{ $article->category->name }}</span><span>·</span><span>{{ number_format($article->views,0,',','.') }} visninger</span></div></a>@endforeach</div>@else<div class="kbEmpty">Ingen artikler matchede din søgning. Prøv med andre søgeord.</div>@endif</div></section>
+@endsection
