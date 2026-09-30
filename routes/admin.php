@@ -24,6 +24,7 @@ Route::post('/knowledgebase/articles', [Admin\KnowledgebaseController::class, 's
 Route::get('/knowledgebase/articles/{article}/edit', [Admin\KnowledgebaseController::class, 'editArticle'])->name('admin.knowledgebase.articles.edit');
 Route::patch('/knowledgebase/articles/{article}', [Admin\KnowledgebaseController::class, 'updateArticle'])->name('admin.knowledgebase.articles.update');
 Route::delete('/knowledgebase/articles/{article}', [Admin\KnowledgebaseController::class, 'destroyArticle'])->name('admin.knowledgebase.articles.delete');
+Route::post('/knowledgebase/upload-image', [Admin\KnowledgebaseController::class, 'uploadImage'])->name('admin.knowledgebase.upload-image');
 
 // Nodexa Support Tickets
 Route::get('/tickets', [Admin\SupportTicketController::class, 'index'])->name('admin.tickets');
