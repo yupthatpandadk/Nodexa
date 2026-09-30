@@ -95,7 +95,8 @@ os.replace(tmp, path)
 PY
 
 if [[ -f "${WINGS_CONFIG}" ]]; then
-    say "Opdaterer Wings remote og WebSocket origins..."
+    say "Kontrollerer Wings remote og WebSocket origins..."
+    WINGS_BEFORE_HASH="$(sha256sum "${WINGS_CONFIG}" | awk '{print $1}')"
 
     python3 - "${WINGS_CONFIG}" "${PRIMARY_URL}" "${LEGACY_PANEL_URL}" <<'PY'
 import os
@@ -152,23 +153,43 @@ except PermissionError:
 os.replace(tmp, path)
 PY
 
-    if systemctl list-unit-files wings.service >/dev/null 2>&1; then
-        say "Genstarter Wings..."
+    WINGS_AFTER_HASH="$(sha256sum "${WINGS_CONFIG}" | awk '{print $1}')"
+
+    if [[ "${WINGS_BEFORE_HASH}" == "${WINGS_AFTER_HASH}" ]]; then
+        say "Wings-konfigurationen er allerede korrekt. Spring genstart over."
+    elif systemctl list-unit-files wings.service >/dev/null 2>&1; then
+        say "Wings-konfigurationen er ændret. Genstarter Wings..."
+
         if ! systemctl restart wings; then
-            warn "Wings kunne ikke genstartes. Gendanner tidligere Wings-konfiguration."
+            warn "Wings kunne ikke genstartes. Viser de seneste loglinjer:"
+            journalctl -u wings -n 40 --no-pager 2>/dev/null || true
+            warn "Gendanner tidligere Wings-konfiguration."
             cp -a "${BACKUP}/wings-config.yml" "${WINGS_CONFIG}"
             systemctl restart wings || true
             cp -a "${BACKUP}/.env" .env
             die "Single-domain migreringen blev rullet tilbage."
         fi
-        sleep 2
-        if ! systemctl is-active --quiet wings; then
-            warn "Wings er ikke aktiv efter ændringen. Gendanner tidligere konfiguration."
+
+        WINGS_OK=0
+        for _ in $(seq 1 30); do
+            if systemctl is-active --quiet wings; then
+                WINGS_OK=1
+                break
+            fi
+            sleep 1
+        done
+
+        if [[ "${WINGS_OK}" -ne 1 ]]; then
+            warn "Wings blev ikke aktiv inden for 30 sekunder. Viser de seneste loglinjer:"
+            journalctl -u wings -n 40 --no-pager 2>/dev/null || true
+            warn "Gendanner tidligere Wings-konfiguration."
             cp -a "${BACKUP}/wings-config.yml" "${WINGS_CONFIG}"
             systemctl restart wings || true
             cp -a "${BACKUP}/.env" .env
             die "Single-domain migreringen blev rullet tilbage."
         fi
+
+        say "Wings er aktiv med den nye single-domain-konfiguration."
     else
         warn "wings.service blev ikke fundet. Wings-konfigurationen er ændret, men servicen kunne ikke genstartes automatisk."
     fi
