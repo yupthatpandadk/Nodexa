@@ -3,6 +3,7 @@
 namespace Pterodactyl\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Pterodactyl\Models\KnowledgebaseArticle;
 use Pterodactyl\Models\KnowledgebaseCategory;
@@ -85,6 +86,19 @@ class KnowledgebaseController extends Controller
             ->get();
 
         return view('store.knowledgebase.category', compact('category', 'articles'));
+    }
+
+    public function media(string $filename)
+    {
+        abort_unless((bool) preg_match('/^[A-Za-z0-9._-]+$/', $filename), 404);
+
+        $path = 'knowledgebase/' . $filename;
+        abort_unless(Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path, null, [
+            'Cache-Control' => 'public, max-age=31536000, immutable',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function article(KnowledgebaseArticle $article): View
