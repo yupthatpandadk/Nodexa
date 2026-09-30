@@ -103,6 +103,13 @@
                                 <i class="fa fa-cloud-download"></i> <span>Update Center</span>
                             </a>
                         </li>
+                        @if(Auth::user()->hasPermission('site_access.view'))
+                        <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.site-access') ?: 'active' }}">
+                            <a href="{{ route('admin.site-access') }}">
+                                <i class="fa fa-hourglass-half"></i> <span>Countdown & Maintenance</span>
+                            </a>
+                        </li>
+                        @endif
                         @if(Auth::user()->hasPermission('roles.view'))
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.roles') ?: 'active' }}">
                             <a href="{{ route('admin.roles') }}">
