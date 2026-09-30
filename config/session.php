@@ -2,6 +2,22 @@
 
 use Illuminate\Support\Str;
 
+$sessionDomain = env('SESSION_DOMAIN');
+$appHost = strtolower((string) parse_url((string) env('APP_URL', ''), PHP_URL_HOST));
+$isNordicNode = in_array($appHost, ['nordicnode.org', 'www.nordicnode.org', 'panel.nordicnode.org'], true);
+
+if (($sessionDomain === null || $sessionDomain === '') && $isNordicNode) {
+    // nordicnode.org and panel.nordicnode.org are the same Nodexa installation.
+    // Sharing the Laravel session cookie prevents the two hosts from drifting
+    // into different sessions/CSRF tokens.
+    $sessionDomain = '.nordicnode.org';
+}
+
+$secureCookie = env('SESSION_SECURE_COOKIE');
+if ($secureCookie === null && $isNordicNode) {
+    $secureCookie = true;
+}
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -155,7 +171,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN'),
+    'domain' => $sessionDomain,
 
     /*
     |--------------------------------------------------------------------------
@@ -168,7 +184,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => $secureCookie,
 
     /*
     |--------------------------------------------------------------------------
