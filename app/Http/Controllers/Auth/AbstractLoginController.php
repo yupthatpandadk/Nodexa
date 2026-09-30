@@ -81,10 +81,12 @@ abstract class AbstractLoginController extends Controller
 
         Event::dispatch(new DirectLogin($user, true));
 
+        $adminLogin = (bool) $request->session()->pull('nodexa_admin_login', false);
+
         return new JsonResponse([
             'data' => [
                 'complete' => true,
-                'intended' => $this->redirectPath(),
+                'intended' => $adminLogin && $user->hasAdminAccess() ? '/admin' : $this->redirectPath(),
                 'user' => $user->toVueObject(),
             ],
         ]);
