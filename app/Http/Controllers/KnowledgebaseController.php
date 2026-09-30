@@ -25,6 +25,7 @@ class KnowledgebaseController extends Controller
 
         $featured = KnowledgebaseArticle::query()
             ->where('published', true)
+            ->whereHas('category', fn ($query) => $query->where('published', true))
             ->where('featured', true)
             ->with('category')
             ->orderByDesc('views')
@@ -34,6 +35,7 @@ class KnowledgebaseController extends Controller
 
         $popular = KnowledgebaseArticle::query()
             ->where('published', true)
+            ->whereHas('category', fn ($query) => $query->where('published', true))
             ->with('category')
             ->orderByDesc('views')
             ->orderByDesc('updated_at')
@@ -49,6 +51,7 @@ class KnowledgebaseController extends Controller
 
         $articles = KnowledgebaseArticle::query()
             ->where('published', true)
+            ->whereHas('category', fn ($query) => $query->where('published', true))
             ->with('category')
             ->when($term !== '', function ($query) use ($term) {
                 $query->where(function ($query) use ($term) {
@@ -81,12 +84,11 @@ class KnowledgebaseController extends Controller
 
     public function article(KnowledgebaseArticle $article): View
     {
-        abort_unless($article->published, 404);
+        $article->load('category');
+
+        abort_unless($article->published && $article->category?->published, 404);
 
         $article->increment('views');
-        $article->views++;
-
-        $article->load('category');
 
         $related = KnowledgebaseArticle::query()
             ->where('published', true)
