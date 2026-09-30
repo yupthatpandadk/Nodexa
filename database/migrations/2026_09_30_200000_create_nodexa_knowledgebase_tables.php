@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name', 120);
             $table->string('slug', 140)->unique();
             $table->string('description', 500)->nullable();
-            $table->string('icon', 40)->default('fa-book');
+            $table->string('icon', 40)->default('📚');
             $table->unsignedInteger('sort_order')->default(0);
             $table->boolean('published')->default(true);
             $table->timestamps();
