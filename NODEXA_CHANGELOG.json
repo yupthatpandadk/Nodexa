@@ -1,6 +1,18 @@
 {
-  "latest": "1.3.3",
+  "latest": "1.3.4",
   "releases": [
+    {
+      "version": "1.3.4",
+      "date": "2026-09-30",
+      "type": "patch",
+      "title": "Client Area serverliste rettet",
+      "changes": [
+        "Client Area henter nu servere direkte fra Pterodactyl-adgangen på brugerens konto i stedet for kun fra Storefront-ordrer.",
+        "Servere oprettet manuelt i kontrolpanelet vises nu under Dashboard og Mine servere.",
+        "Servere som brugeren har adgang til som subuser vises også.",
+        "Storefront-ordredata bruges fortsat som ekstra serviceinformation, når en server er knyttet til en ordre."
+      ]
+    },
     {
       "version": "1.3.3",
       "date": "2026-09-30",
