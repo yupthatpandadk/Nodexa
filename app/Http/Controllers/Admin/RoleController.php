@@ -26,6 +26,7 @@ class RoleController extends Controller
         'Mounts' => ['mounts.view', 'mounts.manage'],
         'Nests & Eggs' => ['nests.view', 'nests.manage'],
         'Roles & Permissions' => ['roles.view', 'roles.manage'],
+        'Website Access' => ['site_access.view', 'site_access.manage', 'site_access.bypass_countdown', 'site_access.bypass_maintenance'],
         'Addon Manager' => ['addons.view', 'addons.manage'],
     ];
 
