@@ -47,7 +47,7 @@ class KnowledgebaseController extends Controller
             'name' => trim($data['name']),
             'slug' => $this->uniqueSlug(KnowledgebaseCategory::class, $data['name']),
             'description' => trim((string) ($data['description'] ?? '')) ?: null,
-            'icon' => trim((string) ($data['icon'] ?? '')) ?: 'fa-book',
+            'icon' => trim((string) ($data['icon'] ?? '')) ?: '📚',
             'sort_order' => (int) ($data['sort_order'] ?? 0),
             'published' => $request->boolean('published'),
         ]);
