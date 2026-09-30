@@ -6,6 +6,7 @@
         <title>Nodexa — @yield('title')</title>
         <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
         <meta name="_token" content="{{ csrf_token() }}">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png">
         <link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
@@ -273,5 +274,6 @@
                 })
             </script>
         @show
+        @include('partials.csrf-refresh')
     </body>
 </html>
