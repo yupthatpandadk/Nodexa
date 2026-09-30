@@ -4,6 +4,25 @@ use Illuminate\Support\Facades\Route;
 use Pterodactyl\Http\Controllers\StorefrontController;
 use Pterodactyl\Http\Controllers\SupportTicketController;
 
+Route::get('/csrf/refresh', function () {
+    $response = response()
+        ->json(['token' => csrf_token()])
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        ->header('Pragma', 'no-cache');
+
+    // Older Nodexa installs may still have a host-only session cookie on a
+    // subdomain. Once the shared .nordicnode.org cookie is active, expire the
+    // old host-only cookie so the browser cannot send two competing sessions.
+    $sessionDomain = ltrim((string) config('session.domain'), '.');
+    $host = strtolower(request()->getHost());
+
+    if ($sessionDomain === 'nordicnode.org' && $host !== 'nordicnode.org') {
+        $response->withCookie(cookie()->forget((string) config('session.cookie'), '/', null));
+    }
+
+    return $response;
+})->name('csrf.refresh');
+
 Route::get('/', [StorefrontController::class, 'index'])->name('store.home');
 Route::get('/hosting', [StorefrontController::class, 'hosting'])->name('store.hosting');
 Route::get('/features', [StorefrontController::class, 'features'])->name('store.features');
