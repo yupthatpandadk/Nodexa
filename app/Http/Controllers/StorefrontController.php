@@ -24,28 +24,48 @@ class StorefrontController extends Controller
 
     public function dashboard(Request $request)
     {
+        $user = $request->user();
+
         $orders = StoreOrder::with(['product','server'])
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $user->id)
             ->latest()
+            ->get();
+
+        // The Client Area must reflect the actual servers the user can access in
+        // Pterodactyl, not only servers that happened to be created through the
+        // Nodexa Storefront order flow. This also includes servers assigned to the
+        // account as a subuser.
+        $activeServers = $user->accessibleServers()
+            ->with(['node', 'allocation'])
+            ->orderByDesc('servers.created_at')
             ->get();
 
         return view('store.client.index', [
             'orders' => $orders,
-            'activeServers' => $orders->filter(fn ($order) => $order->server !== null),
+            'activeServers' => $activeServers,
+            'serverOrders' => $orders->whereNotNull('server_id')->keyBy('server_id'),
             'pendingOrders' => $orders->where('status', 'awaiting_payment'),
-            'user' => $request->user(),
+            'user' => $user,
         ]);
     }
 
     public function clientServers(Request $request)
     {
-        $orders = StoreOrder::with(['product','server'])
-            ->where('user_id', $request->user()->id)
-            ->whereNotNull('server_id')
-            ->latest()
+        $user = $request->user();
+
+        $servers = $user->accessibleServers()
+            ->with(['node', 'allocation'])
+            ->orderByDesc('servers.created_at')
             ->get();
 
-        return view('store.client.servers', compact('orders'));
+        $serverOrders = StoreOrder::with('product')
+            ->where('user_id', $user->id)
+            ->whereNotNull('server_id')
+            ->latest()
+            ->get()
+            ->keyBy('server_id');
+
+        return view('store.client.servers', compact('servers', 'serverOrders'));
     }
 
     public function clientBilling(Request $request)
