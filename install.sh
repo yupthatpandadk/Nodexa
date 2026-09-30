@@ -79,6 +79,14 @@ update_panel() {
   fi
 
   php artisan migrate --force
+
+  # NordicNode uses one public domain for Storefront, Client Area and the
+  # Pterodactyl UI. This system-level migration also updates Wings origins,
+  # which requires the root privileges this installer already runs with.
+  if [[ -f installers/single_domain.sh ]]; then
+    NODEXA_PANEL_DIR="$PANEL_DIR" bash installers/single_domain.sh
+  fi
+
   php artisan optimize:clear || true
   chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
   php artisan up 2>/dev/null || true
@@ -114,9 +122,10 @@ menu() {
     echo "  9) Remove Wings"
     echo " 10) Remove Nodexa Panel"
     echo " 11) Fix www/Storefront domain"
+    echo " 12) Use nordicnode.org only"
     echo "  0) Exit"
     echo
-    read -r -p "Vælg [0-11]: " choice
+    read -r -p "Vælg [0-12]: " choice
     echo
     case "$choice" in
       1) run_remote panel.sh; pause ;;
@@ -130,6 +139,7 @@ menu() {
       9) run_remote remove_wings.sh; pause ;;
       10) run_remote remove_panel.sh; pause ;;
       11) run_remote fix_storefront_domain.sh; pause ;;
+      12) run_remote single_domain.sh; pause ;;
       0) exit 0 ;;
       *) warn "Ugyldigt valg."; sleep 1 ;;
     esac
@@ -147,6 +157,7 @@ case "${1:-}" in
   remove-panel) run_remote remove_panel.sh ;;
   remove-wings) run_remote remove_wings.sh ;;
   remove-phpmyadmin) run_remote remove_phpmyadmin.sh ;;
+  single-domain) run_remote single_domain.sh ;;
   "") menu ;;
   *) fail "Ukendt kommando: $1" ;;
 esac
