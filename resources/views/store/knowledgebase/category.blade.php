@@ -1,0 +1,7 @@
+@extends('store.layout')
+@section('title',$category->name.' · Vidensbase')
+@push('styles')@include('store.knowledgebase.partials.styles')@endpush
+@section('content')
+<section class="kbHero"><div class="container"><div class="eyebrow">VIDENSBASE / KATEGORI</div><h1>{{ $category->name }}</h1><p>{{ $category->description ?: 'Guides og svar fra Nodexa.' }}</p><form class="kbSearch" action="{{ route('knowledgebase.search') }}" method="GET"><input type="search" name="q" placeholder="Søg i vidensbasen..."><button class="btn primary">Søg</button></form></div></section>
+<section class="kbShell"><div class="container"><div class="kbBreadcrumbs"><a href="{{ route('knowledgebase.index') }}">Vidensbase</a><span>›</span><span>{{ $category->name }}</span></div>@if($articles->isNotEmpty())<div class="kbArticleList">@foreach($articles as $article)<a class="kbArticleRow" href="{{ route('knowledgebase.article',$article) }}"><div><strong>{{ $article->title }}</strong><small>{{ $article->summary ?: 'Læs vejledningen' }}</small></div><div class="kbMeta">@if($article->featured)<span class="kbBadge">Udvalgt</span>@endif<span>{{ number_format($article->views,0,',','.') }} visninger</span><span>→</span></div></a>@endforeach</div>@else<div class="kbEmpty">Der er endnu ingen publicerede artikler i denne kategori.</div>@endif</div></section>
+@endsection
