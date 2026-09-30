@@ -4,6 +4,47 @@ import { store } from '@/state';
 const csrfToken = (): string | undefined =>
     document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
 
+const setCsrfToken = (token: string): void => {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]');
+    if (meta) meta.content = token;
+
+    document.querySelectorAll<HTMLInputElement>('input[name="_token"]').forEach((input) => {
+        input.value = token;
+    });
+};
+
+let csrfRefreshRequest: Promise<string> | null = null;
+
+const refreshCsrfToken = (): Promise<string> => {
+    if (csrfRefreshRequest) return csrfRefreshRequest;
+
+    // Use the global axios instance here, not this module's instance, otherwise
+    // a failed refresh could recursively trigger the 419 interceptor below.
+    csrfRefreshRequest = axios
+        .get('/csrf/refresh', {
+            withCredentials: true,
+            timeout: 10000,
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then((response) => {
+            const token = response.data?.token;
+            if (typeof token !== 'string' || !token) {
+                throw new Error('CSRF refresh returned no token.');
+            }
+
+            setCsrfToken(token);
+            return token;
+        })
+        .finally(() => {
+            csrfRefreshRequest = null;
+        });
+
+    return csrfRefreshRequest;
+};
+
 const http: AxiosInstance = axios.create({
     withCredentials: true,
     timeout: 20000,
@@ -41,8 +82,29 @@ http.interceptors.response.use(
 
         return resp;
     },
-    (error) => {
+    async (error) => {
         store.getActions().progress.setComplete();
+
+        const config = error?.config as any;
+        const isCsrfMismatch = error?.response?.status === 419;
+        const isRefreshRequest = String(config?.url || '').includes('/csrf/refresh');
+
+        if (isCsrfMismatch && config && !config.__nodexaCsrfRetried && !isRefreshRequest) {
+            config.__nodexaCsrfRetried = true;
+
+            try {
+                const token = await refreshCsrfToken();
+
+                config.headers = config.headers || {};
+                config.headers['X-CSRF-TOKEN'] = token;
+
+                // The 419 happens before Laravel reaches the controller, so it is
+                // safe to retry the original request once with the renewed session.
+                return http.request(config);
+            } catch (refreshError) {
+                // Preserve the original 419 if refreshing the session itself fails.
+            }
+        }
 
         throw error;
     }
