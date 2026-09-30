@@ -91,7 +91,8 @@ export default () => {
         // Don't use react-router to handle changing this part of the URL, otherwise it
         // triggers a needless re-render. We just want to track this in the URL incase the
         // user refreshes the page.
-        window.history.replaceState(null, document.title, `/${page <= 1 ? '' : `?page=${page}`}`);
+        const dashboardPath = window.location.pathname.startsWith('/panel') ? '/panel' : '/';
+        window.history.replaceState(null, document.title, `${dashboardPath}${page <= 1 ? '' : `?page=${page}`}`);
     }, [page]);
 
     useEffect(() => {
