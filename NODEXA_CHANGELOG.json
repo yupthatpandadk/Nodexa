@@ -1,6 +1,18 @@
 {
-  "latest": "1.3.10",
+  "latest": "1.3.11",
   "releases": [
+    {
+      "version": "1.3.11",
+      "date": "2026-09-30",
+      "type": "patch",
+      "title": "Dynamiske Countdown-bokse",
+      "changes": [
+        "Dage-boksen forsvinder automatisk uden side-reload, når der er under 1 dag tilbage.",
+        "Timer-boksen forsvinder automatisk uden side-reload, når der er under 1 time tilbage.",
+        "Minutter-boksen forsvinder automatisk uden side-reload, når der er under 1 minut tilbage.",
+        "De resterende Countdown-bokse tilpasser automatisk bredden, mens den endelige side-reload ved 00:00:00:00 bevares."
+      ]
+    },
     {
       "version": "1.3.10",
       "date": "2026-09-30",
