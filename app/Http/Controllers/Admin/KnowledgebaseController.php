@@ -3,8 +3,10 @@
 namespace Pterodactyl\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Prologue\Alerts\AlertsMessageBag;
 use Pterodactyl\Http\Controllers\Controller;
@@ -146,13 +148,28 @@ class KnowledgebaseController extends Controller
         return redirect()->route('admin.knowledgebase');
     }
 
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'image' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:10240',
+        ]);
+
+        $path = $data['image']->store('knowledgebase', 'public');
+        $url = Storage::disk('public')->url($path);
+
+        return response()->json([
+            'url' => $url,
+            'markdown' => '![Billede](' . $url . ' "Billedtekst")',
+        ]);
+    }
+
     private function validateArticle(Request $request): array
     {
         $data = $request->validate([
             'category_id' => 'required|exists:knowledgebase_categories,id',
             'title' => 'required|string|max:180',
             'summary' => 'nullable|string|max:500',
-            'content' => 'required|string|max:100000',
+            'content' => 'required|string|max:200000',
             'sort_order' => 'nullable|integer|min:0|max:9999',
         ]);
 
