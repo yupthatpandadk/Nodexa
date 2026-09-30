@@ -31,6 +31,7 @@ Route::get('/about', [StorefrontController::class, 'about'])->name('store.about'
 Route::get('/support', [StorefrontController::class, 'support'])->name('store.support');
 Route::get('/knowledgebase', [KnowledgebaseController::class, 'index'])->name('knowledgebase.index');
 Route::get('/knowledgebase/search', [KnowledgebaseController::class, 'search'])->name('knowledgebase.search');
+Route::get('/knowledgebase/media/{filename}', [KnowledgebaseController::class, 'media'])->where('filename', '[A-Za-z0-9._-]+')->name('knowledgebase.media');
 Route::get('/knowledgebase/category/{category:slug}', [KnowledgebaseController::class, 'category'])->name('knowledgebase.category');
 Route::get('/knowledgebase/article/{article:slug}', [KnowledgebaseController::class, 'article'])->name('knowledgebase.article');
 Route::get('/store', [StorefrontController::class, 'hosting'])->name('store.index');
