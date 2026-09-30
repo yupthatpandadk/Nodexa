@@ -1,6 +1,19 @@
 {
-  "latest": "1.3.6",
+  "latest": "1.3.7",
   "releases": [
+    {
+      "version": "1.3.7",
+      "date": "2026-09-30",
+      "type": "minor",
+      "title": "Countdown & Maintenance",
+      "changes": [
+        "Ny Countdown-side som kan slås til og fra fra Admin Area med valgfrit sluttidspunkt, titel og besked.",
+        "Ny Maintenance-side som kan slås til og fra fra Admin Area og returnerer korrekt maintenance-status til almindelige besøgende.",
+        "Nye permissions til at se og administrere Website Access samt særskilt bypass af Countdown og Maintenance.",
+        "Administrator-login og Admin Area forbliver tilgængelige under begge tilstande, så autoriserede admins ikke låses ude.",
+        "Maintenance har prioritet over Countdown; en admin med maintenance-bypass får adgang til den rigtige hjemmeside under vedligeholdelse."
+      ]
+    },
     {
       "version": "1.3.6",
       "date": "2026-09-30",
