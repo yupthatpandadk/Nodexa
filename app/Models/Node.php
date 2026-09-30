@@ -163,7 +163,16 @@ class Node extends Model implements Identifiable
                 ],
             ],
             'allowed_mounts' => $this->mounts->pluck('source')->toArray(),
-            'remote' => route('index'),
+            // Wings compares the browser WebSocket Origin against its configured
+            // panel location. Use the canonical base URL rather than the /panel
+            // React route, otherwise nordicnode.org server consoles are rejected.
+            'remote' => rtrim((string) config('app.url'), '/'),
+            'allowed_origins' => array_values(array_unique(array_filter([
+                rtrim((string) config('app.url'), '/'),
+                config('app.url') && parse_url((string) config('app.url'), PHP_URL_HOST) === 'nordicnode.org'
+                    ? 'https://panel.nordicnode.org'
+                    : null,
+            ]))),
         ];
     }
 
