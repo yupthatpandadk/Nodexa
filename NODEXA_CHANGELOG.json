@@ -1,6 +1,20 @@
 {
-  "latest": "1.3.11",
+  "latest": "1.3.12",
   "releases": [
+    {
+      "version": "1.3.12",
+      "date": "2026-09-30",
+      "type": "minor",
+      "title": "WHMCS-lignende Vidensbase",
+      "changes": [
+        "Ny offentlig Vidensbase med kategorier, søgning, artikeloversigter, breadcrumbs, relaterede artikler samt populære og udvalgte artikler.",
+        "Nyt Admin Area til at oprette, redigere, publicere, sortere og slette vidensbase-kategorier og artikler.",
+        "Artikler understøtter titel, kort beskrivelse, længere indhold, kategori, kladde/publiceret status, udvalgt status, sortering og visningstæller.",
+        "Vidensbasen er integreret i Storefront-navigation, footer og Support Center.",
+        "Nye knowledgebase.view og knowledgebase.manage permissions gør det muligt at styre hvilke admins der kan se og administrere vidensbasen.",
+        "Database-tabeller til kategorier og artikler oprettes automatisk af Nodexa updateren."
+      ]
+    },
     {
       "version": "1.3.11",
       "date": "2026-09-30",
