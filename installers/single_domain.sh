@@ -96,9 +96,37 @@ PY
 
 if [[ -f "${WINGS_CONFIG}" ]]; then
     say "Kontrollerer Wings remote og WebSocket origins..."
-    WINGS_BEFORE_HASH="$(sha256sum "${WINGS_CONFIG}" | awk '{print $1}')"
 
-    python3 - "${WINGS_CONFIG}" "${PRIMARY_URL}" "${LEGACY_PANEL_URL}" <<'PY'
+    if python3 - "${WINGS_CONFIG}" "${PRIMARY_URL}" "${LEGACY_PANEL_URL}" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text()
+primary = sys.argv[2]
+legacy = sys.argv[3]
+
+remote = re.search(r'(?m)^remote\s*:\s*["\x27]?([^"\x27\s#]+)', text)
+origins = re.search(r'(?ms)^allowed_origins\s*:\s*(.*?)(?=^\S|\Z)', text)
+
+if not remote or remote.group(1).rstrip('/') != primary.rstrip('/'):
+    raise SystemExit(1)
+
+origin_text = origins.group(0) if origins else ''
+if primary not in origin_text or legacy not in origin_text:
+    raise SystemExit(1)
+PY
+    then
+        say "Wings-konfigurationen er allerede korrekt. Spring ændring og genstart over."
+        WINGS_ALREADY_CORRECT=1
+    else
+        WINGS_ALREADY_CORRECT=0
+    fi
+
+    if [[ "${WINGS_ALREADY_CORRECT}" -eq 0 ]]; then
+        WINGS_BEFORE_HASH="$(sha256sum "${WINGS_CONFIG}" | awk '{print $1}')"
+
+        python3 - "${WINGS_CONFIG}" "${PRIMARY_URL}" "${LEGACY_PANEL_URL}" <<'PY'
 import os
 import re
 import stat
@@ -153,7 +181,7 @@ except PermissionError:
 os.replace(tmp, path)
 PY
 
-    WINGS_AFTER_HASH="$(sha256sum "${WINGS_CONFIG}" | awk '{print $1}')"
+        WINGS_AFTER_HASH="$(sha256sum "${WINGS_CONFIG}" | awk '{print $1}')"
 
     if [[ "${WINGS_BEFORE_HASH}" == "${WINGS_AFTER_HASH}" ]]; then
         say "Wings-konfigurationen er allerede korrekt. Spring genstart over."
@@ -192,6 +220,7 @@ PY
         say "Wings er aktiv med den nye single-domain-konfiguration."
     else
         warn "wings.service blev ikke fundet. Wings-konfigurationen er ændret, men servicen kunne ikke genstartes automatisk."
+    fi
     fi
 else
     warn "${WINGS_CONFIG} findes ikke. APP_URL er ændret, men Wings skal have remote/allowed_origins rettet manuelt på noden."
