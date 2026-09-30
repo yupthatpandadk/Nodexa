@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Pterodactyl\Http\Middleware\TrimStrings;
 use Pterodactyl\Http\Middleware\AdminAuthenticate;
 use Pterodactyl\Http\Middleware\AdminPermission;
+use Pterodactyl\Http\Middleware\SiteAccessGate;
 use Pterodactyl\Http\Middleware\RequireTwoFactorAuthentication;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 
@@ -38,9 +39,13 @@ class RouteServiceProvider extends ServiceProvider
 
         $this->routes(function () {
             Route::middleware('web')->group(function () {
-                Route::group([], base_path('routes/storefront.php'));
+                // Countdown/Maintenance gates apply to the public storefront and
+                // customer/server panel. Auth and Admin remain reachable so an
+                // authorized administrator can sign in and disable a gate.
+                Route::middleware(SiteAccessGate::class)
+                    ->group(base_path('routes/storefront.php'));
 
-                Route::middleware(['auth.session', RequireTwoFactorAuthentication::class])
+                Route::middleware([SiteAccessGate::class, 'auth.session', RequireTwoFactorAuthentication::class])
                     ->group(base_path('routes/base.php'));
 
                 Route::middleware(['auth.session', RequireTwoFactorAuthentication::class, AdminAuthenticate::class, AdminPermission::class])
