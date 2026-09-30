@@ -26,7 +26,15 @@ class KnowledgebaseRenderer
 
             $text = trim(implode(' ', array_map('trim', $paragraph)));
             if ($text !== '') {
-                $html[] = '<p>' . $this->inline($text) . '</p>';
+                $rendered = $this->inline($text);
+
+                // Standalone images are rendered as figures rather than invalid
+                // figure-inside-paragraph markup.
+                if (str_starts_with($rendered, '<figure>') && str_ends_with($rendered, '</figure>')) {
+                    $html[] = $rendered;
+                } else {
+                    $html[] = '<p>' . $rendered . '</p>';
+                }
             }
 
             $paragraph = [];
