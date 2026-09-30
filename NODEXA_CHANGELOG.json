@@ -1,6 +1,18 @@
 {
-  "latest": "1.3.0",
+  "latest": "1.3.1",
   "releases": [
+    {
+      "version": "1.3.1",
+      "date": "2026-09-30",
+      "type": "patch",
+      "title": "CSRF og session-stabilitet",
+      "changes": [
+        "nordicnode.org og panel.nordicnode.org deler nu automatisk den korrekte sikre Laravel-session.",
+        "CSRF-token fornyes automatisk i baggrunden på Storefront, Client Panel og Admin Area.",
+        "HTTP 419/CSRF-fejl på React/API-kald genopfrisker sessionen og prøver requesten én gang igen.",
+        "Gamle host-only session-cookies på subdomæner ryddes sikkert under CSRF-refresh for at undgå konkurrerende sessions."
+      ]
+    },
     {
       "version": "1.3.0",
       "date": "2026-09-20",
