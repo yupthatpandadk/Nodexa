@@ -6,9 +6,14 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Pterodactyl\Models\KnowledgebaseArticle;
 use Pterodactyl\Models\KnowledgebaseCategory;
+use Pterodactyl\Services\Knowledgebase\KnowledgebaseRenderer;
 
 class KnowledgebaseController extends Controller
 {
+    public function __construct(private KnowledgebaseRenderer $renderer)
+    {
+    }
+
     public function index(): View
     {
         $categories = KnowledgebaseCategory::query()
@@ -99,6 +104,8 @@ class KnowledgebaseController extends Controller
             ->limit(5)
             ->get();
 
-        return view('store.knowledgebase.article', compact('article', 'related'));
+        $renderedContent = $this->renderer->render($article->content);
+
+        return view('store.knowledgebase.article', compact('article', 'related', 'renderedContent'));
     }
 }
