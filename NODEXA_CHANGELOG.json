@@ -1,6 +1,18 @@
 {
-  "latest": "1.3.9",
+  "latest": "1.3.10",
   "releases": [
+    {
+      "version": "1.3.10",
+      "date": "2026-09-30",
+      "type": "patch",
+      "title": "Automatisk afslutning af Countdown",
+      "changes": [
+        "Countdown slår nu automatisk sig selv fra, når det konfigurerede sluttidspunkt er nået.",
+        "Countdown-siden bruger serverens klokkeslæt, så brugerens telefon- eller computerur ikke kan få nedtællingen til at afslutte for tidligt eller for sent.",
+        "Når nedtællingen rammer 00:00:00:00, genindlæses siden automatisk og den normale hjemmeside vises.",
+        "Hvis sluttidspunktet allerede er passeret ved et nyt request, deaktiveres Countdown server-side med det samme."
+      ]
+    },
     {
       "version": "1.3.9",
       "date": "2026-09-30",
