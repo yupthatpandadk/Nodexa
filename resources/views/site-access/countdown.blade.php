@@ -13,7 +13,7 @@
         .wrap{width:min(760px,100%);position:relative;z-index:1}.brand{display:flex;align-items:center;justify-content:center;gap:11px;margin-bottom:24px;font-weight:900}.logo{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,var(--blue),var(--purple));box-shadow:0 15px 45px rgba(77,86,255,.28)}
         .card{border:1px solid var(--line);border-radius:24px;background:rgba(7,19,31,.88);box-shadow:0 28px 90px rgba(0,0,0,.38);backdrop-filter:blur(20px);padding:clamp(28px,6vw,58px);text-align:center}.status{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid #244361;border-radius:999px;background:#0b1d2e;color:#9bc9f7;font-size:11px;font-weight:900;letter-spacing:.11em;text-transform:uppercase}.dot{width:7px;height:7px;border-radius:50%;background:#5ad8ff;box-shadow:0 0 16px currentColor}
         h1{font-size:clamp(36px,8vw,64px);line-height:1.02;letter-spacing:-.045em;margin:22px 0 16px}.message{max-width:580px;margin:0 auto;color:var(--muted);font-size:clamp(15px,2.5vw,18px);line-height:1.7}.login{display:inline-flex;margin-top:28px;color:#87bfff;font-size:12px;text-decoration:none;font-weight:800}.login:hover{color:#fff}
-        .countdown{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:34px auto 4px;max-width:560px}.unit{padding:18px 8px;border-radius:15px;background:#0b1c2d;border:1px solid #1c3854}.unit strong{font-size:clamp(24px,6vw,40px);display:block;letter-spacing:-.04em}.unit span{display:block;color:#69839f;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;margin-top:3px}
+        .countdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:34px auto 4px;max-width:560px}.unit{padding:18px 8px;border-radius:15px;background:#0b1c2d;border:1px solid #1c3854}.unit[hidden]{display:none}.unit strong{font-size:clamp(24px,6vw,40px);display:block;letter-spacing:-.04em}.unit span{display:block;color:#69839f;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;margin-top:3px}
         .maintenanceIcon{width:82px;height:82px;border-radius:22px;margin:30px auto 0;display:grid;place-items:center;background:linear-gradient(145deg,#182b40,#271f35);border:1px solid #314760;font-size:34px}
         @media(max-width:520px){.card{border-radius:19px;padding:30px 18px}.countdown{gap:6px}.unit{padding:14px 4px;border-radius:12px}}
     </style>
@@ -28,10 +28,10 @@
         <p class="message">{{ $message }}</p>
         @if($target)
         <div class="countdown" id="countdown" data-target="{{ $target }}" data-server-now="{{ $serverNow }}">
-            <div class="unit"><strong id="days">--</strong><span>Dage</span></div>
-            <div class="unit"><strong id="hours">--</strong><span>Timer</span></div>
-            <div class="unit"><strong id="minutes">--</strong><span>Minutter</span></div>
-            <div class="unit"><strong id="seconds">--</strong><span>Sekunder</span></div>
+            <div class="unit" id="days-unit"><strong id="days">--</strong><span>Dage</span></div>
+            <div class="unit" id="hours-unit"><strong id="hours">--</strong><span>Timer</span></div>
+            <div class="unit" id="minutes-unit"><strong id="minutes">--</strong><span>Minutter</span></div>
+            <div class="unit" id="seconds-unit"><strong id="seconds">--</strong><span>Sekunder</span></div>
         </div>
         @endif
         <a class="login" href="{{ route('auth.admin-login') }}">Administrator-login →</a>
@@ -56,10 +56,17 @@
         var hours=Math.floor(diff/3600000); diff%=3600000;
         var minutes=Math.floor(diff/60000); diff%=60000;
         var seconds=Math.floor(diff/1000);
+
         document.getElementById('days').textContent=String(days).padStart(2,'0');
         document.getElementById('hours').textContent=String(hours).padStart(2,'0');
         document.getElementById('minutes').textContent=String(minutes).padStart(2,'0');
         document.getElementById('seconds').textContent=String(seconds).padStart(2,'0');
+
+        // Hide finished units immediately without reloading the page.
+        // Once a larger unit reaches zero it stays removed for the rest of the countdown.
+        document.getElementById('days-unit').hidden = days === 0;
+        document.getElementById('hours-unit').hidden = days === 0 && hours === 0;
+        document.getElementById('minutes-unit').hidden = days === 0 && hours === 0 && minutes === 0;
     }
 
     function tick(){
