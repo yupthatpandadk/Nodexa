@@ -1,6 +1,18 @@
 {
-  "latest": "1.3.12",
+  "latest": "1.3.13",
   "releases": [
+    {
+      "version": "1.3.13",
+      "date": "2026-09-30",
+      "type": "patch",
+      "title": "Vidensbase migration fix",
+      "changes": [
+        "Rettet MySQL foreign key-fejlen på knowledgebase_articles.author_id, som skyldtes forskellig datatype mellem users.id og Laravel foreignId().",
+        "Vidensbase-migrationen bruger nu korrekt UNSIGNED INT til author_id, så foreign key matcher Pterodactyl users.id.",
+        "Migrationen er gjort repair-safe, så en delvist oprettet knowledgebase_categories-tabel efter et tidligere fejlforsøg ikke blokerer næste update.",
+        "Ingen manuel databaseoprydning er normalt nødvendig; updateren kan blot køres igen."
+      ]
+    },
     {
       "version": "1.3.12",
       "date": "2026-09-30",
