@@ -107,6 +107,18 @@ if command -v yarn >/dev/null 2>&1; then yarn build:production; else npm run bui
 progress 79 "Running database migrations…"
 php artisan migrate --force
 
+# The web Update Center normally runs as www-data and cannot safely edit the
+# system Wings configuration. If this updater is ever run as root, perform the
+# single-domain migration automatically; otherwise leave a clear log message.
+if [ -f installers/single_domain.sh ]; then
+    if [ "${EUID:-$(id -u)}" -eq 0 ]; then
+        progress 84 "Migrating NordicNode to one public domain…"
+        NODEXA_PANEL_DIR="$ROOT" bash installers/single_domain.sh
+    else
+        log "Single-domain system migration requires root. Run: sudo bash $ROOT/installers/single_domain.sh"
+    fi
+fi
+
 progress 87 "Refreshing application cache…"
 php artisan optimize:clear
 php artisan config:cache || true
