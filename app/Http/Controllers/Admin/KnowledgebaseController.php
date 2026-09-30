@@ -6,7 +6,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Prologue\Alerts\AlertsMessageBag;
 use Pterodactyl\Http\Controllers\Controller;
@@ -154,8 +153,9 @@ class KnowledgebaseController extends Controller
             'image' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:10240',
         ]);
 
-        $path = $data['image']->store('knowledgebase', 'public');
-        $url = Storage::disk('public')->url($path);
+        $path = $data['image']->store('knowledgebase', 'local');
+        $filename = basename($path);
+        $url = route('knowledgebase.media', ['filename' => $filename]);
 
         return response()->json([
             'url' => $url,
