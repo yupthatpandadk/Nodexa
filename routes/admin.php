@@ -6,6 +6,10 @@ use Pterodactyl\Http\Middleware\Admin\Servers\ServerInstalled;
 
 Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
 
+// Nodexa Website Access (Countdown & Maintenance)
+Route::get('/site-access', [Admin\SiteAccessController::class, 'index'])->name('admin.site-access');
+Route::patch('/site-access', [Admin\SiteAccessController::class, 'update'])->name('admin.site-access.update');
+
 // Nodexa Error Center
 Route::get('/errors', [Admin\ErrorCenterController::class, 'index'])->name('admin.errors');
 Route::post('/errors/repair', [Admin\ErrorCenterController::class, 'repair'])->name('admin.errors.repair');
