@@ -19,14 +19,21 @@ class SiteAccessGate
     {
         $user = $request->user();
 
-        if ($this->enabled('maintenance_enabled') && !$this->canBypass($user, 'site_access.bypass_maintenance')) {
-            return response()
-                ->view('site-access.maintenance', [
-                    'title' => $this->settings->get(self::PREFIX . 'maintenance_title', 'Vi vedligeholder Nodexa'),
-                    'message' => $this->settings->get(self::PREFIX . 'maintenance_message', 'Vi arbejder på platformen og er tilbage så hurtigt som muligt.'),
-                ], 503)
-                ->header('Retry-After', '300')
-                ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        if ($this->enabled('maintenance_enabled')) {
+            if (!$this->canBypass($user, 'site_access.bypass_maintenance')) {
+                return response()
+                    ->view('site-access.maintenance', [
+                        'title' => $this->settings->get(self::PREFIX . 'maintenance_title', 'Vi vedligeholder Nodexa'),
+                        'message' => $this->settings->get(self::PREFIX . 'maintenance_message', 'Vi arbejder på platformen og er tilbage så hurtigt som muligt.'),
+                    ], 503)
+                    ->header('Retry-After', '300')
+                    ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+            }
+
+            // Maintenance has priority over Countdown. An administrator with
+            // maintenance bypass gets the real website even if Countdown is
+            // also configured as enabled.
+            return $next($request);
         }
 
         if ($this->enabled('countdown_enabled') && !$this->canBypass($user, 'site_access.bypass_countdown')) {
