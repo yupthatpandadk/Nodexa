@@ -147,6 +147,11 @@
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.tickets') ?: 'active' }}">
                             <a href="{{ route('admin.tickets') }}"><i class="fa fa-life-ring"></i> <span>Support Tickets</span></a>
                         </li>
+                        @if(Auth::user()->hasPermission('knowledgebase.view'))
+                        <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.knowledgebase') ?: 'active' }}">
+                            <a href="{{ route('admin.knowledgebase') }}"><i class="fa fa-book"></i> <span>Knowledgebase</span></a>
+                        </li>
+                        @endif
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.store') ?: 'active' }}">
                             <a href="{{ route('admin.store') }}">
                                 <i class="fa fa-shopping-cart"></i> <span>Storefront & Billing</span>
