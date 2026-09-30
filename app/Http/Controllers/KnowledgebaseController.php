@@ -91,7 +91,7 @@ class KnowledgebaseController extends Controller
         $related = KnowledgebaseArticle::query()
             ->where('published', true)
             ->where('category_id', $article->category_id)
-            ->whereKeyNot($article->id)
+            ->where('id', '!=', $article->id)
             ->orderByDesc('featured')
             ->orderByDesc('views')
             ->limit(5)
