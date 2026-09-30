@@ -14,6 +14,17 @@ Route::patch('/site-access', [Admin\SiteAccessController::class, 'update'])->nam
 Route::get('/errors', [Admin\ErrorCenterController::class, 'index'])->name('admin.errors');
 Route::post('/errors/repair', [Admin\ErrorCenterController::class, 'repair'])->name('admin.errors.repair');
 
+// Nodexa Knowledgebase
+Route::get('/knowledgebase', [Admin\KnowledgebaseController::class, 'index'])->name('admin.knowledgebase');
+Route::post('/knowledgebase/categories', [Admin\KnowledgebaseController::class, 'storeCategory'])->name('admin.knowledgebase.categories.store');
+Route::patch('/knowledgebase/categories/{category}', [Admin\KnowledgebaseController::class, 'updateCategory'])->name('admin.knowledgebase.categories.update');
+Route::delete('/knowledgebase/categories/{category}', [Admin\KnowledgebaseController::class, 'destroyCategory'])->name('admin.knowledgebase.categories.delete');
+Route::get('/knowledgebase/articles/new', [Admin\KnowledgebaseController::class, 'createArticle'])->name('admin.knowledgebase.articles.create');
+Route::post('/knowledgebase/articles', [Admin\KnowledgebaseController::class, 'storeArticle'])->name('admin.knowledgebase.articles.store');
+Route::get('/knowledgebase/articles/{article}/edit', [Admin\KnowledgebaseController::class, 'editArticle'])->name('admin.knowledgebase.articles.edit');
+Route::patch('/knowledgebase/articles/{article}', [Admin\KnowledgebaseController::class, 'updateArticle'])->name('admin.knowledgebase.articles.update');
+Route::delete('/knowledgebase/articles/{article}', [Admin\KnowledgebaseController::class, 'destroyArticle'])->name('admin.knowledgebase.articles.delete');
+
 // Nodexa Support Tickets
 Route::get('/tickets', [Admin\SupportTicketController::class, 'index'])->name('admin.tickets');
 Route::get('/tickets/settings', [Admin\SupportTicketController::class, 'settings'])->name('admin.tickets.settings');
