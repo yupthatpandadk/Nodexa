@@ -1,6 +1,18 @@
 {
-  "latest": "1.3.4",
+  "latest": "1.3.5",
   "releases": [
+    {
+      "version": "1.3.5",
+      "date": "2026-09-30",
+      "type": "patch",
+      "title": "Canonical panel-domain for serverstyring",
+      "changes": [
+        "Serverstyring fra nordicnode.org åbner nu altid på den kanoniske paneladresse fra APP_URL, normalt panel.nordicnode.org.",
+        "Direkte besøg på nordicnode.org/server/... viderestilles automatisk til panel.nordicnode.org/server/... med samme sti og query string.",
+        "Client Area, Mine servere, ordrer, support, profil og profil-dropdown bruger nu panel-domænet til kontrolpanel- og serverlinks.",
+        "Dette undgår WebSocket/Wings-problemer, som kunne opstå når serverkonsollen blev åbnet fra storefront-domænet."
+      ]
+    },
     {
       "version": "1.3.4",
       "date": "2026-09-30",
