@@ -148,15 +148,21 @@ class KnowledgebaseController extends Controller
 
     private function validateArticle(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'category_id' => 'required|exists:knowledgebase_categories,id',
             'title' => 'required|string|max:180',
             'summary' => 'nullable|string|max:500',
             'content' => 'required|string|max:100000',
             'sort_order' => 'nullable|integer|min:0|max:9999',
-        ]) + [
-            'sort_order' => (int) $request->input('sort_order', 0),
-        ];
+        ]);
+
+        $data['category_id'] = (int) $data['category_id'];
+        $data['title'] = trim($data['title']);
+        $data['summary'] = trim((string) ($data['summary'] ?? '')) ?: null;
+        $data['content'] = trim($data['content']);
+        $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
+
+        return $data;
     }
 
     private function uniqueSlug(string $model, string $value, ?int $ignoreId = null): string
@@ -167,7 +173,7 @@ class KnowledgebaseController extends Controller
 
         while ($model::query()
             ->where('slug', $slug)
-            ->when($ignoreId, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
             ->exists()) {
             $slug = $base . '-' . $number++;
         }
