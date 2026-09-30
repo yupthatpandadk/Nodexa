@@ -21,6 +21,7 @@ class AdminPermission
         'mounts' => 'mounts',
         'nests' => 'nests',
         'roles' => 'roles',
+        'site-access' => 'site_access',
     ];
 
     public function handle(Request $request, Closure $next): mixed
