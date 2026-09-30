@@ -22,6 +22,7 @@ class AdminPermission
         'nests' => 'nests',
         'roles' => 'roles',
         'site-access' => 'site_access',
+        'knowledgebase' => 'knowledgebase',
     ];
 
     public function handle(Request $request, Closure $next): mixed
