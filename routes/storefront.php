@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Pterodactyl\Http\Controllers\StorefrontController;
 use Pterodactyl\Http\Controllers\SupportTicketController;
+use Pterodactyl\Http\Controllers\KnowledgebaseController;
 
 Route::get('/csrf/refresh', function () {
     $response = response()
@@ -28,6 +29,10 @@ Route::get('/hosting', [StorefrontController::class, 'hosting'])->name('store.ho
 Route::get('/features', [StorefrontController::class, 'features'])->name('store.features');
 Route::get('/about', [StorefrontController::class, 'about'])->name('store.about');
 Route::get('/support', [StorefrontController::class, 'support'])->name('store.support');
+Route::get('/knowledgebase', [KnowledgebaseController::class, 'index'])->name('knowledgebase.index');
+Route::get('/knowledgebase/search', [KnowledgebaseController::class, 'search'])->name('knowledgebase.search');
+Route::get('/knowledgebase/category/{category:slug}', [KnowledgebaseController::class, 'category'])->name('knowledgebase.category');
+Route::get('/knowledgebase/article/{article:slug}', [KnowledgebaseController::class, 'article'])->name('knowledgebase.article');
 Route::get('/store', [StorefrontController::class, 'hosting'])->name('store.index');
 Route::get('/store/{product:slug}', [StorefrontController::class, 'show'])->name('store.product');
 Route::middleware('auth.session')->group(function () {
