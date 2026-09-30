@@ -1,6 +1,20 @@
 {
-  "latest": "1.3.13",
+  "latest": "1.3.14",
   "releases": [
+    {
+      "version": "1.3.14",
+      "date": "2026-09-30",
+      "type": "minor",
+      "title": "Rich Knowledgebase Articles",
+      "changes": [
+        "Vidensbase-artikler kan nu bygges som professionelle hosting-guides med overskrifter, underoverskrifter, trin-for-trin lister, punktlister, fed/kursiv tekst, inline kode, kodeblokke, links, citater, skillelinjer og informations-/advarselsbokse.",
+        "Admin artikel-editoren har fået en formatteringsværktøjslinje, så admins ikke behøver skrive formateringen manuelt.",
+        "Screenshots kan uploades direkte fra artikel-editoren; uploadet billede indsættes automatisk ved markørens position og kan få en billedtekst.",
+        "Artikelsiden har fået styling til store screenshots, kodefelter, lister, callouts, links og sektioner som i en WHMCS/PineRiver-lignende knowledgebase.",
+        "Artikelindhold renderes gennem en sikker formatteringsrenderer frem for rå HTML, så scripts og vilkårlig HTML ikke kan injiceres.",
+        "Knowledgebase-billeder gemmes privat på serveren og leveres gennem en kontrolleret mediarute, så løsningen ikke kræver et public storage-symlink."
+      ]
+    },
     {
       "version": "1.3.13",
       "date": "2026-09-30",
