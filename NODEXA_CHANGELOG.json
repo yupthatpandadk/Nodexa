@@ -1,6 +1,18 @@
 {
-  "latest": "1.3.7",
+  "latest": "1.3.8",
   "releases": [
+    {
+      "version": "1.3.8",
+      "date": "2026-09-30",
+      "type": "patch",
+      "title": "Single-domain updater fix",
+      "changes": [
+        "Updateren omskriver eller genstarter ikke længere Wings, når remote og allowed_origins allerede er korrekt sat til nordicnode.org.",
+        "Wings får nu op til 30 sekunder til at blive aktiv efter en reel konfigurationsændring i stedet for at blive vurderet efter kun 2 sekunder.",
+        "Ved en reel Wings-startfejl vises de seneste Wings-loglinjer før rollback, så fejlen kan diagnosticeres.",
+        "Rettet den update-fejl hvor en allerede korrekt single-domain installation kunne blive rullet tilbage under en almindelig Nodexa-opdatering."
+      ]
+    },
     {
       "version": "1.3.7",
       "date": "2026-09-30",
