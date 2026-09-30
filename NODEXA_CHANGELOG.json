@@ -1,6 +1,18 @@
 {
-  "latest": "1.3.8",
+  "latest": "1.3.9",
   "releases": [
+    {
+      "version": "1.3.9",
+      "date": "2026-09-30",
+      "type": "patch",
+      "title": "Administrator-login under Countdown og Maintenance",
+      "changes": [
+        "Administrator-login på Countdown- og Maintenance-siderne bruger nu en dedikeret admin-login-rute i stedet for at blive sendt tilbage til den gatede hjemmeside.",
+        "Allerede indloggede administratorer sendes direkte til /admin.",
+        "Administratorer som logger ind fra Countdown/Maintenance sendes automatisk til Admin Area efter login, også gennem 2FA-flowet.",
+        "Rettet problemet hvor Administrator-login blot reloadede Countdown/Maintenance-siden."
+      ]
+    },
     {
       "version": "1.3.8",
       "date": "2026-09-30",
