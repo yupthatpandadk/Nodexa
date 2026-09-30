@@ -34,7 +34,7 @@
             <div class="unit"><strong id="seconds">--</strong><span>Sekunder</span></div>
         </div>
         @endif
-        <a class="login" href="/auth/login">Administrator-login →</a>
+        <a class="login" href="{{ route('auth.admin-login') }}">Administrator-login →</a>
     </main>
 </div>
 <script>
