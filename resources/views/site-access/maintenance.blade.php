@@ -27,7 +27,7 @@
         <h1>{{ $title }}</h1>
         <p class="message">{{ $message }}</p>
         
-        <a class="login" href="/auth/login">Administrator-login →</a>
+        <a class="login" href="{{ route('auth.admin-login') }}">Administrator-login →</a>
     </main>
 </div>
 
