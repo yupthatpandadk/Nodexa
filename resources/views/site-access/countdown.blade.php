@@ -27,7 +27,7 @@
         <h1>{{ $title }}</h1>
         <p class="message">{{ $message }}</p>
         @if($target)
-        <div class="countdown" id="countdown" data-target="{{ $target }}">
+        <div class="countdown" id="countdown" data-target="{{ $target }}" data-server-now="{{ $serverNow }}">
             <div class="unit"><strong id="days">--</strong><span>Dage</span></div>
             <div class="unit"><strong id="hours">--</strong><span>Timer</span></div>
             <div class="unit"><strong id="minutes">--</strong><span>Minutter</span></div>
@@ -40,9 +40,18 @@
 <script>
 (function(){
     var box=document.getElementById('countdown'); if(!box)return;
+
     var target=new Date(box.dataset.target).getTime();
-    function tick(){
-        var diff=Math.max(0,target-Date.now());
+    var serverNow=new Date(box.dataset.serverNow).getTime();
+    var clockOffset=Date.now()-serverNow;
+    var timer=null;
+    var reloading=false;
+
+    function serverTime(){
+        return Date.now()-clockOffset;
+    }
+
+    function render(diff){
         var days=Math.floor(diff/86400000); diff%=86400000;
         var hours=Math.floor(diff/3600000); diff%=3600000;
         var minutes=Math.floor(diff/60000); diff%=60000;
@@ -52,7 +61,31 @@
         document.getElementById('minutes').textContent=String(minutes).padStart(2,'0');
         document.getElementById('seconds').textContent=String(seconds).padStart(2,'0');
     }
-    tick(); setInterval(tick,1000);
+
+    function tick(){
+        var remaining=target-serverTime();
+
+        if(remaining<=0){
+            render(0);
+            if(timer) clearInterval(timer);
+
+            if(!reloading){
+                reloading=true;
+                // Give the server a brief moment to cross the exact target time.
+                // On reload SiteAccessGate persists countdown_enabled=0 and serves
+                // the normal website immediately.
+                setTimeout(function(){
+                    window.location.reload();
+                },750);
+            }
+            return;
+        }
+
+        render(remaining);
+    }
+
+    tick();
+    if(!reloading) timer=setInterval(tick,250);
 })();
 </script>
 </body>
