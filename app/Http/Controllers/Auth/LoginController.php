@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Pterodactyl\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Pterodactyl\Facades\Activity;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -20,6 +21,31 @@ class LoginController extends AbstractLoginController
      */
     public function index(): View
     {
+        return view('templates/auth.core');
+    }
+
+    /**
+     * Entry point used by Countdown/Maintenance pages.
+     *
+     * If an administrator is already authenticated, go straight to Admin Area
+     * instead of letting the guest middleware bounce them back to the gated
+     * website. Guests are shown the normal login UI and marked so a successful
+     * login returns them to /admin.
+     */
+    public function adminLogin(Request $request): View|RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user && $user->hasAdminAccess()) {
+            return redirect()->route('admin.index');
+        }
+
+        if ($user) {
+            return redirect()->route('index');
+        }
+
+        $request->session()->put('nodexa_admin_login', true);
+
         return view('templates/auth.core');
     }
 
