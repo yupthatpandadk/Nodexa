@@ -3,18 +3,15 @@
 use Illuminate\Support\Str;
 
 $sessionDomain = env('SESSION_DOMAIN');
+$secureCookie = env('SESSION_SECURE_COOKIE');
 $appHost = strtolower((string) parse_url((string) env('APP_URL', ''), PHP_URL_HOST));
 $isNordicNode = in_array($appHost, ['nordicnode.org', 'www.nordicnode.org', 'panel.nordicnode.org'], true);
 
-if (($sessionDomain === null || $sessionDomain === '') && $isNordicNode) {
+if ($isNordicNode) {
     // nordicnode.org and panel.nordicnode.org are the same Nodexa installation.
-    // Sharing the Laravel session cookie prevents the two hosts from drifting
-    // into different sessions/CSRF tokens.
+    // Always share one HTTPS-only Laravel session across these hosts, even if an
+    // older .env still contains a host-only SESSION_DOMAIN value.
     $sessionDomain = '.nordicnode.org';
-}
-
-$secureCookie = env('SESSION_SECURE_COOKIE');
-if ($secureCookie === null && $isNordicNode) {
     $secureCookie = true;
 }
 
