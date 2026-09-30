@@ -1,6 +1,19 @@
 {
-  "latest": "1.3.5",
+  "latest": "1.3.6",
   "releases": [
+    {
+      "version": "1.3.6",
+      "date": "2026-09-30",
+      "type": "minor",
+      "title": "Single-domain NordicNode",
+      "changes": [
+        "nordicnode.org er nu det primære domæne for Storefront, Client Area, kontrolpanel og serverstyring.",
+        "APP_URL, sessions og CORS migreres automatisk til nordicnode.org ved root-opdatering.",
+        "Wings remote og allowed_origins opdateres automatisk, så konsol/WebSocket virker direkte fra nordicnode.org.",
+        "panel.nordicnode.org beholdes kun som legacy-adresse og viderestiller browsertrafik til samme sti på nordicnode.org.",
+        "Fremtidige node-konfigurationer bruger den kanoniske base-URL uden /panel som Wings remote."
+      ]
+    },
     {
       "version": "1.3.5",
       "date": "2026-09-30",
