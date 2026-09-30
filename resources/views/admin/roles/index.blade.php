@@ -55,8 +55,17 @@ document.addEventListener("DOMContentLoaded", function () {
                             <div style="padding:8px 0;border-top:1px solid rgba(128,128,128,.15)">
                                 <strong style="display:inline-block;min-width:150px">{{ $group }}</strong>
                                 @foreach($items as $permission)
+                                    @php
+                                        $permissionLabel = match (true) {
+                                            str_ends_with($permission, '.view') => 'Se',
+                                            str_ends_with($permission, '.manage') => 'Administrer',
+                                            str_ends_with($permission, '.bypass_countdown') => 'Bypass countdown',
+                                            str_ends_with($permission, '.bypass_maintenance') => 'Bypass maintenance',
+                                            default => $permission,
+                                        };
+                                    @endphp
                                     <label class="checkbox-inline" style="margin-left:0;margin-right:14px">
-                                        <input type="checkbox" name="permissions[]" value="{{ $permission }}" {{ $role->hasPermission($permission) ? 'checked' : '' }}> {{ str_ends_with($permission, '.view') ? 'Se' : 'Administrer' }}
+                                        <input type="checkbox" name="permissions[]" value="{{ $permission }}" {{ $role->hasPermission($permission) ? 'checked' : '' }}> {{ $permissionLabel }}
                                     </label>
                                 @endforeach
                             </div>
