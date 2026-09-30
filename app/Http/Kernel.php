@@ -15,6 +15,7 @@ use Pterodactyl\Http\Middleware\VerifyReCaptcha;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Pterodactyl\Http\Middleware\LanguageMiddleware;
 use Pterodactyl\Http\Middleware\SetSecurityHeaders;
+use Pterodactyl\Http\Middleware\RedirectLegacyPanelDomain;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Pterodactyl\Http\Middleware\Activity\TrackAPIKey;
@@ -42,6 +43,7 @@ class Kernel extends HttpKernel
      */
     protected $middleware = [
         TrustProxies::class,
+        RedirectLegacyPanelDomain::class,
         HandleCors::class,
         PreventRequestsDuringMaintenance::class,
         ValidatePostSize::class,
