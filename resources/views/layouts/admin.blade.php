@@ -152,6 +152,11 @@
                             <a href="{{ route('admin.knowledgebase') }}"><i class="fa fa-book"></i> <span>Knowledgebase</span></a>
                         </li>
                         @endif
+                        @if(Auth::user()->hasPermission('operations.view'))
+                        <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.operations') ?: 'active' }}">
+                            <a href="{{ route('admin.operations') }}"><i class="fa fa-heartbeat"></i> <span>Operations Center</span></a>
+                        </li>
+                        @endif
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.store') ?: 'active' }}">
                             <a href="{{ route('admin.store') }}">
                                 <i class="fa fa-shopping-cart"></i> <span>Storefront & Billing</span>
