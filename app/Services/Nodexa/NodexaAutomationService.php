@@ -50,7 +50,7 @@ class NodexaAutomationService
                 'node_id' => $node->id,
                 'status' => $status,
                 'latency_ms' => $latency,
-                'message' => $socket ? null : substr($error ?: ('Connection error ' . $errno), 0, 1000),
+                'message' => $status === 'online' ? null : substr($error ?: ('Connection error ' . $errno), 0, 1000),
                 'checked_at' => now(),
             ]);
 
