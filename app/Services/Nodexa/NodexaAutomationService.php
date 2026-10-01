@@ -1,0 +1,250 @@
+<?php
+
+namespace Pterodactyl\Services\Nodexa;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Pterodactyl\Models\Node;
+use Pterodactyl\Models\Server;
+use Pterodactyl\Services\Backups\DeleteBackupService;
+use Pterodactyl\Services\Backups\InitiateBackupService;
+use Pterodactyl\Services\Servers\SuspensionService;
+
+class NodexaAutomationService
+{
+    public function __construct(
+        private InitiateBackupService $backups,
+        private DeleteBackupService $deleteBackups,
+        private SuspensionService $suspension,
+        private NodexaEventService $events,
+    ) {
+    }
+
+    public function run(): array
+    {
+        return [
+            'health' => $this->runHealthChecks(),
+            'backups' => $this->runBackupPolicies(),
+            'billing' => $this->runBilling(),
+        ];
+    }
+
+    public function runHealthChecks(): int
+    {
+        $count = 0;
+
+        foreach (Node::query()->orderBy('id')->get() as $node) {
+            $started = microtime(true);
+            $errno = 0;
+            $error = '';
+
+            $socket = @fsockopen($node->fqdn, $node->daemonListen, $errno, $error, 2.0);
+            $latency = (int) round((microtime(true) - $started) * 1000);
+            $status = $socket ? 'online' : 'offline';
+
+            if (is_resource($socket)) {
+                fclose($socket);
+            }
+
+            DB::table('nodexa_health_checks')->insert([
+                'node_id' => $node->id,
+                'status' => $status,
+                'latency_ms' => $latency,
+                'message' => $socket ? null : substr($error ?: ('Connection error ' . $errno), 0, 1000),
+                'checked_at' => now(),
+            ]);
+
+            DB::table('nodexa_health_checks')
+                ->where('node_id', $node->id)
+                ->where('checked_at', '<', now()->subDays(30))
+                ->delete();
+
+            $count++;
+        }
+
+        return $count;
+    }
+
+    public function runBackupPolicies(): int
+    {
+        $policies = DB::table('nodexa_backup_policies')
+            ->where('enabled', true)
+            ->where(function ($query) {
+                $query->whereNull('next_run_at')->orWhere('next_run_at', '<=', now());
+            })
+            ->get();
+
+        $count = 0;
+
+        foreach ($policies as $policy) {
+            $server = Server::query()->find($policy->server_id);
+
+            if (!$server || $server->owner_id !== $policy->user_id) {
+                DB::table('nodexa_backup_policies')->where('id', $policy->id)->update([
+                    'last_status' => 'failed',
+                    'last_error' => 'Server not found or ownership changed.',
+                    'next_run_at' => now()->addHours(max(1, (int) $policy->frequency_hours)),
+                    'updated_at' => now(),
+                ]);
+                continue;
+            }
+
+            try {
+                $retention = max(1, min((int) $policy->retention_count, max(1, $server->backup_limit)));
+                $existing = $server->backups()
+                    ->where('is_successful', true)
+                    ->where('is_locked', false)
+                    ->orderByDesc('created_at')
+                    ->get();
+
+                foreach ($existing->slice(max(0, $retention - 1)) as $oldBackup) {
+                    try {
+                        $this->deleteBackups->handle($oldBackup);
+                    } catch (\Throwable $exception) {
+                        report($exception);
+                    }
+                }
+
+                $backup = $this->backups->handle(
+                    $server,
+                    trim((string) $policy->name_prefix) . ' ' . now()->format('Y-m-d H:i'),
+                    true
+                );
+
+                DB::table('nodexa_backup_policies')->where('id', $policy->id)->update([
+                    'last_run_at' => now(),
+                    'last_status' => 'started',
+                    'last_error' => null,
+                    'next_run_at' => now()->addHours(max(1, (int) $policy->frequency_hours)),
+                    'updated_at' => now(),
+                ]);
+
+                $this->events->notify(
+                    $policy->user_id,
+                    'Automatisk backup startet',
+                    'Backup af ' . $server->name . ' er startet.',
+                    'backup',
+                    '/server/' . $server->uuidShort . '/backups',
+                    ['backup_uuid' => $backup->uuid]
+                );
+
+                $count++;
+            } catch (\Throwable $exception) {
+                report($exception);
+                DB::table('nodexa_backup_policies')->where('id', $policy->id)->update([
+                    'last_run_at' => now(),
+                    'last_status' => 'failed',
+                    'last_error' => substr($exception->getMessage(), 0, 2000),
+                    'next_run_at' => now()->addHours(max(1, (int) $policy->frequency_hours)),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
+        return $count;
+    }
+
+    public function runBilling(): int
+    {
+        $created = 0;
+
+        $subscriptions = DB::table('nodexa_subscriptions')
+            ->where('status', 'active')
+            ->whereNotNull('next_invoice_at')
+            ->where('next_invoice_at', '<=', now())
+            ->get();
+
+        foreach ($subscriptions as $subscription) {
+            $number = 'NX-' . now()->format('Ym') . '-' . strtoupper(Str::random(8));
+
+            $invoiceId = DB::table('nodexa_invoices')->insertGetId([
+                'user_id' => $subscription->user_id,
+                'subscription_id' => $subscription->id,
+                'number' => $number,
+                'status' => 'unpaid',
+                'subtotal' => $subscription->amount,
+                'tax' => 0,
+                'total' => $subscription->amount,
+                'currency' => $subscription->currency,
+                'due_at' => now()->addDays(7),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('nodexa_invoice_items')->insert([
+                'invoice_id' => $invoiceId,
+                'description' => 'Nodexa hosting subscription',
+                'quantity' => 1,
+                'unit_price' => $subscription->amount,
+                'total' => $subscription->amount,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $next = match ($subscription->interval) {
+                'yearly' => now()->addYear(),
+                'quarterly' => now()->addMonths(3),
+                default => now()->addMonth(),
+            };
+
+            DB::table('nodexa_subscriptions')->where('id', $subscription->id)->update([
+                'next_invoice_at' => $next,
+                'updated_at' => now(),
+            ]);
+
+            $this->events->notify(
+                $subscription->user_id,
+                'Ny faktura ' . $number,
+                'En ny faktura på ' . number_format((float) $subscription->amount, 2, ',', '.') . ' ' . $subscription->currency . ' er klar.',
+                'billing',
+                '/client/billing'
+            );
+
+            $this->events->emit('invoice.created', [
+                'invoice_id' => $invoiceId,
+                'number' => $number,
+                'total' => $subscription->amount,
+                'currency' => $subscription->currency,
+            ], $subscription->user_id);
+
+            $created++;
+        }
+
+        $overdue = DB::table('nodexa_invoices')
+            ->where('status', 'unpaid')
+            ->whereNotNull('due_at')
+            ->where('due_at', '<', now())
+            ->get();
+
+        foreach ($overdue as $invoice) {
+            DB::table('nodexa_invoices')->where('id', $invoice->id)->update([
+                'status' => 'overdue',
+                'updated_at' => now(),
+            ]);
+
+            $subscription = $invoice->subscription_id
+                ? DB::table('nodexa_subscriptions')->where('id', $invoice->subscription_id)->first()
+                : null;
+
+            if ($subscription?->server_id) {
+                $server = Server::query()->find($subscription->server_id);
+                if ($server && !$server->isSuspended()) {
+                    try {
+                        $this->suspension->toggle($server, SuspensionService::ACTION_SUSPEND);
+                        $this->events->notify(
+                            $invoice->user_id,
+                            'Service suspenderet',
+                            'Serveren ' . $server->name . ' er suspenderet på grund af en forfalden faktura.',
+                            'warning',
+                            '/client/billing'
+                        );
+                    } catch (\Throwable $exception) {
+                        report($exception);
+                    }
+                }
+            }
+        }
+
+        return $created;
+    }
+}
