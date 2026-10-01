@@ -23,6 +23,7 @@ class AdminPermission
         'roles' => 'roles',
         'site-access' => 'site_access',
         'knowledgebase' => 'knowledgebase',
+        'operations' => 'operations',
     ];
 
     public function handle(Request $request, Closure $next): mixed
