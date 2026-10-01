@@ -62,6 +62,31 @@ class NodexaAutomationService
             $count++;
         }
 
+        $latest = DB::table('nodexa_health_checks as h')
+            ->joinSub(
+                DB::table('nodexa_health_checks')
+                    ->selectRaw('node_id, MAX(checked_at) as checked_at')
+                    ->groupBy('node_id'),
+                'latest',
+                function ($join) {
+                    $join->on('h.node_id', '=', 'latest.node_id')
+                        ->on('h.checked_at', '=', 'latest.checked_at');
+                }
+            )
+            ->pluck('h.status');
+
+        if ($latest->isNotEmpty()) {
+            $offline = $latest->filter(fn ($status) => $status !== 'online')->count();
+            $status = $offline === 0
+                ? 'operational'
+                : ($offline === $latest->count() ? 'major_outage' : 'degraded');
+
+            DB::table('nodexa_status_components')->where('slug', 'game-nodes')->update([
+                'status' => $status,
+                'updated_at' => now(),
+            ]);
+        }
+
         return $count;
     }
 
@@ -148,6 +173,32 @@ class NodexaAutomationService
     {
         $created = 0;
 
+        // Adopt existing paid/active Storefront orders into recurring billing.
+        if (DB::getSchemaBuilder()->hasTable('nodexa_store_orders')) {
+            $orders = DB::table('nodexa_store_orders')
+                ->whereIn('status', ['paid', 'active'])
+                ->whereNotNull('server_id')
+                ->get();
+
+            foreach ($orders as $order) {
+                $exists = DB::table('nodexa_subscriptions')->where('order_id', $order->id)->exists();
+                if (!$exists) {
+                    DB::table('nodexa_subscriptions')->insert([
+                        'user_id' => $order->user_id,
+                        'server_id' => $order->server_id,
+                        'order_id' => $order->id,
+                        'status' => 'active',
+                        'amount' => $order->amount,
+                        'currency' => $order->currency ?: 'DKK',
+                        'interval' => 'monthly',
+                        'next_invoice_at' => now()->addMonth(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        }
+
         $subscriptions = DB::table('nodexa_subscriptions')
             ->where('status', 'active')
             ->whereNotNull('next_invoice_at')
@@ -210,6 +261,29 @@ class NodexaAutomationService
             $created++;
         }
 
+        $reminders = DB::table('nodexa_invoices')
+            ->where('status', 'unpaid')
+            ->whereNull('reminder_sent_at')
+            ->whereNotNull('due_at')
+            ->where('due_at', '<=', now()->addDays(3))
+            ->where('due_at', '>=', now())
+            ->get();
+
+        foreach ($reminders as $invoice) {
+            $this->events->notify(
+                $invoice->user_id,
+                'Betalingspåmindelse ' . $invoice->number,
+                'Fakturaen på ' . number_format((float) $invoice->total, 2, ',', '.') . ' ' . $invoice->currency . ' forfalder snart.',
+                'billing',
+                '/client/billing'
+            );
+
+            DB::table('nodexa_invoices')->where('id', $invoice->id)->update([
+                'reminder_sent_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
         $overdue = DB::table('nodexa_invoices')
             ->where('status', 'unpaid')
             ->whereNotNull('due_at')
@@ -219,8 +293,17 @@ class NodexaAutomationService
         foreach ($overdue as $invoice) {
             DB::table('nodexa_invoices')->where('id', $invoice->id)->update([
                 'status' => 'overdue',
+                'overdue_notified_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            $this->events->notify(
+                $invoice->user_id,
+                'Faktura forfalden ' . $invoice->number,
+                'Fakturaen er forfalden. Tilknyttede services kan blive suspenderet, indtil betalingen er registreret.',
+                'warning',
+                '/client/billing'
+            );
 
             $subscription = $invoice->subscription_id
                 ? DB::table('nodexa_subscriptions')->where('id', $invoice->subscription_id)->first()
