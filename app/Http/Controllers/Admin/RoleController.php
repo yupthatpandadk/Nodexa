@@ -28,6 +28,7 @@ class RoleController extends Controller
         'Roles & Permissions' => ['roles.view', 'roles.manage'],
         'Website Access' => ['site_access.view', 'site_access.manage', 'site_access.bypass_countdown', 'site_access.bypass_maintenance'],
         'Knowledgebase' => ['knowledgebase.view', 'knowledgebase.manage'],
+        'Operations Center' => ['operations.view', 'operations.manage'],
         'Addon Manager' => ['addons.view', 'addons.manage'],
     ];
 
