@@ -6,6 +6,19 @@ use Pterodactyl\Http\Middleware\Admin\Servers\ServerInstalled;
 
 Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
 
+// Nodexa Operations Suite
+Route::get('/operations', [Admin\OperationsController::class, 'index'])->name('admin.operations');
+Route::post('/operations/components', [Admin\OperationsController::class, 'storeComponent'])->name('admin.operations.components.store');
+Route::patch('/operations/components/{component}', [Admin\OperationsController::class, 'updateComponent'])->name('admin.operations.components.update');
+Route::delete('/operations/components/{component}', [Admin\OperationsController::class, 'deleteComponent'])->name('admin.operations.components.delete');
+Route::post('/operations/incidents', [Admin\OperationsController::class, 'storeIncident'])->name('admin.operations.incidents.store');
+Route::post('/operations/incidents/{incident}/updates', [Admin\OperationsController::class, 'updateIncident'])->name('admin.operations.incidents.update');
+Route::post('/operations/addons', [Admin\OperationsController::class, 'storeAddon'])->name('admin.operations.addons.store');
+Route::post('/operations/invoices/{invoice}/paid', [Admin\OperationsController::class, 'markInvoicePaid'])->name('admin.operations.invoices.paid');
+Route::post('/operations/subscriptions/sync', [Admin\OperationsController::class, 'syncSubscriptions'])->name('admin.operations.subscriptions.sync');
+Route::post('/operations/affiliates/{affiliate}/payout', [Admin\OperationsController::class, 'payAffiliate'])->name('admin.operations.affiliates.payout');
+Route::post('/operations/automation/run', [Admin\OperationsController::class, 'runAutomation'])->name('admin.operations.automation');
+
 // Nodexa Website Access (Countdown & Maintenance)
 Route::get('/site-access', [Admin\SiteAccessController::class, 'index'])->name('admin.site-access');
 Route::patch('/site-access', [Admin\SiteAccessController::class, 'update'])->name('admin.site-access.update');
