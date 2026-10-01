@@ -117,7 +117,9 @@
                     <strong>{{ $org->name }}</strong>
                     <small>{{ ($organizationMembers[$org->id] ?? collect())->count() }} medlem(mer)</small>
                     @if($org->owner_id===auth()->id())
-                    <form method="POST" action="{{ route('store.client.hub.organizations.members',$org->id) }}" class="inlineActions" style="margin-top:10px">@csrf<input class="btn" style="flex:1" type="email" name="email" required placeholder="bruger@email.dk"><select class="btn" name="role"><option value="member">Member</option><option value="billing">Billing</option><option value="admin">Admin</option></select><button class="btn">Tilføj</button></form>
+                    <form method="POST" action="{{ route('store.client.hub.organizations.members',$org->id) }}" class="inlineActions" style="margin-top:10px">@csrf<input class="btn" style="flex:1" type="email" name="email" required placeholder="bruger@email.dk"><select class="btn" name="role"><option value="member">Member</option><option value="billing">Billing</option><option value="admin">Admin</option></select><button class="btn">Tilføj medlem</button></form>
+                    <form method="POST" action="{{ route('store.client.hub.organizations.servers',$org->id) }}" class="inlineActions" style="margin-top:8px">@csrf<select class="btn" name="server_id" required style="flex:1">@foreach($servers->where('owner_id',auth()->id()) as $server)<option value="{{ $server->id }}">{{ $server->name }}</option>@endforeach</select><button class="btn">Del server</button></form>
+                    @if(($organizationServers[$org->id] ?? collect())->isNotEmpty())<div class="tiny" style="margin-top:8px">Delte servere: {{ ($organizationServers[$org->id] ?? collect())->pluck('server_name')->implode(', ') }}</div>@endif
                     @endif
                 </div>
                 @empty<div class="empty">Ingen teams endnu.</div>@endforelse
