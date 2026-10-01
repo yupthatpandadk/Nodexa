@@ -119,6 +119,29 @@ class ClientHubController extends Controller
         ));
     }
 
+    public function referral(Request $request, string $code): RedirectResponse
+    {
+        $affiliate = DB::table('nodexa_affiliates')->where('code', strtoupper($code))->where('enabled', true)->first();
+        if (!$affiliate) {
+            return redirect()->route('store.home');
+        }
+
+        DB::table('nodexa_affiliates')->where('id', $affiliate->id)->increment('clicks');
+        DB::table('nodexa_affiliate_events')->insert([
+            'affiliate_id' => $affiliate->id,
+            'referred_user_id' => $request->user()?->id,
+            'order_id' => null,
+            'type' => 'click',
+            'amount' => 0,
+            'commission' => 0,
+            'metadata' => json_encode(['ip' => $request->ip()], JSON_UNESCAPED_SLASHES),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('store.home')->withCookie(cookie('nodexa_ref', $affiliate->code, 60 * 24 * 30));
+    }
+
     public function markNotification(Request $request, int $notification): RedirectResponse
     {
         DB::table('nodexa_notifications')
