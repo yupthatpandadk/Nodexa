@@ -443,7 +443,7 @@ class ClientHubController extends Controller
             'file.read',
             'file.read-content',
             'backup.read',
-            'database.view',
+            'database.read',
         ];
 
         if ($role === 'billing') {
