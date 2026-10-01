@@ -20,6 +20,12 @@ class SiteAccessGate
     {
         $user = $request->user();
 
+        // The public status page must stay reachable during Countdown and
+        // Maintenance so customers can always see current incidents.
+        if ($request->route()?->named('store.status')) {
+            return $next($request);
+        }
+
         // Countdown is self-expiring. As soon as the configured target time has
         // passed, disable it persistently and continue to the real website.
         // This check runs before Maintenance/bypass handling so the setting is
