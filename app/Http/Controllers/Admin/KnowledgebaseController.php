@@ -6,6 +6,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Prologue\Alerts\AlertsMessageBag;
 use Pterodactyl\Http\Controllers\Controller;
@@ -126,6 +127,15 @@ class KnowledgebaseController extends Controller
     public function updateArticle(Request $request, KnowledgebaseArticle $article): RedirectResponse
     {
         $data = $this->validateArticle($request);
+
+        DB::table('nodexa_kb_revisions')->insert([
+            'article_id' => $article->id,
+            'user_id' => $request->user()->id,
+            'title' => $article->title,
+            'summary' => $article->summary,
+            'content' => $article->content,
+            'created_at' => now(),
+        ]);
 
         $article->update([
             ...$data,
