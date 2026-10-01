@@ -13,6 +13,7 @@ use Pterodactyl\Http\Middleware\AdminAuthenticate;
 use Pterodactyl\Http\Middleware\AdminPermission;
 use Pterodactyl\Http\Middleware\SiteAccessGate;
 use Pterodactyl\Http\Middleware\NodexaApiAuthenticate;
+use Pterodactyl\Http\Middleware\NodexaAdminAudit;
 use Pterodactyl\Http\Middleware\RequireTwoFactorAuthentication;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 
@@ -49,7 +50,7 @@ class RouteServiceProvider extends ServiceProvider
                 Route::middleware([SiteAccessGate::class, 'auth.session', RequireTwoFactorAuthentication::class])
                     ->group(base_path('routes/base.php'));
 
-                Route::middleware(['auth.session', RequireTwoFactorAuthentication::class, AdminAuthenticate::class, AdminPermission::class])
+                Route::middleware(['auth.session', RequireTwoFactorAuthentication::class, AdminAuthenticate::class, AdminPermission::class, NodexaAdminAudit::class])
                     ->prefix('/admin')
                     ->group(base_path('routes/admin.php'));
 
