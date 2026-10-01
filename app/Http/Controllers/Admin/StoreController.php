@@ -4,12 +4,14 @@ namespace Pterodactyl\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Pterodactyl\Http\Controllers\Controller;
 use Pterodactyl\Models\Egg;
 use Pterodactyl\Models\StoreCoupon;
 use Pterodactyl\Models\StoreProduct;
 use Pterodactyl\Models\StoreOrder;
 use Pterodactyl\Services\Store\ProvisionStoreOrderService;
+use Pterodactyl\Services\Nodexa\NodexaEventService;
 
 class StoreController extends Controller
 {
@@ -41,16 +43,69 @@ class StoreController extends Controller
         return back()->with('success','Rabatkode oprettet.');
     }
 
-    public function orderStatus(Request $r, StoreOrder $order, ProvisionStoreOrderService $provision){
+    public function orderStatus(Request $r, StoreOrder $order, ProvisionStoreOrderService $provision, NodexaEventService $events){
         $status=$r->validate(['status'=>'required|in:awaiting_payment,paid,active,cancelled,refunded'])['status'];
         if ($status === 'paid' && !$order->paid_at) $order->paid_at=now();
         if ($status === 'cancelled') $order->cancelled_at=now();
         $order->status=$status; $order->save();
 
         if ($status === 'paid' && !$order->server_id) {
-            try { $provision->handle($order); }
+            try { $provision->handle($order); $order->refresh(); }
             catch (\Throwable $e) { report($e); return back()->withErrors(['store'=>'Betaling markeret, men serveren kunne ikke provisioneres: '.$e->getMessage()]); }
         }
+
+        if ($status === 'paid' && $order->server_id) {
+            DB::table('nodexa_subscriptions')->updateOrInsert(
+                ['order_id' => $order->id],
+                [
+                    'user_id' => $order->user_id,
+                    'server_id' => $order->server_id,
+                    'status' => 'active',
+                    'amount' => $order->amount,
+                    'currency' => $order->currency ?: 'DKK',
+                    'interval' => 'monthly',
+                    'next_invoice_at' => now()->addMonth(),
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+
+            $affiliateEvent = DB::table('nodexa_affiliate_events')
+                ->where('order_id', $order->id)
+                ->where('type', 'order_pending')
+                ->first();
+
+            if ($affiliateEvent) {
+                $affiliate = DB::table('nodexa_affiliates')->where('id', $affiliateEvent->affiliate_id)->where('enabled', true)->first();
+                if ($affiliate) {
+                    $commission = round((float) $order->amount * ((float) $affiliate->commission_percent / 100), 2);
+
+                    DB::table('nodexa_affiliate_events')->where('id', $affiliateEvent->id)->update([
+                        'type' => 'conversion',
+                        'amount' => $order->amount,
+                        'commission' => $commission,
+                        'updated_at' => now(),
+                    ]);
+
+                    DB::table('nodexa_affiliates')->where('id', $affiliate->id)->update([
+                        'balance' => DB::raw('balance + ' . $commission),
+                        'conversions' => DB::raw('conversions + 1'),
+                        'updated_at' => now(),
+                    ]);
+
+                    $events->notify(
+                        $affiliate->user_id,
+                        'Ny affiliate-konvertering',
+                        'Du har optjent ' . number_format($commission, 2, ',', '.') . ' DKK i provision.',
+                        'billing',
+                        '/client/hub'
+                    );
+                }
+            }
+        }
+
+        $events->audit($r->user()->id, 'store', 'order.status', 'Order #' . $order->id . ' -> ' . $status, 'order', $order->id, ['status' => $status], $r);
+
         return back()->with('success','Ordrestatus opdateret.');
     }
 }
