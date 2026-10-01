@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -19,6 +20,17 @@ return new class extends Migration
                 $table->unsignedInteger('sort_order')->default(0);
                 $table->timestamps();
             });
+        }
+
+        if (DB::table('nodexa_status_components')->count() === 0) {
+            $now = now();
+            DB::table('nodexa_status_components')->insert([
+                ['name' => 'Nodexa Website', 'slug' => 'website', 'description' => 'Storefront og Client Area', 'status' => 'operational', 'is_public' => true, 'sort_order' => 10, 'created_at' => $now, 'updated_at' => $now],
+                ['name' => 'Control Panel', 'slug' => 'control-panel', 'description' => 'Serveradministration og API', 'status' => 'operational', 'is_public' => true, 'sort_order' => 20, 'created_at' => $now, 'updated_at' => $now],
+                ['name' => 'Game Nodes', 'slug' => 'game-nodes', 'description' => 'Game server infrastructure', 'status' => 'operational', 'is_public' => true, 'sort_order' => 30, 'created_at' => $now, 'updated_at' => $now],
+                ['name' => 'SFTP', 'slug' => 'sftp', 'description' => 'Server file access', 'status' => 'operational', 'is_public' => true, 'sort_order' => 40, 'created_at' => $now, 'updated_at' => $now],
+                ['name' => 'Database', 'slug' => 'database', 'description' => 'Nodexa database services', 'status' => 'operational', 'is_public' => true, 'sort_order' => 50, 'created_at' => $now, 'updated_at' => $now],
+            ]);
         }
 
         if (!Schema::hasTable('nodexa_incidents')) {
@@ -125,6 +137,8 @@ return new class extends Migration
                 $table->string('currency', 8)->default('DKK');
                 $table->timestamp('due_at')->nullable()->index();
                 $table->timestamp('paid_at')->nullable();
+                $table->timestamp('reminder_sent_at')->nullable();
+                $table->timestamp('overdue_notified_at')->nullable();
                 $table->string('payment_method', 80)->nullable();
                 $table->string('payment_reference', 191)->nullable();
                 $table->timestamps();
