@@ -166,6 +166,7 @@ return new class extends Migration
                 $table->unsignedInteger('user_id')->index();
                 $table->unsignedInteger('server_id')->index();
                 $table->unsignedBigInteger('addon_id')->index();
+                $table->unsignedBigInteger('invoice_id')->nullable()->index();
                 $table->string('status', 40)->default('active');
                 $table->timestamp('started_at')->nullable();
                 $table->timestamp('cancelled_at')->nullable();
