@@ -3,6 +3,7 @@
 namespace Pterodactyl\Services\Nodexa;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Pterodactyl\Models\Node;
 use Pterodactyl\Models\Server;
@@ -174,7 +175,7 @@ class NodexaAutomationService
         $created = 0;
 
         // Adopt existing paid/active Storefront orders into recurring billing.
-        if (DB::getSchemaBuilder()->hasTable('nodexa_store_orders')) {
+        if (Schema::hasTable('nodexa_store_orders')) {
             $orders = DB::table('nodexa_store_orders')
                 ->whereIn('status', ['paid', 'active'])
                 ->whereNotNull('server_id')
