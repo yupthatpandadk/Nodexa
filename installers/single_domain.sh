@@ -107,13 +107,23 @@ primary = sys.argv[2]
 legacy = sys.argv[3]
 
 remote = re.search(r'(?m)^remote\s*:\s*["\x27]?([^"\x27\s#]+)', text)
-origins = re.search(r'(?ms)^allowed_origins\s*:\s*(.*?)(?=^\S|\Z)', text)
+origin_lines = text.splitlines()
+origin_values = []
+for index, line in enumerate(origin_lines):
+    if re.match(r'^allowed_origins\s*:', line):
+        inline = line.split(':', 1)[1].strip()
+        if inline:
+            origin_values.extend(re.findall(r'https?://[^\s,\]"]+', inline))
+        cursor = index + 1
+        while cursor < len(origin_lines) and re.match(r'^\s*-\s+', origin_lines[cursor]):
+            origin_values.append(re.sub(r'^\s*-\s+', '', origin_lines[cursor]).strip().strip('"\x27'))
+            cursor += 1
+        break
 
 if not remote or remote.group(1).rstrip('/') != primary.rstrip('/'):
     raise SystemExit(1)
 
-origin_text = origins.group(0) if origins else ''
-if primary not in origin_text or legacy not in origin_text:
+if primary not in origin_values or legacy not in origin_values:
     raise SystemExit(1)
 PY
     then
@@ -147,7 +157,11 @@ while i < len(lines):
     line = lines[i]
     if re.match(r"^allowed_origins\s*:", line):
         i += 1
-        while i < len(lines) and re.match(r"^[ \t]+-[ \t]+", lines[i]):
+        # YAML emitted by Wings commonly uses zero-indented sequence rows:
+        # allowed_origins:
+        # - https://example.com
+        # Accept both zero-indented and indented list items.
+        while i < len(lines) and re.match(r"^[ \t]*-[ \t]+", lines[i]):
             i += 1
         continue
     clean.append(line)
