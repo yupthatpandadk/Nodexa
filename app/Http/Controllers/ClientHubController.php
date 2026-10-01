@@ -11,11 +11,14 @@ use Illuminate\View\View;
 use Pterodactyl\Models\Server;
 use Pterodactyl\Models\User;
 use Pterodactyl\Services\Nodexa\NodexaEventService;
+use Pterodactyl\Services\Subusers\SubuserCreationService;
 
 class ClientHubController extends Controller
 {
-    public function __construct(private NodexaEventService $events)
-    {
+    public function __construct(
+        private NodexaEventService $events,
+        private SubuserCreationService $subusers,
+    ) {
     }
 
     public function index(Request $request): View
@@ -74,6 +77,14 @@ class ClientHubController extends Controller
             ->get()
             ->groupBy('organization_id');
 
+        $organizationServers = DB::table('nodexa_organization_servers as os')
+            ->join('servers', 'servers.id', '=', 'os.server_id')
+            ->select('os.*', 'servers.name as server_name', 'servers.uuidShort as server_identifier')
+            ->whereIn('os.organization_id', $organizations->pluck('id')->all())
+            ->orderBy('servers.name')
+            ->get()
+            ->groupBy('organization_id');
+
         $webhooks = DB::table('nodexa_webhooks')
             ->where('user_id', $user->id)
             ->orderByDesc('id')
@@ -111,6 +122,7 @@ class ClientHubController extends Controller
             'affiliate',
             'organizations',
             'organizationMembers',
+            'organizationServers',
             'webhooks',
             'tokens',
             'securityActivity',
@@ -345,9 +357,115 @@ class ClientHubController extends Controller
             ]
         );
 
+        $this->syncOrganizationMember($organization, $user, $data['role']);
+
         $this->events->notify($user->id, 'Tilføjet til ' . $org->name, 'Du er blevet tilføjet til teamet med rollen ' . $data['role'] . '.', 'team', '/client/hub');
 
-        return back()->with('success', 'Medlemmet er tilføjet.');
+        return back()->with('success', 'Medlemmet er tilføjet og serveradgang er synkroniseret.');
+    }
+
+    public function attachOrganizationServer(Request $request, int $organization): RedirectResponse
+    {
+        $org = DB::table('nodexa_organizations')
+            ->where('id', $organization)
+            ->where('owner_id', $request->user()->id)
+            ->first();
+        abort_unless($org, 403);
+
+        $data = $request->validate(['server_id' => 'required|integer']);
+        $server = $request->user()->servers()->whereKey($data['server_id'])->firstOrFail();
+
+        DB::table('nodexa_organization_servers')->updateOrInsert(
+            ['organization_id' => $organization, 'server_id' => $server->id],
+            ['updated_at' => now(), 'created_at' => now()]
+        );
+
+        $members = DB::table('nodexa_organization_members')
+            ->where('organization_id', $organization)
+            ->where('user_id', '!=', $request->user()->id)
+            ->get();
+
+        foreach ($members as $member) {
+            $memberUser = User::query()->find($member->user_id);
+            if ($memberUser) {
+                $this->syncSubuserAccess($server, $memberUser, $member->role);
+            }
+        }
+
+        $this->events->audit($request->user()->id, 'team', 'server.attached', $server->name, 'organization', $organization, ['server_id' => $server->id], $request);
+
+        return back()->with('success', 'Serveren er tilknyttet teamet, og medlemsadgang er synkroniseret.');
+    }
+
+    private function syncOrganizationMember(int $organizationId, User $user, string $role): void
+    {
+        $serverIds = DB::table('nodexa_organization_servers')
+            ->where('organization_id', $organizationId)
+            ->pluck('server_id');
+
+        foreach (Server::query()->whereIn('id', $serverIds)->get() as $server) {
+            $this->syncSubuserAccess($server, $user, $role);
+        }
+    }
+
+    private function syncSubuserAccess(Server $server, User $user, string $role): void
+    {
+        if ($server->owner_id === $user->id) {
+            return;
+        }
+
+        $permissions = $this->organizationPermissions($role);
+        $existing = \Pterodactyl\Models\Subuser::query()
+            ->where('server_id', $server->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($existing) {
+            $existing->update(['permissions' => $permissions]);
+            return;
+        }
+
+        try {
+            $this->subusers->handle($server, $user->email, $permissions);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+    }
+
+    private function organizationPermissions(string $role): array
+    {
+        $member = [
+            'websocket.connect',
+            'control.console',
+            'control.start',
+            'control.stop',
+            'control.restart',
+            'file.read',
+            'file.read-content',
+            'backup.read',
+            'database.view',
+        ];
+
+        if ($role === 'billing') {
+            return $member;
+        }
+
+        if ($role === 'admin') {
+            return array_merge($member, [
+                'file.create',
+                'file.update',
+                'file.delete',
+                'file.archive',
+                'file.sftp',
+                'backup.create',
+                'backup.download',
+                'schedule.read',
+                'schedule.create',
+                'settings.rename',
+            ]);
+        }
+
+        return $member;
     }
 
     public function createWebhook(Request $request): RedirectResponse
