@@ -299,6 +299,19 @@ class OperationsController extends Controller
                     'started_at' => now(),
                     'updated_at' => now(),
                 ]);
+
+                $subscription = DB::table('nodexa_subscriptions')
+                    ->where('server_id', $server->id)
+                    ->where('status', 'active')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($subscription) {
+                    DB::table('nodexa_subscriptions')->where('id', $subscription->id)->update([
+                        'amount' => (float) $subscription->amount + (float) $addon->price_monthly,
+                        'updated_at' => now(),
+                    ]);
+                }
             }
         }
 
