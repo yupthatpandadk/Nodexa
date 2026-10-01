@@ -38,6 +38,7 @@ Route::get('/knowledgebase/search', [KnowledgebaseController::class, 'search'])-
 Route::get('/knowledgebase/media/{filename}', [KnowledgebaseController::class, 'media'])->where('filename', '[A-Za-z0-9._-]+')->name('knowledgebase.media');
 Route::get('/knowledgebase/category/{category:slug}', [KnowledgebaseController::class, 'category'])->name('knowledgebase.category');
 Route::get('/knowledgebase/article/{article:slug}', [KnowledgebaseController::class, 'article'])->name('knowledgebase.article');
+Route::post('/knowledgebase/article/{article:slug}/feedback', [KnowledgebaseController::class, 'feedback'])->name('knowledgebase.feedback');
 Route::get('/store', [StorefrontController::class, 'hosting'])->name('store.index');
 Route::get('/store/{product:slug}', [StorefrontController::class, 'show'])->name('store.product');
 Route::middleware('auth.session')->group(function () {
