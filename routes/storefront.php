@@ -54,6 +54,7 @@ Route::middleware('auth.session')->group(function () {
     Route::post('/client/hub/affiliate', [ClientHubController::class, 'enableAffiliate'])->name('store.client.hub.affiliate.enable');
     Route::post('/client/hub/organizations', [ClientHubController::class, 'createOrganization'])->name('store.client.hub.organizations.create');
     Route::post('/client/hub/organizations/{organization}/members', [ClientHubController::class, 'addOrganizationMember'])->name('store.client.hub.organizations.members');
+    Route::post('/client/hub/organizations/{organization}/servers', [ClientHubController::class, 'attachOrganizationServer'])->name('store.client.hub.organizations.servers');
     Route::post('/client/hub/webhooks', [ClientHubController::class, 'createWebhook'])->name('store.client.hub.webhooks.create');
     Route::post('/client/hub/webhooks/{webhook}/test', [ClientHubController::class, 'testWebhook'])->name('store.client.hub.webhooks.test');
     Route::delete('/client/hub/webhooks/{webhook}', [ClientHubController::class, 'deleteWebhook'])->name('store.client.hub.webhooks.delete');
