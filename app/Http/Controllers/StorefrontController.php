@@ -76,7 +76,17 @@ class StorefrontController extends Controller
             ->latest()
             ->get();
 
-        return view('store.client.billing', compact('orders'));
+        $invoices = DB::table('nodexa_invoices')
+            ->where('user_id', $request->user()->id)
+            ->orderByDesc('id')
+            ->get();
+
+        $subscriptions = DB::table('nodexa_subscriptions')
+            ->where('user_id', $request->user()->id)
+            ->orderByDesc('id')
+            ->get();
+
+        return view('store.client.billing', compact('orders', 'invoices', 'subscriptions'));
     }
 
     public function clientProfile(Request $request)
