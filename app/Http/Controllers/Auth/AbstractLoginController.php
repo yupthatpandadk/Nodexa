@@ -81,6 +81,30 @@ abstract class AbstractLoginController extends Controller
 
         Event::dispatch(new DirectLogin($user, true));
 
+        try {
+            /** @var \Pterodactyl\Services\Nodexa\NodexaEventService $nodexaEvents */
+            $nodexaEvents = app(\Pterodactyl\Services\Nodexa\NodexaEventService::class);
+            $nodexaEvents->audit(
+                $user->id,
+                'security',
+                'auth.login',
+                'Successful account login',
+                'user',
+                $user->id,
+                [],
+                $request
+            );
+            $nodexaEvents->notify(
+                $user->id,
+                'Ny login på din konto',
+                'Der blev logget ind på din Nodexa-konto fra ' . ($request->ip() ?: 'ukendt IP') . '.',
+                'security',
+                '/client/hub'
+            );
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+
         $adminLogin = (bool) $request->session()->pull('nodexa_admin_login', false);
 
         return new JsonResponse([
