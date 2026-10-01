@@ -58,7 +58,7 @@
                 @php($policy=$backupPolicies[$server->id] ?? null)
                 <div class="rowCard">
                     <div><strong>{{ $server->name }}</strong><small>{{ $server->node?->name }} · {{ $server->backups->count() }}/{{ $server->backup_limit }} backups @if($policy && $policy->last_status)· Sidst: {{ $policy->last_status }}@endif</small></div>
-                    @if($server->owner_id===auth()->id())
+                    @if($server->owner_id===auth()->id() && $server->backup_limit > 0)
                     <form method="POST" action="{{ route('store.client.hub.backups.save') }}" class="inlineActions">
                         @csrf
                         <input type="hidden" name="server_id" value="{{ $server->id }}">
@@ -70,8 +70,9 @@
                         <input type="hidden" name="name_prefix" value="Automatic backup">
                         <button class="btn primary">Gem</button>
                     </form>
+                    @elseif($server->owner_id===auth()->id())<span class="badge warn">Backup ikke inkluderet</span>
                     @else<span class="badge">Subuser</span>@endif
-                    <a class="linkish" href="{{ rtrim(config('app.url'), '/') }}/server/{{ $server->uuidShort }}/backups">Åbn backups →</a>
+                    @if($server->backup_limit > 0)<a class="linkish" href="{{ rtrim(config('app.url'), '/') }}/server/{{ $server->uuidShort }}/backups">Åbn backups →</a>@endif
                 </div>
                 @empty<div class="empty">Du har ingen servere endnu.</div>@endforelse
             </div>
