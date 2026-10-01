@@ -4,6 +4,7 @@ namespace Pterodactyl\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Pterodactyl\Models\KnowledgebaseArticle;
 use Pterodactyl\Models\KnowledgebaseCategory;
@@ -119,7 +120,37 @@ class KnowledgebaseController extends Controller
             ->get();
 
         $renderedContent = $this->renderer->render($article->content);
+        $helpfulYes = DB::table('nodexa_kb_feedback')->where('article_id', $article->id)->where('helpful', true)->count();
+        $helpfulNo = DB::table('nodexa_kb_feedback')->where('article_id', $article->id)->where('helpful', false)->count();
 
-        return view('store.knowledgebase.article', compact('article', 'related', 'renderedContent'));
+        return view('store.knowledgebase.article', compact('article', 'related', 'renderedContent', 'helpfulYes', 'helpfulNo'));
+    }
+
+    public function feedback(Request $request, KnowledgebaseArticle $article)
+    {
+        abort_unless($article->published, 404);
+
+        $data = $request->validate(['helpful' => 'required|boolean']);
+        $user = $request->user();
+        $fingerprint = hash('sha256', ($request->ip() ?? '') . '|' . (string) $request->userAgent());
+
+        $query = DB::table('nodexa_kb_feedback')->where('article_id', $article->id);
+        if ($user) {
+            $query->where('user_id', $user->id);
+        } else {
+            $query->where('fingerprint', $fingerprint);
+        }
+        $query->delete();
+
+        DB::table('nodexa_kb_feedback')->insert([
+            'article_id' => $article->id,
+            'user_id' => $user?->id,
+            'helpful' => (bool) $data['helpful'],
+            'fingerprint' => $user ? null : $fingerprint,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return back()->with('kb_feedback', 'Tak for din feedback.');
     }
 }
