@@ -1,6 +1,17 @@
 {
-  "latest": "1.4.0",
+  "latest": "1.4.1",
   "releases": [
+    {
+      "version": "1.4.1",
+      "date": "2026-10-01",
+      "type": "patch",
+      "title": "Wings allowed_origins YAML fix",
+      "changes": [
+        "Rettet single-domain updateren så den korrekt håndterer Wings-configs hvor allowed_origins-listen bruger YAML-listelinjer uden indrykning.",
+        "Updateren efterlader ikke længere orphaned allowed_origins URL-linjer, som kunne få Wings til at fejle med 'did not find expected key'.",
+        "Single-domain valideringen genkender nu både inline allowed_origins og listeformatet genereret af wings configure."
+      ]
+    },
     {
       "version": "1.4.0",
       "date": "2026-10-01",
