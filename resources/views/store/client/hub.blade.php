@@ -71,6 +71,7 @@
                         <button class="btn primary">Gem</button>
                     </form>
                     @else<span class="badge">Subuser</span>@endif
+                    <a class="linkish" href="{{ rtrim(config('app.url'), '/') }}/server/{{ $server->uuidShort }}/backups">Åbn backups →</a>
                 </div>
                 @empty<div class="empty">Du har ingen servere endnu.</div>@endforelse
             </div>
