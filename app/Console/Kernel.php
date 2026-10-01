@@ -35,6 +35,10 @@ class Kernel extends ConsoleKernel
         $schedule->command(ProcessRunnableCommand::class)->everyMinute()->withoutOverlapping();
         $schedule->command(CleanServiceBackupFilesCommand::class)->daily();
 
+        // Nodexa operations automation: node health, scheduled backups, recurring
+        // invoices and overdue service handling.
+        $schedule->command('nodexa:automation')->everyFiveMinutes()->withoutOverlapping();
+
         if (config('backups.prune_age')) {
             // Every 30 minutes, run the backup pruning command so that any abandoned backups can be deleted.
             $schedule->command(PruneOrphanedBackupsCommand::class)->everyThirtyMinutes();
