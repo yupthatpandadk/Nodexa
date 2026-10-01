@@ -3,6 +3,7 @@
 namespace Pterodactyl\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Pterodactyl\Models\StoreProduct;
 use Pterodactyl\Models\StoreOrder;
 
@@ -101,6 +102,28 @@ class StorefrontController extends Controller
             'currency'=>'DKK',
             'server_name'=>$data['server_name'],
         ]);
+
+        $referralCode = strtoupper(trim((string) $request->cookie('nodexa_ref', '')));
+        if ($referralCode !== '') {
+            $affiliate = DB::table('nodexa_affiliates')
+                ->where('code', $referralCode)
+                ->where('enabled', true)
+                ->first();
+
+            if ($affiliate && (int) $affiliate->user_id !== (int) $request->user()->id) {
+                DB::table('nodexa_affiliate_events')->insert([
+                    'affiliate_id' => $affiliate->id,
+                    'referred_user_id' => $request->user()->id,
+                    'order_id' => $order->id,
+                    'type' => 'order_pending',
+                    'amount' => $order->amount,
+                    'commission' => 0,
+                    'metadata' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
 
         return redirect()->route('store.checkout',$order);
     }
