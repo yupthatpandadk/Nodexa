@@ -26,6 +26,9 @@
                     <a href="{{ route('admin.servers') }}" class="btn btn-primary"><i class="fa fa-server"></i> Servere</a>
                     <a href="{{ route('admin.nodes') }}" class="btn btn-default"><i class="fa fa-sitemap"></i> Nodes</a>
                     <a href="{{ route('admin.users') }}" class="btn btn-default"><i class="fa fa-users"></i> Brugere</a>
+                    @if(Auth::user()->hasPermission('operations.view'))
+                    <a href="{{ route('admin.operations') }}" class="btn btn-default"><i class="fa fa-heartbeat"></i> Operations Center</a>
+                    @endif
                 </div>
             </div>
         </div>
