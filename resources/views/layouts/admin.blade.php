@@ -93,11 +93,13 @@
                                 <i class="fa fa-envelope"></i> <span>Mail Center</span>
                             </a>
                         </li>
+                        @if(Auth::user()->hasPermission('errors.view'))
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.errors') ?: 'active' }}">
                             <a href="{{ route('admin.errors') }}">
                                 <i class="fa fa-exclamation-triangle"></i> <span>Error Center</span>
                             </a>
                         </li>
+                        @endif
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.updates') ?: 'active' }}">
                             <a href="{{ route('admin.updates') }}">
                                 <i class="fa fa-cloud-download"></i> <span>Update Center</span>
@@ -144,9 +146,11 @@
                             </a>
                         </li>
                         <li class="header">SERVICE MANAGEMENT</li>
+                        @if(Auth::user()->hasPermission('tickets.view'))
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.tickets') ?: 'active' }}">
                             <a href="{{ route('admin.tickets') }}"><i class="fa fa-life-ring"></i> <span>Support Tickets</span></a>
                         </li>
+                        @endif
                         @if(Auth::user()->hasPermission('knowledgebase.view'))
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.knowledgebase') ?: 'active' }}">
                             <a href="{{ route('admin.knowledgebase') }}"><i class="fa fa-book"></i> <span>Knowledgebase</span></a>
@@ -157,11 +161,13 @@
                             <a href="{{ route('admin.operations') }}"><i class="fa fa-heartbeat"></i> <span>Operations Center</span></a>
                         </li>
                         @endif
+                        @if(Auth::user()->hasPermission('store.view'))
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.store') ?: 'active' }}">
                             <a href="{{ route('admin.store') }}">
                                 <i class="fa fa-shopping-cart"></i> <span>Storefront & Billing</span>
                             </a>
                         </li>
+                        @endif
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.mounts') ?: 'active' }}">
                             <a href="{{ route('admin.mounts') }}">
                                 <i class="fa fa-magic"></i> <span>Mounts</span>
