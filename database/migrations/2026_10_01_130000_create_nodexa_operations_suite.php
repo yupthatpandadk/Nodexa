@@ -226,6 +226,17 @@ return new class extends Migration
             });
         }
 
+        if (!Schema::hasTable('nodexa_organization_servers')) {
+            Schema::create('nodexa_organization_servers', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('organization_id');
+                $table->unsignedInteger('server_id')->index();
+                $table->timestamps();
+                $table->unique(['organization_id', 'server_id']);
+                $table->foreign('organization_id')->references('id')->on('nodexa_organizations')->cascadeOnDelete();
+            });
+        }
+
         if (!Schema::hasTable('nodexa_webhooks')) {
             Schema::create('nodexa_webhooks', function (Blueprint $table) {
                 $table->id();
@@ -310,6 +321,7 @@ return new class extends Migration
             'nodexa_api_tokens',
             'nodexa_webhook_deliveries',
             'nodexa_webhooks',
+            'nodexa_organization_servers',
             'nodexa_organization_members',
             'nodexa_organizations',
             'nodexa_affiliate_events',
