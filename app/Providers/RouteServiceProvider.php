@@ -12,6 +12,7 @@ use Pterodactyl\Http\Middleware\TrimStrings;
 use Pterodactyl\Http\Middleware\AdminAuthenticate;
 use Pterodactyl\Http\Middleware\AdminPermission;
 use Pterodactyl\Http\Middleware\SiteAccessGate;
+use Pterodactyl\Http\Middleware\NodexaApiAuthenticate;
 use Pterodactyl\Http\Middleware\RequireTwoFactorAuthentication;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 
@@ -54,6 +55,10 @@ class RouteServiceProvider extends ServiceProvider
 
                 Route::middleware('guest')->prefix('/auth')->group(base_path('routes/auth.php'));
             });
+
+            Route::middleware(['api', NodexaApiAuthenticate::class])
+                ->prefix('/api/nodexa')
+                ->group(base_path('routes/api-nodexa.php'));
 
             Route::middleware(['api', RequireTwoFactorAuthentication::class])->group(function () {
                 Route::middleware(['application-api', 'throttle:api.application'])
