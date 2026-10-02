@@ -33,6 +33,7 @@ Route::get('/hosting', [StorefrontController::class, 'hosting'])->name('store.ho
 Route::get('/features', [StorefrontController::class, 'features'])->name('store.features');
 Route::get('/about', [StorefrontController::class, 'about'])->name('store.about');
 Route::get('/support', [StorefrontController::class, 'support'])->name('store.support');
+Route::view('/docs', 'store.docs')->name('store.docs');
 Route::get('/knowledgebase', [KnowledgebaseController::class, 'index'])->name('knowledgebase.index');
 Route::get('/knowledgebase/search', [KnowledgebaseController::class, 'search'])->name('knowledgebase.search');
 Route::get('/knowledgebase/media/{filename}', [KnowledgebaseController::class, 'media'])->where('filename', '[A-Za-z0-9._-]+')->name('knowledgebase.media');
