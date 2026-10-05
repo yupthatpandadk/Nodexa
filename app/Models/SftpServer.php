@@ -3,16 +3,13 @@
 namespace Pterodactyl\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class SftpServer extends Model
 {
-    use HasUuids;
-
     protected $table = 'sftp_servers';
 
     protected $fillable = [
-        'name', 'host', 'port', 'username', 'password', 'root_path', 'enabled',
+        'uuid', 'name', 'host', 'port', 'username', 'password', 'root_path', 'enabled',
     ];
 
     protected $hidden = ['password'];
