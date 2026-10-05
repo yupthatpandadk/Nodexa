@@ -22,8 +22,9 @@
             <div class="box-body">
                 <h3 style="margin-top:0;color:#f4f7fb;">Velkommen til Nodexa</h3>
                 <p>Administrér servere, nodes, brugere og platformens konfiguration fra ét samlet control center.</p>
-                <div style="margin-top:20px;">
+                <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;">
                     <a href="{{ route('admin.servers') }}" class="btn btn-primary"><i class="fa fa-server"></i> Servere</a>
+                    <a href="{{ route('admin.sftp-servers') }}" class="btn btn-info"><i class="fa fa-folder-open"></i> SFTP File Manager</a>
                     <a href="{{ route('admin.nodes') }}" class="btn btn-default"><i class="fa fa-sitemap"></i> Nodes</a>
                     <a href="{{ route('admin.users') }}" class="btn btn-default"><i class="fa fa-users"></i> Brugere</a>
                     @if(Auth::user()->hasPermission('operations.view'))
