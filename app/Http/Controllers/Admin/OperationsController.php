@@ -10,6 +10,7 @@ use Illuminate\View\View;
 use Pterodactyl\Http\Controllers\Controller;
 use Pterodactyl\Models\Server;
 use Pterodactyl\Models\StoreOrder;
+use Pterodactyl\Services\Nodexa\CfxEupService;
 use Pterodactyl\Services\Nodexa\NodexaAutomationService;
 use Pterodactyl\Services\Nodexa\NodexaEventService;
 use Pterodactyl\Services\Servers\BuildModificationService;
@@ -22,6 +23,7 @@ class OperationsController extends Controller
         private NodexaAutomationService $automation,
         private BuildModificationService $builds,
         private SuspensionService $suspension,
+        private CfxEupService $cfxEup,
     ) {
     }
 
@@ -317,13 +319,16 @@ class OperationsController extends Controller
 
         if ($row->subscription_id) {
             $subscription = DB::table('nodexa_subscriptions')->where('id', $row->subscription_id)->first();
-            if ($subscription?->server_id) {
-                $server = Server::query()->find($subscription->server_id);
-                $hasOverdue = DB::table('nodexa_invoices')
+            $hasOverdue = $subscription
+                ? DB::table('nodexa_invoices')
                     ->where('subscription_id', $subscription->id)
                     ->where('status', 'overdue')
                     ->where('id', '!=', $invoice)
-                    ->exists();
+                    ->exists()
+                : false;
+
+            if ($subscription?->server_id) {
+                $server = Server::query()->find($subscription->server_id);
 
                 if ($server && $server->isSuspended() && !$hasOverdue) {
                     try {
@@ -331,6 +336,14 @@ class OperationsController extends Controller
                     } catch (\Throwable $exception) {
                         report($exception);
                     }
+                }
+            }
+
+            if (($subscription->service_type ?? null) === 'cfx_eup' && !$hasOverdue) {
+                try {
+                    $this->cfxEup->activateInvoice($invoice);
+                } catch (\Throwable $exception) {
+                    report($exception);
                 }
             }
         }
