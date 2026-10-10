@@ -6,6 +6,7 @@ use Pterodactyl\Http\Controllers\SupportTicketController;
 use Pterodactyl\Http\Controllers\KnowledgebaseController;
 use Pterodactyl\Http\Controllers\StatusController;
 use Pterodactyl\Http\Controllers\ClientHubController;
+use Pterodactyl\Http\Controllers\CfxEupController;
 
 Route::get('/csrf/refresh', function () {
     $response = response()
@@ -47,6 +48,7 @@ Route::middleware('auth.session')->group(function () {
     Route::get('/client/servers', [StorefrontController::class, 'clientServers'])->name('store.client.servers');
     Route::get('/client/billing', [StorefrontController::class, 'clientBilling'])->name('store.client.billing');
     Route::get('/client/profile', [StorefrontController::class, 'clientProfile'])->name('store.client.profile');
+    Route::get('/client/eup-keys', [CfxEupController::class, 'index'])->name('store.client.eup-keys');
     Route::get('/client/hub', [ClientHubController::class, 'index'])->name('store.client.hub');
     Route::post('/client/hub/notifications/{notification}/read', [ClientHubController::class, 'markNotification'])->name('store.client.hub.notifications.read');
     Route::post('/client/hub/notifications/read-all', [ClientHubController::class, 'markAllNotifications'])->name('store.client.hub.notifications.read-all');
