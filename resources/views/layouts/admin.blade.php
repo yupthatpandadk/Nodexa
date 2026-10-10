@@ -161,6 +161,11 @@
                             <a href="{{ route('admin.operations') }}"><i class="fa fa-heartbeat"></i> <span>Operations Center</span></a>
                         </li>
                         @endif
+                        @if(Auth::user()->hasPermission('cfx_eup.view'))
+                        <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.cfx-eup') ?: 'active' }}">
+                            <a href="{{ route('admin.cfx-eup') }}"><i class="fa fa-key"></i> <span>CFX EUP Keys</span></a>
+                        </li>
+                        @endif
                         @if(Auth::user()->hasPermission('store.view'))
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.store') ?: 'active' }}">
                             <a href="{{ route('admin.store') }}">
