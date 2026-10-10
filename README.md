@@ -6,7 +6,7 @@
 
 A modern, self-hosted platform for managing game servers, customers, billing, support and infrastructure from one unified interface.
 
-![Version](https://img.shields.io/badge/version-1.4.1-7657ff?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.4.2-7657ff?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Linux-20232a?style=for-the-badge&logo=linux&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=for-the-badge&logo=php&logoColor=white)
 ![Docker](https://img.shields.io/badge/containers-Docker-2496ed?style=for-the-badge&logo=docker&logoColor=white)
@@ -51,6 +51,7 @@ The goal is simple: give administrators and customers everything they need witho
 - Notifications
 - Automatic backup configuration
 - Service add-ons
+- CFX EUP key services
 - Teams and organisations
 - Affiliate/referral system
 - API tokens and webhooks
@@ -68,6 +69,28 @@ The goal is simple: give administrators and customers everything they need witho
 - Automatic service restoration after payment
 - Resource add-ons for RAM, CPU, disk and backups
 - Affiliate commissions
+
+### CFX EUP Key Management
+
+Nodexa includes a dedicated CFX EUP key inventory and subscription system for hosting providers that distribute their own authorised keys to customers.
+
+Administrators and owners can:
+
+- Add keys to a secure key pool
+- Store keys encrypted at rest
+- Detect duplicate keys without storing a clear-text fingerprint
+- Assign a key directly to a customer
+- Create a monthly EUP subscription for a customer
+- Choose a specific key or automatically reserve the next available key
+- Create the first invoice automatically
+- Keep the key hidden until payment is registered
+- Suspend access in Nodexa when an invoice becomes overdue
+- Restore access automatically after outstanding invoices are paid
+- Cancel an EUP service and return its key to the available pool
+
+Customers can view active keys from `/client/eup-keys` and copy them directly from their account. Monthly EUP services use Nodexa's normal subscription, invoice, reminder and overdue automation.
+
+> Nodexa manages key inventory, customer entitlement and billing. Suspending a service in Nodexa does not by itself revoke a key at an external CFX provider.
 
 ### Smart Provisioning
 
@@ -153,6 +176,7 @@ Nodexa includes a custom administrator role system with granular permissions for
 - Support Tickets
 - Knowledgebase
 - Operations Center
+- CFX EUP Keys
 - Error Center
 - Countdown & Maintenance
 - Update Center
@@ -179,7 +203,8 @@ The automation system can handle:
 - Recurring invoice creation
 - Payment reminders
 - Overdue invoice handling
-- Service suspension
+- Game server suspension and restoration
+- CFX EUP entitlement suspension and restoration
 - Subscription synchronization
 
 Run manually from the Nodexa application directory:
@@ -217,11 +242,13 @@ The updater creates a local backup before updating, installs dependencies, rebui
 | Storefront | `/` |
 | Client Area | `/client` |
 | Services Hub | `/client/hub` |
+| CFX EUP Keys | `/client/eup-keys` |
 | Server Control | `/server/{identifier}` |
 | Knowledgebase | `/knowledgebase` |
 | Public Status | `/status` |
 | Admin Area | `/admin` |
 | Operations Center | `/admin/operations` |
+| CFX EUP Management | `/admin/cfx-eup` |
 
 ## Technology
 
@@ -249,6 +276,8 @@ Nodexa includes multiple security-focused features:
 - Scoped API tokens
 - Hashed API token storage
 - Signed webhooks
+- Encrypted CFX EUP key storage
+- Duplicate key fingerprinting
 - Isolated server containers
 - Security activity tracking
 
@@ -266,7 +295,7 @@ public/                 Public web assets
 
 ## Version
 
-Current release: **Nodexa 1.4.1**
+Current release: **Nodexa 1.4.2**
 
 The installed version can be checked with:
 
