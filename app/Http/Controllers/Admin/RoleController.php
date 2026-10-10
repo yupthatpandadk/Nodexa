@@ -32,6 +32,7 @@ class RoleController extends Controller
         'Website Access' => ['site_access.view', 'site_access.manage', 'site_access.bypass_countdown', 'site_access.bypass_maintenance'],
         'Knowledgebase' => ['knowledgebase.view', 'knowledgebase.manage'],
         'Operations Center' => ['operations.view', 'operations.manage'],
+        'CFX EUP Keys' => ['cfx_eup.view', 'cfx_eup.manage'],
         'Addon Manager' => ['addons.view', 'addons.manage'],
     ];
 
