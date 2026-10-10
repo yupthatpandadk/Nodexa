@@ -28,6 +28,7 @@ class AdminPermission
         'site-access' => 'site_access',
         'knowledgebase' => 'knowledgebase',
         'operations' => 'operations',
+        'cfx-eup' => 'cfx_eup',
     ];
 
     public function handle(Request $request, Closure $next): mixed
