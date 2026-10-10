@@ -33,19 +33,41 @@ class StorefrontController extends Controller
             ->get();
 
         // The Client Area must reflect the actual servers the user can access in
-        // Pterodactyl, not only servers that happened to be created through the
-        // Nodexa Storefront order flow. This also includes servers assigned to the
-        // account as a subuser.
+        // Nodexa, not only servers that happened to be created through the
+        // Storefront order flow. This also includes servers assigned as subuser.
         $activeServers = $user->accessibleServers()
             ->with(['node', 'allocation'])
             ->orderByDesc('servers.created_at')
             ->get();
+
+        // CFX EUP is a first-class Nodexa service as well. Keep it separate from
+        // game servers internally, but expose it in the same "Mine services"
+        // overview so customers do not have to know which subsystem created it.
+        $eupServices = DB::table('nodexa_cfx_eup_orders as eup')
+            ->leftJoin('nodexa_subscriptions as sub', 'sub.id', '=', 'eup.subscription_id')
+            ->where('eup.user_id', $user->id)
+            ->whereIn('eup.status', ['awaiting_payment', 'active', 'suspended'])
+            ->select([
+                'eup.*',
+                'sub.status as subscription_status',
+                'sub.next_invoice_at',
+            ])
+            ->orderByDesc('eup.created_at')
+            ->get();
+
+        $activeServiceCount = $activeServers->count() + $eupServices->where('status', 'active')->count();
+        $pendingServiceCount = $orders->where('status', 'awaiting_payment')->count() + $eupServices->where('status', 'awaiting_payment')->count();
+        $totalOrderCount = $orders->count() + $eupServices->count();
 
         return view('store.client.index', [
             'orders' => $orders,
             'activeServers' => $activeServers,
             'serverOrders' => $orders->whereNotNull('server_id')->keyBy('server_id'),
             'pendingOrders' => $orders->where('status', 'awaiting_payment'),
+            'eupServices' => $eupServices,
+            'activeServiceCount' => $activeServiceCount,
+            'pendingServiceCount' => $pendingServiceCount,
+            'totalOrderCount' => $totalOrderCount,
             'user' => $user,
         ]);
     }
