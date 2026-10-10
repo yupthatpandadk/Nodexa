@@ -19,6 +19,13 @@ Route::post('/operations/subscriptions/sync', [Admin\OperationsController::class
 Route::post('/operations/affiliates/{affiliate}/payout', [Admin\OperationsController::class, 'payAffiliate'])->name('admin.operations.affiliates.payout');
 Route::post('/operations/automation/run', [Admin\OperationsController::class, 'runAutomation'])->name('admin.operations.automation');
 
+// Nodexa CFX EUP Key Management
+Route::get('/cfx-eup', [Admin\CfxEupController::class, 'index'])->name('admin.cfx-eup');
+Route::post('/cfx-eup/keys', [Admin\CfxEupController::class, 'storeKey'])->name('admin.cfx-eup.keys.store');
+Route::post('/cfx-eup/orders', [Admin\CfxEupController::class, 'createOrder'])->name('admin.cfx-eup.orders.store');
+Route::post('/cfx-eup/assign', [Admin\CfxEupController::class, 'assignDirect'])->name('admin.cfx-eup.assign');
+Route::delete('/cfx-eup/orders/{order}', [Admin\CfxEupController::class, 'cancel'])->name('admin.cfx-eup.orders.cancel');
+
 // Nodexa Website Access (Countdown & Maintenance)
 Route::get('/site-access', [Admin\SiteAccessController::class, 'index'])->name('admin.site-access');
 Route::patch('/site-access', [Admin\SiteAccessController::class, 'update'])->name('admin.site-access.update');
@@ -55,7 +62,6 @@ Route::patch('/store/products/{product}', [Admin\StoreController::class, 'update
 Route::delete('/store/products/{product}', [Admin\StoreController::class, 'destroy'])->name('admin.store.products.destroy');
 Route::post('/store/coupons', [Admin\StoreController::class, 'coupon'])->name('admin.store.coupons.store');
 Route::patch('/store/orders/{order}/status', [Admin\StoreController::class, 'orderStatus'])->name('admin.store.orders.status');
-
 
 // Nodexa Roles & Permissions
 Route::get('/roles', [Admin\RoleController::class, 'index'])->name('admin.roles');
