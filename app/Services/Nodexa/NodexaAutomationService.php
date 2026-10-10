@@ -18,6 +18,7 @@ class NodexaAutomationService
         private DeleteBackupService $deleteBackups,
         private SuspensionService $suspension,
         private NodexaEventService $events,
+        private CfxEupService $cfxEup,
     ) {
     }
 
@@ -208,6 +209,7 @@ class NodexaAutomationService
 
         foreach ($subscriptions as $subscription) {
             $number = 'NX-' . now()->format('Ym') . '-' . strtoupper(Str::random(8));
+            $description = trim((string) ($subscription->description ?? '')) ?: 'Nodexa hosting subscription';
 
             $invoiceId = DB::table('nodexa_invoices')->insertGetId([
                 'user_id' => $subscription->user_id,
@@ -225,7 +227,7 @@ class NodexaAutomationService
 
             DB::table('nodexa_invoice_items')->insert([
                 'invoice_id' => $invoiceId,
-                'description' => 'Nodexa hosting subscription',
+                'description' => $description,
                 'quantity' => 1,
                 'unit_price' => $subscription->amount,
                 'total' => $subscription->amount,
@@ -247,7 +249,7 @@ class NodexaAutomationService
             $this->events->notify(
                 $subscription->user_id,
                 'Ny faktura ' . $number,
-                'En ny faktura på ' . number_format((float) $subscription->amount, 2, ',', '.') . ' ' . $subscription->currency . ' er klar.',
+                'En ny faktura på ' . number_format((float) $subscription->amount, 2, ',', '.') . ' ' . $subscription->currency . ' er klar for ' . $description . '.',
                 'billing',
                 '/client/billing'
             );
@@ -257,6 +259,7 @@ class NodexaAutomationService
                 'number' => $number,
                 'total' => $subscription->amount,
                 'currency' => $subscription->currency,
+                'service_type' => $subscription->service_type ?? null,
             ], $subscription->user_id);
 
             $created++;
@@ -322,6 +325,49 @@ class NodexaAutomationService
                             'warning',
                             '/client/billing'
                         );
+                    } catch (\Throwable $exception) {
+                        report($exception);
+                    }
+                }
+            }
+
+            if (($subscription->service_type ?? null) === 'cfx_eup') {
+                try {
+                    $this->cfxEup->suspendSubscription($subscription->id);
+                } catch (\Throwable $exception) {
+                    report($exception);
+                }
+            }
+        }
+
+        // Re-activate CFX EUP entitlements automatically when payment has been
+        // registered and no other invoice on the subscription remains overdue.
+        if (Schema::hasTable('nodexa_cfx_eup_orders')) {
+            $cfxSubscriptions = DB::table('nodexa_subscriptions')
+                ->where('service_type', 'cfx_eup')
+                ->whereIn('status', ['pending', 'active'])
+                ->get();
+
+            foreach ($cfxSubscriptions as $subscription) {
+                $hasOverdue = DB::table('nodexa_invoices')
+                    ->where('subscription_id', $subscription->id)
+                    ->where('status', 'overdue')
+                    ->exists();
+
+                if ($hasOverdue) {
+                    continue;
+                }
+
+                $paidInvoice = DB::table('nodexa_invoices')
+                    ->where('subscription_id', $subscription->id)
+                    ->where('status', 'paid')
+                    ->orderByDesc('paid_at')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($paidInvoice) {
+                    try {
+                        $this->cfxEup->activateInvoice($paidInvoice->id);
                     } catch (\Throwable $exception) {
                         report($exception);
                     }
