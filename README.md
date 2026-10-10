@@ -182,10 +182,9 @@ The automation system can handle:
 - Service suspension
 - Subscription synchronization
 
-Manual execution:
+Run manually from the Nodexa application directory:
 
 ```bash
-cd /var/www/pterodactyl
 php artisan nodexa:automation
 ```
 
@@ -210,15 +209,6 @@ curl -fsSL https://raw.githubusercontent.com/yupthatpandadk/Nodexa/main/install.
 ```
 
 The updater creates a local backup before updating, installs dependencies, rebuilds the frontend, runs database migrations and refreshes application caches.
-
-## Default Paths
-
-| Purpose | Path |
-| --- | --- |
-| Nodexa application | `/var/www/pterodactyl` |
-| Application environment | `/var/www/pterodactyl/.env` |
-| Node daemon configuration | `/etc/pterodactyl/config.yml` |
-| Web server | Nginx |
 
 ## Main Areas
 
