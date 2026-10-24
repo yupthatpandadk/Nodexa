@@ -6,7 +6,7 @@
 
 A modern, self-hosted platform for managing game servers, customers, billing, support and infrastructure from one unified interface.
 
-![Version](https://img.shields.io/badge/version-1.4.2-7657ff?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.4.4-7657ff?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Linux-20232a?style=for-the-badge&logo=linux&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=for-the-badge&logo=php&logoColor=white)
 ![Docker](https://img.shields.io/badge/containers-Docker-2496ed?style=for-the-badge&logo=docker&logoColor=white)
@@ -91,6 +91,29 @@ Administrators and owners can:
 Customers can view active keys from `/client/eup-keys` and copy them directly from their account. Monthly EUP services use Nodexa's normal subscription, invoice, reminder and overdue automation.
 
 > Nodexa manages key inventory, customer entitlement and billing. Suspending a service in Nodexa does not by itself revoke a key at an external CFX provider.
+
+### Minecraft Utility Addons
+
+Nodexa includes optional Minecraft-specific server tools controlled through the Admin Addon Manager.
+
+**Player List**
+
+- Live online player count
+- Maximum player slots
+- Player names
+- Automatic refresh every 15 seconds
+- Manual refresh
+- Uses Minecraft's built-in `list` command
+
+**MC Server Chat**
+
+- Live Minecraft chat in the Nodexa server panel
+- Player join and leave events
+- Send messages to Minecraft players directly from Nodexa
+- Uses Minecraft's built-in `say` command
+- Keeps the latest chat messages visible while the page is open
+
+Both addons use the existing Wings WebSocket connection and require no RCON setup or additional Minecraft plugin. Administrators can enable each addon independently and select which Eggs may use it.
 
 ### Smart Provisioning
 
@@ -295,7 +318,7 @@ public/                 Public web assets
 
 ## Version
 
-Current release: **Nodexa 1.4.2**
+Current release: **Nodexa 1.4.4**
 
 The installed version can be checked with:
 
