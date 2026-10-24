@@ -12,8 +12,64 @@ use Pterodactyl\Models\Egg;
 
 class AddonController extends Controller
 {
-    private const MINECRAFT_PLUGIN_MANAGER = 'minecraft-plugin-manager';
-    private const MINECRAFT_MOD_MANAGER = 'minecraft-mod-manager';
+    private const DEFINITIONS = [
+        'minecraft-plugin-manager' => [
+            'title' => 'Minecraft Plugin Manager',
+            'category' => 'Plugin Manager',
+            'description' => 'Installer og administrer Minecraft plugins direkte fra Modrinth.',
+            'version' => '1.0',
+            'compatible_versions' => 'Paper, Purpur, Spigot, Folia, Bukkit',
+            'download_url' => 'https://modrinth.com',
+            'install_path' => '/plugins/',
+            'provider' => 'Modrinth',
+            'icon' => 'fa-puzzle-piece',
+            'color' => '#9b7cff',
+            'background' => 'rgba(124,58,237,.16)',
+            'tab' => 'Plugins',
+        ],
+        'minecraft-mod-manager' => [
+            'title' => 'Minecraft Mod Manager',
+            'category' => 'Mod Manager',
+            'description' => 'Mods fra Modrinth med automatisk Forge, NeoForge, Fabric og Quilt filtrering.',
+            'version' => '1.0',
+            'compatible_versions' => 'Forge, NeoForge, Fabric, Quilt',
+            'download_url' => 'https://modrinth.com',
+            'install_path' => '/mods/',
+            'provider' => 'Modrinth',
+            'icon' => 'fa-cubes',
+            'color' => '#22d3ee',
+            'background' => 'rgba(6,182,212,.14)',
+            'tab' => 'Mods',
+        ],
+        'minecraft-player-list' => [
+            'title' => 'Minecraft Player List',
+            'category' => 'Player List',
+            'description' => 'Vis online spillere, player count og max slots live direkte fra Minecraft-serveren.',
+            'version' => '1.0',
+            'compatible_versions' => 'Java Edition & Bedrock console-compatible servers',
+            'download_url' => null,
+            'install_path' => null,
+            'provider' => 'Nodexa / Wings',
+            'icon' => 'fa-users',
+            'color' => '#34d399',
+            'background' => 'rgba(16,185,129,.14)',
+            'tab' => 'Player List',
+        ],
+        'minecraft-server-chat' => [
+            'title' => 'MC Server Chat',
+            'category' => 'Server Chat',
+            'description' => 'Live Minecraft-chat i Nodexa med join/leave events og mulighed for at sende beskeder til spillerne.',
+            'version' => '1.0',
+            'compatible_versions' => 'Java Edition & console-compatible Minecraft servers',
+            'download_url' => null,
+            'install_path' => null,
+            'provider' => 'Nodexa / Wings',
+            'icon' => 'fa-comments',
+            'color' => '#60a5fa',
+            'background' => 'rgba(59,130,246,.14)',
+            'tab' => 'Server Chat',
+        ],
+    ];
 
     public function __construct(private AlertsMessageBag $alert)
     {
@@ -21,56 +77,46 @@ class AddonController extends Controller
 
     public function index(): View
     {
-        $addon = Addon::query()->firstOrCreate(
-            ['name' => self::MINECRAFT_PLUGIN_MANAGER],
-            [
-                'game' => 'Minecraft',
-                'category' => 'Plugin Manager',
-                'description' => 'Lader Minecraft-serverejere finde, installere, opdatere og afinstallere plugins via Modrinth.',
-                'version' => '1.0',
-                'compatible_versions' => 'Paper, Purpur, Spigot, Folia, Bukkit',
-                'download_url' => 'https://modrinth.com',
-                'install_path' => '/plugins/',
-                'egg_ids' => null,
-                'enabled' => true,
-            ]
-        );
-
-        $modAddon = Addon::query()->firstOrCreate(
-            ['name' => self::MINECRAFT_MOD_MANAGER],
-            [
-                'game' => 'Minecraft',
-                'category' => 'Mod Manager',
-                'description' => 'Lader Minecraft-serverejere finde og installere mods fra Modrinth filtreret efter Forge, NeoForge, Fabric eller Quilt.',
-                'version' => '1.0',
-                'compatible_versions' => 'Forge, NeoForge, Fabric, Quilt',
-                'download_url' => 'https://modrinth.com',
-                'install_path' => '/mods/',
-                'egg_ids' => null,
-                'enabled' => true,
-            ]
-        );
+        $addons = collect(self::DEFINITIONS)->map(function (array $definition, string $name) {
+            return Addon::query()->firstOrCreate(
+                ['name' => $name],
+                [
+                    'game' => 'Minecraft',
+                    'category' => $definition['category'],
+                    'description' => $definition['description'],
+                    'version' => $definition['version'],
+                    'compatible_versions' => $definition['compatible_versions'],
+                    'download_url' => $definition['download_url'],
+                    'install_path' => $definition['install_path'],
+                    'egg_ids' => null,
+                    'enabled' => true,
+                ]
+            );
+        });
 
         return view('admin.addons.index', [
-            'addon' => $addon,
-            'modAddon' => $modAddon,
+            'addons' => $addons,
+            'definitions' => self::DEFINITIONS,
             'eggs' => Egg::query()->with('nest')->orderBy('name')->get(),
         ]);
     }
 
     public function show(Addon $addon): View
     {
-        abort_unless(in_array($addon->name, [self::MINECRAFT_PLUGIN_MANAGER, self::MINECRAFT_MOD_MANAGER], true), 404);
+        $meta = self::DEFINITIONS[$addon->name] ?? null;
+        abort_unless($meta !== null, 404);
 
         return view('admin.addons.show', [
             'addon' => $addon,
+            'meta' => $meta,
             'eggs' => Egg::query()->with('nest')->get()->sortBy('name')->values(),
         ]);
     }
 
     public function update(Request $request, Addon $addon): RedirectResponse
     {
-        abort_unless(in_array($addon->name, [self::MINECRAFT_PLUGIN_MANAGER, self::MINECRAFT_MOD_MANAGER], true), 404);
+        $meta = self::DEFINITIONS[$addon->name] ?? null;
+        abort_unless($meta !== null, 404);
 
         $data = $request->validate([
             'egg_ids' => 'nullable|array',
@@ -82,7 +128,7 @@ class AddonController extends Controller
             'enabled' => $request->boolean('enabled'),
         ]);
 
-        $this->alert->success($addon->name === self::MINECRAFT_MOD_MANAGER ? 'Minecraft Mod Manager er opdateret.' : 'Minecraft Plugin Manager er opdateret.')->flash();
+        $this->alert->success($meta['title'] . ' er opdateret.')->flash();
 
         return redirect()->route('admin.addons.show', $addon);
     }
