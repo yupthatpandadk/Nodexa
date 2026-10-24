@@ -6,7 +6,7 @@
 
 A modern, self-hosted platform for managing game servers, customers, billing, support and infrastructure from one unified interface.
 
-![Version](https://img.shields.io/badge/version-1.4.4-7657ff?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.4.5-7657ff?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Linux-20232a?style=for-the-badge&logo=linux&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=for-the-badge&logo=php&logoColor=white)
 ![Docker](https://img.shields.io/badge/containers-Docker-2496ed?style=for-the-badge&logo=docker&logoColor=white)
@@ -98,6 +98,7 @@ Nodexa includes optional Minecraft-specific server tools controlled through the 
 
 **Player List**
 
+- Embedded directly below the server Console
 - Live online player count
 - Maximum player slots
 - Player names
@@ -318,7 +319,7 @@ public/                 Public web assets
 
 ## Version
 
-Current release: **Nodexa 1.4.4**
+Current release: **Nodexa 1.4.5**
 
 The installed version can be checked with:
 
