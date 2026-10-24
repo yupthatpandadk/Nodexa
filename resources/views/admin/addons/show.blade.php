@@ -1,9 +1,9 @@
 @extends('layouts.admin')
 
-@section('title', $addon->name === 'minecraft-mod-manager' ? 'Minecraft Mod Manager' : 'Minecraft Plugin Manager')
+@section('title', $meta['title'])
 
 @section('content-header')
-    <h1>{{ $addon->name === 'minecraft-mod-manager' ? 'Minecraft Mod Manager' : 'Minecraft Plugin Manager' }} <small>Konfigurer addonet og vælg hvilke servertyper der har adgang.</small></h1>
+    <h1>{{ $meta['title'] }} <small>Konfigurer addonet og vælg hvilke servertyper der har adgang.</small></h1>
 @endsection
 
 @section('content')
@@ -29,8 +29,8 @@
             <div class="box-header with-border" style="padding:18px 20px">
                 <div style="display:flex;align-items:center;justify-content:space-between">
                     <div>
-                        <h3 class="box-title"><i class="fa fa-puzzle-piece" style="color:#9b7cff;margin-right:8px"></i> {{ $addon->name === 'minecraft-mod-manager' ? 'Minecraft Mod Manager' : 'Minecraft Plugin Manager' }}</h3>
-                        <div class="text-muted" style="margin-top:6px">Modrinth integration · {{ $addon->name === 'minecraft-mod-manager' ? '/mods' : '/plugins' }}</div>
+                        <h3 class="box-title"><i class="fa {{ $meta['icon'] }}" style="color:{{ $meta['color'] }};margin-right:8px"></i> {{ $meta['title'] }}</h3>
+                        <div class="text-muted" style="margin-top:6px">{{ $meta['provider'] }} · {{ $meta['category'] }}</div>
                     </div>
                     {!! $addon->enabled ? '<span class="label label-success">Aktiv</span>' : '<span class="label label-default">Deaktiveret</span>' !!}
                 </div>
@@ -41,17 +41,28 @@
                 <div class="box-body" style="padding:22px">
                     <div class="row">
                         <div class="col-md-4"><strong>Spil</strong><p class="text-muted">Minecraft</p></div>
-                        <div class="col-md-4"><strong>Provider</strong><p class="text-muted">Modrinth</p></div>
-                        <div class="col-md-4"><strong>Understøtter</strong><p class="text-muted">{{ $addon->name === 'minecraft-mod-manager' ? 'Forge, NeoForge, Fabric & Quilt' : 'Paper, Purpur, Spigot, Folia & Bukkit' }}</p></div>
+                        <div class="col-md-4"><strong>Provider</strong><p class="text-muted">{{ $meta['provider'] }}</p></div>
+                        <div class="col-md-4"><strong>Understøtter</strong><p class="text-muted">{{ $meta['compatible_versions'] }}</p></div>
                     </div>
                     <hr>
+
+                    @if(in_array($addon->name, ['minecraft-player-list', 'minecraft-server-chat'], true))
+                    <div class="callout callout-info" style="margin-bottom:22px">
+                        <h4><i class="fa fa-bolt"></i> Ingen ekstra Minecraft-plugin kræves</h4>
+                        <p style="margin:0">
+                            Dette addon bruger Nodexas eksisterende Wings WebSocket og Minecraft-konsollen.
+                            Serverejeren skal have <code>control.console</code> permission for at bruge funktionen.
+                        </p>
+                    </div>
+                    @endif
+
                     <div class="form-group">
-                        <label>{{ $addon->name === 'minecraft-mod-manager' ? 'Mod Manager' : 'Plugin Manager' }}</label>
+                        <label>{{ $meta['title'] }}</label>
                         <div style="border:1px solid #26384d;border-radius:10px;padding:14px">
                             <div class="ndx-toggle-row">
                                 <div class="ndx-toggle-copy">
-                                    <strong>Aktivér {{ $addon->name === 'minecraft-mod-manager' ? 'Minecraft Mod Manager' : 'Minecraft Plugin Manager' }}</strong>
-                                    <div class="text-muted" style="font-size:12px;margin-top:3px">Vis manageren på de valgte Minecraft-servere.</div>
+                                    <strong>Aktivér {{ $meta['title'] }}</strong>
+                                    <div class="text-muted" style="font-size:12px;margin-top:3px">Vis {{ $meta['tab'] }} på de valgte Minecraft-servere.</div>
                                 </div>
                                 <label class="ndx-toggle">
                                     <input type="checkbox" name="enabled" value="1" {{ $addon->enabled ? 'checked' : '' }}>
@@ -60,9 +71,10 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="form-group" style="margin-top:22px">
                         <label>Tilladte Eggs</label>
-                        <p class="text-muted">{{ $addon->name === 'minecraft-mod-manager' ? 'Mods-fanen' : 'Plugin-fanen' }} vises kun på servere, hvis Egg er aktiveret her.</p>
+                        <p class="text-muted">{{ $meta['tab'] }}-fanen vises kun på servere, hvis Egg er aktiveret her.</p>
                         <div class="row">
                             @foreach($eggs as $egg)
                                 <div class="col-lg-4 col-md-6" style="margin-bottom:10px">
