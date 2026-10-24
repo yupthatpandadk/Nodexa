@@ -34,6 +34,8 @@ export default () => {
     const serverId = ServerContext.useStoreState((state) => state.server.data?.internalId);
     const pluginManagerEnabled = ServerContext.useStoreState((state) => state.server.data?.pluginManagerEnabled ?? false);
     const modManagerEnabled = ServerContext.useStoreState((state) => state.server.data?.modManagerEnabled ?? false);
+    const playerListEnabled = ServerContext.useStoreState((state) => state.server.data?.playerListEnabled ?? false);
+    const serverChatEnabled = ServerContext.useStoreState((state) => state.server.data?.serverChatEnabled ?? false);
     const getServer = ServerContext.useStoreActions((actions) => actions.server.getServer);
     const clearServerState = ServerContext.useStoreActions((actions) => actions.clearServerState);
 
@@ -42,6 +44,21 @@ export default () => {
             return url ? match.url : match.path;
         }
         return `${(url ? match.url : match.path).replace(/\/*$/, '')}/${value.replace(/^\/+/, '')}`;
+    };
+
+    const addonRouteEnabled = (path: string) => {
+        switch (path) {
+            case '/plugins':
+                return pluginManagerEnabled;
+            case '/mods':
+                return modManagerEnabled;
+            case '/players':
+                return playerListEnabled;
+            case '/chat':
+                return serverChatEnabled;
+            default:
+                return true;
+        }
     };
 
     useEffect(
@@ -79,7 +96,7 @@ export default () => {
                         <SubNavigation>
                             <div>
                                 {routes.server
-                                    .filter((route) => !!route.name && (route.path !== '/plugins' || pluginManagerEnabled) && (route.path !== '/mods' || modManagerEnabled))
+                                    .filter((route) => !!route.name && addonRouteEnabled(route.path))
                                     .map((route) =>
                                         route.permission ? (
                                             <Can key={route.path} action={route.permission} matchAny>
@@ -111,7 +128,7 @@ export default () => {
                         <ErrorBoundary>
                             <TransitionRouter>
                                 <Switch location={location}>
-                                    {routes.server.filter((route) => (route.path !== '/plugins' || pluginManagerEnabled) && (route.path !== '/mods' || modManagerEnabled)).map(({ path, permission, component: Component }) => (
+                                    {routes.server.filter((route) => addonRouteEnabled(route.path)).map(({ path, permission, component: Component }) => (
                                         <PermissionRoute key={path} permission={permission} path={to(path)} exact>
                                             <Spinner.Suspense>
                                                 <Component />
