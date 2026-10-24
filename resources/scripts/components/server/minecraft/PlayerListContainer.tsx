@@ -140,8 +140,8 @@ export default () => {
                         <div>
                             <div className={'flex items-center gap-3'}>
                                 <h1 className={'font-header text-xl font-semibold text-gray-50'}>Player List</h1>
-                                <span className={\`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold \${serverReady ? 'border-green-500 text-green-400' : 'border-gray-600 text-gray-400'}\`}>
-                                    <span className={\`mr-2 h-2 w-2 rounded-full \${serverReady ? 'bg-green-400' : 'bg-gray-500'}\`} />
+                                <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${serverReady ? 'border-green-500 text-green-400' : 'border-gray-600 text-gray-400'}`}>
+                                    <span className={`mr-2 h-2 w-2 rounded-full ${serverReady ? 'bg-green-400' : 'bg-gray-500'}`} />
                                     {serverReady ? 'Live' : 'Server offline'}
                                 </span>
                             </div>
