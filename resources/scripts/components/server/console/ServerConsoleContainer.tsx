@@ -10,6 +10,7 @@ import StatGraphs from '@/components/server/console/StatGraphs';
 import PowerButtons from '@/components/server/console/PowerButtons';
 import ServerDetailsBlock from '@/components/server/console/ServerDetailsBlock';
 import { Alert } from '@/components/elements/alert';
+import PlayerListContainer from '@/components/server/minecraft/PlayerListContainer';
 
 export type PowerAction = 'start' | 'stop' | 'restart' | 'kill';
 
@@ -21,6 +22,7 @@ const ServerConsoleContainer = () => {
     const isTransferring = ServerContext.useStoreState((state) => state.server.data!.isTransferring);
     const eggFeatures = ServerContext.useStoreState((state) => state.server.data!.eggFeatures, isEqual);
     const isNodeUnderMaintenance = ServerContext.useStoreState((state) => state.server.data!.isNodeUnderMaintenance);
+    const playerListEnabled = ServerContext.useStoreState((state) => state.server.data!.playerListEnabled);
 
     const statusLabel = status === 'running' ? 'Online' : status === 'offline' ? 'Offline' : status || 'Connecting';
 
@@ -70,6 +72,14 @@ const ServerConsoleContainer = () => {
                     </Spinner.Suspense>
                 </div>
             </div>
+
+            {playerListEnabled && (
+                <div className={'mb-3'}>
+                    <Spinner.Suspense>
+                        <PlayerListContainer />
+                    </Spinner.Suspense>
+                </div>
+            )}
 
             <div className={'mb-3'}>
                 <ServerDetailsBlock />
