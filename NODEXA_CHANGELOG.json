@@ -1,6 +1,18 @@
 {
-  "latest": "1.4.6",
+  "latest": "1.4.7",
   "releases": [
+    {
+      "version": "1.4.7",
+      "date": "2026-10-24",
+      "type": "patch",
+      "title": "MC Server Chat panel message sync",
+      "changes": [
+        "Beskeder sendt fra Nodexa Server Chat vises nu med det samme i webchatten som en Nodexa/panel-besked.",
+        "Essentials-loglinjer som 'CONSOLE issued server command: /say ...' genkendes nu som panel-chat, så beskeder kan gendannes fra konsolhistorikken.",
+        "Dobbeltvisning undgås, når en optimistisk panelbesked senere ekkoes tilbage fra Minecraft-konsollen.",
+        "Panelbeskeder får en tydelig 'sendt fra panel'-markering i chatten."
+      ]
+    },
     {
       "version": "1.4.6",
       "date": "2026-10-24",
