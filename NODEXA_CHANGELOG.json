@@ -1,6 +1,19 @@
 {
-  "latest": "1.4.7",
+  "latest": "1.4.8",
   "releases": [
+    {
+      "version": "1.4.8",
+      "date": "2026-10-24",
+      "type": "patch",
+      "title": "Player List polling cleanup",
+      "changes": [
+        "Player List sender ikke længere /list hvert 15. sekund.",
+        "Automatisk refresh er reduceret til højst én gang i minuttet.",
+        "Player List pauser automatisk polling når browserfanen ikke er synlig.",
+        "Overlappende /list-requests blokeres, så man ikke får bursts af gentagne kommandoer.",
+        "Når man vender tilbage til fanen, opdateres listen igen uden at starte flere samtidige pollers."
+      ]
+    },
     {
       "version": "1.4.7",
       "date": "2026-10-24",
