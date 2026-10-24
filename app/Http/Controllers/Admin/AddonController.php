@@ -77,7 +77,26 @@ class AddonController extends Controller
 
     public function index(): View
     {
-        $addons = collect(self::DEFINITIONS)->map(function (array $definition, string $name) {
+        $eggs = Egg::query()->with('nest')->orderBy('name')->get();
+
+        $minecraftEggIds = $eggs
+            ->filter(function (Egg $egg) {
+                $haystack = strtolower(trim((string) optional($egg->nest)->name . ' ' . $egg->name));
+
+                foreach (['minecraft', 'paper', 'purpur', 'spigot', 'bukkit', 'folia', 'fabric', 'forge', 'neoforge', 'quilt', 'bedrock'] as $keyword) {
+                    if (str_contains($haystack, $keyword)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            })
+            ->pluck('id')
+            ->implode(',');
+
+        $addons = collect(self::DEFINITIONS)->map(function (array $definition, string $name) use ($minecraftEggIds) {
+            $utilityAddon = in_array($name, ['minecraft-player-list', 'minecraft-server-chat'], true);
+
             return Addon::query()->firstOrCreate(
                 ['name' => $name],
                 [
@@ -88,7 +107,7 @@ class AddonController extends Controller
                     'compatible_versions' => $definition['compatible_versions'],
                     'download_url' => $definition['download_url'],
                     'install_path' => $definition['install_path'],
-                    'egg_ids' => null,
+                    'egg_ids' => $utilityAddon ? ($minecraftEggIds ?: null) : null,
                     'enabled' => true,
                 ]
             );
@@ -97,7 +116,7 @@ class AddonController extends Controller
         return view('admin.addons.index', [
             'addons' => $addons,
             'definitions' => self::DEFINITIONS,
-            'eggs' => Egg::query()->with('nest')->orderBy('name')->get(),
+            'eggs' => $eggs,
         ]);
     }
 
