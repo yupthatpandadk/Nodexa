@@ -50,6 +50,17 @@ const parseMinecraftLine = (line: string): Omit<ChatMessage, 'id' | 'time'> | nu
         };
     }
 
+    // Essentials commonly logs panel broadcasts like:
+    // "[Essentials] CONSOLE issued server command: /say Hello"
+    const panelSay = clean.match(/CONSOLE issued server command:\s*\/?say\s+(.+)$/i);
+    if (panelSay) {
+        return {
+            type: 'panel',
+            player: 'Nodexa',
+            message: panelSay[1].trim(),
+        };
+    }
+
     return null;
 };
 
@@ -78,7 +89,27 @@ export default () => {
                 time: new Date(),
             };
 
-            setMessages((current) => [...current, next].slice(-150));
+            setMessages((current) => {
+                // A message sent from this page is inserted optimistically.
+                // If Essentials echoes the /say command back a moment later,
+                // avoid showing the same panel message twice.
+                if (next.type === 'panel') {
+                    const duplicate = [...current]
+                        .reverse()
+                        .slice(0, 5)
+                        .some((entry) =>
+                            entry.type === 'panel' &&
+                            entry.message === next.message &&
+                            Math.abs(next.time.getTime() - entry.time.getTime()) < 5000
+                        );
+
+                    if (duplicate) {
+                        return current;
+                    }
+                }
+
+                return [...current, next].slice(-150);
+            });
         };
 
         if (instance && connected) {
