@@ -66,6 +66,7 @@ export default () => {
     const [waiting, setWaiting] = useState(false);
     const [message, setMessage] = useState('');
     const requestTimeout = useRef<number | null>(null);
+    const requestInFlight = useRef(false);
 
     const clearRequestTimeout = () => {
         if (requestTimeout.current !== null) {
@@ -75,16 +76,25 @@ export default () => {
     };
 
     const refresh = useCallback(() => {
-        if (!instance || !connected || status !== 'running' || !canUseConsole) {
+        if (
+            !instance ||
+            !connected ||
+            status !== 'running' ||
+            !canUseConsole ||
+            requestInFlight.current ||
+            document.visibilityState !== 'visible'
+        ) {
             return;
         }
 
+        requestInFlight.current = true;
         setWaiting(true);
         setMessage('');
         instance.send('send command', 'list');
 
         clearRequestTimeout();
         requestTimeout.current = window.setTimeout(() => {
+            requestInFlight.current = false;
             setWaiting(false);
             setMessage('Minecraft svarede ikke på list-kommandoen. Kontrollér at serveren er helt startet.');
         }, 5000);
@@ -98,6 +108,7 @@ export default () => {
             }
 
             clearRequestTimeout();
+            requestInFlight.current = false;
             setWaiting(false);
             setMessage('');
             setData({
@@ -128,8 +139,27 @@ export default () => {
             return;
         }
 
-        const interval = window.setInterval(refresh, 15000);
-        return () => window.clearInterval(interval);
+        // Keep the list reasonably fresh without filling the Minecraft console
+        // with /list commands. Poll only once per minute and only while this
+        // browser tab is actually visible.
+        const interval = window.setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                refresh();
+            }
+        }, 60000);
+
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                refresh();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibility);
+
+        return () => {
+            window.clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibility);
+        };
     }, [connected, status, canUseConsole, refresh]);
 
     const sortedPlayers = useMemo(
@@ -152,7 +182,7 @@ export default () => {
                                 </span>
                             </div>
                             <p className={'mt-1 text-xs text-gray-400'}>
-                                Live spillere på {serverName}. Listen opdateres automatisk hvert 15. sekund.
+                                Live spillere på {serverName}. Listen opdateres automatisk højst én gang i minuttet.
                             </p>
                         </div>
                         <button
