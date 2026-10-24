@@ -1,6 +1,19 @@
 {
-  "latest": "1.4.4",
+  "latest": "1.4.5",
   "releases": [
+    {
+      "version": "1.4.5",
+      "date": "2026-10-24",
+      "type": "patch",
+      "title": "Player List integreret i Console",
+      "changes": [
+        "Minecraft Player List vises nu direkte under serverens Console i stedet for som en separat navigationstab.",
+        "Player List-beholderen er gjort embeddable, så den følger Console-layoutet uden et ekstra side-wrapper.",
+        "Den separate /players-rute og Player List-fanen er fjernet fra servernavigationen.",
+        "MC Server Chat beholder sin egen Server Chat-fane.",
+        "Player List vises fortsat kun når addonet er aktiveret for serverens Egg."
+      ]
+    },
     {
       "version": "1.4.4",
       "date": "2026-10-24",
