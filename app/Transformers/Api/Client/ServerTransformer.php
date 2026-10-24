@@ -37,22 +37,35 @@ class ServerTransformer extends BaseClientTransformer
 
         $user = $this->request->user();
 
-        $pluginManager = Addon::query()->where('name', 'minecraft-plugin-manager')->first();
-        $pluginManagerEnabled = false;
-        if ($pluginManager?->enabled && $pluginManager->egg_ids) {
-            $allowedEggs = collect(explode(',', $pluginManager->egg_ids))
+        $addons = Addon::query()
+            ->whereIn('name', [
+                'minecraft-plugin-manager',
+                'minecraft-mod-manager',
+                'minecraft-player-list',
+                'minecraft-server-chat',
+            ])
+            ->get()
+            ->keyBy('name');
+
+        $addonEnabled = static function (string $name) use ($addons, $server): bool {
+            $addon = $addons->get($name);
+
+            if (!$addon?->enabled || !$addon->egg_ids) {
+                return false;
+            }
+
+            $allowedEggs = collect(explode(',', $addon->egg_ids))
                 ->map(fn ($id) => (int) trim($id))
                 ->filter()
                 ->all();
-            $pluginManagerEnabled = in_array((int) $server->egg_id, $allowedEggs, true);
-        }
 
-        $modManager = Addon::query()->where('name', 'minecraft-mod-manager')->first();
-        $modManagerEnabled = false;
-        if ($modManager?->enabled && $modManager->egg_ids) {
-            $allowedModEggs = collect(explode(',', $modManager->egg_ids))->map(fn ($id) => (int) trim($id))->filter()->all();
-            $modManagerEnabled = in_array((int) $server->egg_id, $allowedModEggs, true);
-        }
+            return in_array((int) $server->egg_id, $allowedEggs, true);
+        };
+
+        $pluginManagerEnabled = $addonEnabled('minecraft-plugin-manager');
+        $modManagerEnabled = $addonEnabled('minecraft-mod-manager');
+        $playerListEnabled = $addonEnabled('minecraft-player-list');
+        $serverChatEnabled = $addonEnabled('minecraft-server-chat');
 
         return [
             'server_owner' => $user->id === $server->owner_id,
@@ -89,6 +102,8 @@ class ServerTransformer extends BaseClientTransformer
             'egg_id' => $server->egg_id,
             'plugin_manager_enabled' => $pluginManagerEnabled,
             'mod_manager_enabled' => $modManagerEnabled,
+            'player_list_enabled' => $playerListEnabled,
+            'server_chat_enabled' => $serverChatEnabled,
             'feature_limits' => [
                 'databases' => $server->database_limit,
                 'allocations' => $server->allocation_limit,
