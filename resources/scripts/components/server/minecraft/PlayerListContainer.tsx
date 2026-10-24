@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import ServerContentBlock from '@/components/elements/ServerContentBlock';
 import { ServerContext } from '@/state/server';
 import { SocketEvent, SocketRequest } from '@/components/server/events';
 import { usePermissions } from '@/plugins/usePermissions';
@@ -133,8 +132,7 @@ export default () => {
     const serverReady = connected && status === 'running';
 
     return (
-        <ServerContentBlock title={'Player List'}>
-            <div className={'rounded-xl border border-gray-700 bg-gray-800 bg-opacity-40 shadow-lg overflow-hidden'}>
+        <div className={'rounded-xl border border-gray-700 bg-gray-800 bg-opacity-40 shadow-lg overflow-hidden'}>
                 <div className={'px-5 py-5 border-b border-gray-700'}>
                     <div className={'flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'}>
                         <div>
@@ -214,7 +212,6 @@ export default () => {
                         </div>
                     </div>
                 )}
-            </div>
-        </ServerContentBlock>
+        </div>
     );
 };
