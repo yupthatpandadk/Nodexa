@@ -6,7 +6,7 @@ import { usePermissions } from '@/plugins/usePermissions';
 
 type ChatMessage = {
     id: number;
-    type: 'chat' | 'join' | 'leave';
+    type: 'chat' | 'join' | 'leave' | 'panel';
     player: string;
     message: string;
     time: Date;
@@ -112,6 +112,21 @@ export default () => {
         }
 
         instance.send('send command', 'say ' + clean);
+
+        // The Minecraft console does not consistently echo /say broadcasts in a
+        // chat-line format that can be parsed back into the web chat. Add the
+        // outgoing message locally so the sender immediately sees it here too.
+        setMessages((current) => [
+            ...current,
+            {
+                id: ++sequence,
+                type: 'panel',
+                player: 'Nodexa',
+                message: clean,
+                time: new Date(),
+            },
+        ].slice(-150));
+
         setDraft('');
     };
 
@@ -164,14 +179,26 @@ export default () => {
                     ) : (
                         <div className={'space-y-2'}>
                             {messages.map((entry) =>
-                                entry.type === 'chat' ? (
-                                    <div key={entry.id} className={'flex gap-3 rounded-lg px-3 py-2 hover:bg-gray-800 hover:bg-opacity-50'}>
-                                        <div className={'flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-blue-600 bg-opacity-20 text-xs font-bold text-blue-300'}>
-                                            {entry.player.slice(0, 1).toUpperCase()}
+                                entry.type === 'chat' || entry.type === 'panel' ? (
+                                    <div
+                                        key={entry.id}
+                                        className={`flex gap-3 rounded-lg px-3 py-2 hover:bg-gray-800 hover:bg-opacity-50 ${entry.type === 'panel' ? 'border border-purple-500 border-opacity-20 bg-purple-900 bg-opacity-10' : ''}`}
+                                    >
+                                        <div
+                                            className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-opacity-20 text-xs font-bold ${entry.type === 'panel' ? 'bg-purple-600 text-purple-300' : 'bg-blue-600 text-blue-300'}`}
+                                        >
+                                            {entry.type === 'panel' ? 'N' : entry.player.slice(0, 1).toUpperCase()}
                                         </div>
                                         <div className={'min-w-0 flex-1'}>
                                             <div className={'flex flex-wrap items-baseline gap-x-2'}>
-                                                <span className={'text-sm font-semibold text-blue-300'}>{entry.player}</span>
+                                                <span className={`text-sm font-semibold ${entry.type === 'panel' ? 'text-purple-300' : 'text-blue-300'}`}>
+                                                    {entry.player}
+                                                </span>
+                                                {entry.type === 'panel' && (
+                                                    <span className={'rounded-full border border-purple-500 border-opacity-30 px-1.5 py-0.5 text-xs text-purple-300'}>
+                                                        sendt fra panel
+                                                    </span>
+                                                )}
                                                 <span className={'text-xs text-gray-600'}>{entry.time.toLocaleTimeString()}</span>
                                             </div>
                                             <div className={'mt-0.5 break-words text-sm text-gray-200'}>{entry.message}</div>
