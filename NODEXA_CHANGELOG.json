@@ -1,6 +1,43 @@
 {
-  "latest": "1.4.1",
+  "latest": "1.4.4",
   "releases": [
+    {
+      "version": "1.4.4",
+      "date": "2026-10-24",
+      "type": "minor",
+      "title": "Minecraft Player List & Server Chat Addons",
+      "changes": [
+        "Nyt Minecraft Player List-addon med live online count, max slots, spillernavne, manuel refresh og automatisk opdatering hvert 15. sekund.",
+        "Nyt MC Server Chat-addon som viser Minecraft chat samt join/leave-events direkte i Nodexa og lader brugere sende beskeder tilbage til serveren.",
+        "Begge addons bruger den eksisterende Wings WebSocket og Minecraft-konsollen, så der kræves hverken RCON eller et ekstra Minecraft-plugin.",
+        "Player List og Server Chat kan aktiveres/deaktiveres separat i Addon Manager og begrænses til bestemte Eggs.",
+        "Nye Minecraft Eggs registreres automatisk som standardvalg ved første oprettelse af utility-addons, når deres Nest/Egg-navn matcher kendte Minecraft-servertyper.",
+        "Server-navigationen viser kun Player List og Server Chat på servere hvor det relevante addon er aktivt, Egg er tilladt og brugeren har control.console permission."
+      ]
+    },
+    {
+      "version": "1.4.3",
+      "date": "2026-10-24",
+      "type": "patch",
+      "title": "CFX EUP services i Client Area",
+      "changes": [
+        "CFX EUP-services vises nu direkte under Mine services sammen med kundens game servers.",
+        "EUP-status, månedlig pris, næste faktura og link til EUP key-siden vises på dashboardet.",
+        "EUP-services tæller nu med i aktive services, ordrer og afventende services."
+      ]
+    },
+    {
+      "version": "1.4.2",
+      "date": "2026-10-24",
+      "type": "minor",
+      "title": "CFX EUP Key Management",
+      "changes": [
+        "Nyt CFX EUP key inventory-system med krypteret key storage og duplicate fingerprinting.",
+        "Admins kan tildele EUP keys direkte eller oprette månedlige EUP-abonnementer med automatisk fakturering.",
+        "Keys reserveres før betaling, frigives efter betaling og skjules ved suspended/overdue services.",
+        "Kunder kan se og kopiere aktive EUP keys fra Client Area."
+      ]
+    },
     {
       "version": "1.4.1",
       "date": "2026-10-01",
