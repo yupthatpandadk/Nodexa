@@ -26,9 +26,17 @@ const stripConsoleFormatting = (line: string): string =>
 const parsePlayerList = (line: string): Omit<PlayerListState, 'updatedAt'> | null => {
     const clean = stripConsoleFormatting(line);
 
+    // Vanilla/Paper: "There are 2 of a max of 20 players online: Steve, Alex"
     const java = clean.match(/There are\s+(\d+)\s+of a max of\s+(\d+)\s+players online(?:\s*:\s*(.*))?/i);
+
+    // Essentials/EssentialsX: "There are 2 out of maximum 20 players online."
+    // Some versions use "out of a maximum of 20", so both variants are accepted.
+    const essentials = clean.match(/There are\s+(\d+)\s+out of\s+(?:a\s+)?maximum(?:\s+of)?\s+(\d+)\s+players online(?:[.!])?(?:\s*:\s*(.*))?/i);
+
+    // Bedrock/proxy variants: "There are 2 / 20 players online"
     const bedrock = clean.match(/There are\s+(\d+)\s*\/\s*(\d+)\s+players online(?:\s*:\s*(.*))?/i);
-    const match = java || bedrock;
+
+    const match = java || essentials || bedrock;
 
     if (!match) {
         return null;
