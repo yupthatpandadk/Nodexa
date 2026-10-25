@@ -1,6 +1,18 @@
 {
-  "latest": "1.4.9",
+  "latest": "1.4.10",
   "releases": [
+    {
+      "version": "1.4.10",
+      "date": "2026-10-25",
+      "type": "patch",
+      "title": "Updater maintenance recovery",
+      "changes": [
+        "Nodexa updateren kan ikke længere efterlade panelet permanent i Laravel maintenance mode, hvis en build, migration eller system-step fejler.",
+        "Updateren registrerer nu en EXIT-cleanup umiddelbart efter php artisan down og kører automatisk php artisan up ved fejl.",
+        "Cleanup-trappen fjernes igen efter en succesfuld opdatering, så normale updater-kørsler fortsat afsluttes rent.",
+        "Updater-scriptet er syntax-valideret efter ændringen."
+      ]
+    },
     {
       "version": "1.4.9",
       "date": "2026-10-25",
