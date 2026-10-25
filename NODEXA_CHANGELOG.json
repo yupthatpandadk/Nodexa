@@ -1,6 +1,18 @@
 {
-  "latest": "1.4.8",
+  "latest": "1.4.9",
   "releases": [
+    {
+      "version": "1.4.9",
+      "date": "2026-10-25",
+      "type": "patch",
+      "title": "Silent Player List polling",
+      "changes": [
+        "Player List fortsætter med at hente spillerdata via Minecrafts list-kommando, men de automatiske /list-linjer skjules nu fra den synlige Console.",
+        "Essentials/EssentialsX 'CONSOLE issued server command: /list'-linjer filtreres fra Console-visningen, når Player List addonet er aktivt.",
+        "Vanilla/Paper-, Essentials- og Bedrock/proxy-svar fra Player List skjules kun i xterm-visningen; Player List-komponenten modtager stadig de rå WebSocket-events.",
+        "Andre konsollinjer og serverlogs påvirkes ikke."
+      ]
+    },
     {
       "version": "1.4.8",
       "date": "2026-10-24",
