@@ -37,7 +37,24 @@ update_panel() {
   info "Opretter lokal backup..."
   mkdir -p storage/nodexa-backups
   tar --exclude='./storage/nodexa-backups' --exclude='./.git' -czf "storage/nodexa-backups/update-$(date +%Y%m%d-%H%M%S).tar.gz" . || true
+
+  # Never leave Nodexa stuck in Laravel maintenance mode if a later update
+  # step fails. set -e aborts on errors, so an EXIT fallback is required after
+  # artisan down.
+  local panel_was_put_down=0
+  restore_panel_on_exit() {
+    local rc=$?
+    trap - EXIT
+    if [[ "${panel_was_put_down:-0}" -eq 1 ]]; then
+      cd "$PANEL_DIR" 2>/dev/null || true
+      php artisan up 2>/dev/null || true
+    fi
+    exit "$rc"
+  }
+
   php artisan down 2>/dev/null || true
+  panel_was_put_down=1
+  trap restore_panel_on_exit EXIT
 
   if git remote get-url origin >/dev/null 2>&1; then
     git remote set-url origin "https://github.com/$REPO.git"
@@ -90,6 +107,9 @@ update_panel() {
   php artisan optimize:clear || true
   chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
   php artisan up 2>/dev/null || true
+  panel_was_put_down=0
+  trap - EXIT
+
   systemctl restart pteroq 2>/dev/null || true
   systemctl restart nginx 2>/dev/null || true
   info "Nodexa Panel er opdateret."
