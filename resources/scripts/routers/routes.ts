@@ -16,6 +16,7 @@ import ServerActivityLogContainer from '@/components/server/ServerActivityLogCon
 import PluginManagerContainer from '@/components/server/plugins/PluginManagerContainer';
 import ModManagerContainer from '@/components/server/mods/ModManagerContainer';
 import ServerChatContainer from '@/components/server/minecraft/ServerChatContainer';
+import PlayerListContainer from '@/components/server/minecraft/PlayerListContainer';
 
 // Each of the router files is already code split out appropriately — so
 // all of the items above will only be loaded in when that router is loaded.
@@ -94,6 +95,12 @@ export default {
             permission: 'control.console',
             name: 'Server Chat',
             component: ServerChatContainer,
+        },
+        {
+            path: '/players',
+            permission: 'control.console',
+            name: 'Player List',
+            component: PlayerListContainer,
         },
         {
             path: '/files',
