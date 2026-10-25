@@ -22,6 +22,9 @@ class AccountTransformer extends BaseClientTransformer
         return [
             'id' => $model->id,
             'admin' => $model->root_admin,
+            // Used by Android for a server-verified Admin Panel menu.
+            // Role admins may access only the administration areas granted by middleware.
+            'admin_panel_access' => $model->hasAdminAccess(),
             'username' => $model->username,
             'email' => $model->email,
             'first_name' => $model->name_first,
