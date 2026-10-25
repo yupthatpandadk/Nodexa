@@ -66,6 +66,7 @@ export default () => {
     const [canSendCommands] = usePermissions(['control.console']);
     const serverId = ServerContext.useStoreState((state) => state.server.data!.id);
     const isTransferring = ServerContext.useStoreState((state) => state.server.data!.isTransferring);
+    const playerListEnabled = ServerContext.useStoreState((state) => state.server.data!.playerListEnabled);
     const [history, setHistory] = usePersistedState<string[]>(`${serverId}:command_history`, []);
     const [historyIndex, setHistoryIndex] = useState(-1);
     // SearchBarAddon has hardcoded z-index: 999 :(
@@ -74,8 +75,34 @@ export default () => {
         z-index: 10;
     }`;
 
-    const handleConsoleOutput = (line: string, prelude = false) =>
+    const isPlayerListNoise = (line: string): boolean => {
+        if (!playerListEnabled) {
+            return false;
+        }
+
+        const clean = line
+            .replace(/\u001b\[[0-9;]*m/g, '')
+            .replace(/§[0-9A-FK-OR]/gi, '')
+            .trim();
+
+        return (
+            /CONSOLE issued server command:\s*\/?list\s*$/i.test(clean) ||
+            /There are\s+\d+\s+of a max of\s+\d+\s+players online(?:\s*:\s*.*)?[.!]?$/i.test(clean) ||
+            /There are\s+\d+\s+out of\s+(?:a\s+)?maximum(?:\s+of)?\s+\d+\s+players online(?:[.!])?(?:\s*:\s*.*)?$/i.test(clean) ||
+            /There are\s+\d+\s*\/\s*\d+\s+players online(?:\s*:\s*.*)?[.!]?$/i.test(clean)
+        );
+    };
+
+    const handleConsoleOutput = (line: string, prelude = false) => {
+        // Player List still receives the raw websocket line through its own
+        // listener. We only hide the automatic query + response from xterm so
+        // the server console is not flooded by background list polling.
+        if (isPlayerListNoise(line)) {
+            return;
+        }
+
         terminal.writeln((prelude ? TERMINAL_PRELUDE : '') + line.replace(/(?:\r\n|\r|\n)$/im, '') + '\u001b[0m');
+    };
 
     const handleTransferStatus = (status: string) => {
         switch (status) {
@@ -196,7 +223,7 @@ export default () => {
                 });
             }
         };
-    }, [connected, instance]);
+    }, [connected, instance, playerListEnabled]);
 
     return (
         <div className={classNames(styles.terminal, 'relative')}>
