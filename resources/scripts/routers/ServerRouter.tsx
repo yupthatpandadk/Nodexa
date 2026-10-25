@@ -35,6 +35,7 @@ export default () => {
     const pluginManagerEnabled = ServerContext.useStoreState((state) => state.server.data?.pluginManagerEnabled ?? false);
     const modManagerEnabled = ServerContext.useStoreState((state) => state.server.data?.modManagerEnabled ?? false);
     const serverChatEnabled = ServerContext.useStoreState((state) => state.server.data?.serverChatEnabled ?? false);
+    const playerListEnabled = ServerContext.useStoreState((state) => state.server.data?.playerListEnabled ?? false);
     const getServer = ServerContext.useStoreActions((actions) => actions.server.getServer);
     const clearServerState = ServerContext.useStoreActions((actions) => actions.clearServerState);
 
@@ -53,6 +54,8 @@ export default () => {
                 return modManagerEnabled;
             case '/chat':
                 return serverChatEnabled;
+            case '/players':
+                return playerListEnabled;
             default:
                 return true;
         }
