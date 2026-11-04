@@ -1,6 +1,17 @@
 {
-  "latest": "1.4.10",
+  "latest": "1.4.11",
   "releases": [
+    {
+      "version": "1.4.11",
+      "date": "2026-11-04",
+      "type": "patch",
+      "title": "Guest registration CTA",
+      "changes": [
+        "Ikke-indloggede brugere ser nu Register i topnavigationen i stedet for Bestil server.",
+        "Register-knappen åbner direkte /auth/register.",
+        "Indloggede brugere beholder deres normale Client Area/profil-navigation."
+      ]
+    },
     {
       "version": "1.4.10",
       "date": "2026-10-25",
