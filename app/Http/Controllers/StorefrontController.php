@@ -55,9 +55,30 @@ class StorefrontController extends Controller
             ->orderByDesc('eup.created_at')
             ->get();
 
-        $activeServiceCount = $activeServers->count() + $eupServices->where('status', 'active')->count();
-        $pendingServiceCount = $orders->where('status', 'awaiting_payment')->count() + $eupServices->where('status', 'awaiting_payment')->count();
-        $totalOrderCount = $orders->count() + $eupServices->count();
+        $flaxServices = DB::table('nodexa_flax_services as vps')
+            ->leftJoin('nodexa_flax_products as product', 'product.id', '=', 'vps.product_id')
+            ->leftJoin('nodexa_subscriptions as sub', 'sub.id', '=', 'vps.subscription_id')
+            ->where('vps.user_id', $user->id)
+            ->whereIn('vps.status', ['awaiting_payment', 'provisioning', 'provisioning_failed', 'active', 'suspended'])
+            ->select([
+                'vps.*',
+                'product.name as product_name',
+                'product.monthly_price',
+                'product.currency',
+                'sub.next_invoice_at',
+            ])
+            ->orderByDesc('vps.created_at')
+            ->get();
+
+        $activeServiceCount = $activeServers->count()
+            + $eupServices->where('status', 'active')->count()
+            + $flaxServices->where('status', 'active')->count();
+
+        $pendingServiceCount = $orders->where('status', 'awaiting_payment')->count()
+            + $eupServices->where('status', 'awaiting_payment')->count()
+            + $flaxServices->whereIn('status', ['awaiting_payment', 'provisioning', 'provisioning_failed'])->count();
+
+        $totalOrderCount = $orders->count() + $eupServices->count() + $flaxServices->count();
 
         return view('store.client.index', [
             'orders' => $orders,
@@ -65,6 +86,7 @@ class StorefrontController extends Controller
             'serverOrders' => $orders->whereNotNull('server_id')->keyBy('server_id'),
             'pendingOrders' => $orders->where('status', 'awaiting_payment'),
             'eupServices' => $eupServices,
+            'flaxServices' => $flaxServices,
             'activeServiceCount' => $activeServiceCount,
             'pendingServiceCount' => $pendingServiceCount,
             'totalOrderCount' => $totalOrderCount,
