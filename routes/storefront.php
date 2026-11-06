@@ -7,6 +7,7 @@ use Pterodactyl\Http\Controllers\KnowledgebaseController;
 use Pterodactyl\Http\Controllers\StatusController;
 use Pterodactyl\Http\Controllers\ClientHubController;
 use Pterodactyl\Http\Controllers\CfxEupController;
+use Pterodactyl\Http\Controllers\FlaxVpsController;
 
 Route::get('/csrf/refresh', function () {
     $response = response()
@@ -31,6 +32,8 @@ Route::get('/', [StorefrontController::class, 'index'])->name('store.home');
 Route::get('/status', [StatusController::class, 'index'])->name('store.status');
 Route::get('/r/{code}', [ClientHubController::class, 'referral'])->name('store.referral');
 Route::get('/hosting', [StorefrontController::class, 'hosting'])->name('store.hosting');
+Route::get('/vps', [FlaxVpsController::class, 'index'])->name('store.vps');
+Route::get('/vps/{product}', [FlaxVpsController::class, 'show'])->name('store.vps.product');
 Route::get('/features', [StorefrontController::class, 'features'])->name('store.features');
 Route::get('/about', [StorefrontController::class, 'about'])->name('store.about');
 Route::get('/support', [StorefrontController::class, 'support'])->name('store.support');
@@ -49,6 +52,10 @@ Route::middleware('auth.session')->group(function () {
     Route::get('/client/billing', [StorefrontController::class, 'clientBilling'])->name('store.client.billing');
     Route::get('/client/profile', [StorefrontController::class, 'clientProfile'])->name('store.client.profile');
     Route::get('/client/eup-keys', [CfxEupController::class, 'index'])->name('store.client.eup-keys');
+    Route::get('/client/vps', [FlaxVpsController::class, 'client'])->name('store.client.vps');
+    Route::post('/client/vps/{service}/action', [FlaxVpsController::class, 'action'])->name('store.client.vps.action');
+    Route::post('/vps/{product}/order', [FlaxVpsController::class, 'order'])->name('store.vps.order');
+    Route::get('/vps/orders/{service}/checkout', [FlaxVpsController::class, 'checkout'])->name('store.vps.checkout');
     Route::get('/client/hub', [ClientHubController::class, 'index'])->name('store.client.hub');
     Route::post('/client/hub/notifications/{notification}/read', [ClientHubController::class, 'markNotification'])->name('store.client.hub.notifications.read');
     Route::post('/client/hub/notifications/read-all', [ClientHubController::class, 'markAllNotifications'])->name('store.client.hub.notifications.read-all');
