@@ -6,6 +6,16 @@ use Pterodactyl\Http\Middleware\Admin\Servers\ServerInstalled;
 
 Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
 
+// Flax VPS Reseller
+Route::get('/flax-reseller', [Admin\FlaxResellerController::class, 'index'])->name('admin.flax-reseller');
+Route::post('/flax-reseller/settings', [Admin\FlaxResellerController::class, 'saveSettings'])->name('admin.flax.settings');
+Route::post('/flax-reseller/test', [Admin\FlaxResellerController::class, 'testConnection'])->name('admin.flax.test');
+Route::post('/flax-reseller/templates/sync', [Admin\FlaxResellerController::class, 'syncTemplates'])->name('admin.flax.templates.sync');
+Route::post('/flax-reseller/products', [Admin\FlaxResellerController::class, 'storeProduct'])->name('admin.flax.products.store');
+Route::patch('/flax-reseller/products/{product}', [Admin\FlaxResellerController::class, 'updateProduct'])->name('admin.flax.products.update');
+Route::delete('/flax-reseller/products/{product}', [Admin\FlaxResellerController::class, 'deleteProduct'])->name('admin.flax.products.delete');
+Route::post('/flax-reseller/services/{service}/action', [Admin\FlaxResellerController::class, 'serviceAction'])->name('admin.flax.services.action');
+
 // Nodexa Operations Suite
 Route::get('/operations', [Admin\OperationsController::class, 'index'])->name('admin.operations');
 Route::post('/operations/components', [Admin\OperationsController::class, 'storeComponent'])->name('admin.operations.components.store');
