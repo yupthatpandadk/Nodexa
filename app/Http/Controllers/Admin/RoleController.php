@@ -33,6 +33,7 @@ class RoleController extends Controller
         'Knowledgebase' => ['knowledgebase.view', 'knowledgebase.manage'],
         'Operations Center' => ['operations.view', 'operations.manage'],
         'CFX EUP Keys' => ['cfx_eup.view', 'cfx_eup.manage'],
+        'Flax VPS Reseller' => ['flax_reseller.view', 'flax_reseller.manage'],
         'Addon Manager' => ['addons.view', 'addons.manage'],
     ];
 
