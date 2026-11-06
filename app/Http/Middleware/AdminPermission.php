@@ -29,6 +29,7 @@ class AdminPermission
         'knowledgebase' => 'knowledgebase',
         'operations' => 'operations',
         'cfx-eup' => 'cfx_eup',
+        'flax-reseller' => 'flax_reseller',
     ];
 
     public function handle(Request $request, Closure $next): mixed
