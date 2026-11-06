@@ -166,6 +166,11 @@
                             <a href="{{ route('admin.cfx-eup') }}"><i class="fa fa-key"></i> <span>CFX EUP Keys</span></a>
                         </li>
                         @endif
+                        @if(Auth::user()->hasPermission('flax_reseller.view'))
+                        <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.flax') ?: 'active' }}">
+                            <a href="{{ route('admin.flax-reseller') }}"><i class="fa fa-cloud"></i> <span>Flax VPS Reseller</span></a>
+                        </li>
+                        @endif
                         @if(Auth::user()->hasPermission('store.view'))
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.store') ?: 'active' }}">
                             <a href="{{ route('admin.store') }}">
