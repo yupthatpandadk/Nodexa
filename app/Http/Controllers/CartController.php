@@ -29,6 +29,10 @@ class CartController extends Controller
             $request->session()->get(self::COUPON_KEY)
         );
 
+        if ($request->session()->has(self::COUPON_KEY) && !$summary['coupon']) {
+            $request->session()->forget(self::COUPON_KEY);
+        }
+
         return view('store.cart.index', compact('summary'));
     }
 
@@ -150,6 +154,13 @@ class CartController extends Controller
 
         if ($summary['count'] < 1) {
             return redirect()->route('store.cart')->withErrors(['cart' => 'Kurven er tom.']);
+        }
+
+        if ($request->session()->has(self::COUPON_KEY) && !$summary['coupon']) {
+            $request->session()->forget(self::COUPON_KEY);
+
+            return redirect()->route('store.cart.checkout')
+                ->withErrors(['coupon' => 'Rabatkoden er ikke længere gyldig og er blevet fjernet.']);
         }
 
         return view('store.cart.checkout', [
