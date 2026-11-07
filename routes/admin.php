@@ -73,6 +73,7 @@ Route::post('/store/products', [Admin\StoreController::class, 'store'])->name('a
 Route::patch('/store/products/{product}', [Admin\StoreController::class, 'update'])->name('admin.store.products.update');
 Route::delete('/store/products/{product}', [Admin\StoreController::class, 'destroy'])->name('admin.store.products.destroy');
 Route::post('/store/coupons', [Admin\StoreController::class, 'coupon'])->name('admin.store.coupons.store');
+Route::post('/store/global-sale', [Admin\StoreController::class, 'globalSale'])->name('admin.store.sale');
 Route::post('/store/stripe', [Admin\StoreController::class, 'stripeSettings'])->name('admin.store.stripe.settings');
 Route::post('/store/stripe/test', [Admin\StoreController::class, 'stripeTest'])->name('admin.store.stripe.test');
 Route::patch('/store/orders/{order}/status', [Admin\StoreController::class, 'orderStatus'])->name('admin.store.orders.status');
