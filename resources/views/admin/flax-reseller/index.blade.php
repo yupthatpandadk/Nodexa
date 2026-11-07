@@ -24,9 +24,9 @@
                 @csrf
                 <div class="box-body">
                     <div class="form-group">
-                        <label>API endpoint</label>
+                        <label>Flax API base URL</label>
                         <input class="form-control" type="url" name="api_url" value="{{ old('api_url',$settings->api_url ?? 'https://api.flaxhosting.dk/') }}" placeholder="https://api.flaxhosting.dk/" required>
-                        <p class="help-block">Flax Reseller API endpoint: <code>https://api.flaxhosting.dk/</code>. API-key og action sendes som POST-parametre.</p>
+                        <p class="help-block">Brug base URL <code>https://api.flaxhosting.dk</code>. Nodexa tilføjer automatisk <code>/api-endpoint.php</code> og sender key/action efter samme format som Flax’ eget reseller-modul.</p>
                     </div>
                     <div class="form-group">
                         <label>API key</label><p class="help-block" style="margin-top:0">Opret nøglen i Flax Reseller Dashboard → API-dokumentation → Opret API-nøgle.</p>
