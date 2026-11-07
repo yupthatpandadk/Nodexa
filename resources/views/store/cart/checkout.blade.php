@@ -165,7 +165,7 @@
                             <div>
                                 <span>Rabatkode</span>
                                 <strong>{{ $summary['coupon']['code'] }}</strong>
-                                <small>{{ $summary['coupon']['label'] }} rabat</small>
+                                <small>{{ $summary['coupon']['label'] }} rabat · {{ $summary['coupon']['duration_months'] }} mdr.</small>
                             </div>
                             <form method="POST" action="{{ route('store.cart.coupon.remove') }}">
                                 @csrf @method('DELETE')
@@ -206,7 +206,7 @@
                 <div class="paymentNotice">
                     <span class="paymentNoticeIcon">{{ $stripeEnabled ? 'S' : 'i' }}</span>
                     @if($stripeEnabled)
-                        <p><strong>Betaling med Stripe.</strong> Efter du bekræfter, sendes du sikkert til Stripe. Stripe får Nodexas gemte slutbeløb på <b>{{ number_format((float)$summary['total'],2,',','.') }} DKK</b> for første betaling — rabatten er allerede trukket fra. Senere fakturaer bruger normal servicepris.</p>
+                        <p><strong>Betaling med Stripe.</strong> Efter du bekræfter, sendes du sikkert til Stripe. Stripe får Nodexas gemte slutbeløb på <b>{{ number_format((float)$summary['total'],2,',','.') }} DKK</b> for første betaling — rabatten er allerede trukket fra. Rabatten gælder i {{ $summary['coupon']['duration_months'] ?? 1 }} måned(er), hvor denne betaling er måned 1. Derefter bruger fakturaer normal servicepris.</p>
                     @else
                         <p><strong>Stripe er ikke aktiveret endnu.</strong> Ordren kan oprettes og efterfølgende registreres betalt af admin.</p>
                     @endif
