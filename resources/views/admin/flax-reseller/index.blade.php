@@ -107,7 +107,8 @@
             <div class="box-header with-border"><h3 class="box-title">VPS-produkter</h3></div>
             <div class="box-body">
                 @forelse($products as $product)
-                    <form method="POST" action="{{ route('admin.flax.products.update',$product->id) }}" style="padding:14px 0;border-bottom:1px solid rgba(128,128,128,.18)">
+                    <div class="flax-product-item">
+                    <form method="POST" action="{{ route('admin.flax.products.update',$product->id) }}" class="flax-product-update">
                         @csrf @method('PATCH')
                         <div class="row">
                             <div class="col-sm-4"><label class="control-label" style="font-size:10px;color:#7f93aa">Navn</label><input class="form-control input-sm" name="name" value="{{ $product->name }}" required></div>
@@ -136,12 +137,22 @@
                                     <span class="label label-success" style="padding:6px 9px">Margin: {{ number_format((float)$product->monthly_price - (float)$product->upstream_monthly_price,2,',','.') }} {{ $product->currency }}</span>
                                 </div>
                             @endif
-                            <button class="btn btn-xs btn-primary pull-right">Gem</button>
+                        </div>
+                        <div class="flax-product-actions">
+                            <button type="submit" class="btn btn-primary flax-save-btn">
+                                <i class="fa fa-save"></i> Gem ændringer
+                            </button>
                         </div>
                     </form>
                     @if(!DB::table('nodexa_flax_services')->where('product_id',$product->id)->exists())
-                    <form method="POST" action="{{ route('admin.flax.products.delete',$product->id) }}" style="margin-top:-34px;margin-right:55px" class="pull-right">@csrf @method('DELETE')<button class="btn btn-xs btn-danger" onclick="return confirm('Slet VPS-produkt?')">Slet</button></form>
+                    <form method="POST" action="{{ route('admin.flax.products.delete',$product->id) }}" class="flax-product-delete">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Slet VPS-produkt?')">
+                            <i class="fa fa-trash"></i> Slet
+                        </button>
+                    </form>
                     @endif
+                    </div>
                 @empty
                     <p class="text-muted">Ingen VPS-produkter er oprettet endnu.</p>
                 @endforelse
@@ -185,4 +196,52 @@
         </table>
     </div>
 </div>
+
+<style>
+.flax-product-item {
+    position: relative;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(128,128,128,.18);
+}
+.flax-product-item:last-child {
+    border-bottom: 0;
+}
+.flax-product-update {
+    margin: 0;
+}
+.flax-product-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    padding-right: 92px;
+}
+.flax-product-delete {
+    position: absolute;
+    right: 0;
+    bottom: 16px;
+    margin: 0;
+}
+.flax-save-btn,
+.flax-product-delete .btn {
+    min-height: 34px;
+    padding: 6px 13px;
+}
+@media (max-width: 767px) {
+    .flax-product-actions {
+        padding-right: 0;
+        justify-content: stretch;
+        margin-top: 14px;
+    }
+    .flax-save-btn {
+        width: 100%;
+    }
+    .flax-product-delete {
+        position: static;
+        margin-top: 8px;
+    }
+    .flax-product-delete .btn {
+        width: 100%;
+    }
+}
+</style>
 @endsection
