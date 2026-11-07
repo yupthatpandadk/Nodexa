@@ -14,6 +14,54 @@
 <label><input type="checkbox" name="enabled" value="1" checked> Aktiv</label>&nbsp;&nbsp;<label><input type="checkbox" name="featured" value="1"> Fremhævet</label>
 </div><div class="box-footer"><button class="btn btn-primary btn-block">Opret produkt</button></div></form></div>
 
+<div class="box box-success">
+<div class="box-header">
+    <h3 class="box-title"><i class="fa fa-percent"></i> Globalt udsalg</h3>
+    @if($globalSale->enabled && $globalSale->percent > 0)
+        <span class="label label-success pull-right">{{number_format($globalSale->percent,0,',','.')}}% aktiv</span>
+    @else
+        <span class="label label-default pull-right">Deaktiveret</span>
+    @endif
+</div>
+<form method="POST" action="{{route('admin.store.sale')}}">
+@csrf
+<div class="box-body">
+    <div class="form-group">
+        <label>Navn / label</label>
+        <input class="form-control" name="label" maxlength="120" value="{{$globalSale->label}}" placeholder="Black Friday">
+    </div>
+    <div class="row">
+        <div class="col-xs-6">
+            <div class="form-group">
+                <label>Rabat på alle varer</label>
+                <div class="input-group">
+                    <input class="form-control" type="number" name="percent" min="0" max="100" step=".01" value="{{$globalSale->percent}}" required>
+                    <span class="input-group-addon">%</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-6">
+            <div class="form-group">
+                <label>Rabatperiode</label>
+                <div class="input-group">
+                    <input class="form-control" type="number" name="duration_months" min="1" max="120" value="{{$globalSale->duration_months}}" required>
+                    <span class="input-group-addon">mdr.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <label><input type="checkbox" name="enabled" value="1" {{$globalSale->enabled?'checked':''}}> Aktivér globalt udsalg</label>
+    <p class="help-block">
+        Gælder nye game-server- og VPS-køb. Eksisterende abonnementer ændres ikke.
+        Rabatkoder beregnes bagefter på den allerede nedsatte udsalgspris.
+    </p>
+</div>
+<div class="box-footer">
+    <button class="btn btn-success btn-block"><i class="fa fa-save"></i> Gem globalt udsalg</button>
+</div>
+</form>
+</div>
+
 <div class="box"><div class="box-header"><h3 class="box-title"><i class="fa fa-ticket"></i> Rabatkoder</h3></div><form method="POST" action="{{route('admin.store.coupons.store')}}">@csrf<div class="box-body">
 <div class="form-group"><label>Kode</label><input class="form-control" name="code" placeholder="WELCOME20" required></div>
 <div class="row"><div class="col-xs-6"><label>Type</label><select class="form-control" name="type"><option value="percent">Procent</option><option value="fixed">Fast DKK</option></select></div><div class="col-xs-6"><label>Værdi</label><input class="form-control" type="number" step=".01" name="value" required></div></div><br>
