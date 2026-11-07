@@ -47,7 +47,7 @@
                     </div>
                 </div>
                 @if($settings?->last_tested_at)
-                    <p class="help-block" style="margin-top:12px">Senest testet: {{ CarbonCarbon::parse($settings->last_tested_at)->format('d.m.Y H:i') }} · {{ $settings->last_test_message }}</p>
+                    <p class="help-block" style="margin-top:12px">Senest testet: {{ \Carbon\Carbon::parse($settings->last_tested_at)->format('d.m.Y H:i') }} · {{ $settings->last_test_message }}</p>
                 @endif
             </div>
         </div>
@@ -69,13 +69,22 @@
 
     <div class="col-md-7">
         <div class="box box-success">
-            <div class="box-header with-border"><h3 class="box-title"><i class="fa fa-plus-circle"></i> Nyt VPS-produkt</h3></div>
+            <div class="box-header with-border">
+                <h3 class="box-title"><i class="fa fa-plus-circle"></i> VPS-produkter</h3>
+                <form method="POST" action="{{ route('admin.flax.products.import-presets') }}" class="pull-right" style="margin:0">
+                    @csrf
+                    <button class="btn btn-xs btn-info" type="submit" onclick="return confirm('Importér Flax VPS-01 til VPS-06+ med de viste upstream-priser? Eksisterende salgspriser overskrives ikke.')">
+                        <i class="fa fa-download"></i> Importér Flax presets
+                    </button>
+                </form>
+            </div>
             <form method="POST" action="{{ route('admin.flax.products.store') }}">@csrf
                 <div class="box-body">
                     <div class="row">
-                        <div class="col-sm-6"><div class="form-group"><label>Navn</label><input class="form-control" name="name" required placeholder="VPS Starter"></div></div>
-                        <div class="col-sm-3"><div class="form-group"><label>Flax Product ID</label><input class="form-control" type="number" name="upstream_product_id" min="1" required></div></div>
-                        <div class="col-sm-3"><div class="form-group"><label>Pris/md DKK</label><input class="form-control" type="number" step=".01" name="monthly_price" required></div></div>
+                        <div class="col-sm-5"><div class="form-group"><label>Navn</label><input class="form-control" name="name" required placeholder="VPS Starter"></div></div>
+                        <div class="col-sm-2"><div class="form-group"><label>Flax ID</label><input class="form-control" type="number" name="upstream_product_id" min="1" required></div></div>
+                        <div class="col-sm-2"><div class="form-group"><label>Flax cost</label><input class="form-control" type="number" step=".01" name="upstream_monthly_price" placeholder="0.00"></div></div>
+                        <div class="col-sm-3"><div class="form-group"><label>Din pris/md</label><input class="form-control" type="number" step=".01" name="monthly_price" required></div></div>
                     </div>
                     <div class="form-group"><label>Beskrivelse</label><textarea class="form-control" name="description" rows="2"></textarea></div>
                     <div class="row">
@@ -101,8 +110,9 @@
                     <form method="POST" action="{{ route('admin.flax.products.update',$product->id) }}" style="padding:14px 0;border-bottom:1px solid rgba(128,128,128,.18)">
                         @csrf @method('PATCH')
                         <div class="row">
-                            <div class="col-sm-5"><input class="form-control input-sm" name="name" value="{{ $product->name }}" required></div>
-                            <div class="col-sm-3"><input class="form-control input-sm" type="number" name="upstream_product_id" value="{{ $product->upstream_product_id }}" required></div>
+                            <div class="col-sm-4"><input class="form-control input-sm" name="name" value="{{ $product->name }}" required></div>
+                            <div class="col-sm-2"><input class="form-control input-sm" type="number" name="upstream_product_id" value="{{ $product->upstream_product_id }}" required></div>
+                            <div class="col-sm-2"><input class="form-control input-sm" type="number" step=".01" name="upstream_monthly_price" value="{{ $product->upstream_monthly_price }}" placeholder="Flax cost"></div>
                             <div class="col-sm-2"><input class="form-control input-sm" type="number" step=".01" name="monthly_price" value="{{ $product->monthly_price }}" required></div>
                             <div class="col-sm-2"><input class="form-control input-sm" name="currency" value="{{ $product->currency }}" required></div>
                         </div>
@@ -116,7 +126,13 @@
                         <div style="margin-top:8px">
                             <label><input type="checkbox" name="enabled" value="1" {{ $product->enabled ? 'checked' : '' }}> Aktiv</label>&nbsp;&nbsp;
                             <label><input type="checkbox" name="featured" value="1" {{ $product->featured ? 'checked' : '' }}> Fremhævet</label>
-                            <span class="text-muted" style="margin-left:12px">{{ $product->vcpu ?: '—' }} vCPU · {{ $product->memory_mb ?: '—' }} MB · {{ $product->disk_gb ?: '—' }} GB</span>
+                            <span class="text-muted" style="margin-left:12px">
+                                {{ $product->vcpu ?: '—' }} vCPU · {{ $product->memory_mb ?: '—' }} MB · {{ $product->disk_gb ?: '—' }} GB
+                                @if($product->upstream_monthly_price !== null)
+                                    · Flax {{ number_format((float)$product->upstream_monthly_price,2,',','.') }} kr
+                                    · Margin {{ number_format((float)$product->monthly_price - (float)$product->upstream_monthly_price,2,',','.') }} kr
+                                @endif
+                            </span>
                             <button class="btn btn-xs btn-primary pull-right">Gem</button>
                         </div>
                     </form>
