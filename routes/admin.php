@@ -12,6 +12,7 @@ Route::post('/flax-reseller/settings', [Admin\FlaxResellerController::class, 'sa
 Route::post('/flax-reseller/test', [Admin\FlaxResellerController::class, 'testConnection'])->name('admin.flax.test');
 Route::post('/flax-reseller/templates/sync', [Admin\FlaxResellerController::class, 'syncTemplates'])->name('admin.flax.templates.sync');
 Route::post('/flax-reseller/products', [Admin\FlaxResellerController::class, 'storeProduct'])->name('admin.flax.products.store');
+Route::post('/flax-reseller/products/import-presets', [Admin\FlaxResellerController::class, 'importPresetProducts'])->name('admin.flax.products.import-presets');
 Route::patch('/flax-reseller/products/{product}', [Admin\FlaxResellerController::class, 'updateProduct'])->name('admin.flax.products.update');
 Route::delete('/flax-reseller/products/{product}', [Admin\FlaxResellerController::class, 'deleteProduct'])->name('admin.flax.products.delete');
 Route::post('/flax-reseller/services/{service}/action', [Admin\FlaxResellerController::class, 'serviceAction'])->name('admin.flax.services.action');
