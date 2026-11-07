@@ -187,6 +187,8 @@ class NodexaCartService
                 'status' => 'awaiting_payment',
                 'coupon_id' => $resolved['coupon']['id'] ?? null,
                 'coupon_code' => $resolved['coupon']['code'] ?? null,
+                'coupon_type' => $resolved['coupon']['type'] ?? null,
+                'coupon_value' => $resolved['coupon']['value'] ?? null,
                 'coupon_duration_months' => $resolved['coupon']['duration_months'] ?? null,
                 'global_sale_percent' => $resolved['global_sale']['percent'] ?? 0,
                 'global_sale_discount' => $resolved['sale_discount'],
@@ -594,6 +596,10 @@ class NodexaCartService
 
         DB::table('nodexa_subscriptions')->where('id', $subscriptionId)->update([
             'discount_code' => $checkout->coupon_code,
+            'discount_type' => $checkout->coupon_type ?? 'fixed',
+            'discount_value' => $checkout->coupon_value ?? ($discountCents / 100),
+            // Fixed discounts use the allocated per-service amount. Percentage
+            // discounts are recalculated from that month's post-sale base.
             'discount_amount' => $discountCents / 100,
             'discount_months_total' => $durationMonths,
             // Month 1 is the combined checkout that has just been paid.
