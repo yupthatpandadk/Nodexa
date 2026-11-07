@@ -1,6 +1,24 @@
 {
-  "latest": "1.6.3",
+  "latest": "1.6.4",
   "releases": [
+    {
+      "version": "1.6.4",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Professional combined checkout",
+      "changes": [
+        "Redesignet den samlede checkout til et mere professionelt hosting-checkout layout.",
+        "Hver service viser nu tydeligt type, navn, server/VPS-navn, konfiguration, specs og månedlig pris.",
+        "Tilføjet forbedret checkout-stepper med Kurv, Gennemgå og Ordre.",
+        "Tilføjet kunde-/kontooversigt direkte i checkout.",
+        "Ordreoversigten er sticky på desktop og flyttes øverst på tablet/mobil.",
+        "Samlet månedlig pris og alle ordrelinjer vises tydeligere uden at blande servicepriser sammen.",
+        "Checkout forklarer nu tydeligt, at der endnu ikke trækkes betaling på denne side, fordi betalingsgateway ikke er aktiv.",
+        "Bekræft-knappen er ændret til en tydelig 'Opret samlet ordre'-handling med bedre visuel hierarki.",
+        "Tilføjet information om månedlige abonnementer, automatisk aktivering og idempotent provisioning.",
+        "Mobilvisningen er optimeret med kompakte specs og bedre stacking."
+      ]
+    },
     {
       "version": "1.6.3",
       "date": "2026-11-07",
