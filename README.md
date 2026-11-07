@@ -6,7 +6,7 @@
 
 A modern, self-hosted platform for managing game servers, customers, billing, support and infrastructure from one unified interface.
 
-![Version](https://img.shields.io/badge/version-1.7.0-7657ff?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.7.1-7657ff?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Linux-20232a?style=for-the-badge&logo=linux&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=for-the-badge&logo=php&logoColor=white)
 ![Docker](https://img.shields.io/badge/containers-Docker-2496ed?style=for-the-badge&logo=docker&logoColor=white)
@@ -62,7 +62,7 @@ The goal is simple: give administrators and customers everything they need witho
 - Hosting product catalogue
 - Customer checkout flow
 - Shared shopping cart and combined checkout
-- Storefront discount codes
+- Storefront discount codes with configurable 1–120 month duration
 - Stripe hosted Checkout payments
 - Automatic server provisioning
 - Recurring subscriptions
@@ -87,6 +87,8 @@ Administrators can configure Stripe directly from **Admin → Storefront & Billi
 - Connection testing is available from the Admin Area
 - The webhook endpoint is `/webhooks/stripe`
 - Required checkout events are `checkout.session.completed`, `checkout.session.async_payment_succeeded` and `checkout.session.expired`
+
+A discount code can be configured for a fixed number of months. Month 1 is the initial combined checkout, and recurring invoices continue applying the exact saved per-service discount until the configured month count is exhausted. Existing subscriptions keep their snapshotted discount even if the admin later changes the coupon.
 
 Discount codes are calculated by Nodexa before the Stripe Session is created. The checkout subtotal and discount are converted to integer cents, and Stripe receives one authoritative line item containing exactly the final Nodexa total. Nodexa only fulfills an order after validating Stripe's `amount_total`, currency, client reference and order metadata against the stored checkout.
 
@@ -383,7 +385,7 @@ public/                 Public web assets
 
 ## Version
 
-Current release: **Nodexa 1.7.0**
+Current release: **Nodexa 1.7.1**
 
 The installed version can be checked with:
 
