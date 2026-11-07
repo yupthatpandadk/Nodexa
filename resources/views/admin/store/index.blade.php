@@ -17,10 +17,11 @@
 <div class="box"><div class="box-header"><h3 class="box-title"><i class="fa fa-ticket"></i> Rabatkoder</h3></div><form method="POST" action="{{route('admin.store.coupons.store')}}">@csrf<div class="box-body">
 <div class="form-group"><label>Kode</label><input class="form-control" name="code" placeholder="WELCOME20" required></div>
 <div class="row"><div class="col-xs-6"><label>Type</label><select class="form-control" name="type"><option value="percent">Procent</option><option value="fixed">Fast DKK</option></select></div><div class="col-xs-6"><label>Værdi</label><input class="form-control" type="number" step=".01" name="value" required></div></div><br>
+<div class="form-group"><label>Rabatperiode</label><div class="input-group"><input class="form-control" type="number" name="duration_months" min="1" max="120" value="1" required><span class="input-group-addon">måned(er)</span></div><p class="help-block">Måned 1 er den første betaling. Fx 3 = rabat på måned 1, 2 og 3.</p></div>
 <div class="form-group"><label>Maks. anvendelser</label><input class="form-control" type="number" name="max_uses"></div>
 <div class="form-group"><label>Udløber</label><input class="form-control" type="datetime-local" name="expires_at"></div>
 <button class="btn btn-default btn-block">Opret rabatkode</button></div></form>
-<div class="box-body table-responsive"><table class="table table-condensed"><tr><th>Kode</th><th>Rabat</th><th>Brugt</th></tr>@foreach($coupons as $c)<tr><td><b>{{$c->code}}</b></td><td>{{$c->value}}{{$c->type==='percent'?'%':' DKK'}}</td><td>{{$c->uses}}{{$c->max_uses?'/'.$c->max_uses:''}}</td></tr>@endforeach</table></div></div>
+<div class="box-body table-responsive"><table class="table table-condensed"><tr><th>Kode</th><th>Rabat</th><th>Periode</th><th>Brugt</th></tr>@foreach($coupons as $c)<tr><td><b>{{$c->code}}</b></td><td>{{$c->value}}{{$c->type==='percent'?'%':' DKK'}}</td><td>{{$c->duration_months ?? 1}} mdr.</td><td>{{$c->uses}}{{$c->max_uses?'/'.$c->max_uses:''}}</td></tr>@endforeach</table></div></div>
 
 <div class="box box-info">
 <div class="box-header"><h3 class="box-title"><i class="fa fa-credit-card"></i> Stripe betaling</h3>
