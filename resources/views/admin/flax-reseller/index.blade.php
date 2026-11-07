@@ -29,7 +29,7 @@
                         <p class="help-block">Flax Reseller API endpoint: <code>https://api.flaxhosting.dk/</code>. API-key og action sendes som POST-parametre.</p>
                     </div>
                     <div class="form-group">
-                        <label>API key</label>
+                        <label>API key</label><p class="help-block" style="margin-top:0">Opret nøglen i Flax Reseller Dashboard → API-dokumentation → Opret API-nøgle.</p>
                         <input class="form-control" type="password" name="api_key" autocomplete="new-password" placeholder="{{ $maskedKey ?: 'Indtast API key' }}">
                         @if($maskedKey)<p class="help-block">Gemt key: <code>{{ $maskedKey }}</code>. Lad feltet være tomt for at beholde den.</p>@endif
                     </div>
