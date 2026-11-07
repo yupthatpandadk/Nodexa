@@ -1,6 +1,25 @@
 {
-  "latest": "1.5.8",
+  "latest": "1.6.0",
   "releases": [
+    {
+      "version": "1.6.0",
+      "date": "2026-11-07",
+      "type": "minor",
+      "title": "Combined shopping cart",
+      "changes": [
+        "Ny fælles Nodexa-kurv til game servers og Flax VPS-produkter.",
+        "Game-server- og VPS-konfigurationer lægges nu i kurven med deres individuelle servernavn/VPS-navn og OS-valg.",
+        "Topnavigationen viser et kurv-ikon med live antal varer i brugerens session.",
+        "Ny /cart-side med vareoversigt, konfigurationer, månedlige priser, fjern vare og tøm kurv.",
+        "Ny samlet checkout samler alle kurvlinjer under ét NX-CART ordrenummer og ét samlet månedsbeløb.",
+        "Client Area Billing viser samlede checkouts separat fra tekniske servicefakturaer.",
+        "Operations Center viser samlede checkouts og kan registrere hele ordren betalt med én handling.",
+        "Når en samlet ordre markeres betalt oprettes game-serverordrer som betalte, mens VPS-linjer opretter og provisionerer deres Flax-service automatisk.",
+        "Tekniske child-fakturaer fra VPS provisioning linkes til den samlede checkout og skjules fra kundens Billing-visning.",
+        "VPS-linjer har idempotent retry, så en Flax-fejl efter lokal ordreoprettelse ikke kan skabe en dobbelt VPS-service ved retry.",
+        "Den samlede checkout er klar til en fremtidig betalingsgateway; indtil en gateway er koblet på kan betalingen registreres samlet af admin."
+      ]
+    },
     {
       "version": "1.5.8",
       "date": "2026-11-07",
