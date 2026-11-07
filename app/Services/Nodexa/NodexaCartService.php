@@ -247,14 +247,41 @@ class NodexaCartService
                         'updated_at' => now(),
                     ]);
                 } elseif ($item->type === 'flax_vps') {
-                    $result = $this->flax->createOrder(
-                        (int) $checkout->user_id,
-                        (int) $item->product_id,
-                        trim((string) ($configuration['hostname'] ?? 'VPS')),
-                        (int) ($configuration['os_template_id'] ?? 0)
-                    );
+                    $serviceId = $item->reference_id ? (int) $item->reference_id : null;
+                    $invoiceId = null;
 
-                    DB::table('nodexa_invoices')->where('id', $result['invoiceId'])->update([
+                    if ($serviceId) {
+                        $existingService = DB::table('nodexa_flax_services')->where('id', $serviceId)->first();
+                        if (!$existingService || (int) $existingService->user_id !== (int) $checkout->user_id) {
+                            throw new RuntimeException('Den eksisterende VPS-reference er ugyldig.');
+                        }
+
+                        $invoiceId = (int) $existingService->first_invoice_id;
+                    } else {
+                        $result = $this->flax->createOrder(
+                            (int) $checkout->user_id,
+                            (int) $item->product_id,
+                            trim((string) ($configuration['hostname'] ?? 'VPS')),
+                            (int) ($configuration['os_template_id'] ?? 0)
+                        );
+
+                        $serviceId = (int) $result['serviceId'];
+                        $invoiceId = (int) $result['invoiceId'];
+
+                        // Persist the local service reference before calling the
+                        // upstream API. If Flax fails afterwards, a retry resumes
+                        // this service instead of creating a duplicate order.
+                        DB::table('nodexa_cart_checkout_items')->where('id', $item->id)->update([
+                            'reference_id' => $serviceId,
+                            'updated_at' => now(),
+                        ]);
+                    }
+
+                    if (!$invoiceId) {
+                        throw new RuntimeException('VPS-servicen mangler sin tekniske faktura.');
+                    }
+
+                    DB::table('nodexa_invoices')->where('id', $invoiceId)->update([
                         'status' => 'paid',
                         'paid_at' => now(),
                         'payment_method' => $paymentMethod,
@@ -264,11 +291,11 @@ class NodexaCartService
                         'updated_at' => now(),
                     ]);
 
-                    $this->flax->activateInvoice((int) $result['invoiceId']);
+                    $this->flax->activateInvoice($invoiceId);
 
                     DB::table('nodexa_cart_checkout_items')->where('id', $item->id)->update([
                         'status' => 'completed',
-                        'reference_id' => $result['serviceId'],
+                        'reference_id' => $serviceId,
                         'updated_at' => now(),
                     ]);
                 } else {
