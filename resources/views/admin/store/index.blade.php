@@ -36,7 +36,8 @@
 <div class="form-group">
 <label>Webhook Secret</label>
 <input class="form-control" type="password" name="webhook_secret" autocomplete="new-password" placeholder="{{$stripeSettings->has_webhook_secret?'Gemt — lad feltet være tomt for at beholde':'whsec_...'}}">
-<p class="help-block">Webhook endpoint: <code>{{route('stripe.webhook')}}</code></p>
+<p class="help-block">Webhook endpoint: <code>{{route('stripe.webhook')}}</code><br>
+Lyt til: <code>checkout.session.completed</code>, <code>checkout.session.async_payment_succeeded</code> og <code>checkout.session.expired</code>.</p>
 </div>
 <label><input type="checkbox" name="enabled" value="1" {{$stripeSettings->enabled?'checked':''}}> Aktivér Stripe Checkout</label>
 @if($stripeSettings->last_tested_at)
