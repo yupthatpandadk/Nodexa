@@ -762,6 +762,16 @@ class FlaxResellerService
             } else {
                 $response = Http::timeout(20)
                     ->acceptJson()
+                    ->withOptions([
+                        // Flax documents the API root with a trailing slash.
+                        // Keep POST + body intact if their edge ever redirects.
+                        'allow_redirects' => [
+                            'max' => 3,
+                            'strict' => true,
+                            'referer' => false,
+                            'track_redirects' => true,
+                        ],
+                    ])
                     ->asForm()
                     ->post($url, array_merge([
                         'key' => $key,
@@ -782,7 +792,27 @@ class FlaxResellerService
         $key = $this->apiKey(false);
 
         if (!is_array($json)) {
-            throw new RuntimeException('Flax API returnerede ugyldigt JSON (HTTP ' . $response->status() . ').');
+            $contentType = trim((string) $response->header('Content-Type'));
+            $preview = strip_tags((string) $response->body());
+            $preview = preg_replace('/\s+/', ' ', $preview) ?: '';
+            $preview = trim($preview);
+
+            if ($key && $preview !== '') {
+                $preview = str_replace($key, '[redacted]', $preview);
+            }
+
+            if (mb_strlen($preview) > 180) {
+                $preview = mb_substr($preview, 0, 180) . '…';
+            }
+
+            $details = $contentType !== '' ? ' · Content-Type: ' . $contentType : '';
+            if ($preview !== '') {
+                $details .= ' · Svar: ' . $preview;
+            }
+
+            throw new RuntimeException(
+                'Flax API returnerede ugyldigt JSON (HTTP ' . $response->status() . ')' . $details
+            );
         }
 
         if ($key) {
@@ -885,6 +915,11 @@ class FlaxResellerService
             throw new RuntimeException('Flax API URL skal bruge HTTPS.');
         }
 
-        return rtrim($url, '?&/');
+        $url = preg_replace('/[?#].*$/', '', $url) ?: $url;
+
+        // Flax documents the reseller endpoint as https://api.flaxhosting.dk/
+        // and their edge may redirect the slash-less host. Always call the
+        // canonical slash form directly so POST fields are never lost.
+        return rtrim($url, '/') . '/';
     }
 }
