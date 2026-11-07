@@ -34,35 +34,61 @@ return new class extends Migration
             });
         }
 
-        if (Schema::hasTable('nodexa_cart_checkouts')) {
+        if (!Schema::hasTable('nodexa_cart_checkouts')) {
+            return;
+        }
+
+        if (!Schema::hasColumn('nodexa_cart_checkouts', 'coupon_id')) {
             Schema::table('nodexa_cart_checkouts', function (Blueprint $table) {
-                if (!Schema::hasColumn('nodexa_cart_checkouts', 'coupon_id')) {
-                    $table->unsignedBigInteger('coupon_id')->nullable()->index()->after('user_id');
-                }
-                if (!Schema::hasColumn('nodexa_cart_checkouts', 'coupon_code')) {
-                    $table->string('coupon_code', 80)->nullable()->after('coupon_id');
-                }
-                if (!Schema::hasColumn('nodexa_cart_checkouts', 'coupon_reserved_at')) {
-                    $table->timestamp('coupon_reserved_at')->nullable()->after('coupon_code');
-                }
-                if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_attempt')) {
-                    $table->unsignedInteger('stripe_attempt')->default(0)->after('payment_reference');
-                }
-                if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_session_id')) {
-                    $table->string('stripe_session_id', 191)->nullable()->unique()->after('stripe_attempt');
-                }
-                if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_payment_intent_id')) {
-                    $table->string('stripe_payment_intent_id', 191)->nullable()->index()->after('stripe_session_id');
-                }
-                if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_status')) {
-                    $table->string('stripe_status', 40)->nullable()->index()->after('stripe_payment_intent_id');
-                }
-                if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_amount_total')) {
-                    $table->unsignedBigInteger('stripe_amount_total')->nullable()->after('stripe_status');
-                }
-                if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_currency')) {
-                    $table->string('stripe_currency', 8)->nullable()->after('stripe_amount_total');
-                }
+                $table->unsignedBigInteger('coupon_id')->nullable()->index()->after('user_id');
+            });
+        }
+
+        if (!Schema::hasColumn('nodexa_cart_checkouts', 'coupon_code')) {
+            Schema::table('nodexa_cart_checkouts', function (Blueprint $table) {
+                $table->string('coupon_code', 80)->nullable()->after('coupon_id');
+            });
+        }
+
+        if (!Schema::hasColumn('nodexa_cart_checkouts', 'coupon_reserved_at')) {
+            Schema::table('nodexa_cart_checkouts', function (Blueprint $table) {
+                $table->timestamp('coupon_reserved_at')->nullable()->after('coupon_code');
+            });
+        }
+
+        if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_attempt')) {
+            Schema::table('nodexa_cart_checkouts', function (Blueprint $table) {
+                $table->unsignedInteger('stripe_attempt')->default(0)->after('payment_reference');
+            });
+        }
+
+        if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_session_id')) {
+            Schema::table('nodexa_cart_checkouts', function (Blueprint $table) {
+                $table->string('stripe_session_id', 191)->nullable()->unique()->after('stripe_attempt');
+            });
+        }
+
+        if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_payment_intent_id')) {
+            Schema::table('nodexa_cart_checkouts', function (Blueprint $table) {
+                $table->string('stripe_payment_intent_id', 191)->nullable()->index()->after('stripe_session_id');
+            });
+        }
+
+        if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_status')) {
+            Schema::table('nodexa_cart_checkouts', function (Blueprint $table) {
+                $table->string('stripe_status', 40)->nullable()->index()->after('stripe_payment_intent_id');
+            });
+        }
+
+        if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_amount_total')) {
+            Schema::table('nodexa_cart_checkouts', function (Blueprint $table) {
+                $table->unsignedBigInteger('stripe_amount_total')->nullable()->after('stripe_status');
+            });
+        }
+
+        if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_currency')) {
+            Schema::table('nodexa_cart_checkouts', function (Blueprint $table) {
+                $table->string('stripe_currency', 8)->nullable()->after('stripe_amount_total');
             });
         }
     }
