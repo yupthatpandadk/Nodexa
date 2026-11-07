@@ -198,14 +198,14 @@
                 </div>
                 @endif
                 <div class="summaryRow">
-                    <span>Rabatkode@if($summary['coupon']) · {{ $summary['coupon']['code'] }}@endif</span>
+                    <span>Rabatkode @if($summary['coupon']) · {{ $summary['coupon']['code'] }} @endif</span>
                     <strong class="{{ $summary['discount'] > 0 ? 'discountValue' : '' }}">-{{ number_format((float)$summary['discount'],2,',','.') }} DKK</strong>
                 </div>
 
                 <div class="summaryTotal">
                     <div>
                         <span>Til betaling nu</span>
-                        <small>@if($summary['global_sale'] || $summary['coupon'])Normalpris efter rabatperioder: {{ number_format((float)$summary['subtotal'],2,',','.') }} DKK/md@else{{ $summary['count'] }} {{ $summary['count'] === 1 ? 'service' : 'services' }}@endif</small>
+                        <small>@if($summary['global_sale'] || $summary['coupon']) Normalpris efter rabatperioder: {{ number_format((float)$summary['subtotal'],2,',','.') }} DKK/md @else {{ $summary['count'] }} {{ $summary['count'] === 1 ? 'service' : 'services' }} @endif</small>
                     </div>
                     <strong>{{ number_format((float)$summary['total'],2,',','.') }} <small>DKK</small></strong>
                 </div>
