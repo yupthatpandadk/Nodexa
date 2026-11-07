@@ -25,7 +25,10 @@
                                 <div class="miniLabel">{{ $item['type']==='flax_vps' ? 'VPS HOSTING' : 'GAME SERVER' }}</div>
                                 <h2>{{ $item['name'] }}</h2>
                             </div>
-                            <strong class="cartPrice">{{ number_format((float)$item['price'],2,',','.') }} {{ $item['currency'] }}<small>/md</small></strong>
+                            <strong class="cartPrice">
+    @if(($item['sale_discount'] ?? 0) > 0)<span style="display:block;font-size:9px;color:#607992;text-decoration:line-through">{{ number_format((float)$item['original_price'],2,',','.') }} {{ $item['currency'] }}</span>@endif
+    {{ number_format((float)($item['sale_price'] ?? $item['price']),2,',','.') }} {{ $item['currency'] }}<small>/md</small>
+</strong>
                         </div>
 
                         @if($item['type']==='game_server')
@@ -69,7 +72,10 @@
             <div class="miniLabel">ORDER SUMMARY</div>
             <h2>{{ $summary['count'] }} {{ $summary['count']===1 ? 'vare' : 'varer' }}</h2>
             <div class="summaryLine"><span>Normal månedspris</span><strong>{{ number_format((float)$summary['subtotal'],2,',','.') }} DKK</strong></div>
-            <div class="summaryLine"><span>Rabat på første betaling@if($summary['coupon']) · {{$summary['coupon']['code']}}@endif</span><strong class="{{$summary['discount']>0?'discountText':''}}">-{{ number_format((float)$summary['discount'],2,',','.') }} DKK</strong></div>
+            @if($summary['global_sale'])
+            <div class="summaryLine"><span>{{ $summary['global_sale']['label'] }} · {{ number_format($summary['global_sale']['percent'],0,',','.') }}%</span><strong class="discountText">-{{ number_format((float)$summary['sale_discount'],2,',','.') }} DKK</strong></div>
+            @endif
+            <div class="summaryLine"><span>Rabatkode@if($summary['coupon']) · {{$summary['coupon']['code']}}@endif</span><strong class="{{$summary['discount']>0?'discountText':''}}">-{{ number_format((float)$summary['discount'],2,',','.') }} DKK</strong></div>
 
             @if($summary['coupon'])
                 <div class="cartCoupon applied">
@@ -85,7 +91,11 @@
             @endif
 
             <div class="summaryTotal"><span>Til betaling nu</span><strong>{{ number_format((float)$summary['total'],2,',','.') }} DKK</strong></div>
-            <p class="micro">@if($summary['discount'] > 0)Rabatkoden gælder i {{$summary['coupon']['duration_months'] ?? 1}} måned(er), hvor første betaling tæller som måned 1. Derefter er normal månedspris {{ number_format((float)$summary['subtotal'],2,',','.') }} DKK.@else Hver service fortsætter som sit eget månedlige abonnement efter første samlede checkout.@endif</p>
+            <p class="micro">
+                @if($summary['global_sale'])Globalt udsalg gælder i {{ $summary['global_sale']['duration_months'] }} måned(er). @endif
+                @if($summary['coupon'])Rabatkode gælder i {{ $summary['coupon']['duration_months'] }} måned(er). @endif
+                Første betaling tæller som måned 1. Derefter fortsætter services til normal månedspris, når deres rabatperiode er slut.
+            </p>
 
             @if($summary['count'] > 0)
                 <a class="btn primary" style="width:100%;margin-top:12px" href="{{ route('store.cart.checkout') }}">Fortsæt til checkout →</a>
