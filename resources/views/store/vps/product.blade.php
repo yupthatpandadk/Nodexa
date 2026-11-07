@@ -36,7 +36,13 @@
 
     <aside class="card featured">
         <div class="productTop"><span class="tag">Månedlig VPS</span><span class="miniLabel">{{ $product->currency }}</span></div>
+        @if($globalSale)
+        <div class="miniLabel" style="color:#75e3b1;margin:8px 0 4px">{{ $globalSale->label }} · -{{ number_format($globalSale->percent,0,',','.') }}% i {{ $globalSale->duration_months }} mdr.</div>
+        <div style="font-size:12px;color:#637b96;text-decoration:line-through">{{ number_format((float)$product->monthly_price,2,',','.') }} kr</div>
+        <div class="price">{{ number_format(round((float)$product->monthly_price*(1-((float)$globalSale->percent/100)),2),2,',','.') }} kr <small>/ måned</small></div>
+        @else
         <div class="price">{{ number_format((float)$product->monthly_price,2,',','.') }} kr <small>/ måned</small></div>
+        @endif
 
         @if(!$configured)
             <div class="notice">VPS-reseller-integrationen er ikke aktiv lige nu.</div>
