@@ -75,6 +75,12 @@ update_panel() {
   # back online.
   php artisan optimize:clear || true
 
+  # Migrate the database before running the potentially long frontend build.
+  # Otherwise a failed Node/Yarn build can leave new PHP routes using tables
+  # that do not exist yet, resulting in HTTP 500 (for example /cart).
+  info "Opdaterer Nodexa database..."
+  php artisan migrate --force
+
   # Frontend source changes are not visible until the production bundle is rebuilt.
   if [[ -f package.json ]]; then
     info "Bygger Nodexa frontend..."
@@ -99,8 +105,6 @@ update_panel() {
       fail "Node/Yarn/NPM mangler. Frontend kan derfor ikke bygges."
     fi
   fi
-
-  php artisan migrate --force
 
   # NordicNode uses one public domain for Storefront, Client Area and the
   # Pterodactyl UI. This system-level migration also updates Wings origins,
