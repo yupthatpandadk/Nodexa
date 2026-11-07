@@ -1,6 +1,32 @@
 {
-  "latest": "1.6.4",
+  "latest": "1.7.0",
   "releases": [
+    {
+      "version": "1.7.0",
+      "date": "2026-11-07",
+      "type": "minor",
+      "title": "Stripe Checkout & exact discount totals",
+      "changes": [
+        "Tilføjet Stripe-hosted Checkout til Nodexas samlede kurv og ordreflow.",
+        "Stripe Secret Key og Webhook Secret konfigureres direkte i Admin → Storefront & Billing og gemmes krypteret.",
+        "Tilføjet Stripe connection test samt visning af webhook endpoint og nødvendige checkout events.",
+        "Checkout opretter en server-side Stripe Session med Nodexas gemte slutbeløb i øre og DKK som autoritativ total.",
+        "Stripe får én samlet ordrelinje med det endelige Nodexa-beløb, så rabat/afrunding ikke kan give forskellig hjemmeside- og Stripe-total.",
+        "Ved Stripe-bekræftelse validerer Nodexa amount_total, currency, client_reference_id og order metadata før services aktiveres.",
+        "Stripe webhook signatur verificeres mod raw request body, timestamp og whsec-secret før eventet behandles.",
+        "Webhook events behandles idempotent og gemmes i nodexa_stripe_events for at undgå dobbelt fulfillment.",
+        "Rabatkoder fra Storefront & Billing kan nu anvendes direkte i kurven og checkout.",
+        "Procent- og fast DKK-rabat beregnes server-side i hele øre, cap'es ved subtotalen og gemmes på ordren.",
+        "Rabatkoder reserverer først en use ved betalingsstart og frigives igen ved udløbet Stripe Session.",
+        "Checkout stopper i stedet for at falde tilbage til fuld pris, hvis en rabatkode bliver udløbet eller opbrugt inden betaling.",
+        "Kurv og checkout viser normalpris, rabat og præcis 'Til betaling nu'-total.",
+        "Ved aktiv Stripe sender checkout kunden direkte til Stripe; annulleret betaling kan genoptages fra ordresiden.",
+        "100% rabat/0,00 DKK checkout aktiveres uden at oprette en unødvendig Stripe-betaling.",
+        "Game-serverlinjer provisioneres nu idempotent efter samlet betaling, ligesom Flax VPS-linjer allerede gør.",
+        "Ordre-fulfillment har fået checkout-level locking, så browser success callback og Stripe webhook ikke kan provisionere samme service to gange.",
+        "Første Stripe-betaling kan være rabatteret; efterfølgende månedlige Nodexa-fakturaer fortsætter med normal servicepris."
+      ]
+    },
     {
       "version": "1.6.4",
       "date": "2026-11-07",
