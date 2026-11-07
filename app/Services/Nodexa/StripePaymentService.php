@@ -238,12 +238,28 @@ class StripePaymentService
             throw new RuntimeException('Stripe returnerede ikke en gyldig Checkout Session.');
         }
 
-        $this->assertSessionAmount($session, $checkout);
+        try {
+            $this->assertSessionAmount($session, $checkout);
+        } catch (\Throwable $exception) {
+            $this->cart->releaseCoupon($checkoutId);
+
+            if (!empty($session['id'])) {
+                try {
+                    $this->request('POST', '/checkout/sessions/' . rawurlencode($session['id']) . '/expire');
+                } catch (\Throwable $ignored) {
+                    report($ignored);
+                }
+            }
+
+            throw $exception;
+        }
+
+        $currentCheckout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->first();
 
         DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
             'stripe_attempt' => $attempt,
             'stripe_session_id' => $session['id'],
-            'stripe_status' => $session['status'] ?? 'open',
+            'stripe_status' => $currentCheckout?->paid_at ? 'paid' : ($session['status'] ?? 'open'),
             'stripe_amount_total' => (int) ($session['amount_total'] ?? $expectedCents),
             'stripe_currency' => strtolower((string) ($session['currency'] ?? $checkout->currency ?? 'dkk')),
             'updated_at' => now(),
@@ -569,16 +585,26 @@ class StripePaymentService
 
     private function recordTest(string $status, string $message): void
     {
-        DB::table('nodexa_stripe_settings')->updateOrInsert(
-            ['id' => 1],
-            [
-                'last_tested_at' => now(),
-                'last_test_status' => $status,
-                'last_test_message' => substr($message, 0, 2000),
-                'updated_at' => now(),
-                'created_at' => DB::raw('COALESCE(created_at, NOW())'),
-            ]
-        );
+        $existing = DB::table('nodexa_stripe_settings')->where('id', 1)->exists();
+
+        $values = [
+            'last_tested_at' => now(),
+            'last_test_status' => $status,
+            'last_test_message' => substr($message, 0, 2000),
+            'updated_at' => now(),
+        ];
+
+        if ($existing) {
+            DB::table('nodexa_stripe_settings')->where('id', 1)->update($values);
+        } else {
+            DB::table('nodexa_stripe_settings')->insert(array_merge([
+                'id' => 1,
+                'enabled' => false,
+                'secret_key_encrypted' => null,
+                'webhook_secret_encrypted' => null,
+                'created_at' => now(),
+            ], $values));
+        }
     }
 
     private function successUrl(int $checkoutId): string
