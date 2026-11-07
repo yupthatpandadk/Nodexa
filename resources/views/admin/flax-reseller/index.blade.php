@@ -73,7 +73,7 @@
                 <h3 class="box-title"><i class="fa fa-plus-circle"></i> VPS-produkter</h3>
                 <form method="POST" action="{{ route('admin.flax.products.import-presets') }}" class="pull-right" style="margin:0">
                     @csrf
-                    <button class="btn btn-xs btn-info" type="submit" onclick="return confirm('Importér Flax VPS-01 til VPS-06+ med de viste upstream-priser? Eksisterende salgspriser overskrives ikke.')">
+                    <button class="btn btn-xs btn-info" type="submit" onclick="return confirm('Importér Flax VPS-01 til VPS-06+ med de viste upstream-priser? Eksisterende kundepriser overskrives ikke. Flax Din pris synkroniseres og er låst.')">
                         <i class="fa fa-download"></i> Importér Flax presets
                     </button>
                 </form>
@@ -83,8 +83,8 @@
                     <div class="row">
                         <div class="col-sm-5"><div class="form-group"><label>Navn</label><input class="form-control" name="name" required placeholder="VPS Starter"></div></div>
                         <div class="col-sm-2"><div class="form-group"><label>Flax ID</label><input class="form-control" type="number" name="upstream_product_id" min="1" required></div></div>
-                        <div class="col-sm-2"><div class="form-group"><label>Flax cost</label><input class="form-control" type="number" step=".01" name="upstream_monthly_price" placeholder="0.00"></div></div>
-                        <div class="col-sm-3"><div class="form-group"><label>Din pris/md</label><input class="form-control" type="number" step=".01" name="monthly_price" required></div></div>
+                        <div class="col-sm-2"><div class="form-group"><label>Flax Din pris</label><input class="form-control" type="text" value="Auto" readonly disabled title="Hentes fra Flax-preset og kan ikke ændres i Nodexa"></div></div>
+                        <div class="col-sm-3"><div class="form-group"><label>Kundepris/md</label><input class="form-control" type="number" step=".01" name="monthly_price" required></div></div>
                     </div>
                     <div class="form-group"><label>Beskrivelse</label><textarea class="form-control" name="description" rows="2"></textarea></div>
                     <div class="row">
@@ -112,8 +112,8 @@
                         <div class="row">
                             <div class="col-sm-4"><input class="form-control input-sm" name="name" value="{{ $product->name }}" required></div>
                             <div class="col-sm-2"><input class="form-control input-sm" type="number" name="upstream_product_id" value="{{ $product->upstream_product_id }}" required></div>
-                            <div class="col-sm-2"><input class="form-control input-sm" type="number" step=".01" name="upstream_monthly_price" value="{{ $product->upstream_monthly_price }}" placeholder="Flax cost"></div>
-                            <div class="col-sm-2"><input class="form-control input-sm" type="number" step=".01" name="monthly_price" value="{{ $product->monthly_price }}" required></div>
+                            <div class="col-sm-2"><input class="form-control input-sm" type="text" value="{{ $product->upstream_monthly_price !== null ? number_format((float)$product->upstream_monthly_price,2,'.','') : '—' }}" readonly disabled title="Flax Din pris er låst og opdateres kun via preset/import-sync"></div>
+                            <div class="col-sm-2"><input class="form-control input-sm" type="number" step=".01" name="monthly_price" value="{{ $product->monthly_price }}" required title="Kundepris pr. måned"></div>
                             <div class="col-sm-2"><input class="form-control input-sm" name="currency" value="{{ $product->currency }}" required></div>
                         </div>
                         <input type="hidden" name="description" value="{{ $product->description }}">
@@ -129,7 +129,7 @@
                             <span class="text-muted" style="margin-left:12px">
                                 {{ $product->vcpu ?: '—' }} vCPU · {{ $product->memory_mb ?: '—' }} MB · {{ $product->disk_gb ?: '—' }} GB
                                 @if($product->upstream_monthly_price !== null)
-                                    · Flax {{ number_format((float)$product->upstream_monthly_price,2,',','.') }} kr
+                                    · Flax Din pris {{ number_format((float)$product->upstream_monthly_price,2,',','.') }} kr
                                     · Margin {{ number_format((float)$product->monthly_price - (float)$product->upstream_monthly_price,2,',','.') }} kr
                                 @endif
                             </span>
@@ -159,8 +159,8 @@
                     <td><strong>{{ $service->hostname }}</strong><br><small>{{ $service->product_name }} @if($service->primary_ip)· {{ $service->primary_ip }}@endif</small></td>
                     <td>@if($service->upstream_server_id)<code>{{ $service->upstream_server_id }}</code>@else<span class="text-muted">Ikke provisioneret</span>@endif<br>@if($service->upstream_price !== null)<small>Flax cost: {{ number_format((float)$service->upstream_price,2,',','.') }}</small>@endif</td>
                     <td>{{ number_format((float)$service->retail_price,2,',','.') }} {{ $service->product_currency }}/md</td>
-                    <td><span class="label {{ $service->status==='active'?'label-success':($service->status==='suspended'?'label-danger':($service->status==='provisioning_failed'?'label-danger':'label-warning')) }}">{{ $service->status }}</span>@if($service->last_error)<br><small class="text-danger">{{ IlluminateSupportStr::limit($service->last_error,90) }}</small>@endif</td>
-                    <td>{{ $service->next_invoice_at ? CarbonCarbon::parse($service->next_invoice_at)->format('d.m.Y') : '—' }}</td>
+                    <td><span class="label {{ $service->status==='active'?'label-success':($service->status==='suspended'?'label-danger':($service->status==='provisioning_failed'?'label-danger':'label-warning')) }}">{{ $service->status }}</span>@if($service->last_error)<br><small class="text-danger">{{ \Illuminate\Support\Str::limit($service->last_error,90) }}</small>@endif</td>
+                    <td>{{ $service->next_invoice_at ? \Carbon\Carbon::parse($service->next_invoice_at)->format('d.m.Y') : '—' }}</td>
                     <td style="min-width:190px">
                         <form method="POST" action="{{ route('admin.flax.services.action',$service->id) }}">@csrf
                             <select class="form-control input-sm" name="action" onchange="if(this.value==='terminate'&&!confirm('Terminate VPS hos Flax permanent?')){this.value='';return;} if(this.value)this.form.submit()">
