@@ -748,35 +748,44 @@ class FlaxResellerService
         }
 
         $key = $this->apiKey();
-        $url = $this->normalizeApiUrl($settings->api_url);
+        $baseUrl = $this->normalizeApiUrl($settings->api_url);
+        $endpoint = $this->buildEndpointUrl($baseUrl);
         $method = strtoupper($method);
 
+        // Flax' eget WHMCS-modul kalder /api-endpoint.php med key/action i
+        // query-string og sender samtidig Authorization: Bearer <key>.
+        // Server/action-parametre ligger også i query-string; POST-body bruges
+        // til action-specifikke data. For kompatibilitet sender Nodexa de samme
+        // parametre i body ved POST, men key/action forbliver altid i query.
+        $query = array_merge([
+            'key' => $key,
+            'action' => $action,
+        ], $params);
+
+        $requestUrl = $endpoint . '?' . http_build_query($query);
+
         try {
+            $client = Http::timeout($method === 'GET' ? 15 : 20)
+                ->acceptJson()
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $key,
+                    'User-Agent' => 'Nodexa Flax Reseller',
+                ])
+                ->withOptions([
+                    'allow_redirects' => [
+                        'max' => 3,
+                        'strict' => true,
+                        'referer' => false,
+                        'track_redirects' => true,
+                    ],
+                ]);
+
             if ($method === 'GET') {
-                // Flax documents GET/POST for most reseller actions. GET is
-                // retained as a compatibility path, but Nodexa uses POST for
-                // VPS lifecycle calls so the API key is not placed in the URL.
-                $response = Http::timeout(15)
-                    ->acceptJson()
-                    ->get($url, array_merge(['key' => $key, 'action' => $action], $params));
+                $response = $client->get($requestUrl);
             } else {
-                $response = Http::timeout(20)
-                    ->acceptJson()
-                    ->withOptions([
-                        // Flax documents the API root with a trailing slash.
-                        // Keep POST + body intact if their edge ever redirects.
-                        'allow_redirects' => [
-                            'max' => 3,
-                            'strict' => true,
-                            'referer' => false,
-                            'track_redirects' => true,
-                        ],
-                    ])
+                $response = $client
                     ->asForm()
-                    ->post($url, array_merge([
-                        'key' => $key,
-                        'action' => $action,
-                    ], $params));
+                    ->post($requestUrl, $params);
             }
         } catch (\Throwable $exception) {
             $message = str_replace($key, '[redacted]', $exception->getMessage());
@@ -917,9 +926,15 @@ class FlaxResellerService
 
         $url = preg_replace('/[?#].*$/', '', $url) ?: $url;
 
-        // Flax documents the reseller endpoint as https://api.flaxhosting.dk/
-        // and their edge may redirect the slash-less host. Always call the
-        // canonical slash form directly so POST fields are never lost.
-        return rtrim($url, '/') . '/';
+        // Accept either the Flax API base host or a full legacy endpoint path.
+        $url = preg_replace('#/api-endpoint\.php/?$#i', '', $url) ?: $url;
+
+        return rtrim($url, '/');
     }
+
+    private function buildEndpointUrl(string $baseUrl): string
+    {
+        return rtrim($baseUrl, '/') . '/api-endpoint.php';
+    }
+
 }
