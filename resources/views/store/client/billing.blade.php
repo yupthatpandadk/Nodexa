@@ -19,7 +19,7 @@
     <div class="clientHead"><div><div class="eyebrow">Client Area / Billing</div><h1>Billing & fakturaer</h1><p class="muted">Abonnementer, fakturaer, ordrer og checkout samlet ét sted.</p></div></div>
 
     <div class="clientCards">
-        <div class="clientStat"><span>FAKTURAER</span><strong>{{$invoices->count()}}</strong></div>
+        <div class="clientStat"><span>BETALINGER</span><strong>{{$invoices->count()+$cartCheckouts->count()}}</strong></div>
         <div class="clientStat"><span>FORFALDNE</span><strong>{{$invoices->where('status','overdue')->count()}}</strong></div>
         <div class="clientStat"><span>ABONNEMENTER</span><strong>{{$subscriptions->where('status','active')->count()}}</strong></div>
     </div>
