@@ -1,6 +1,18 @@
 {
-  "latest": "1.6.2",
+  "latest": "1.6.3",
   "releases": [
+    {
+      "version": "1.6.3",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Responsive storefront navbar",
+      "changes": [
+        "Profilbilledet holdes nu inden for samme højre containerkant som resten af storefront-layoutet.",
+        "Navbarens links kollapser ved 1120 px, så kurv, Client Area og profil ikke længere skubbes uden for viewporten.",
+        "Brand, links og actions har fået stabile flex-regler med min-width:0 og faste shrink-begrænsninger.",
+        "Mobil- og tabletvisning bevarer resten af storefrontens eksisterende responsive design."
+      ]
+    },
     {
       "version": "1.6.2",
       "date": "2026-11-07",
