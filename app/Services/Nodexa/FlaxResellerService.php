@@ -270,18 +270,19 @@ class FlaxResellerService
                     'operatingSystem' => (int) $service->os_template_id,
                 ]);
 
-                $serverId = $response['server_id'] ?? $response['data']['server_id'] ?? null;
+                $responseData = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
+                $serverId = $response['server_id'] ?? $responseData['server_id'] ?? null;
                 if (!$serverId) {
                     throw new RuntimeException('Flax oprettede ikke VPS’en: server_id mangler i API-responsen.');
                 }
 
-                $expiresAt = $response['expires_at'] ?? $response['data']['expires_at'] ?? null;
+                $expiresAt = $response['expires_at'] ?? $responseData['expires_at'] ?? null;
                 $serverInfo = $this->fetchServerInfo((string) $serverId, false);
 
                 DB::table('nodexa_flax_services')->where('id', $service->id)->update([
                     'upstream_server_id' => (string) $serverId,
                     'status' => 'active',
-                    'upstream_price' => $response['price'] ?? $response['data']['price'] ?? null,
+                    'upstream_price' => $response['price'] ?? $responseData['price'] ?? null,
                     'upstream_invoice_id' => isset($response['invoice_id']) ? (string) $response['invoice_id'] : null,
                     'upstream_invoice_number' => $response['invoice_number'] ?? null,
                     'last_billed_invoice_id' => $invoiceId,
@@ -318,7 +319,8 @@ class FlaxResellerService
             }
 
             $response = $this->request('extend', 'GET', ['server_id' => $service->upstream_server_id]);
-            $expiresAt = $response['expires_at'] ?? $response['data']['expires_at'] ?? null;
+            $responseData = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
+            $expiresAt = $response['expires_at'] ?? $responseData['expires_at'] ?? null;
 
             $hasOverdue = DB::table('nodexa_invoices')
                 ->where('subscription_id', $subscription->id)
