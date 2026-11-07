@@ -6,7 +6,7 @@
 
 A modern, self-hosted platform for managing game servers, customers, billing, support and infrastructure from one unified interface.
 
-![Version](https://img.shields.io/badge/version-1.4.5-7657ff?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.5.0-7657ff?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Linux-20232a?style=for-the-badge&logo=linux&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=for-the-badge&logo=php&logoColor=white)
 ![Docker](https://img.shields.io/badge/containers-Docker-2496ed?style=for-the-badge&logo=docker&logoColor=white)
@@ -52,6 +52,7 @@ The goal is simple: give administrators and customers everything they need witho
 - Automatic backup configuration
 - Service add-ons
 - CFX EUP key services
+- Flax VPS reseller services
 - Teams and organisations
 - Affiliate/referral system
 - API tokens and webhooks
@@ -69,6 +70,38 @@ The goal is simple: give administrators and customers everything they need witho
 - Automatic service restoration after payment
 - Resource add-ons for RAM, CPU, disk and backups
 - Affiliate commissions
+- VPS product catalogue and Flax upstream provisioning
+- Monthly VPS renewals through the Flax reseller API
+
+### FlaxHosting VPS Reseller
+
+Nodexa includes a native FlaxHosting reseller integration for selling VPS services from the Nodexa storefront while provisioning the actual virtual server through Flax.
+
+Administrators can:
+
+- Configure the full Flax reseller API endpoint and API key from Admin → Flax VPS Reseller
+- Store the API key encrypted at rest
+- Test the upstream connection from Nodexa
+- Synchronise VirtFusion operating-system templates
+- Create Nodexa VPS products with their own retail price and an upstream Flax Product ID
+- Configure displayed vCPU, RAM, disk, IPv4 and bandwidth specifications
+- Retry failed provisioning without creating a duplicate VPS
+- Synchronise current VPS information from Flax
+- Start, shut down, restart, force-power-off, suspend, unsuspend and terminate upstream VPS services
+
+The customer flow is:
+
+1. The customer opens `/vps` and selects a Nodexa VPS package.
+2. The customer chooses a hostname and one of the operating-system templates synchronised from Flax.
+3. Nodexa creates the local subscription and first invoice.
+4. When the first invoice is marked paid, Nodexa calls the Flax `create` action and stores the returned upstream server ID.
+5. Future monthly Nodexa invoices use the Flax `extend` action after payment.
+6. Overdue invoices can suspend the upstream service; once outstanding invoices are paid, Nodexa can unsuspend it automatically.
+7. Customers manage the service from `/client/vps` and can view the current IP/status and send supported power actions.
+
+Flax VPS services also appear on the main Client Area dashboard together with game servers and CFX EUP services.
+
+> The supplied Flax reseller API exposes VirtFusion template discovery but does not expose a reseller-product catalogue endpoint in the provided module documentation. Therefore an administrator maps each Nodexa VPS package to its Flax Product ID when creating the package.
 
 ### CFX EUP Key Management
 
@@ -229,6 +262,7 @@ The automation system can handle:
 - Overdue invoice handling
 - Game server suspension and restoration
 - CFX EUP entitlement suspension and restoration
+- Flax VPS provisioning, renewal, suspension recovery and periodic status synchronisation
 - Subscription synchronization
 
 Run manually from the Nodexa application directory:
@@ -267,12 +301,15 @@ The updater creates a local backup before updating, installs dependencies, rebui
 | Client Area | `/client` |
 | Services Hub | `/client/hub` |
 | CFX EUP Keys | `/client/eup-keys` |
+| VPS Hosting | `/vps` |
+| My VPS Services | `/client/vps` |
 | Server Control | `/server/{identifier}` |
 | Knowledgebase | `/knowledgebase` |
 | Public Status | `/status` |
 | Admin Area | `/admin` |
 | Operations Center | `/admin/operations` |
 | CFX EUP Management | `/admin/cfx-eup` |
+| Flax VPS Reseller | `/admin/flax-reseller` |
 
 ## Technology
 
@@ -301,6 +338,7 @@ Nodexa includes multiple security-focused features:
 - Hashed API token storage
 - Signed webhooks
 - Encrypted CFX EUP key storage
+- Encrypted Flax reseller API credential storage
 - Duplicate key fingerprinting
 - Isolated server containers
 - Security activity tracking
@@ -319,7 +357,7 @@ public/                 Public web assets
 
 ## Version
 
-Current release: **Nodexa 1.4.5**
+Current release: **Nodexa 1.5.0**
 
 The installed version can be checked with:
 
