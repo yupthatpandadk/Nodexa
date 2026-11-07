@@ -1,6 +1,20 @@
 {
-  "latest": "1.6.1",
+  "latest": "1.6.2",
   "releases": [
+    {
+      "version": "1.6.2",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Global storefront 500 recovery",
+      "changes": [
+        "Rettet en global 500-risiko fra den nye kurv-navigation for indloggede brugere.",
+        "Kurv-tælleren beregnes nu i en separat Blade-blok i stedet for inline i navbar-linket.",
+        "Det globale kurv-link bruger /cart direkte og er derfor ikke afhængigt af en frisk Laravel route-cache for at kunne rendre storefronten.",
+        "Combined checkout invoice-migrationen er gjort robust ved at kontrollere og tilføje kolonner i separate schema-ændringer.",
+        "Root updater og web Update Center rydder nu Laravel route/view/config-cache straks efter Composer og før migrations/builds.",
+        "Hvis en senere update-step fejler, efterlades Nodexa derfor ikke med nye Blade-filer oven på en gammel route-cache."
+      ]
+    },
     {
       "version": "1.6.1",
       "date": "2026-11-07",
