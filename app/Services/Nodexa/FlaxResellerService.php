@@ -2,6 +2,7 @@
 
 namespace Pterodactyl\Services\Nodexa;
 
+use Carbon\Carbon;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -245,6 +246,9 @@ class FlaxResellerService
         }
 
         if ((int) ($service->last_billed_invoice_id ?? 0) === $invoiceId) {
+            if ($service->status === 'suspended') {
+                $this->unsuspendSubscription((int) $subscription->id);
+            }
             return;
         }
 
@@ -281,7 +285,7 @@ class FlaxResellerService
                     'upstream_invoice_id' => isset($response['invoice_id']) ? (string) $response['invoice_id'] : null,
                     'upstream_invoice_number' => $response['invoice_number'] ?? null,
                     'last_billed_invoice_id' => $invoiceId,
-                    'expires_at' => $expiresAt ? now()->parse($expiresAt) : null,
+                    'expires_at' => $expiresAt ? Carbon::parse($expiresAt) : null,
                     'server_info' => $serverInfo ? json_encode($serverInfo, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
                     'last_synced_at' => $serverInfo ? now() : null,
                     'last_error' => null,
@@ -389,6 +393,45 @@ class FlaxResellerService
             $service->hostname . ' er suspenderet hos Flax på grund af en forfalden faktura.',
             'warning',
             '/client/billing'
+        );
+    }
+
+    public function unsuspendSubscription(int $subscriptionId): void
+    {
+        $subscription = DB::table('nodexa_subscriptions')->where('id', $subscriptionId)->first();
+        if (!$subscription || ($subscription->service_type ?? null) !== 'flax_vps' || !$subscription->service_reference) {
+            return;
+        }
+
+        $hasOverdue = DB::table('nodexa_invoices')
+            ->where('subscription_id', $subscriptionId)
+            ->where('status', 'overdue')
+            ->exists();
+
+        if ($hasOverdue) {
+            return;
+        }
+
+        $service = DB::table('nodexa_flax_services')->where('id', $subscription->service_reference)->first();
+        if (!$service || !$service->upstream_server_id || $service->status !== 'suspended') {
+            return;
+        }
+
+        $this->request('unsuspend', 'POST', ['server_id' => $service->upstream_server_id]);
+
+        DB::table('nodexa_flax_services')->where('id', $service->id)->update([
+            'status' => 'active',
+            'suspended_at' => null,
+            'last_error' => null,
+            'updated_at' => now(),
+        ]);
+
+        $this->events->notify(
+            $service->user_id,
+            'VPS genaktiveret',
+            $service->hostname . ' er genaktiveret hos Flax, fordi de udestående fakturaer er betalt.',
+            'service',
+            '/client/vps'
         );
     }
 
