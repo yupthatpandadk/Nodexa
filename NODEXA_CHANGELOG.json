@@ -1,6 +1,23 @@
 {
-  "latest": "1.7.0",
+  "latest": "1.7.1",
   "releases": [
+    {
+      "version": "1.7.1",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Multi-month discount codes",
+      "changes": [
+        "Admins can now choose how many months each Storefront discount code remains active, from 1 to 120 months.",
+        "Month 1 is the initial combined checkout payment; for example 20% for 3 months applies to months 1, 2 and 3, then normal price returns from month 4.",
+        "Coupon duration is snapshotted on the checkout and subscription so later admin changes to the coupon do not change an existing customer's agreed discount period.",
+        "Recurring subscriptions store discount code, exact monthly discount amount, total discount months and months already used.",
+        "Recurring invoice generation automatically applies the saved discount while months remain and returns to the normal subscription amount afterwards.",
+        "Fixed-DKK discounts on combined orders are allocated proportionally across services so the discount is not multiplied per service and the allocated amounts add up to the exact checkout discount.",
+        "Percentage discounts are also converted into exact per-service money amounts, preserving cent-accurate recurring billing.",
+        "Client Area Billing now shows active discount progress such as month 2/3 and invoice discount amounts.",
+        "Existing coupons migrate with a one-month duration, preserving the previous behavior."
+      ]
+    },
     {
       "version": "1.7.0",
       "date": "2026-11-07",
