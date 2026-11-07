@@ -28,7 +28,7 @@
         <div class="sectionTitleRow"><div><div class="miniLabel">INVOICES</div><h2>Fakturaer</h2></div></div>
         @forelse($invoices as $invoice)
         <div class="clientRow">
-            <div><div class="miniLabel">{{$invoice->number}}</div><h3>{{number_format($invoice->total,2,',','.')}} {{$invoice->currency}}</h3><p>Oprettet {{CarbonCarbon::parse($invoice->created_at)->format('d.m.Y')}} · Forfalder {{$invoice->due_at ? CarbonCarbon::parse($invoice->due_at)->format('d.m.Y') : '—'}}</p></div>
+            <div><div class="miniLabel">{{$invoice->number}}</div><h3>{{number_format($invoice->total,2,',','.')}} {{$invoice->currency}}</h3><p>Oprettet {{\Carbon\Carbon::parse($invoice->created_at)->format('d.m.Y')}} · Forfalder {{$invoice->due_at ? \Carbon\Carbon::parse($invoice->due_at)->format('d.m.Y') : '—'}}</p></div>
             <div style="display:flex;gap:8px;align-items:center"><span class="statusBadge {{$invoice->status==='paid'?'good':($invoice->status==='overdue'?'bad':'warn')}}">{{strtoupper($invoice->status)}}</span></div>
         </div>
         @empty<div class="notice">Ingen fakturaer endnu.</div>@endforelse
@@ -38,7 +38,7 @@
         <div class="sectionTitleRow"><div><div class="miniLabel">SUBSCRIPTIONS</div><h2>Abonnementer</h2></div></div>
         @forelse($subscriptions as $subscription)
         <div class="clientRow">
-            <div><div class="miniLabel">SUBSCRIPTION #{{$subscription->id}}</div><h3>{{number_format($subscription->amount,2,',','.')}} {{$subscription->currency}} / {{$subscription->interval}}</h3><p>Næste faktura {{$subscription->next_invoice_at ? CarbonCarbon::parse($subscription->next_invoice_at)->format('d.m.Y') : '—'}}</p></div>
+            <div><div class="miniLabel">SUBSCRIPTION #{{$subscription->id}}</div><h3>{{number_format($subscription->amount,2,',','.')}} {{$subscription->currency}} / {{$subscription->interval}}</h3><p>Næste faktura {{$subscription->next_invoice_at ? \Carbon\Carbon::parse($subscription->next_invoice_at)->format('d.m.Y') : '—'}}</p></div>
             <span class="statusBadge {{$subscription->status==='active'?'good':''}}">{{strtoupper($subscription->status)}}</span>
         </div>
         @empty<div class="notice">Ingen aktive abonnementer endnu.</div>@endforelse
