@@ -214,23 +214,40 @@ class NodexaAutomationService
             $description = trim((string) ($subscription->description ?? '')) ?: 'Nodexa hosting subscription';
 
             $subtotal = round((float) $subscription->amount, 2);
+
+            $saleMonthsTotal = max(0, (int) ($subscription->sale_months_total ?? 0));
+            $saleMonthsUsed = max(0, (int) ($subscription->sale_months_used ?? 0));
+            $saleDiscount = 0.0;
+
+            if ($saleMonthsTotal > 0 && $saleMonthsUsed < $saleMonthsTotal) {
+                $saleDiscount = min(
+                    $subtotal,
+                    max(0.0, round((float) ($subscription->sale_discount_amount ?? 0), 2))
+                );
+            }
+
+            $afterSale = max(0.0, round($subtotal - $saleDiscount, 2));
+
             $discountMonthsTotal = max(0, (int) ($subscription->discount_months_total ?? 0));
             $discountMonthsUsed = max(0, (int) ($subscription->discount_months_used ?? 0));
-            $discount = 0.0;
+            $couponDiscount = 0.0;
 
             if (
                 !empty($subscription->discount_code)
                 && $discountMonthsTotal > 0
                 && $discountMonthsUsed < $discountMonthsTotal
             ) {
-                $discount = min(
-                    $subtotal,
+                $couponDiscount = min(
+                    $afterSale,
                     max(0.0, round((float) ($subscription->discount_amount ?? 0), 2))
                 );
             }
 
+            $discount = round($saleDiscount + $couponDiscount, 2);
             $total = max(0.0, round($subtotal - $discount, 2));
-            $discountMonthNumber = $discount > 0 ? ($discountMonthsUsed + 1) : null;
+
+            $saleMonthNumber = $saleDiscount > 0 ? ($saleMonthsUsed + 1) : null;
+            $discountMonthNumber = $couponDiscount > 0 ? ($discountMonthsUsed + 1) : null;
 
             $invoiceId = DB::table('nodexa_invoices')->insertGetId([
                 'user_id' => $subscription->user_id,
@@ -248,7 +265,13 @@ class NodexaAutomationService
             ]);
 
             $itemDescription = $description;
-            if ($discount > 0) {
+
+            if ($saleDiscount > 0) {
+                $itemDescription .= ' — Globalt udsalg'
+                    . ' (måned ' . $saleMonthNumber . '/' . $saleMonthsTotal . ')';
+            }
+
+            if ($couponDiscount > 0) {
                 $itemDescription .= ' — Rabatkode ' . $subscription->discount_code
                     . ' (måned ' . $discountMonthNumber . '/' . $discountMonthsTotal . ')';
             }
@@ -274,7 +297,11 @@ class NodexaAutomationService
                 'updated_at' => now(),
             ];
 
-            if ($discount > 0) {
+            if ($saleDiscount > 0) {
+                $subscriptionUpdate['sale_months_used'] = $saleMonthNumber;
+            }
+
+            if ($couponDiscount > 0) {
                 $subscriptionUpdate['discount_months_used'] = $discountMonthNumber;
             }
 
@@ -283,7 +310,12 @@ class NodexaAutomationService
             $notification = 'En ny faktura på ' . number_format($total, 2, ',', '.') . ' ' . $subscription->currency
                 . ' er klar for ' . $description . '.';
 
-            if ($discount > 0) {
+            if ($saleDiscount > 0) {
+                $notification .= ' Globalt udsalg er anvendt (måned '
+                    . $saleMonthNumber . '/' . $saleMonthsTotal . ').';
+            }
+
+            if ($couponDiscount > 0) {
                 $notification .= ' Rabatkode ' . $subscription->discount_code
                     . ' er anvendt (måned ' . $discountMonthNumber . '/' . $discountMonthsTotal . ').';
             }
@@ -300,10 +332,14 @@ class NodexaAutomationService
                 'invoice_id' => $invoiceId,
                 'number' => $number,
                 'subtotal' => $subtotal,
+                'sale_discount' => $saleDiscount,
+                'coupon_discount' => $couponDiscount,
                 'discount' => $discount,
                 'total' => $total,
                 'currency' => $subscription->currency,
-                'discount_code' => $discount > 0 ? $subscription->discount_code : null,
+                'sale_month' => $saleMonthNumber,
+                'sale_months_total' => $saleMonthsTotal,
+                'discount_code' => $couponDiscount > 0 ? $subscription->discount_code : null,
                 'discount_month' => $discountMonthNumber,
                 'discount_months_total' => $discountMonthsTotal,
                 'service_type' => $subscription->service_type ?? null,
@@ -311,7 +347,6 @@ class NodexaAutomationService
 
             $created++;
         }
-
         $reminders = DB::table('nodexa_invoices')
             ->where('status', 'unpaid')
             ->whereNull('reminder_sent_at')
