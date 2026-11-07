@@ -1,6 +1,17 @@
 {
-  "latest": "1.6.0",
+  "latest": "1.6.1",
   "releases": [
+    {
+      "version": "1.6.1",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Cleaner combined order numbers",
+      "changes": [
+        "Samlede checkout-ordrer bruger ikke længere NX-CART-prefix.",
+        "Nye ordrenumre bruger formatet YYYYMM-XXXXXXX, fx 202611-AB12CD3.",
+        "Eksisterende ordrenumre ændres ikke."
+      ]
+    },
     {
       "version": "1.6.0",
       "date": "2026-11-07",
