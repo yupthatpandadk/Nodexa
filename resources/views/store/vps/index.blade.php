@@ -29,7 +29,13 @@
             </div>
             <h3 style="font-size:25px;margin-bottom:6px">{{ $product->name }}</h3>
             <p class="muted" style="min-height:48px">{{ $product->description ?: 'Virtuel privat server med automatisk provisionering.' }}</p>
+            @if($globalSale)
+            <div class="miniLabel" style="color:#75e3b1;margin:8px 0 4px">{{ $globalSale->label }} · -{{ number_format($globalSale->percent,0,',','.') }}%</div>
+            <div style="font-size:11px;color:#637b96;text-decoration:line-through">{{ number_format((float)$product->monthly_price,2,',','.') }} kr</div>
+            <div class="price">{{ number_format(round((float)$product->monthly_price*(1-((float)$globalSale->percent/100)),2),2,',','.') }} kr <small>/ måned</small></div>
+            @else
             <div class="price">{{ number_format((float)$product->monthly_price,2,',','.') }} kr <small>/ måned</small></div>
+            @endif
             <div class="specs">
                 <span class="resource">{{ $product->vcpu ?: '—' }} vCPU</span>
                 <span class="resource">{{ $product->memory_mb ? number_format($product->memory_mb/1024, $product->memory_mb % 1024 ? 1 : 0, ',', '.') . ' GB' : '—' }} RAM</span>
