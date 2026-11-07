@@ -71,6 +71,8 @@ return new class extends Migration
                 $table->string('upstream_invoice_id', 191)->nullable();
                 $table->string('upstream_invoice_number', 191)->nullable();
                 $table->unsignedBigInteger('last_billed_invoice_id')->nullable()->index();
+                $table->unsignedBigInteger('processing_invoice_id')->nullable()->index();
+                $table->timestamp('processing_started_at')->nullable();
                 $table->timestamp('expires_at')->nullable();
                 $table->longText('server_info')->nullable();
                 $table->timestamp('last_synced_at')->nullable()->index();
