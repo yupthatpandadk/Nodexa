@@ -90,6 +90,10 @@ git reset --hard "$TARGET"
 progress 43 "Installing PHP dependencies…"
 composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
+# Do this before migrations/builds so a failed later step cannot leave new
+# Blade/routes running against the previous release's route/view cache.
+php artisan optimize:clear || true
+
 progress 56 "Installing frontend dependencies…"
 if command -v yarn >/dev/null 2>&1; then
     yarn install --frozen-lockfile
