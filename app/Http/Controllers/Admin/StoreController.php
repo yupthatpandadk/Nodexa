@@ -12,15 +12,17 @@ use Pterodactyl\Models\StoreProduct;
 use Pterodactyl\Models\StoreOrder;
 use Pterodactyl\Services\Store\ProvisionStoreOrderService;
 use Pterodactyl\Services\Nodexa\NodexaEventService;
+use Pterodactyl\Services\Nodexa\StripePaymentService;
 
 class StoreController extends Controller
 {
-    public function index(){
+    public function index(StripePaymentService $stripe){
         return view('admin.store.index',[
             'products'=>StoreProduct::orderBy('name')->get(),
             'orders'=>StoreOrder::with(['product','user','server'])->latest()->limit(100)->get(),
             'coupons'=>StoreCoupon::latest()->get(),
             'eggs'=>Egg::orderBy('name')->get(),
+            'stripeSettings'=>$stripe->settingsForAdmin(),
         ]);
     }
 
@@ -39,8 +41,36 @@ class StoreController extends Controller
 
     public function coupon(Request $r){
         $d=$r->validate(['code'=>'required|string|max:40|unique:nodexa_store_coupons,code','type'=>'required|in:percent,fixed','value'=>'required|numeric|min:0','max_uses'=>'nullable|integer|min:1','expires_at'=>'nullable|date']);
+        if ($d['type'] === 'percent' && (float) $d['value'] > 100) return back()->withErrors(['value'=>'Procentrabat kan højst være 100%.'])->withInput();
         $d['code']=strtoupper(trim($d['code'])); $d['enabled']=true; StoreCoupon::create($d);
         return back()->with('success','Rabatkode oprettet.');
+    }
+
+    public function stripeSettings(Request $r, StripePaymentService $stripe){
+        $d=$r->validate([
+            'secret_key'=>'nullable|string|max:500',
+            'webhook_secret'=>'nullable|string|max:500',
+        ]);
+
+        try {
+            $stripe->saveSettings(
+                $r->boolean('enabled'),
+                $d['secret_key'] ?? null,
+                $d['webhook_secret'] ?? null
+            );
+        } catch (\Throwable $e) {
+            return back()->withErrors(['stripe'=>$e->getMessage()]);
+        }
+
+        return back()->with('success','Stripe-indstillinger gemt.');
+    }
+
+    public function stripeTest(StripePaymentService $stripe){
+        $result=$stripe->testConnection();
+
+        return $result['success']
+            ? back()->with('success',$result['message'])
+            : back()->withErrors(['stripe'=>$result['message']]);
     }
 
     public function orderStatus(Request $r, StoreOrder $order, ProvisionStoreOrderService $provision, NodexaEventService $events){
