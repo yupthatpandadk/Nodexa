@@ -8,6 +8,7 @@ use Pterodactyl\Http\Controllers\StatusController;
 use Pterodactyl\Http\Controllers\ClientHubController;
 use Pterodactyl\Http\Controllers\CfxEupController;
 use Pterodactyl\Http\Controllers\FlaxVpsController;
+use Pterodactyl\Http\Controllers\CartController;
 
 Route::get('/csrf/refresh', function () {
     $response = response()
@@ -47,6 +48,14 @@ Route::post('/knowledgebase/article/{article:slug}/feedback', [KnowledgebaseCont
 Route::get('/store', [StorefrontController::class, 'hosting'])->name('store.index');
 Route::get('/store/{product:slug}', [StorefrontController::class, 'show'])->name('store.product');
 Route::middleware('auth.session')->group(function () {
+    Route::get('/cart', [CartController::class, 'index'])->name('store.cart');
+    Route::post('/cart/server/{product:slug}', [CartController::class, 'addServer'])->name('store.cart.add-server');
+    Route::post('/cart/vps/{product}', [CartController::class, 'addVps'])->name('store.cart.add-vps');
+    Route::delete('/cart/items/{item}', [CartController::class, 'remove'])->name('store.cart.remove');
+    Route::delete('/cart', [CartController::class, 'clear'])->name('store.cart.clear');
+    Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('store.cart.checkout');
+    Route::post('/cart/checkout', [CartController::class, 'place'])->name('store.cart.place');
+    Route::get('/cart/orders/{checkout}', [CartController::class, 'order'])->name('store.cart.order');
     Route::get('/client', [StorefrontController::class, 'dashboard'])->name('store.client');
     Route::get('/client/servers', [StorefrontController::class, 'clientServers'])->name('store.client.servers');
     Route::get('/client/billing', [StorefrontController::class, 'clientBilling'])->name('store.client.billing');
