@@ -75,6 +75,31 @@
         <div class="box box-success">
             <div class="box-header with-border"><h3 class="box-title"><i class="fa fa-credit-card"></i> Billing & Subscriptions</h3><form method="POST" action="{{ route('admin.operations.subscriptions.sync') }}" style="display:inline" class="pull-right">@csrf<button class="btn btn-xs btn-default">Synk abonnementer fra aktive ordrer</button></form></div>
             <div class="box-body table-responsive">
+                <h4>Samlede checkouts</h4>
+                <table class="table table-condensed">
+                    <tr><th>Ordre</th><th>Kunde</th><th>Beløb</th><th>Status</th><th></th></tr>
+                    @forelse($cartCheckouts as $cartCheckout)
+                    <tr>
+                        <td><strong>{{ $cartCheckout->number }}</strong></td>
+                        <td>{{ $cartCheckout->user_email }}</td>
+                        <td>{{ number_format((float)$cartCheckout->total,2,',','.') }} {{ $cartCheckout->currency }}</td>
+                        <td><span class="label {{ in_array($cartCheckout->status,['paid','completed'])?'label-success':($cartCheckout->status==='partial'?'label-danger':'label-warning') }}">{{ $cartCheckout->status }}</span></td>
+                        <td>
+                            @if(!in_array($cartCheckout->status,['paid','completed']))
+                            <form method="POST" action="{{ route('admin.operations.cart-checkouts.paid',$cartCheckout->id) }}">
+                                @csrf
+                                <input type="hidden" name="payment_method" value="manual">
+                                <button class="btn btn-xs btn-success">Markér hele ordren betalt</button>
+                            </form>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="5" class="text-muted">Ingen samlede checkouts endnu.</td></tr>
+                    @endforelse
+                </table>
+            </div>
+            <div class="box-body table-responsive">
                 <table class="table"><tr><th>Faktura</th><th>Kunde</th><th>Beløb</th><th>Status</th><th>Forfalder</th><th></th></tr>
                 @foreach($invoices as $invoice)<tr><td><strong>{{ $invoice->number }}</strong></td><td>{{ $invoice->user_email }}</td><td>{{ number_format($invoice->total,2,',','.') }} {{ $invoice->currency }}</td><td><span class="label {{ $invoice->status==='paid'?'label-success':($invoice->status==='overdue'?'label-danger':'label-warning') }}">{{ $invoice->status }}</span></td><td>{{ $invoice->due_at }}</td><td>@if($invoice->status!=='paid')<form method="POST" action="{{ route('admin.operations.invoices.paid',$invoice->id) }}">@csrf<input type="hidden" name="payment_method" value="manual"><button class="btn btn-xs btn-success">Markér betalt</button></form>@endif</td></tr>@endforeach
                 </table>
