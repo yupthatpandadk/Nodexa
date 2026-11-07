@@ -345,7 +345,7 @@ class FlaxResellerService
             ]);
 
             DB::table('nodexa_subscriptions')->where('id', $subscription->id)->update([
-                'status' => $hasOverdue ? 'active' : 'active',
+                'status' => 'active',
                 'updated_at' => now(),
             ]);
 
