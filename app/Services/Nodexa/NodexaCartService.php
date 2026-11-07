@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Pterodactyl\Models\StoreOrder;
 use Pterodactyl\Models\StoreProduct;
 use Pterodactyl\Models\StoreCoupon;
+use Pterodactyl\Services\Store\ProvisionStoreOrderService;
 use RuntimeException;
 
 class NodexaCartService
@@ -14,6 +15,7 @@ class NodexaCartService
     public function __construct(
         private FlaxResellerService $flax,
         private NodexaEventService $events,
+        private ProvisionStoreOrderService $provision,
     ) {
     }
 
@@ -248,19 +250,56 @@ class NodexaCartService
                         throw new RuntimeException('Game-serverproduktet findes ikke længere.');
                     }
 
-                    $order = StoreOrder::create([
-                        'user_id' => $checkout->user_id,
-                        'product_id' => $product->id,
-                        'status' => 'paid',
-                        'amount' => $item->unit_price,
-                        'subtotal' => $item->unit_price,
-                        'discount' => 0,
-                        'currency' => $item->currency ?: 'DKK',
-                        'server_name' => trim((string) ($configuration['server_name'] ?? 'Server')),
-                        'payment_method' => $paymentMethod,
-                        'payment_reference' => $paymentReference ?: $checkout->number,
-                        'paid_at' => now(),
-                    ]);
+                    $order = $item->reference_id
+                        ? StoreOrder::query()->where('id', $item->reference_id)->where('user_id', $checkout->user_id)->first()
+                        : null;
+
+                    if (!$order) {
+                        $order = StoreOrder::create([
+                            'user_id' => $checkout->user_id,
+                            'product_id' => $product->id,
+                            'status' => 'paid',
+                            'amount' => $item->unit_price,
+                            'subtotal' => $item->unit_price,
+                            'discount' => 0,
+                            'currency' => $item->currency ?: 'DKK',
+                            'server_name' => trim((string) ($configuration['server_name'] ?? 'Server')),
+                            'payment_method' => $paymentMethod,
+                            'payment_reference' => $paymentReference ?: $checkout->number,
+                            'paid_at' => now(),
+                        ]);
+
+                        // Persist before provisioning so a retry resumes the
+                        // same order instead of creating a duplicate server.
+                        DB::table('nodexa_cart_checkout_items')->where('id', $item->id)->update([
+                            'reference_id' => $order->id,
+                            'updated_at' => now(),
+                        ]);
+                    }
+
+                    if (!$order->server_id) {
+                        $this->provision->handle($order);
+                        $order->refresh();
+                    }
+
+                    if (!$order->server_id) {
+                        throw new RuntimeException('Game-serverordren blev betalt, men serveren blev ikke provisioneret.');
+                    }
+
+                    DB::table('nodexa_subscriptions')->updateOrInsert(
+                        ['order_id' => $order->id],
+                        [
+                            'user_id' => $order->user_id,
+                            'server_id' => $order->server_id,
+                            'status' => 'active',
+                            'amount' => $order->amount,
+                            'currency' => $order->currency ?: 'DKK',
+                            'interval' => 'monthly',
+                            'next_invoice_at' => now()->addMonth(),
+                            'updated_at' => now(),
+                            'created_at' => now(),
+                        ]
+                    );
 
                     DB::table('nodexa_cart_checkout_items')->where('id', $item->id)->update([
                         'status' => 'completed',
