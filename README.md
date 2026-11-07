@@ -92,7 +92,7 @@ Administrators can:
 The customer flow is:
 
 1. The customer opens `/vps` and selects a Nodexa VPS package.
-2. The customer chooses a hostname and one of the operating-system templates synchronised from Flax.
+2. The customer chooses a local VPS service name and one of the operating-system templates synchronised from Flax.
 3. Nodexa creates the local subscription and first invoice.
 4. When the first invoice is marked paid, Nodexa calls the Flax `create` action and stores the returned upstream server ID.
 5. Future monthly Nodexa invoices use the Flax `extend` action after payment.
@@ -101,7 +101,7 @@ The customer flow is:
 
 Flax VPS services also appear on the main Client Area dashboard together with game servers and CFX EUP services.
 
-> The supplied Flax reseller API exposes VirtFusion template discovery but does not expose a reseller-product catalogue endpoint in the provided module documentation. Therefore an administrator maps each Nodexa VPS package to its Flax Product ID when creating the package.
+> The supplied Flax reseller API exposes VirtFusion template discovery but does not expose a reseller-product catalogue endpoint in the provided module documentation. Therefore an administrator maps each Nodexa VPS package to its Flax Product ID when creating the package. The supplied Flax create endpoint also does not expose a customer hostname parameter, so the VPS name entered in Nodexa is used as the local service label.
 
 ### CFX EUP Key Management
 
@@ -135,7 +135,7 @@ Nodexa includes optional Minecraft-specific server tools controlled through the 
 - Live online player count
 - Maximum player slots
 - Player names
-- Automatic refresh every 15 seconds
+- Automatic refresh at most once per minute while the browser tab is visible
 - Manual refresh
 - Uses Minecraft's built-in `list` command
 
