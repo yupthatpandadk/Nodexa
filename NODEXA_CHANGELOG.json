@@ -1,6 +1,20 @@
 {
-  "latest": "1.5.3",
+  "latest": "1.5.4",
   "releases": [
+    {
+      "version": "1.5.4",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Flax official API endpoint transport",
+      "changes": [
+        "Flax integrationen bruger nu samme transport som det officielle FlaxHVPS WHMCS-modul.",
+        "Nodexa behandler https://api.flaxhosting.dk som base URL og kalder automatisk /api-endpoint.php.",
+        "API key og action sendes i query-string, og API-key sendes samtidig som Authorization: Bearer-header ligesom Flax-modulet.",
+        "user_servers og info bruger GET; power/lifecycle/create bruger POST efter Flax’ modulmønster.",
+        "Action-parametre inkluderes i query-string, mens POST-data også sendes som form-data for kompatibilitet med det nye reseller API.",
+        "Retter HTTP 200 login-HTML fejlen der opstod, når Nodexa ramte Flax-webroden i stedet for api-endpoint.php."
+      ]
+    },
     {
       "version": "1.5.3",
       "date": "2026-11-07",
