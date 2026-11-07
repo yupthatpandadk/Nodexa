@@ -6,7 +6,7 @@
 
 A modern, self-hosted platform for managing game servers, customers, billing, support and infrastructure from one unified interface.
 
-![Version](https://img.shields.io/badge/version-1.7.1-7657ff?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.7.2-7657ff?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Linux-20232a?style=for-the-badge&logo=linux&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=for-the-badge&logo=php&logoColor=white)
 ![Docker](https://img.shields.io/badge/containers-Docker-2496ed?style=for-the-badge&logo=docker&logoColor=white)
@@ -75,6 +75,19 @@ The goal is simple: give administrators and customers everything they need witho
 - Affiliate commissions
 - VPS product catalogue and Flax upstream provisioning
 - Monthly VPS renewals through the Flax reseller API
+
+### Global Storefront sale
+
+Administrators can activate a Storefront-wide percentage sale from **Admin → Storefront & Billing**. The sale supports a custom label, a percentage from 0–100%, and a 1–120 month duration for new purchases.
+
+Game-server and VPS product pages show the normal price and discounted price. Combined checkout calculates prices in this order:
+
+1. Normal product price
+2. Global sale
+3. Optional coupon code
+4. Final Stripe amount
+
+The sale and coupon durations are snapshotted independently onto new subscriptions. Existing subscriptions are not changed when a new global sale is enabled.
 
 ### Stripe Checkout
 
@@ -385,7 +398,7 @@ public/                 Public web assets
 
 ## Version
 
-Current release: **Nodexa 1.7.1**
+Current release: **Nodexa 1.7.2**
 
 The installed version can be checked with:
 
