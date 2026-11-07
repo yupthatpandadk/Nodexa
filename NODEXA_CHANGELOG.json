@@ -1,6 +1,21 @@
 {
-  "latest": "1.5.0",
+  "latest": "1.5.1",
   "releases": [
+    {
+      "version": "1.5.1",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Flax reseller API documentation alignment",
+      "changes": [
+        "Flax VPS Reseller bruger nu det dokumenterede endpoint https://api.flaxhosting.dk/ som standard.",
+        "API key og action sendes nu som POST-parametre til Flax API’et i stedet for at være afhængige af legacy api-endpoint.php-formatet.",
+        "user_servers, virtfusion_templates, info og extend bruger det dokumenterede POST-flow.",
+        "terminate er rettet fra HTTP DELETE til Flax’ dokumenterede GET/POST-action og sendes nu som POST.",
+        "API-keyen placeres ikke længere i URL’en for normale VPS lifecycle-kald.",
+        "Respons-parsingen understøtter både den nye Flax reseller JSON-struktur og legacy WHMCS-modulets data-wrapper.",
+        "Admin-siden viser nu korrekt Flax API endpoint og forklarer hvor API-nøglen oprettes i Flax Reseller Dashboard."
+      ]
+    },
     {
       "version": "1.5.0",
       "date": "2026-11-07",
