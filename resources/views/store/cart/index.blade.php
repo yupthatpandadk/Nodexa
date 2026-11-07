@@ -73,7 +73,7 @@
 
             @if($summary['coupon'])
                 <div class="cartCoupon applied">
-                    <div><small>Rabatkode</small><strong>{{$summary['coupon']['code']}}</strong><span>{{$summary['coupon']['label']}} rabat</span></div>
+                    <div><small>Rabatkode</small><strong>{{$summary['coupon']['code']}}</strong><span>{{$summary['coupon']['label']}} rabat · {{$summary['coupon']['duration_months']}} mdr.</span></div>
                     <form method="POST" action="{{route('store.cart.coupon.remove')}}">@csrf @method('DELETE')<button>Fjern</button></form>
                 </div>
             @else
@@ -85,7 +85,7 @@
             @endif
 
             <div class="summaryTotal"><span>Til betaling nu</span><strong>{{ number_format((float)$summary['total'],2,',','.') }} DKK</strong></div>
-            <p class="micro">@if($summary['discount'] > 0)Rabatkoden gælder denne første samlede betaling. Derefter er normal månedspris {{ number_format((float)$summary['subtotal'],2,',','.') }} DKK.@else Hver service fortsætter som sit eget månedlige abonnement efter første samlede checkout.@endif</p>
+            <p class="micro">@if($summary['discount'] > 0)Rabatkoden gælder i {{$summary['coupon']['duration_months'] ?? 1}} måned(er), hvor første betaling tæller som måned 1. Derefter er normal månedspris {{ number_format((float)$summary['subtotal'],2,',','.') }} DKK.@else Hver service fortsætter som sit eget månedlige abonnement efter første samlede checkout.@endif</p>
 
             @if($summary['count'] > 0)
                 <a class="btn primary" style="width:100%;margin-top:12px" href="{{ route('store.cart.checkout') }}">Fortsæt til checkout →</a>
