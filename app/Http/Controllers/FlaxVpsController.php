@@ -7,11 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Pterodactyl\Services\Nodexa\FlaxResellerService;
+use Pterodactyl\Services\Nodexa\GlobalStoreSaleService;
 
 class FlaxVpsController extends Controller
 {
-    public function __construct(private FlaxResellerService $flax)
-    {
+    public function __construct(
+        private FlaxResellerService $flax,
+        private GlobalStoreSaleService $sale,
+    ) {
     }
 
     public function index(): View
@@ -26,6 +29,7 @@ class FlaxVpsController extends Controller
         return view('store.vps.index', [
             'products' => $products,
             'configured' => $this->flax->isConfigured(),
+            'globalSale' => $this->sale->active(),
         ]);
     }
 
@@ -48,6 +52,7 @@ class FlaxVpsController extends Controller
             'product' => $plan,
             'templates' => $templates,
             'configured' => $this->flax->isConfigured(),
+            'globalSale' => $this->sale->active(),
         ]);
     }
 
