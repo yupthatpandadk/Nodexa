@@ -13,6 +13,7 @@ use Pterodactyl\Models\StoreOrder;
 use Pterodactyl\Services\Nodexa\CfxEupService;
 use Pterodactyl\Services\Nodexa\FlaxResellerService;
 use Pterodactyl\Services\Nodexa\NodexaAutomationService;
+use Pterodactyl\Services\Nodexa\NodexaCartService;
 use Pterodactyl\Services\Nodexa\NodexaEventService;
 use Pterodactyl\Services\Servers\BuildModificationService;
 use Pterodactyl\Services\Servers\SuspensionService;
@@ -26,6 +27,7 @@ class OperationsController extends Controller
         private SuspensionService $suspension,
         private CfxEupService $cfxEup,
         private FlaxResellerService $flaxReseller,
+        private NodexaCartService $cart,
     ) {
     }
 
@@ -35,6 +37,13 @@ class OperationsController extends Controller
         $incidents = DB::table('nodexa_incidents')->orderByDesc('started_at')->orderByDesc('id')->limit(40)->get();
         $incidentUpdates = DB::table('nodexa_incident_updates')->orderByDesc('created_at')->limit(150)->get()->groupBy('incident_id');
         $addons = DB::table('nodexa_store_addons')->orderBy('name')->get();
+        $cartCheckouts = DB::table('nodexa_cart_checkouts')
+            ->leftJoin('users', 'users.id', '=', 'nodexa_cart_checkouts.user_id')
+            ->select('nodexa_cart_checkouts.*', 'users.email as user_email')
+            ->orderByDesc('nodexa_cart_checkouts.id')
+            ->limit(100)
+            ->get();
+
         $invoices = DB::table('nodexa_invoices')
             ->leftJoin('users', 'users.id', '=', 'nodexa_invoices.user_id')
             ->select('nodexa_invoices.*', 'users.email as user_email')
@@ -88,6 +97,7 @@ class OperationsController extends Controller
             'incidents',
             'incidentUpdates',
             'addons',
+            'cartCheckouts',
             'invoices',
             'subscriptions',
             'health',
@@ -259,6 +269,42 @@ class OperationsController extends Controller
         ]);
 
         return back()->with('success', 'Service add-on er oprettet.');
+    }
+
+    public function markCartCheckoutPaid(Request $request, int $checkout): RedirectResponse
+    {
+        try {
+            $result = $this->cart->markPaid(
+                $checkout,
+                $request->input('payment_method', 'manual'),
+                trim((string) $request->input('payment_reference')) ?: null
+            );
+        } catch (\Throwable $exception) {
+            report($exception);
+            return back()->withErrors(['billing' => $exception->getMessage()]);
+        }
+
+        $this->events->audit(
+            $request->user()->id,
+            'billing',
+            'cart_checkout.paid',
+            'Combined checkout processed',
+            'cart_checkout',
+            $checkout,
+            $result,
+            $request
+        );
+
+        if (!$result['completed']) {
+            return back()->withErrors([
+                'billing' => sprintf(
+                    'Betalingen er registreret, men %d vare(r) fejlede og kræver retry.',
+                    $result['failed']
+                ),
+            ]);
+        }
+
+        return back()->with('success', 'Den samlede ordre er markeret som betalt, og alle varer er behandlet.');
     }
 
     public function markInvoicePaid(Request $request, int $invoice): RedirectResponse
