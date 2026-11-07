@@ -45,8 +45,11 @@ return new class extends Migration
                 if (!Schema::hasColumn('nodexa_cart_checkouts', 'coupon_reserved_at')) {
                     $table->timestamp('coupon_reserved_at')->nullable()->after('coupon_code');
                 }
+                if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_attempt')) {
+                    $table->unsignedInteger('stripe_attempt')->default(0)->after('payment_reference');
+                }
                 if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_session_id')) {
-                    $table->string('stripe_session_id', 191)->nullable()->unique()->after('payment_reference');
+                    $table->string('stripe_session_id', 191)->nullable()->unique()->after('stripe_attempt');
                 }
                 if (!Schema::hasColumn('nodexa_cart_checkouts', 'stripe_payment_intent_id')) {
                     $table->string('stripe_payment_intent_id', 191)->nullable()->index()->after('stripe_session_id');
@@ -73,6 +76,7 @@ return new class extends Migration
                 'stripe_status',
                 'stripe_payment_intent_id',
                 'stripe_session_id',
+                'stripe_attempt',
                 'coupon_reserved_at',
                 'coupon_code',
                 'coupon_id',
