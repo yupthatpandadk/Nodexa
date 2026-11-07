@@ -1,6 +1,25 @@
 {
-  "latest": "1.4.11",
+  "latest": "1.5.0",
   "releases": [
+    {
+      "version": "1.5.0",
+      "date": "2026-11-07",
+      "type": "minor",
+      "title": "FlaxHosting VPS Reseller",
+      "changes": [
+        "Ny FlaxHosting VPS Reseller-integration baseret på det leverede Flax reseller-modul/API-flow.",
+        "Admin kan konfigurere Flax API endpoint og API-key; API-key gemmes krypteret og vises kun maskeret efter lagring.",
+        "VirtFusion OS-templates kan synkroniseres direkte fra Flax og tilbydes kunder ved VPS-bestilling.",
+        "Admin kan oprette egne Nodexa VPS-pakker med lokal salgspris, ressourcer og tilhørende upstream Flax Product ID.",
+        "Nyt offentligt VPS Hosting-katalog med hostname- og OS-valg samt Nodexa checkout/fakturering.",
+        "Første betalte VPS-faktura provisionerer automatisk VPS’en hos Flax via create; efterfølgende betalte månedsfakturaer bruger extend.",
+        "Forfaldne VPS-fakturaer kan suspendere upstream-servicen hos Flax, og betaling kan automatisk unsuspend den igen.",
+        "Kunder får Mine VPS’er i Client Area med IP, status, resources, næste faktura samt start, shutdown, restart og status-refresh.",
+        "Admins får Flax VPS Reseller-området med connection test, template sync, produktstyring, provisioning retry, power actions, suspend/unsuspend og terminate.",
+        "Flax VPS-services vises som first-class services på Nodexa Client Area-dashboardet sammen med game servers og CFX EUP.",
+        "Nodexa automation synkroniserer løbende stale VPS-status fra Flax og har idempotent recovery af betalte fakturaer uden dobbelt provisionering."
+      ]
+    },
     {
       "version": "1.4.11",
       "date": "2026-11-04",
