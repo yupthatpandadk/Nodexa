@@ -425,3 +425,7 @@ See [`LICENSE.md`](./LICENSE.md) for licensing information.
 Built for modern hosting infrastructure.
 
 </div>
+
+## Support desk
+
+See [Support desk setup and verification](docs/SUPPORT_DESK.md) for departments, predefined replies, merging, feedback, SLA automation and optional email replies.

@@ -90,6 +90,10 @@ Route::middleware('auth.session')->group(function () {
     Route::get('/client/tickets', [SupportTicketController::class, 'index'])->name('store.client.tickets');
     Route::get('/client/tickets/new', [SupportTicketController::class, 'create'])->name('store.client.tickets.create');
     Route::post('/client/tickets', [SupportTicketController::class, 'store'])->name('store.client.tickets.store');
+    Route::get('/client/tickets/suggestions', [SupportTicketController::class, 'suggestions'])->middleware('throttle:30,1')->name('store.client.tickets.suggestions');
+    Route::post('/client/tickets/{ticket}/reopen', [SupportTicketController::class, 'reopen'])->name('store.client.tickets.reopen');
+    Route::post('/client/tickets/{ticket}/feedback', [SupportTicketController::class, 'feedback'])->name('store.client.tickets.feedback');
+    Route::post('/client/tickets/{ticket}/messages/{message}/rating', [SupportTicketController::class, 'rateReply'])->name('store.client.tickets.rating');
     Route::get('/client/tickets/{ticket}', [SupportTicketController::class, 'show'])->name('store.client.tickets.show');
     Route::post('/client/tickets/{ticket}/reply', [SupportTicketController::class, 'reply'])->name('store.client.tickets.reply');
     Route::post('/client/tickets/{ticket}/close', [SupportTicketController::class, 'close'])->name('store.client.tickets.close');
