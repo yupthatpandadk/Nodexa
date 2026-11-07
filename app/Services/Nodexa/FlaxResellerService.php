@@ -783,6 +783,14 @@ class FlaxResellerService
             throw new RuntimeException('Flax API returnerede ugyldigt JSON (HTTP ' . $response->status() . ').');
         }
 
+        if ($key) {
+            array_walk_recursive($json, function (&$value) use ($key) {
+                if (is_string($value)) {
+                    $value = str_replace($key, '[redacted]', $value);
+                }
+            });
+        }
+
         if (!$response->successful()) {
             $message = $json['error'] ?? $json['message'] ?? $json['data'] ?? ('HTTP ' . $response->status());
             throw new RuntimeException('Flax API fejl: ' . (is_scalar($message) ? $message : json_encode($message)));
@@ -796,14 +804,6 @@ class FlaxResellerService
         if (($json['status'] ?? null) === 'error') {
             $message = $json['data'] ?? $json['message'] ?? 'Ukendt fejl';
             throw new RuntimeException('Flax API fejl: ' . (is_scalar($message) ? $message : json_encode($message)));
-        }
-
-        if ($key) {
-            array_walk_recursive($json, function (&$value) use ($key) {
-                if (is_string($value)) {
-                    $value = str_replace($key, '[redacted]', $value);
-                }
-            });
         }
 
         return $json;
