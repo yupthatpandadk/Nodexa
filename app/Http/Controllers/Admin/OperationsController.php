@@ -11,6 +11,7 @@ use Pterodactyl\Http\Controllers\Controller;
 use Pterodactyl\Models\Server;
 use Pterodactyl\Models\StoreOrder;
 use Pterodactyl\Services\Nodexa\CfxEupService;
+use Pterodactyl\Services\Nodexa\FlaxResellerService;
 use Pterodactyl\Services\Nodexa\NodexaAutomationService;
 use Pterodactyl\Services\Nodexa\NodexaEventService;
 use Pterodactyl\Services\Servers\BuildModificationService;
@@ -24,6 +25,7 @@ class OperationsController extends Controller
         private BuildModificationService $builds,
         private SuspensionService $suspension,
         private CfxEupService $cfxEup,
+        private FlaxResellerService $flaxReseller,
     ) {
     }
 
@@ -344,6 +346,20 @@ class OperationsController extends Controller
                     $this->cfxEup->activateInvoice($invoice);
                 } catch (\Throwable $exception) {
                     report($exception);
+                }
+            }
+
+            if (($subscription->service_type ?? null) === 'flax_vps') {
+                try {
+                    // FlaxResellerService is idempotent per invoice. The first
+                    // paid invoice provisions the VPS; recurring invoices call
+                    // the upstream extend action.
+                    $this->flaxReseller->activateInvoice($invoice);
+                } catch (\Throwable $exception) {
+                    report($exception);
+                    return back()->withErrors([
+                        'billing' => 'Fakturaen er registreret som betalt, men Flax VPS-handlingen fejlede: ' . $exception->getMessage(),
+                    ]);
                 }
             }
         }
