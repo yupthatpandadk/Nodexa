@@ -14,18 +14,18 @@ use Pterodactyl\Services\Nodexa\NodexaEventService;
 class FlaxResellerController extends Controller
 {
     private const PRODUCT_PRESETS = [
-        ['id' => 1, 'name' => 'VPS-01',  'price' => 69.00],
-        ['id' => 2, 'name' => 'VPS-02',  'price' => 109.00],
-        ['id' => 3, 'name' => 'VPS-03',  'price' => 149.00],
-        ['id' => 4, 'name' => 'VPS-04',  'price' => 199.00],
-        ['id' => 5, 'name' => 'VPS-05',  'price' => 259.00],
-        ['id' => 6, 'name' => 'VPS-06',  'price' => 319.00],
-        ['id' => 7, 'name' => 'VPS-01+', 'price' => 99.00],
-        ['id' => 8, 'name' => 'VPS-02+', 'price' => 129.00],
-        ['id' => 9, 'name' => 'VPS-03+', 'price' => 189.00],
-        ['id' => 10, 'name' => 'VPS-04+', 'price' => 219.00],
-        ['id' => 11, 'name' => 'VPS-05+', 'price' => 339.00],
-        ['id' => 12, 'name' => 'VPS-06+', 'price' => 469.00],
+        ['id' => 1, 'name' => 'VPS-01',  'list_price' => 69.00,  'cost' => 51.75],
+        ['id' => 2, 'name' => 'VPS-02',  'list_price' => 109.00, 'cost' => 81.75],
+        ['id' => 3, 'name' => 'VPS-03',  'list_price' => 149.00, 'cost' => 111.75],
+        ['id' => 4, 'name' => 'VPS-04',  'list_price' => 199.00, 'cost' => 149.25],
+        ['id' => 5, 'name' => 'VPS-05',  'list_price' => 259.00, 'cost' => 194.25],
+        ['id' => 6, 'name' => 'VPS-06',  'list_price' => 319.00, 'cost' => 239.25],
+        ['id' => 7, 'name' => 'VPS-01+', 'list_price' => 99.00,  'cost' => 74.25],
+        ['id' => 8, 'name' => 'VPS-02+', 'list_price' => 129.00, 'cost' => 96.75],
+        ['id' => 9, 'name' => 'VPS-03+', 'list_price' => 189.00, 'cost' => 141.75],
+        ['id' => 10, 'name' => 'VPS-04+', 'list_price' => 219.00, 'cost' => 164.25],
+        ['id' => 11, 'name' => 'VPS-05+', 'list_price' => 339.00, 'cost' => 254.25],
+        ['id' => 12, 'name' => 'VPS-06+', 'list_price' => 469.00, 'cost' => 351.75],
     ];
 
     public function __construct(
@@ -160,7 +160,7 @@ class FlaxResellerController extends Controller
                     DB::table('nodexa_flax_products')
                         ->where('id', $existing->id)
                         ->update([
-                            'upstream_monthly_price' => $preset['price'],
+                            'upstream_monthly_price' => $preset['cost'],
                             'updated_at' => now(),
                         ]);
                     $updated++;
@@ -173,7 +173,7 @@ class FlaxResellerController extends Controller
                     'description' => 'Flax VirtFusion VPS package ' . $preset['name'] . '. Set your Nodexa retail price and resources before enabling.',
                     'upstream_product_id' => $preset['id'],
                     'upstream_monthly_price' => $preset['price'],
-                    'monthly_price' => $preset['price'],
+                    'monthly_price' => $preset['list_price'],
                     'currency' => 'DKK',
                     'memory_mb' => null,
                     'vcpu' => null,
@@ -215,6 +215,7 @@ class FlaxResellerController extends Controller
     public function storeProduct(Request $request): RedirectResponse
     {
         $data = $this->validateProduct($request);
+        $data['upstream_monthly_price'] = $this->presetCostForProductId((int) $data['upstream_product_id']);
         $data['slug'] = $this->uniqueSlug($data['name']);
         $data['enabled'] = $request->boolean('enabled');
         $data['featured'] = $request->boolean('featured');
@@ -320,7 +321,6 @@ class FlaxResellerController extends Controller
             'name' => 'required|string|max:140',
             'description' => 'nullable|string|max:3000',
             'upstream_product_id' => 'required|integer|min:1',
-            'upstream_monthly_price' => 'nullable|numeric|min:0|max:999999.99',
             'monthly_price' => 'required|numeric|min:0.01|max:999999.99',
             'currency' => 'required|string|size:3',
             'memory_mb' => 'nullable|integer|min:128|max:1048576',
@@ -330,6 +330,17 @@ class FlaxResellerController extends Controller
             'bandwidth' => 'nullable|string|max:120',
             'sort_order' => 'nullable|integer|min:0|max:99999',
         ]);
+    }
+
+    private function presetCostForProductId(int $productId): ?float
+    {
+        foreach (self::PRODUCT_PRESETS as $preset) {
+            if ((int) $preset['id'] === $productId) {
+                return (float) $preset['cost'];
+            }
+        }
+
+        return null;
     }
 
     private function uniqueSlug(string $name): string
