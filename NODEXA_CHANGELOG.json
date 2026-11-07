@@ -1,6 +1,18 @@
 {
-  "latest": "1.5.5",
+  "latest": "1.5.6",
   "releases": [
+    {
+      "version": "1.5.6",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Clear VPS price breakdown",
+      "changes": [
+        "Flax VPS-produktlisten viser nu Kunde pris, Reseller pris og Margin som tre tydelige værdier.",
+        "Kunde pris er fortsat redigerbar, mens Reseller pris er låst og hentes fra Flax/preset-data.",
+        "Margin beregnes automatisk som Kunde pris minus Reseller pris.",
+        "Formlabels er omdøbt for at undgå forvirring mellem Flax-pris og kundens salgspris."
+      ]
+    },
     {
       "version": "1.5.5",
       "date": "2026-11-07",
