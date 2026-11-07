@@ -434,10 +434,11 @@ class OperationsController extends Controller
         $this->events->audit($request->user()->id, 'operations', 'automation.run', null, null, null, $result, $request);
 
         return back()->with('success', sprintf(
-            'Automation færdig: %d health checks, %d backups og %d fakturaer.',
+            'Automation færdig: %d health checks, %d backups, %d fakturaer og %d Flax VPS syncs.',
             $result['health'],
             $result['backups'],
-            $result['billing']
+            $result['billing'],
+            $result['flax'] ?? 0
         ));
     }
 
