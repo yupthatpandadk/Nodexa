@@ -8,19 +8,26 @@ use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Pterodactyl\Models\StoreProduct;
 use Pterodactyl\Services\Nodexa\NodexaCartService;
+use Pterodactyl\Services\Nodexa\StripePaymentService;
 use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
     private const SESSION_KEY = 'nodexa_cart';
+    private const COUPON_KEY = 'nodexa_cart_coupon';
 
-    public function __construct(private NodexaCartService $cart)
-    {
+    public function __construct(
+        private NodexaCartService $cart,
+        private StripePaymentService $stripe,
+    ) {
     }
 
     public function index(Request $request): View
     {
-        $summary = $this->cart->resolve((array) $request->session()->get(self::SESSION_KEY, []));
+        $summary = $this->cart->resolve(
+            (array) $request->session()->get(self::SESSION_KEY, []),
+            $request->session()->get(self::COUPON_KEY)
+        );
 
         return view('store.cart.index', compact('summary'));
     }
@@ -84,6 +91,37 @@ class CartController extends Controller
             ->with('success', $plan->name . ' er lagt i kurven.');
     }
 
+    public function applyCoupon(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'code' => 'required|string|max:40',
+        ]);
+
+        $cart = (array) $request->session()->get(self::SESSION_KEY, []);
+        $base = $this->cart->resolve($cart);
+
+        if ($base['count'] < 1) {
+            return back()->withErrors(['coupon' => 'Tilføj mindst én vare før du bruger en rabatkode.']);
+        }
+
+        try {
+            $coupon = $this->cart->validateCoupon($data['code'], $base['subtotal_cents']);
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['coupon' => $exception->getMessage()]);
+        }
+
+        $request->session()->put(self::COUPON_KEY, $coupon['code']);
+
+        return back()->with('success', 'Rabatkode ' . $coupon['code'] . ' er anvendt.');
+    }
+
+    public function removeCoupon(Request $request): RedirectResponse
+    {
+        $request->session()->forget(self::COUPON_KEY);
+
+        return back()->with('success', 'Rabatkoden er fjernet.');
+    }
+
     public function remove(Request $request, string $item): RedirectResponse
     {
         $items = (array) $request->session()->get(self::SESSION_KEY, []);
@@ -98,20 +136,26 @@ class CartController extends Controller
 
     public function clear(Request $request): RedirectResponse
     {
-        $request->session()->forget(self::SESSION_KEY);
+        $request->session()->forget([self::SESSION_KEY, self::COUPON_KEY]);
 
         return redirect()->route('store.cart')->with('success', 'Kurven er tømt.');
     }
 
     public function checkout(Request $request): View|RedirectResponse
     {
-        $summary = $this->cart->resolve((array) $request->session()->get(self::SESSION_KEY, []));
+        $summary = $this->cart->resolve(
+            (array) $request->session()->get(self::SESSION_KEY, []),
+            $request->session()->get(self::COUPON_KEY)
+        );
 
         if ($summary['count'] < 1) {
             return redirect()->route('store.cart')->withErrors(['cart' => 'Kurven er tom.']);
         }
 
-        return view('store.cart.checkout', compact('summary'));
+        return view('store.cart.checkout', [
+            'summary' => $summary,
+            'stripeEnabled' => $this->stripe->isEnabled(),
+        ]);
     }
 
     public function place(Request $request): RedirectResponse
@@ -119,7 +163,11 @@ class CartController extends Controller
         $items = (array) $request->session()->get(self::SESSION_KEY, []);
 
         try {
-            $checkoutId = $this->cart->createCheckout($request->user()->id, $items);
+            $checkoutId = $this->cart->createCheckout(
+                $request->user()->id,
+                $items,
+                $request->session()->get(self::COUPON_KEY)
+            );
         } catch (\Throwable $exception) {
             return redirect()->route('store.cart')->withErrors(['cart' => $exception->getMessage()]);
         }
@@ -152,6 +200,7 @@ class CartController extends Controller
         return view('store.cart.order', [
             'checkout' => $row,
             'items' => $items,
+            'stripeEnabled' => $this->stripe->isEnabled(),
         ]);
     }
 }
