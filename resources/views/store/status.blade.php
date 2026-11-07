@@ -42,7 +42,7 @@
         <div class="statusGrid">
             @foreach($health as $check)
             <div class="statusCard">
-                <div><h3>{{ $check->node_name }}</h3><p>Senest kontrolleret {{ CarbonCarbon::parse($check->checked_at)->diffForHumans() }}@if($check->latency_ms) · {{ $check->latency_ms }} ms@endif</p></div>
+                <div><h3>{{ $check->node_name }}</h3><p>Senest kontrolleret {{ \Carbon\Carbon::parse($check->checked_at)->diffForHumans() }}@if($check->latency_ms) · {{ $check->latency_ms }} ms @endif</p></div>
                 <span class="statusBadge s-{{ $check->status }}">{{ $check->status === 'online' ? 'Online' : 'Offline' }}</span>
             </div>
             @endforeach
@@ -59,7 +59,7 @@
                 @if(($updates[$incident->id] ?? collect())->isNotEmpty())
                 <div class="timeline">
                     @foreach($updates[$incident->id] as $update)
-                    <div class="timelineItem"><strong>{{ ucfirst($update->status) }}</strong><p>{{ $update->message }}</p><small>{{ CarbonCarbon::parse($update->created_at)->format('d.m.Y H:i') }}</small></div>
+                    <div class="timelineItem"><strong>{{ ucfirst($update->status) }}</strong><p>{{ $update->message }}</p><small>{{ \Carbon\Carbon::parse($update->created_at)->format('d.m.Y H:i') }}</small></div>
                     @endforeach
                 </div>
                 @endif
@@ -79,7 +79,7 @@
                 @if(($updates[$incident->id] ?? collect())->isNotEmpty())
                 <div class="timeline">
                     @foreach(($updates[$incident->id] ?? collect())->take(5) as $update)
-                    <div class="timelineItem"><strong>{{ ucfirst($update->status) }}</strong><p>{{ $update->message }}</p><small>{{ CarbonCarbon::parse($update->created_at)->format('d.m.Y H:i') }}</small></div>
+                    <div class="timelineItem"><strong>{{ ucfirst($update->status) }}</strong><p>{{ $update->message }}</p><small>{{ \Carbon\Carbon::parse($update->created_at)->format('d.m.Y H:i') }}</small></div>
                     @endforeach
                 </div>
                 @endif
