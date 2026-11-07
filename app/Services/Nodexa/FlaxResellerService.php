@@ -257,6 +257,31 @@ class FlaxResellerService
             throw new RuntimeException('VPS-produktet til denne service findes ikke længere.');
         }
 
+        // Claim the invoice before touching Flax. This blocks simultaneous
+        // callbacks from provisioning or extending the same service twice.
+        $claimed = DB::table('nodexa_flax_services')
+            ->where('id', $service->id)
+            ->whereNull('processing_invoice_id')
+            ->update([
+                'processing_invoice_id' => $invoiceId,
+                'processing_started_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+        if ($claimed === 0) {
+            $current = DB::table('nodexa_flax_services')->where('id', $service->id)->first();
+
+            if ((int) ($current->last_billed_invoice_id ?? 0) === $invoiceId) {
+                return;
+            }
+
+            if ((int) ($current->processing_invoice_id ?? 0) === $invoiceId) {
+                return;
+            }
+
+            throw new RuntimeException('VPS-servicen behandler allerede en anden Flax-faktura. Synkronisér servicen og prøv igen.');
+        }
+
         try {
             if (!$service->upstream_server_id) {
                 DB::table('nodexa_flax_services')->where('id', $service->id)->update([
@@ -286,6 +311,8 @@ class FlaxResellerService
                     'upstream_invoice_id' => isset($response['invoice_id']) ? (string) $response['invoice_id'] : null,
                     'upstream_invoice_number' => $response['invoice_number'] ?? null,
                     'last_billed_invoice_id' => $invoiceId,
+                    'processing_invoice_id' => null,
+                    'processing_started_at' => null,
                     'expires_at' => $expiresAt ? Carbon::parse($expiresAt) : null,
                     'server_info' => $serverInfo ? json_encode($serverInfo, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
                     'last_synced_at' => $serverInfo ? now() : null,
@@ -338,7 +365,9 @@ class FlaxResellerService
                 'upstream_invoice_id' => isset($response['invoice_id']) ? (string) $response['invoice_id'] : $service->upstream_invoice_id,
                 'upstream_invoice_number' => $response['invoice_number'] ?? $service->upstream_invoice_number,
                 'last_billed_invoice_id' => $invoiceId,
-                'expires_at' => $expiresAt ? now()->parse($expiresAt) : $service->expires_at,
+                'processing_invoice_id' => null,
+                'processing_started_at' => null,
+                'expires_at' => $expiresAt ? Carbon::parse($expiresAt) : $service->expires_at,
                 'last_error' => null,
                 'suspended_at' => $hasOverdue ? ($service->suspended_at ?: now()) : null,
                 'updated_at' => now(),
@@ -359,6 +388,8 @@ class FlaxResellerService
         } catch (\Throwable $exception) {
             DB::table('nodexa_flax_services')->where('id', $service->id)->update([
                 'status' => $service->upstream_server_id ? $service->status : 'provisioning_failed',
+                'processing_invoice_id' => null,
+                'processing_started_at' => null,
                 'last_error' => substr($exception->getMessage(), 0, 4000),
                 'updated_at' => now(),
             ]);
