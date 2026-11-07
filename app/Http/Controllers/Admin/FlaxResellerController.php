@@ -210,7 +210,7 @@ class FlaxResellerController extends Controller
         return back()->with(
             'success',
             sprintf(
-                'Flax VPS presets er importeret: %d nye produkter, %d eksisterende cost-priser opdateret. Produkterne er deaktiveret som standard, indtil du har sat din salgspris og ressourcer.',
+                'Flax VPS presets er importeret: %d nye produkter, %d eksisterende produkter opdateret med reseller-pris og specs. Nye produkter er deaktiveret som standard, indtil du har sat din kundepris.',
                 $created,
                 $updated
             )
