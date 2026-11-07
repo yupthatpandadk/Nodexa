@@ -25,6 +25,23 @@
     </div>
 
     <div class="clientSection">
+        <div class="sectionTitleRow"><div><div class="miniLabel">COMBINED CHECKOUTS</div><h2>Samlede ordrer</h2></div></div>
+        @forelse($cartCheckouts as $cartCheckout)
+        <div class="clientRow">
+            <div>
+                <div class="miniLabel">{{ $cartCheckout->number }}</div>
+                <h3>{{ number_format((float)$cartCheckout->total,2,',','.') }} {{ $cartCheckout->currency }}</h3>
+                <p>Oprettet {{ \Carbon\Carbon::parse($cartCheckout->created_at)->format('d.m.Y H:i') }} · Én samlet checkout</p>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <span class="statusBadge {{ in_array($cartCheckout->status,['paid','completed'])?'good':($cartCheckout->status==='partial'?'bad':'warn') }}">{{ strtoupper(str_replace('_',' ',$cartCheckout->status)) }}</span>
+                <a class="btn" href="{{ route('store.cart.order',$cartCheckout->id) }}">Se ordre</a>
+            </div>
+        </div>
+        @empty<div class="notice">Ingen samlede ordrer endnu.</div>@endforelse
+    </div>
+
+    <div class="clientSection">
         <div class="sectionTitleRow"><div><div class="miniLabel">INVOICES</div><h2>Fakturaer</h2></div></div>
         @forelse($invoices as $invoice)
         <div class="clientRow">
