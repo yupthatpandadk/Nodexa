@@ -717,7 +717,15 @@ class FlaxResellerService
         try {
             $response = $this->request('info', 'POST', ['server_id' => $serverId]);
 
+            if (isset($response['server']) && is_array($response['server'])) {
+                return $response['server'];
+            }
+
             if (isset($response['data']) && is_array($response['data'])) {
+                if (isset($response['data']['server']) && is_array($response['data']['server'])) {
+                    return $response['data']['server'];
+                }
+
                 return $response['data'];
             }
 
