@@ -57,7 +57,8 @@
                                     </div>
 
                                     <div class="servicePrice">
-                                        <strong>{{ number_format((float)$item['price'],2,',','.') }} {{ $item['currency'] }}</strong>
+                                        @if(($item['sale_discount'] ?? 0) > 0)<span style="text-decoration:line-through">{{ number_format((float)$item['original_price'],2,',','.') }} {{ $item['currency'] }}</span>@endif
+                                        <strong>{{ number_format((float)($item['sale_price'] ?? $item['price']),2,',','.') }} {{ $item['currency'] }}</strong>
                                         <span>pr. måned</span>
                                     </div>
                                 </div>
@@ -152,7 +153,7 @@
                                 <strong>{{ $item['name'] }}</strong>
                                 <span>{{ $item['type'] === 'flax_vps' ? ($item['configuration']['hostname'] ?? 'VPS') : ($item['configuration']['server_name'] ?? 'Server') }}</span>
                             </div>
-                            <b>{{ number_format((float)$item['price'],2,',','.') }} kr</b>
+                            <b>{{ number_format((float)($item['sale_price'] ?? $item['price']),2,',','.') }} kr</b>
                         </div>
                     @endforeach
                 </div>
@@ -190,15 +191,21 @@
                     <span>Normal månedspris</span>
                     <strong>{{ number_format((float)$summary['subtotal'],2,',','.') }} DKK</strong>
                 </div>
+                @if($summary['global_sale'])
                 <div class="summaryRow">
-                    <span>Rabat på første betaling@if($summary['coupon']) · {{ $summary['coupon']['code'] }}@endif</span>
+                    <span>{{ $summary['global_sale']['label'] }} · {{ number_format($summary['global_sale']['percent'],0,',','.') }}%</span>
+                    <strong class="discountValue">-{{ number_format((float)$summary['sale_discount'],2,',','.') }} DKK</strong>
+                </div>
+                @endif
+                <div class="summaryRow">
+                    <span>Rabatkode@if($summary['coupon']) · {{ $summary['coupon']['code'] }}@endif</span>
                     <strong class="{{ $summary['discount'] > 0 ? 'discountValue' : '' }}">-{{ number_format((float)$summary['discount'],2,',','.') }} DKK</strong>
                 </div>
 
                 <div class="summaryTotal">
                     <div>
                         <span>Til betaling nu</span>
-                        <small>@if($summary['discount'] > 0)Derefter {{ number_format((float)$summary['subtotal'],2,',','.') }} DKK/md@else{{ $summary['count'] }} {{ $summary['count'] === 1 ? 'service' : 'services' }}@endif</small>
+                        <small>@if($summary['global_sale'] || $summary['coupon'])Normalpris efter rabatperioder: {{ number_format((float)$summary['subtotal'],2,',','.') }} DKK/md@else{{ $summary['count'] }} {{ $summary['count'] === 1 ? 'service' : 'services' }}@endif</small>
                     </div>
                     <strong>{{ number_format((float)$summary['total'],2,',','.') }} <small>DKK</small></strong>
                 </div>
@@ -206,7 +213,7 @@
                 <div class="paymentNotice">
                     <span class="paymentNoticeIcon">{{ $stripeEnabled ? 'S' : 'i' }}</span>
                     @if($stripeEnabled)
-                        <p><strong>Betaling med Stripe.</strong> Efter du bekræfter, sendes du sikkert til Stripe. Stripe får Nodexas gemte slutbeløb på <b>{{ number_format((float)$summary['total'],2,',','.') }} DKK</b> for første betaling — rabatten er allerede trukket fra. Rabatten gælder i {{ $summary['coupon']['duration_months'] ?? 1 }} måned(er), hvor denne betaling er måned 1. Derefter bruger fakturaer normal servicepris.</p>
+                        <p><strong>Betaling med Stripe.</strong> Efter du bekræfter, sendes du sikkert til Stripe. Stripe får Nodexas gemte slutbeløb på <b>{{ number_format((float)$summary['total'],2,',','.') }} DKK</b>. Globalt udsalg og rabatkode er allerede regnet med i samme total. Første betaling tæller som måned 1 for aktive rabatperioder.</p>
                     @else
                         <p><strong>Stripe er ikke aktiveret endnu.</strong> Ordren kan oprettes og efterfølgende registreres betalt af admin.</p>
                     @endif
