@@ -19,15 +19,20 @@ class NodexaAutomationService
         private SuspensionService $suspension,
         private NodexaEventService $events,
         private CfxEupService $cfxEup,
+        private FlaxResellerService $flaxReseller,
     ) {
     }
 
     public function run(): array
     {
+        $billing = $this->runBilling();
+        $flax = Schema::hasTable('nodexa_flax_services') ? $this->flaxReseller->syncStaleServices() : 0;
+
         return [
             'health' => $this->runHealthChecks(),
             'backups' => $this->runBackupPolicies(),
-            'billing' => $this->runBilling(),
+            'billing' => $billing,
+            'flax' => $flax,
         ];
     }
 
@@ -338,6 +343,14 @@ class NodexaAutomationService
                     report($exception);
                 }
             }
+
+            if (($subscription->service_type ?? null) === 'flax_vps') {
+                try {
+                    $this->flaxReseller->suspendSubscription($subscription->id);
+                } catch (\Throwable $exception) {
+                    report($exception);
+                }
+            }
         }
 
         // Re-activate CFX EUP entitlements automatically when payment has been
@@ -368,6 +381,43 @@ class NodexaAutomationService
                 if ($paidInvoice) {
                     try {
                         $this->cfxEup->activateInvoice($paidInvoice->id);
+                    } catch (\Throwable $exception) {
+                        report($exception);
+                    }
+                }
+            }
+        }
+
+        if (Schema::hasTable('nodexa_flax_services')) {
+            $flaxSubscriptions = DB::table('nodexa_subscriptions')
+                ->where('service_type', 'flax_vps')
+                ->whereIn('status', ['pending', 'active'])
+                ->get();
+
+            foreach ($flaxSubscriptions as $subscription) {
+                $hasOverdue = DB::table('nodexa_invoices')
+                    ->where('subscription_id', $subscription->id)
+                    ->where('status', 'overdue')
+                    ->exists();
+
+                $paidInvoice = DB::table('nodexa_invoices')
+                    ->where('subscription_id', $subscription->id)
+                    ->where('status', 'paid')
+                    ->orderByDesc('paid_at')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($paidInvoice) {
+                    try {
+                        $this->flaxReseller->activateInvoice($paidInvoice->id);
+                    } catch (\Throwable $exception) {
+                        report($exception);
+                    }
+                }
+
+                if (!$hasOverdue) {
+                    try {
+                        $this->flaxReseller->unsuspendSubscription($subscription->id);
                     } catch (\Throwable $exception) {
                         report($exception);
                     }
