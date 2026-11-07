@@ -3,6 +3,7 @@
 @section('content-header')<h1>Storefront & Billing <small>Produkter, ordrer, rabatter og provisioning</small></h1>@endsection
 @section('content')
 @if(session('success'))<div class="alert alert-success">{{session('success')}}</div>@endif
+@if($errors->any())<div class="alert alert-danger">{{$errors->first()}}</div>@endif
 <div class="row">
 <div class="col-md-4">
 <div class="box box-primary"><div class="box-header"><h3 class="box-title"><i class="fa fa-plus-circle"></i> Nyt serverprodukt</h3></div>
@@ -20,6 +21,37 @@
 <div class="form-group"><label>Udløber</label><input class="form-control" type="datetime-local" name="expires_at"></div>
 <button class="btn btn-default btn-block">Opret rabatkode</button></div></form>
 <div class="box-body table-responsive"><table class="table table-condensed"><tr><th>Kode</th><th>Rabat</th><th>Brugt</th></tr>@foreach($coupons as $c)<tr><td><b>{{$c->code}}</b></td><td>{{$c->value}}{{$c->type==='percent'?'%':' DKK'}}</td><td>{{$c->uses}}{{$c->max_uses?'/'.$c->max_uses:''}}</td></tr>@endforeach</table></div></div>
+
+<div class="box box-info">
+<div class="box-header"><h3 class="box-title"><i class="fa fa-credit-card"></i> Stripe betaling</h3>
+@if($stripeSettings->enabled)<span class="label label-success pull-right">Aktiv</span>@else<span class="label label-default pull-right">Deaktiveret</span>@endif
+</div>
+<form method="POST" action="{{route('admin.store.stripe.settings')}}">@csrf
+<div class="box-body">
+<div class="form-group">
+<label>Stripe Secret Key</label>
+<input class="form-control" type="password" name="secret_key" autocomplete="new-password" placeholder="{{$stripeSettings->has_secret_key?'Gemt — lad feltet være tomt for at beholde':'sk_live_... eller sk_test_...'}}">
+<p class="help-block">Gemmes krypteret. Nøglen vises ikke igen efter lagring.</p>
+</div>
+<div class="form-group">
+<label>Webhook Secret</label>
+<input class="form-control" type="password" name="webhook_secret" autocomplete="new-password" placeholder="{{$stripeSettings->has_webhook_secret?'Gemt — lad feltet være tomt for at beholde':'whsec_...'}}">
+<p class="help-block">Webhook endpoint: <code>{{route('stripe.webhook')}}</code></p>
+</div>
+<label><input type="checkbox" name="enabled" value="1" {{$stripeSettings->enabled?'checked':''}}> Aktivér Stripe Checkout</label>
+@if($stripeSettings->last_tested_at)
+<hr>
+<small class="text-muted">Senest testet: {{$stripeSettings->last_tested_at}} · {{$stripeSettings->last_test_status}}@if($stripeSettings->last_test_message) · {{$stripeSettings->last_test_message}}@endif</small>
+@endif
+</div>
+<div class="box-footer">
+<button class="btn btn-info btn-block"><i class="fa fa-save"></i> Gem Stripe</button>
+</div>
+</form>
+<form method="POST" action="{{route('admin.store.stripe.test')}}" style="padding:0 10px 10px">@csrf
+<button class="btn btn-default btn-block"><i class="fa fa-plug"></i> Test Stripe forbindelse</button>
+</form>
+</div>
 </div>
 
 <div class="col-md-8">
