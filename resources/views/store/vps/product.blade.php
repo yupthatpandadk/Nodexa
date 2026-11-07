@@ -6,7 +6,7 @@
 <div class="container">
     <span class="tag">VPS · FLAX RESELLER</span>
     <h1>{{ $product->name }}</h1>
-    <p class="lead">{{ $product->description ?: 'Vælg hostname og operativsystem. VPS’en oprettes automatisk efter betaling.' }}</p>
+    <p class="lead">{{ $product->description ?: 'Vælg VPS-navn og operativsystem. VPS’en oprettes automatisk efter betaling.' }}</p>
     <div class="steps"><div class="step active"><i>1</i><span>Konfiguration</span></div><i class="stepSep"></i><div class="step"><i>2</i><span>Checkout</span></div><i class="stepSep"></i><div class="step"><i>3</i><span>Provisionering</span></div></div>
 </div>
 </section>
@@ -47,8 +47,8 @@
         @auth
         <form method="POST" action="{{ route('store.vps.order',$product->slug) }}">
             @csrf
-            <label class="formLabel" for="hostname">Hostname</label>
-            <input class="input" id="hostname" name="hostname" value="{{ old('hostname') }}" required minlength="3" maxlength="190" placeholder="vps1.example.dk">
+            <label class="formLabel" for="hostname">VPS-navn</label>
+            <input class="input" id="hostname" name="hostname" value="{{ old('hostname') }}" required minlength="3" maxlength="190" placeholder="Min VPS">
 
             <label class="formLabel" for="os_template_id">Operativsystem</label>
             <select class="input" id="os_template_id" name="os_template_id" required>
