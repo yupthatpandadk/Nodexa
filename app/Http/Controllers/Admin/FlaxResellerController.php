@@ -13,6 +13,21 @@ use Pterodactyl\Services\Nodexa\NodexaEventService;
 
 class FlaxResellerController extends Controller
 {
+    private const PRODUCT_PRESETS = [
+        ['id' => 1, 'name' => 'VPS-01',  'price' => 69.00],
+        ['id' => 2, 'name' => 'VPS-02',  'price' => 109.00],
+        ['id' => 3, 'name' => 'VPS-03',  'price' => 149.00],
+        ['id' => 4, 'name' => 'VPS-04',  'price' => 199.00],
+        ['id' => 5, 'name' => 'VPS-05',  'price' => 259.00],
+        ['id' => 6, 'name' => 'VPS-06',  'price' => 319.00],
+        ['id' => 7, 'name' => 'VPS-01+', 'price' => 99.00],
+        ['id' => 8, 'name' => 'VPS-02+', 'price' => 129.00],
+        ['id' => 9, 'name' => 'VPS-03+', 'price' => 189.00],
+        ['id' => 10, 'name' => 'VPS-04+', 'price' => 219.00],
+        ['id' => 11, 'name' => 'VPS-05+', 'price' => 339.00],
+        ['id' => 12, 'name' => 'VPS-06+', 'price' => 469.00],
+    ];
+
     public function __construct(
         private FlaxResellerService $flax,
         private NodexaEventService $events,
@@ -130,6 +145,73 @@ class FlaxResellerController extends Controller
         return back()->with('success', $count . ' VirtFusion OS-template(s) blev synkroniseret fra Flax.');
     }
 
+    public function importPresetProducts(Request $request): RedirectResponse
+    {
+        $created = 0;
+        $updated = 0;
+
+        DB::transaction(function () use (&$created, &$updated) {
+            foreach (self::PRODUCT_PRESETS as $preset) {
+                $existing = DB::table('nodexa_flax_products')
+                    ->where('upstream_product_id', $preset['id'])
+                    ->first();
+
+                if ($existing) {
+                    DB::table('nodexa_flax_products')
+                        ->where('id', $existing->id)
+                        ->update([
+                            'upstream_monthly_price' => $preset['price'],
+                            'updated_at' => now(),
+                        ]);
+                    $updated++;
+                    continue;
+                }
+
+                DB::table('nodexa_flax_products')->insert([
+                    'name' => $preset['name'],
+                    'slug' => $this->uniqueSlug($preset['name']),
+                    'description' => 'Flax VirtFusion VPS package ' . $preset['name'] . '. Set your Nodexa retail price and resources before enabling.',
+                    'upstream_product_id' => $preset['id'],
+                    'upstream_monthly_price' => $preset['price'],
+                    'monthly_price' => $preset['price'],
+                    'currency' => 'DKK',
+                    'memory_mb' => null,
+                    'vcpu' => null,
+                    'disk_gb' => null,
+                    'ipv4_count' => 1,
+                    'bandwidth' => null,
+                    'enabled' => false,
+                    'featured' => false,
+                    'sort_order' => $preset['id'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $created++;
+            }
+        });
+
+        $this->events->audit(
+            $request->user()->id,
+            'flax_reseller',
+            'products.presets_imported',
+            'Flax VPS package presets imported',
+            null,
+            null,
+            ['created' => $created, 'updated' => $updated],
+            $request
+        );
+
+        return back()->with(
+            'success',
+            sprintf(
+                'Flax VPS presets er importeret: %d nye produkter, %d eksisterende cost-priser opdateret. Produkterne er deaktiveret som standard, indtil du har sat din salgspris og ressourcer.',
+                $created,
+                $updated
+            )
+        );
+    }
+
     public function storeProduct(Request $request): RedirectResponse
     {
         $data = $this->validateProduct($request);
@@ -238,6 +320,7 @@ class FlaxResellerController extends Controller
             'name' => 'required|string|max:140',
             'description' => 'nullable|string|max:3000',
             'upstream_product_id' => 'required|integer|min:1',
+            'upstream_monthly_price' => 'nullable|numeric|min:0|max:999999.99',
             'monthly_price' => 'required|numeric|min:0.01|max:999999.99',
             'currency' => 'required|string|size:3',
             'memory_mb' => 'nullable|integer|min:128|max:1048576',
