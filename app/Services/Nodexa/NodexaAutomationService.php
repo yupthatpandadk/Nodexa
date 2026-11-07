@@ -25,15 +25,12 @@ class NodexaAutomationService
 
     public function run(): array
     {
+        $health = $this->runHealthChecks();
+        $backups = $this->runBackupPolicies();
         $billing = $this->runBilling();
         $flax = Schema::hasTable('nodexa_flax_services') ? $this->flaxReseller->syncStaleServices() : 0;
 
-        return [
-            'health' => $this->runHealthChecks(),
-            'backups' => $this->runBackupPolicies(),
-            'billing' => $billing,
-            'flax' => $flax,
-        ];
+        return compact('health', 'backups', 'billing', 'flax');
     }
 
     public function runHealthChecks(): int
