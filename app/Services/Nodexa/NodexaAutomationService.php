@@ -237,10 +237,14 @@ class NodexaAutomationService
                 && $discountMonthsTotal > 0
                 && $discountMonthsUsed < $discountMonthsTotal
             ) {
-                $couponDiscount = min(
-                    $afterSale,
-                    max(0.0, round((float) ($subscription->discount_amount ?? 0), 2))
-                );
+                if (($subscription->discount_type ?? null) === 'percent') {
+                    $percent = max(0.0, min(100.0, (float) ($subscription->discount_value ?? 0)));
+                    $couponDiscount = round($afterSale * ($percent / 100), 2);
+                } else {
+                    $couponDiscount = max(0.0, round((float) ($subscription->discount_amount ?? 0), 2));
+                }
+
+                $couponDiscount = min($afterSale, $couponDiscount);
             }
 
             $discount = round($saleDiscount + $couponDiscount, 2);
