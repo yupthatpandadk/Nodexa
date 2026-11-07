@@ -43,7 +43,11 @@
         <div class="miniLabel">PAYMENT</div>
         <div class="price">{{ number_format((float)$checkout->total,2,',','.') }} kr <small>/ første betaling</small></div>
         <div class="orderLine"><span class="muted">Ordre</span><strong>{{ $checkout->number }}</strong></div>
-        <div class="orderLine"><span class="muted">Subtotal</span><strong>{{ number_format((float)$checkout->subtotal,2,',','.') }} DKK</strong></div>
+        <div class="orderLine"><span class="muted">Normalpris</span><strong>{{ number_format((float)$checkout->subtotal,2,',','.') }} DKK</strong></div>
+        @if((float)($checkout->global_sale_discount ?? 0) > 0)
+        <div class="orderLine"><span class="muted">Globalt udsalg · {{ number_format((float)$checkout->global_sale_percent,0,',','.') }}%</span><strong style="color:#67d9a2">-{{ number_format((float)$checkout->global_sale_discount,2,',','.') }} DKK</strong></div>
+        <div class="orderLine"><span class="muted">Udsalgsperiode</span><strong>{{ $checkout->global_sale_duration_months }} måned(er)</strong></div>
+        @endif
         @if((float)$checkout->discount > 0)
         <div class="orderLine"><span class="muted">Rabat{{$checkout->coupon_code?' · '.$checkout->coupon_code:''}}</span><strong style="color:#67d9a2">-{{ number_format((float)$checkout->discount,2,',','.') }} DKK</strong></div>
         <div class="orderLine"><span class="muted">Rabatperiode</span><strong>{{ $checkout->coupon_duration_months ?? 1 }} måned(er)</strong></div>
