@@ -122,6 +122,14 @@ class StorefrontController extends Controller
 
         $invoices = DB::table('nodexa_invoices')
             ->where('user_id', $request->user()->id)
+            ->where(function ($query) {
+                $query->whereNull('hidden_from_client')->orWhere('hidden_from_client', false);
+            })
+            ->orderByDesc('id')
+            ->get();
+
+        $cartCheckouts = DB::table('nodexa_cart_checkouts')
+            ->where('user_id', $request->user()->id)
             ->orderByDesc('id')
             ->get();
 
@@ -130,7 +138,7 @@ class StorefrontController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        return view('store.client.billing', compact('orders', 'invoices', 'subscriptions'));
+        return view('store.client.billing', compact('orders', 'invoices', 'subscriptions', 'cartCheckouts'));
     }
 
     public function clientProfile(Request $request)
