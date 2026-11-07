@@ -13,16 +13,18 @@ use Pterodactyl\Models\StoreOrder;
 use Pterodactyl\Services\Store\ProvisionStoreOrderService;
 use Pterodactyl\Services\Nodexa\NodexaEventService;
 use Pterodactyl\Services\Nodexa\StripePaymentService;
+use Pterodactyl\Services\Nodexa\GlobalStoreSaleService;
 
 class StoreController extends Controller
 {
-    public function index(StripePaymentService $stripe){
+    public function index(StripePaymentService $stripe, GlobalStoreSaleService $sale){
         return view('admin.store.index',[
             'products'=>StoreProduct::orderBy('name')->get(),
             'orders'=>StoreOrder::with(['product','user','server'])->latest()->limit(100)->get(),
             'coupons'=>StoreCoupon::latest()->get(),
             'eggs'=>Egg::orderBy('name')->get(),
             'stripeSettings'=>$stripe->settingsForAdmin(),
+            'globalSale'=>$sale->settings(),
         ]);
     }
 
@@ -44,6 +46,25 @@ class StoreController extends Controller
         if ($d['type'] === 'percent' && (float) $d['value'] > 100) return back()->withErrors(['value'=>'Procentrabat kan højst være 100%.'])->withInput();
         $d['code']=strtoupper(trim($d['code'])); $d['enabled']=true; StoreCoupon::create($d);
         return back()->with('success','Rabatkode oprettet.');
+    }
+
+    public function globalSale(Request $r, GlobalStoreSaleService $sale){
+        $d=$r->validate([
+            'percent'=>'required|numeric|min:0|max:100',
+            'duration_months'=>'required|integer|min:1|max:120',
+            'label'=>'nullable|string|max:120',
+        ]);
+
+        $sale->save(
+            $r->boolean('enabled'),
+            (float) $d['percent'],
+            (int) $d['duration_months'],
+            $d['label'] ?? null
+        );
+
+        return back()->with('success',$r->boolean('enabled')
+            ? 'Globalt udsalg er aktiveret.'
+            : 'Globalt udsalg er deaktiveret.');
     }
 
     public function stripeSettings(Request $r, StripePaymentService $stripe){
