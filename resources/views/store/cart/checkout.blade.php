@@ -187,18 +187,18 @@
                 <div class="summaryDivider"></div>
 
                 <div class="summaryRow">
-                    <span>Subtotal pr. måned</span>
+                    <span>Normal månedspris</span>
                     <strong>{{ number_format((float)$summary['subtotal'],2,',','.') }} DKK</strong>
                 </div>
                 <div class="summaryRow">
-                    <span>Rabat@if($summary['coupon']) · {{ $summary['coupon']['code'] }}@endif</span>
+                    <span>Rabat på første betaling@if($summary['coupon']) · {{ $summary['coupon']['code'] }}@endif</span>
                     <strong class="{{ $summary['discount'] > 0 ? 'discountValue' : '' }}">-{{ number_format((float)$summary['discount'],2,',','.') }} DKK</strong>
                 </div>
 
                 <div class="summaryTotal">
                     <div>
-                        <span>Samlet pr. måned</span>
-                        <small>{{ $summary['count'] }} {{ $summary['count'] === 1 ? 'service' : 'services' }}</small>
+                        <span>Til betaling nu</span>
+                        <small>@if($summary['discount'] > 0)Derefter {{ number_format((float)$summary['subtotal'],2,',','.') }} DKK/md@else{{ $summary['count'] }} {{ $summary['count'] === 1 ? 'service' : 'services' }}@endif</small>
                     </div>
                     <strong>{{ number_format((float)$summary['total'],2,',','.') }} <small>DKK</small></strong>
                 </div>
@@ -206,7 +206,7 @@
                 <div class="paymentNotice">
                     <span class="paymentNoticeIcon">{{ $stripeEnabled ? 'S' : 'i' }}</span>
                     @if($stripeEnabled)
-                        <p><strong>Betaling med Stripe.</strong> Efter du bekræfter, sendes du sikkert til Stripe. Stripe får Nodexas gemte slutbeløb på <b>{{ number_format((float)$summary['total'],2,',','.') }} DKK</b> — rabatten er allerede trukket fra.</p>
+                        <p><strong>Betaling med Stripe.</strong> Efter du bekræfter, sendes du sikkert til Stripe. Stripe får Nodexas gemte slutbeløb på <b>{{ number_format((float)$summary['total'],2,',','.') }} DKK</b> for første betaling — rabatten er allerede trukket fra. Senere fakturaer bruger normal servicepris.</p>
                     @else
                         <p><strong>Stripe er ikke aktiveret endnu.</strong> Ordren kan oprettes og efterfølgende registreres betalt af admin.</p>
                     @endif
