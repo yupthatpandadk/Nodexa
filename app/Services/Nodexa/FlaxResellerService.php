@@ -69,7 +69,7 @@ class FlaxResellerService
     public function testConnection(): array
     {
         try {
-            $response = $this->request('user_servers', 'POST');
+            $response = $this->request('user_servers', 'GET');
             $count = count($this->extractCollection($response, ['servers', 'data']));
 
             $this->storeTestResult('success', 'Forbindelsen til Flax virker. ' . $count . ' upstream service(s) fundet.');
@@ -84,7 +84,7 @@ class FlaxResellerService
 
     public function syncTemplates(): int
     {
-        $response = $this->request('virtfusion_templates', 'POST');
+        $response = $this->request('virtfusion_templates', 'GET');
         $templates = $this->extractCollection($response, ['templates', 'data']);
 
         $count = 0;
@@ -345,7 +345,7 @@ class FlaxResellerService
                 return;
             }
 
-            $response = $this->request('extend', 'POST', ['server_id' => $service->upstream_server_id]);
+            $response = $this->request('extend', 'GET', ['server_id' => $service->upstream_server_id]);
             $responseData = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
             $expiresAt = $response['expires_at'] ?? $responseData['expires_at'] ?? null;
 
@@ -715,7 +715,7 @@ class FlaxResellerService
     private function fetchServerInfo(string $serverId, bool $throw = true): ?array
     {
         try {
-            $response = $this->request('info', 'POST', ['server_id' => $serverId]);
+            $response = $this->request('info', 'GET', ['server_id' => $serverId]);
 
             if (isset($response['server']) && is_array($response['server'])) {
                 return $response['server'];
