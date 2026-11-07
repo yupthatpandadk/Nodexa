@@ -6,7 +6,7 @@
     <div class="clientIdentity"><div class="avatar">{{strtoupper(substr(auth()->user()->name_first ?: auth()->user()->username,0,1))}}</div><div><strong>{{auth()->user()->name}}</strong><small>{{auth()->user()->email}}</small></div></div>
     <nav>
         <a href="{{route('store.client')}}">⌂ <span>Oversigt</span></a>
-        <a href="{{route('store.client.servers')}}">▣ <span>Mine servere</span></a>
+        <a href="{{route('store.client.servers')}}">▣ <span>Mine servere</span></a><a href="{{route('store.client.vps')}}">☁ <span>Mine VPS’er</span></a>
         <a class="active" href="{{route('store.client.billing')}}">▤ <span>Billing & ordrer</span></a>
         <a href="{{route('store.client.hub')}}">◆ <span>Services Hub</span></a>
         <a href="{{route('store.client.profile')}}">◎ <span>Min profil</span></a>
