@@ -172,7 +172,7 @@ class CartController extends Controller
             return redirect()->route('store.cart')->withErrors(['cart' => $exception->getMessage()]);
         }
 
-        $request->session()->forget(self::SESSION_KEY);
+        $request->session()->forget([self::SESSION_KEY, self::COUPON_KEY]);
 
         return redirect()
             ->route('store.cart.order', $checkoutId)
