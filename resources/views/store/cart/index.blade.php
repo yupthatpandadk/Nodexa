@@ -68,8 +68,8 @@
         <aside class="card cartSummary">
             <div class="miniLabel">ORDER SUMMARY</div>
             <h2>{{ $summary['count'] }} {{ $summary['count']===1 ? 'vare' : 'varer' }}</h2>
-            <div class="summaryLine"><span>Månedligt subtotal</span><strong>{{ number_format((float)$summary['subtotal'],2,',','.') }} DKK</strong></div>
-            <div class="summaryLine"><span>Rabat@if($summary['coupon']) · {{$summary['coupon']['code']}}@endif</span><strong class="{{$summary['discount']>0?'discountText':''}}">-{{ number_format((float)$summary['discount'],2,',','.') }} DKK</strong></div>
+            <div class="summaryLine"><span>Normal månedspris</span><strong>{{ number_format((float)$summary['subtotal'],2,',','.') }} DKK</strong></div>
+            <div class="summaryLine"><span>Rabat på første betaling@if($summary['coupon']) · {{$summary['coupon']['code']}}@endif</span><strong class="{{$summary['discount']>0?'discountText':''}}">-{{ number_format((float)$summary['discount'],2,',','.') }} DKK</strong></div>
 
             @if($summary['coupon'])
                 <div class="cartCoupon applied">
@@ -84,8 +84,8 @@
                 </form>
             @endif
 
-            <div class="summaryTotal"><span>Samlet pr. måned</span><strong>{{ number_format((float)$summary['total'],2,',','.') }} DKK</strong></div>
-            <p class="micro">Hver service fortsætter som sit eget månedlige abonnement efter første samlede checkout.</p>
+            <div class="summaryTotal"><span>Til betaling nu</span><strong>{{ number_format((float)$summary['total'],2,',','.') }} DKK</strong></div>
+            <p class="micro">@if($summary['discount'] > 0)Rabatkoden gælder denne første samlede betaling. Derefter er normal månedspris {{ number_format((float)$summary['subtotal'],2,',','.') }} DKK.@else Hver service fortsætter som sit eget månedlige abonnement efter første samlede checkout.@endif</p>
 
             @if($summary['count'] > 0)
                 <a class="btn primary" style="width:100%;margin-top:12px" href="{{ route('store.cart.checkout') }}">Fortsæt til checkout →</a>
