@@ -6,7 +6,7 @@
 
 A modern, self-hosted platform for managing game servers, customers, billing, support and infrastructure from one unified interface.
 
-![Version](https://img.shields.io/badge/version-1.5.0-7657ff?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.5.1-7657ff?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Linux-20232a?style=for-the-badge&logo=linux&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=for-the-badge&logo=php&logoColor=white)
 ![Docker](https://img.shields.io/badge/containers-Docker-2496ed?style=for-the-badge&logo=docker&logoColor=white)
@@ -79,7 +79,8 @@ Nodexa includes a native FlaxHosting reseller integration for selling VPS servic
 
 Administrators can:
 
-- Configure the full Flax reseller API endpoint and API key from Admin → Flax VPS Reseller
+- Create an API key in the Flax Reseller Dashboard and store it securely in Nodexa
+- Configure the Flax reseller API endpoint (`https://api.flaxhosting.dk/`) and API key from Admin → Flax VPS Reseller
 - Store the API key encrypted at rest
 - Test the upstream connection from Nodexa
 - Synchronise VirtFusion operating-system templates
@@ -357,7 +358,7 @@ public/                 Public web assets
 
 ## Version
 
-Current release: **Nodexa 1.5.0**
+Current release: **Nodexa 1.5.1**
 
 The installed version can be checked with:
 
