@@ -62,6 +62,10 @@ Route::post('/knowledgebase/upload-image', [Admin\KnowledgebaseController::class
 Route::get('/tickets', [Admin\SupportTicketController::class, 'index'])->name('admin.tickets');
 Route::get('/tickets/settings', [Admin\SupportTicketController::class, 'settings'])->name('admin.tickets.settings');
 Route::post('/tickets/settings', [Admin\SupportTicketController::class, 'saveSettings'])->name('admin.tickets.settings.save');
+Route::post('/tickets/departments', [Admin\SupportTicketController::class, 'saveDepartment'])->name('admin.tickets.departments.save');
+Route::post('/tickets/predefined-replies', [Admin\SupportTicketController::class, 'saveCannedReply'])->name('admin.tickets.canned.save');
+Route::delete('/tickets/predefined-replies/{reply}', [Admin\SupportTicketController::class, 'deleteCannedReply'])->name('admin.tickets.canned.delete');
+Route::post('/tickets/{ticket}/merge', [Admin\SupportTicketController::class, 'merge'])->name('admin.tickets.merge');
 Route::get('/tickets/{ticket}', [Admin\SupportTicketController::class, 'show'])->name('admin.tickets.show');
 Route::post('/tickets/{ticket}/reply', [Admin\SupportTicketController::class, 'reply'])->name('admin.tickets.reply');
 Route::patch('/tickets/{ticket}', [Admin\SupportTicketController::class, 'update'])->name('admin.tickets.update');

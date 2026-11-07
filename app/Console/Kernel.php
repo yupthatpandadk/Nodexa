@@ -39,6 +39,9 @@ class Kernel extends ConsoleKernel
         // invoices and overdue service handling.
         $schedule->command('nodexa:automation')->everyFiveMinutes()->withoutOverlapping();
 
+        $schedule->command('nodexa:support:automation')->everyFiveMinutes()->withoutOverlapping();
+        $schedule->command('nodexa:support:mail')->everyMinute()->withoutOverlapping();
+
         if (config('backups.prune_age')) {
             // Every 30 minutes, run the backup pruning command so that any abandoned backups can be deleted.
             $schedule->command(PruneOrphanedBackupsCommand::class)->everyThirtyMinutes();
