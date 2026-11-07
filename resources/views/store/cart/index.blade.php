@@ -68,8 +68,22 @@
         <aside class="card cartSummary">
             <div class="miniLabel">ORDER SUMMARY</div>
             <h2>{{ $summary['count'] }} {{ $summary['count']===1 ? 'vare' : 'varer' }}</h2>
-            <div class="summaryLine"><span>Månedligt subtotal</span><strong>{{ number_format((float)$summary['total'],2,',','.') }} DKK</strong></div>
-            <div class="summaryLine"><span>Rabat</span><strong>0,00 DKK</strong></div>
+            <div class="summaryLine"><span>Månedligt subtotal</span><strong>{{ number_format((float)$summary['subtotal'],2,',','.') }} DKK</strong></div>
+            <div class="summaryLine"><span>Rabat@if($summary['coupon']) · {{$summary['coupon']['code']}}@endif</span><strong class="{{$summary['discount']>0?'discountText':''}}">-{{ number_format((float)$summary['discount'],2,',','.') }} DKK</strong></div>
+
+            @if($summary['coupon'])
+                <div class="cartCoupon applied">
+                    <div><small>Rabatkode</small><strong>{{$summary['coupon']['code']}}</strong><span>{{$summary['coupon']['label']}} rabat</span></div>
+                    <form method="POST" action="{{route('store.cart.coupon.remove')}}">@csrf @method('DELETE')<button>Fjern</button></form>
+                </div>
+            @else
+                <form method="POST" action="{{route('store.cart.coupon')}}" class="cartCouponForm">
+                    @csrf
+                    <label>Rabatkode</label>
+                    <div><input name="code" maxlength="40" placeholder="F.eks. WELCOME20" autocomplete="off"><button>Anvend</button></div>
+                </form>
+            @endif
+
             <div class="summaryTotal"><span>Samlet pr. måned</span><strong>{{ number_format((float)$summary['total'],2,',','.') }} DKK</strong></div>
             <p class="micro">Hver service fortsætter som sit eget månedlige abonnement efter første samlede checkout.</p>
 
@@ -84,7 +98,7 @@
 
 @push('styles')
 <style>
-.cartLayout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(290px,.55fr);gap:18px;align-items:start}.cartItems{display:grid;gap:12px}.cartItem{display:flex;gap:14px;padding:18px;border:1px solid var(--line);border-radius:15px;background:#081522}.cartIcon{width:44px;height:44px;flex:0 0 auto;border-radius:11px;background:#102a43;border:1px solid #214968;display:grid;place-items:center;color:#8fcaff;font-weight:900}.cartMain{min-width:0;flex:1}.cartTop{display:flex;justify-content:space-between;gap:16px}.cartTop h2{margin:3px 0 0;font-size:18px}.cartPrice{white-space:nowrap;font-size:16px}.cartPrice small{display:block;text-align:right;font-size:9px;color:#7189a4;font-weight:650}.cartMeta{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.cartMeta span{padding:6px 8px;border-radius:8px;border:1px solid #1a3550;background:#091a2a;color:#829ab5;font-size:10px}.cartMeta b{color:#d8e9fb}.cartRemove{border:0;background:transparent;color:#e2818e;padding:0;font:750 10px inherit;cursor:pointer}.cartSummary{position:sticky;top:96px}.cartSummary h2{font-size:22px}.summaryLine,.summaryTotal{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line);font-size:12px}.summaryLine span{color:#8096b0}.summaryTotal{border:0;padding-top:17px}.summaryTotal strong{font-size:17px}.cartError{margin-bottom:16px;border-color:#69333d;color:#ffabb8}@media(max-width:800px){.cartLayout{grid-template-columns:1fr}.cartSummary{position:static}}@media(max-width:560px){.cartItem{align-items:flex-start}.cartTop{flex-direction:column}.cartPrice small{text-align:left}}
+.cartLayout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(290px,.55fr);gap:18px;align-items:start}.cartItems{display:grid;gap:12px}.cartItem{display:flex;gap:14px;padding:18px;border:1px solid var(--line);border-radius:15px;background:#081522}.cartIcon{width:44px;height:44px;flex:0 0 auto;border-radius:11px;background:#102a43;border:1px solid #214968;display:grid;place-items:center;color:#8fcaff;font-weight:900}.cartMain{min-width:0;flex:1}.cartTop{display:flex;justify-content:space-between;gap:16px}.cartTop h2{margin:3px 0 0;font-size:18px}.cartPrice{white-space:nowrap;font-size:16px}.cartPrice small{display:block;text-align:right;font-size:9px;color:#7189a4;font-weight:650}.cartMeta{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.cartMeta span{padding:6px 8px;border-radius:8px;border:1px solid #1a3550;background:#091a2a;color:#829ab5;font-size:10px}.cartMeta b{color:#d8e9fb}.cartRemove{border:0;background:transparent;color:#e2818e;padding:0;font:750 10px inherit;cursor:pointer}.cartSummary{position:sticky;top:96px}.cartSummary h2{font-size:22px}.summaryLine,.summaryTotal{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line);font-size:12px}.summaryLine span{color:#8096b0}.summaryTotal{border:0;padding-top:17px}.summaryTotal strong{font-size:17px}.cartError{margin-bottom:16px;border-color:#69333d;color:#ffabb8}.discountText{color:#67d9a2}.cartCouponForm{padding:12px 0;border-bottom:1px solid var(--line)}.cartCouponForm label{display:block;color:#7189a5;font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}.cartCouponForm>div{display:flex;gap:7px}.cartCouponForm input{min-width:0;flex:1;height:38px;border:1px solid #203b56;border-radius:8px;background:#06111d;color:#fff;padding:0 10px;font:700 10px inherit;text-transform:uppercase;outline:none}.cartCouponForm button,.cartCoupon button{border:1px solid #28527a;border-radius:8px;background:#102941;color:#a8d4fa;padding:0 11px;font:800 9px inherit;cursor:pointer}.cartCoupon.applied{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:12px 0;padding:10px;border:1px solid #245c48;border-radius:10px;background:#0c251d}.cartCoupon small,.cartCoupon strong,.cartCoupon span{display:block}.cartCoupon small{color:#6a9d88;font-size:8px;text-transform:uppercase}.cartCoupon strong{color:#9ce8c4;font-size:11px}.cartCoupon span{color:#628e7b;font-size:8px}.cartCoupon button{height:31px;border-color:#335849;background:#123126;color:#8fd9b5}@media(max-width:800px){.cartLayout{grid-template-columns:1fr}.cartSummary{position:static}}@media(max-width:560px){.cartItem{align-items:flex-start}.cartTop{flex-direction:column}.cartPrice small{text-align:left}}
 </style>
 @endpush
 @endsection
