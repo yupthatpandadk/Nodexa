@@ -1,6 +1,25 @@
 {
-  "latest": "1.7.1",
+  "latest": "1.7.2",
   "releases": [
+    {
+      "version": "1.7.2",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Global Storefront sale",
+      "changes": [
+        "Tilføjet Globalt udsalg under Admin → Storefront & Billing.",
+        "Admin kan aktivere/deaktivere udsalget, vælge navn/label, rabatprocent og rabatperiode fra 1 til 120 måneder.",
+        "Globalt udsalg gælder alle nye game-server- og VPS-køb i den nuværende Storefront-kurv; eksisterende abonnementer ændres ikke.",
+        "Storefrontens game-server- og VPS-kataloger viser førpris, udsalgspris og rabatprocent.",
+        "Kurv og checkout beregner rækkefølgen som normalpris → globalt udsalg → eventuel rabatkode → endelig Stripe-total.",
+        "Stripe får fortsat præcis den gemte Nodexa-total i øre efter både globalt udsalg og rabatkode.",
+        "Globalt udsalg snapshotttes på nye abonnementer, så efterfølgende fakturaer bruger udsalgsprisen i den valgte periode og derefter automatisk vender tilbage til normal pris.",
+        "Rabatkode og globalt udsalg har separate månedstællere og kan derfor have forskellige perioder.",
+        "Procentrabatkoder snapshotter type/værdi og beregnes hver måned efter det globale udsalg; en 20% kode forbliver dermed reelt 20%, også hvis udsalgsperioden slutter tidligere.",
+        "Fast DKK-rabat fordeles fortsat korrekt mellem flere services uden at blive multipliceret pr. service.",
+        "Client Area Billing viser aktiv udsalgsperiode og rabatkodeperiode separat."
+      ]
+    },
     {
       "version": "1.7.1",
       "date": "2026-11-07",
