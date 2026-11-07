@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Pterodactyl\Models\StoreOrder;
 use Pterodactyl\Models\StoreProduct;
+use Pterodactyl\Models\StoreCoupon;
 use RuntimeException;
 
 class NodexaCartService
@@ -16,10 +17,10 @@ class NodexaCartService
     ) {
     }
 
-    public function resolve(array $cart): array
+    public function resolve(array $cart, ?string $couponCode = null): array
     {
         $items = [];
-        $total = 0.0;
+        $subtotalCents = 0;
 
         foreach ($cart as $key => $raw) {
             if (!is_array($raw) || empty($raw['type']) || empty($raw['product_id'])) {
@@ -100,20 +101,36 @@ class NodexaCartService
             }
 
             $items[] = $item;
-            $total += (float) $item['price'];
+            $subtotalCents += $this->moneyToCents($item['price']);
         }
+
+        $coupon = $this->couponForAmount($couponCode, $subtotalCents);
+        $discountCents = (int) ($coupon['discount_cents'] ?? 0);
+        $totalCents = max(0, $subtotalCents - $discountCents);
 
         return [
             'items' => $items,
-            'total' => round($total, 2),
+            'subtotal' => $subtotalCents / 100,
+            'discount' => $discountCents / 100,
+            'total' => $totalCents / 100,
+            'subtotal_cents' => $subtotalCents,
+            'discount_cents' => $discountCents,
+            'total_cents' => $totalCents,
             'currency' => 'DKK',
             'count' => count($items),
+            'coupon' => $coupon,
         ];
     }
 
-    public function createCheckout(int $userId, array $cart): int
+    public function validateCoupon(?string $couponCode, int $subtotalCents): ?array
     {
-        $resolved = $this->resolve($cart);
+        return $this->couponForAmount($couponCode, $subtotalCents, true);
+    }
+
+
+    public function createCheckout(int $userId, array $cart, ?string $couponCode = null): int
+    {
+        $resolved = $this->resolve($cart, $couponCode);
         if ($resolved['count'] < 1) {
             throw new RuntimeException('Kurven er tom eller indeholder ikke længere tilgængelige produkter.');
         }
@@ -135,8 +152,10 @@ class NodexaCartService
                 'user_id' => $userId,
                 'number' => $number,
                 'status' => 'awaiting_payment',
-                'subtotal' => $resolved['total'],
-                'discount' => 0,
+                'coupon_id' => $resolved['coupon']['id'] ?? null,
+                'coupon_code' => $resolved['coupon']['code'] ?? null,
+                'subtotal' => $resolved['subtotal'],
+                'discount' => $resolved['discount'],
                 'total' => $resolved['total'],
                 'currency' => $resolved['currency'],
                 'created_at' => now(),
@@ -188,6 +207,8 @@ class NodexaCartService
         if (in_array($checkout->status, ['paid', 'completed'], true)) {
             return ['completed' => true, 'processed' => 0, 'failed' => 0];
         }
+
+        $this->reserveCoupon($checkoutId);
 
         DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
             'status' => 'processing',
@@ -352,4 +373,105 @@ class NodexaCartService
             'failed' => $failed,
         ];
     }
+    public function reserveCoupon(int $checkoutId): void
+    {
+        DB::transaction(function () use ($checkoutId) {
+            $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->lockForUpdate()->first();
+            if (!$checkout || !$checkout->coupon_id || $checkout->coupon_reserved_at) {
+                return;
+            }
+
+            $coupon = StoreCoupon::query()->where('id', $checkout->coupon_id)->lockForUpdate()->first();
+            if (!$coupon || !$coupon->enabled) {
+                throw new RuntimeException('Rabatkoden er ikke længere aktiv.');
+            }
+
+            if ($coupon->expires_at && $coupon->expires_at->isPast()) {
+                throw new RuntimeException('Rabatkoden er udløbet.');
+            }
+
+            if ($coupon->max_uses !== null && (int) $coupon->uses >= (int) $coupon->max_uses) {
+                throw new RuntimeException('Rabatkoden har nået sit maksimale antal anvendelser.');
+            }
+
+            $coupon->uses = (int) $coupon->uses + 1;
+            $coupon->save();
+
+            DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
+                'coupon_reserved_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+    }
+
+    public function releaseCoupon(int $checkoutId): void
+    {
+        DB::transaction(function () use ($checkoutId) {
+            $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->lockForUpdate()->first();
+            if (!$checkout || !$checkout->coupon_id || !$checkout->coupon_reserved_at || $checkout->paid_at) {
+                return;
+            }
+
+            $coupon = StoreCoupon::query()->where('id', $checkout->coupon_id)->lockForUpdate()->first();
+            if ($coupon && (int) $coupon->uses > 0) {
+                $coupon->uses = max(0, (int) $coupon->uses - 1);
+                $coupon->save();
+            }
+
+            DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
+                'coupon_reserved_at' => null,
+                'updated_at' => now(),
+            ]);
+        });
+    }
+
+    private function couponForAmount(?string $couponCode, int $subtotalCents, bool $strict = false): ?array
+    {
+        $code = strtoupper(trim((string) $couponCode));
+        if ($code === '') {
+            return null;
+        }
+
+        $coupon = StoreCoupon::query()->whereRaw('UPPER(code) = ?', [$code])->first();
+
+        $invalid = !$coupon
+            || !$coupon->enabled
+            || ($coupon->expires_at && $coupon->expires_at->isPast())
+            || ($coupon->max_uses !== null && (int) $coupon->uses >= (int) $coupon->max_uses);
+
+        if ($invalid) {
+            if ($strict) {
+                throw new RuntimeException('Rabatkoden er ugyldig, udløbet eller opbrugt.');
+            }
+
+            return null;
+        }
+
+        if ($coupon->type === 'percent') {
+            $percent = max(0.0, min(100.0, (float) $coupon->value));
+            $discountCents = (int) round($subtotalCents * ($percent / 100));
+            $label = rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.') . '%';
+        } else {
+            $discountCents = $this->moneyToCents((float) $coupon->value);
+            $label = number_format($discountCents / 100, 2, ',', '.') . ' DKK';
+        }
+
+        $discountCents = min($subtotalCents, max(0, $discountCents));
+
+        return [
+            'id' => $coupon->id,
+            'code' => $coupon->code,
+            'type' => $coupon->type,
+            'value' => (float) $coupon->value,
+            'label' => $label,
+            'discount_cents' => $discountCents,
+            'discount' => $discountCents / 100,
+        ];
+    }
+
+    private function moneyToCents(float|int|string $amount): int
+    {
+        return (int) round(((float) $amount) * 100);
+    }
+
 }
