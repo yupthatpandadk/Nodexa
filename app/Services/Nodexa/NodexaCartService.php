@@ -129,7 +129,7 @@ class NodexaCartService
         }
 
         return DB::transaction(function () use ($userId, $resolved) {
-            $number = 'NX-CART-' . now()->format('Ym') . '-' . strtoupper(Str::random(7));
+            $number = now()->format('Ym') . '-' . strtoupper(Str::random(7));
 
             $checkoutId = DB::table('nodexa_cart_checkouts')->insertGetId([
                 'user_id' => $userId,
