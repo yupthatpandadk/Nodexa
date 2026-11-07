@@ -19,7 +19,7 @@
         <p class="muted">{{ $service->hostname }}</p>
         <div style="margin-top:20px">
             @foreach([
-                'Hostname'=>$service->hostname,
+                'VPS-navn'=>$service->hostname,
                 'Operativsystem'=>$service->os_label,
                 'vCPU'=>$service->vcpu ?: '—',
                 'RAM'=>$service->memory_mb ? number_format($service->memory_mb/1024,1,',','.') . ' GB' : '—',
