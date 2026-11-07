@@ -83,8 +83,8 @@
                     <div class="row">
                         <div class="col-sm-5"><div class="form-group"><label>Navn</label><input class="form-control" name="name" required placeholder="VPS Starter"></div></div>
                         <div class="col-sm-2"><div class="form-group"><label>Flax ID</label><input class="form-control" type="number" name="upstream_product_id" min="1" required></div></div>
-                        <div class="col-sm-2"><div class="form-group"><label>Flax Din pris</label><input class="form-control" type="text" value="Auto" readonly disabled title="Hentes fra Flax-preset og kan ikke ændres i Nodexa"></div></div>
-                        <div class="col-sm-3"><div class="form-group"><label>Kundepris/md</label><input class="form-control" type="number" step=".01" name="monthly_price" required></div></div>
+                        <div class="col-sm-2"><div class="form-group"><label>Reseller pris</label><input class="form-control" type="text" value="Auto" readonly disabled title="Hentes fra Flax og kan ikke ændres i Nodexa"></div></div>
+                        <div class="col-sm-3"><div class="form-group"><label>Kunde pris</label><input class="form-control" type="number" step=".01" name="monthly_price" required></div></div>
                     </div>
                     <div class="form-group"><label>Beskrivelse</label><textarea class="form-control" name="description" rows="2"></textarea></div>
                     <div class="row">
@@ -110,11 +110,11 @@
                     <form method="POST" action="{{ route('admin.flax.products.update',$product->id) }}" style="padding:14px 0;border-bottom:1px solid rgba(128,128,128,.18)">
                         @csrf @method('PATCH')
                         <div class="row">
-                            <div class="col-sm-4"><input class="form-control input-sm" name="name" value="{{ $product->name }}" required></div>
-                            <div class="col-sm-2"><input class="form-control input-sm" type="number" name="upstream_product_id" value="{{ $product->upstream_product_id }}" required></div>
-                            <div class="col-sm-2"><input class="form-control input-sm" type="text" value="{{ $product->upstream_monthly_price !== null ? number_format((float)$product->upstream_monthly_price,2,'.','') : '—' }}" readonly disabled title="Flax Din pris er låst og opdateres kun via preset/import-sync"></div>
-                            <div class="col-sm-2"><input class="form-control input-sm" type="number" step=".01" name="monthly_price" value="{{ $product->monthly_price }}" required title="Kundepris pr. måned"></div>
-                            <div class="col-sm-2"><input class="form-control input-sm" name="currency" value="{{ $product->currency }}" required></div>
+                            <div class="col-sm-4"><label class="control-label" style="font-size:10px;color:#7f93aa">Navn</label><input class="form-control input-sm" name="name" value="{{ $product->name }}" required></div>
+                            <div class="col-sm-2"><label class="control-label" style="font-size:10px;color:#7f93aa">Flax ID</label><input class="form-control input-sm" type="number" name="upstream_product_id" value="{{ $product->upstream_product_id }}" required></div>
+                            <div class="col-sm-2"><label class="control-label" style="font-size:10px;color:#7f93aa">Reseller pris</label><input class="form-control input-sm" type="text" value="{{ $product->upstream_monthly_price !== null ? number_format((float)$product->upstream_monthly_price,2,'.','') : '—' }}" readonly disabled title="Reseller-prisen hentes fra Flax og er låst"></div>
+                            <div class="col-sm-2"><label class="control-label" style="font-size:10px;color:#7f93aa">Kunde pris</label><input class="form-control input-sm" type="number" step=".01" name="monthly_price" value="{{ $product->monthly_price }}" required title="Prisen kunden betaler pr. måned"></div>
+                            <div class="col-sm-2"><label class="control-label" style="font-size:10px;color:#7f93aa">Valuta</label><input class="form-control input-sm" name="currency" value="{{ $product->currency }}" required></div>
                         </div>
                         <input type="hidden" name="description" value="{{ $product->description }}">
                         <input type="hidden" name="memory_mb" value="{{ $product->memory_mb }}">
@@ -128,11 +128,14 @@
                             <label><input type="checkbox" name="featured" value="1" {{ $product->featured ? 'checked' : '' }}> Fremhævet</label>
                             <span class="text-muted" style="margin-left:12px">
                                 {{ $product->vcpu ?: '—' }} vCPU · {{ $product->memory_mb ?: '—' }} MB · {{ $product->disk_gb ?: '—' }} GB
-                                @if($product->upstream_monthly_price !== null)
-                                    · Flax Din pris {{ number_format((float)$product->upstream_monthly_price,2,',','.') }} kr
-                                    · Margin {{ number_format((float)$product->monthly_price - (float)$product->upstream_monthly_price,2,',','.') }} kr
-                                @endif
                             </span>
+                            @if($product->upstream_monthly_price !== null)
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+                                    <span class="label label-info" style="padding:6px 9px">Kunde pris: {{ number_format((float)$product->monthly_price,2,',','.') }} {{ $product->currency }}</span>
+                                    <span class="label label-default" style="padding:6px 9px">Reseller pris: {{ number_format((float)$product->upstream_monthly_price,2,',','.') }} {{ $product->currency }}</span>
+                                    <span class="label label-success" style="padding:6px 9px">Margin: {{ number_format((float)$product->monthly_price - (float)$product->upstream_monthly_price,2,',','.') }} {{ $product->currency }}</span>
+                                </div>
+                            @endif
                             <button class="btn btn-xs btn-primary pull-right">Gem</button>
                         </div>
                     </form>
