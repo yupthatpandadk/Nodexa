@@ -6,17 +6,28 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Pterodactyl\Models\StoreProduct;
 use Pterodactyl\Models\StoreOrder;
+use Pterodactyl\Services\Nodexa\GlobalStoreSaleService;
 
 class StorefrontController extends Controller
 {
+    public function __construct(private GlobalStoreSaleService $sale)
+    {
+    }
+
     public function index()
     {
-        return view('store.index', ['products'=>StoreProduct::where('enabled',true)->orderByDesc('featured')->orderBy('price_monthly')->get()]);
+        return view('store.index', [
+            'products'=>StoreProduct::where('enabled',true)->orderByDesc('featured')->orderBy('price_monthly')->get(),
+            'globalSale'=>$this->sale->active(),
+        ]);
     }
 
     public function hosting()
     {
-        return view('store.hosting', ['products'=>StoreProduct::where('enabled',true)->orderByDesc('featured')->orderBy('price_monthly')->get()]);
+        return view('store.hosting', [
+            'products'=>StoreProduct::where('enabled',true)->orderByDesc('featured')->orderBy('price_monthly')->get(),
+            'globalSale'=>$this->sale->active(),
+        ]);
     }
 
     public function features() { return view('store.features'); }
@@ -149,7 +160,10 @@ class StorefrontController extends Controller
     public function show(StoreProduct $product)
     {
         abort_unless($product->enabled,404);
-        return view('store.product', compact('product'));
+        return view('store.product', [
+            'product' => $product,
+            'globalSale' => $this->sale->active(),
+        ]);
     }
 
     public function order(Request $request, StoreProduct $product)
