@@ -45,7 +45,7 @@
         @endif
 
         @auth
-        <form method="POST" action="{{ route('store.vps.order',$product->slug) }}">
+        <form method="POST" action="{{ route('store.cart.add-vps',$product->slug) }}">
             @csrf
             <label class="formLabel" for="hostname">VPS-navn</label>
             <input class="input" id="hostname" name="hostname" value="{{ old('hostname') }}" required minlength="3" maxlength="190" placeholder="Min VPS">
@@ -59,7 +59,7 @@
             </select>
 
             @if($errors->any())<div class="notice" style="margin-top:12px;border-color:#69333d;color:#ffabb8">{{ $errors->first() }}</div>@endif
-            <button class="btn primary" style="width:100%;margin-top:14px" {{ !$configured || $templates->isEmpty() ? 'disabled' : '' }}>Fortsæt til checkout →</button>
+            <button class="btn primary" style="width:100%;margin-top:14px" {{ !$configured || $templates->isEmpty() ? 'disabled' : '' }}>Læg i kurv →</button>
         </form>
         @else
         <a class="btn primary" style="width:100%;margin-top:18px" href="/auth/register">Register for at bestille →</a>
