@@ -174,6 +174,20 @@ class CartController extends Controller
 
         $request->session()->forget([self::SESSION_KEY, self::COUPON_KEY]);
 
+        if ($this->stripe->isEnabled()) {
+            try {
+                $session = $this->stripe->createCheckoutSession($checkoutId, $request->user()->id);
+
+                return redirect()->away($session['url']);
+            } catch (\Throwable $exception) {
+                report($exception);
+
+                return redirect()
+                    ->route('store.cart.order', $checkoutId)
+                    ->withErrors(['stripe' => $exception->getMessage()]);
+            }
+        }
+
         return redirect()
             ->route('store.cart.order', $checkoutId)
             ->with('success', 'Din samlede ordre er oprettet.');
