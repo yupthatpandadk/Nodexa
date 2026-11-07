@@ -1,6 +1,22 @@
 {
-  "latest": "1.5.1",
+  "latest": "1.5.2",
   "releases": [
+    {
+      "version": "1.5.2",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Flax VPS catalog presets",
+      "changes": [
+        "Tilføjet importérbare Flax VirtFusion VPS-presets baseret på reseller-kataloget: VPS-01 til VPS-06 samt VPS-01+ til VPS-06+.",
+        "Preset mapping: ID 1=VPS-01 69 DKK, 2=VPS-02 109 DKK, 3=VPS-03 149 DKK, 4=VPS-04 199 DKK, 5=VPS-05 259 DKK, 6=VPS-06 319 DKK.",
+        "Plus mapping: ID 7=VPS-01+ 99 DKK, 8=VPS-02+ 129 DKK, 9=VPS-03+ 189 DKK, 10=VPS-04+ 219 DKK, 11=VPS-05+ 339 DKK, 12=VPS-06+ 469 DKK.",
+        "Importerede presets gemmer Flax upstream cost separat fra Nodexas salgspris og oprettes deaktiveret, så admin kan sætte margin og ressourcer før salg.",
+        "Eksisterende produkter med samme Flax Product ID får kun upstream cost opdateret; deres Nodexa-salgspris overskrives ikke.",
+        "Admin viser nu Flax cost og beregnet margin pr. VPS-produkt.",
+        "Rettet Carbon namespace-fejl i Flax Reseller-adminens seneste API-test tidspunkt.",
+        "VirtFusion OS templates forbliver live-synkroniserede via Flax API i stedet for at blive hardcoded fra screenshots."
+      ]
+    },
     {
       "version": "1.5.1",
       "date": "2026-11-07",
