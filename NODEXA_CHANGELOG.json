@@ -1,6 +1,20 @@
 {
-  "latest": "1.5.4",
+  "latest": "1.5.5",
   "releases": [
+    {
+      "version": "1.5.5",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Lock Flax reseller cost",
+      "changes": [
+        "Flax' reseller 'Din pris' er nu låst i Nodexa og kan ikke ændres manuelt i Admin.",
+        "Backend ignorerer forsøg på at ændre upstream_monthly_price via manipulerede requests; kun preset/import-sync må opdatere Flax-prisen.",
+        "Admin-labels er gjort tydeligere: 'Flax Din pris' er read-only, mens den redigerbare salgspris hedder 'Kundepris/md'.",
+        "Flax VPS-presets bruger nu de korrekte resellerpriser fra Flax: 51,75 / 81,75 / 111,75 / 149,25 / 194,25 / 239,25 DKK og 74,25 / 96,75 / 141,75 / 164,25 / 254,25 / 351,75 DKK.",
+        "Eksisterende VPS-01 til VPS-06+ får automatisk korrigeret Flax reseller-cost via migration uden at ændre deres kundepris.",
+        "Rettet namespace-fejl i Flax VPS-service tabellen for Str::limit og Carbon datoformattering."
+      ]
+    },
     {
       "version": "1.5.4",
       "date": "2026-11-07",
