@@ -213,26 +213,52 @@ class NodexaAutomationService
             $number = 'NX-' . now()->format('Ym') . '-' . strtoupper(Str::random(8));
             $description = trim((string) ($subscription->description ?? '')) ?: 'Nodexa hosting subscription';
 
+            $subtotal = round((float) $subscription->amount, 2);
+            $discountMonthsTotal = max(0, (int) ($subscription->discount_months_total ?? 0));
+            $discountMonthsUsed = max(0, (int) ($subscription->discount_months_used ?? 0));
+            $discount = 0.0;
+
+            if (
+                !empty($subscription->discount_code)
+                && $discountMonthsTotal > 0
+                && $discountMonthsUsed < $discountMonthsTotal
+            ) {
+                $discount = min(
+                    $subtotal,
+                    max(0.0, round((float) ($subscription->discount_amount ?? 0), 2))
+                );
+            }
+
+            $total = max(0.0, round($subtotal - $discount, 2));
+            $discountMonthNumber = $discount > 0 ? ($discountMonthsUsed + 1) : null;
+
             $invoiceId = DB::table('nodexa_invoices')->insertGetId([
                 'user_id' => $subscription->user_id,
                 'subscription_id' => $subscription->id,
                 'number' => $number,
                 'status' => 'unpaid',
-                'subtotal' => $subscription->amount,
+                'subtotal' => $subtotal,
+                'discount' => $discount,
                 'tax' => 0,
-                'total' => $subscription->amount,
+                'total' => $total,
                 'currency' => $subscription->currency,
                 'due_at' => now()->addDays(7),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
+            $itemDescription = $description;
+            if ($discount > 0) {
+                $itemDescription .= ' — Rabatkode ' . $subscription->discount_code
+                    . ' (måned ' . $discountMonthNumber . '/' . $discountMonthsTotal . ')';
+            }
+
             DB::table('nodexa_invoice_items')->insert([
                 'invoice_id' => $invoiceId,
-                'description' => $description,
+                'description' => $itemDescription,
                 'quantity' => 1,
-                'unit_price' => $subscription->amount,
-                'total' => $subscription->amount,
+                'unit_price' => $subtotal,
+                'total' => $total,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -243,15 +269,29 @@ class NodexaAutomationService
                 default => now()->addMonth(),
             };
 
-            DB::table('nodexa_subscriptions')->where('id', $subscription->id)->update([
+            $subscriptionUpdate = [
                 'next_invoice_at' => $next,
                 'updated_at' => now(),
-            ]);
+            ];
+
+            if ($discount > 0) {
+                $subscriptionUpdate['discount_months_used'] = $discountMonthNumber;
+            }
+
+            DB::table('nodexa_subscriptions')->where('id', $subscription->id)->update($subscriptionUpdate);
+
+            $notification = 'En ny faktura på ' . number_format($total, 2, ',', '.') . ' ' . $subscription->currency
+                . ' er klar for ' . $description . '.';
+
+            if ($discount > 0) {
+                $notification .= ' Rabatkode ' . $subscription->discount_code
+                    . ' er anvendt (måned ' . $discountMonthNumber . '/' . $discountMonthsTotal . ').';
+            }
 
             $this->events->notify(
                 $subscription->user_id,
                 'Ny faktura ' . $number,
-                'En ny faktura på ' . number_format((float) $subscription->amount, 2, ',', '.') . ' ' . $subscription->currency . ' er klar for ' . $description . '.',
+                $notification,
                 'billing',
                 '/client/billing'
             );
@@ -259,8 +299,13 @@ class NodexaAutomationService
             $this->events->emit('invoice.created', [
                 'invoice_id' => $invoiceId,
                 'number' => $number,
-                'total' => $subscription->amount,
+                'subtotal' => $subtotal,
+                'discount' => $discount,
+                'total' => $total,
                 'currency' => $subscription->currency,
+                'discount_code' => $discount > 0 ? $subscription->discount_code : null,
+                'discount_month' => $discountMonthNumber,
+                'discount_months_total' => $discountMonthsTotal,
                 'service_type' => $subscription->service_type ?? null,
             ], $subscription->user_id);
 
