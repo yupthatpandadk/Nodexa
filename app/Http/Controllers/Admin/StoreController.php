@@ -40,7 +40,7 @@ class StoreController extends Controller
     public function destroy(StoreProduct $product){ $product->delete(); return back()->with('success','Produkt slettet.'); }
 
     public function coupon(Request $r){
-        $d=$r->validate(['code'=>'required|string|max:40|unique:nodexa_store_coupons,code','type'=>'required|in:percent,fixed','value'=>'required|numeric|min:0','max_uses'=>'nullable|integer|min:1','expires_at'=>'nullable|date']);
+        $d=$r->validate(['code'=>'required|string|max:40|unique:nodexa_store_coupons,code','type'=>'required|in:percent,fixed','value'=>'required|numeric|min:0','duration_months'=>'required|integer|min:1|max:120','max_uses'=>'nullable|integer|min:1','expires_at'=>'nullable|date']);
         if ($d['type'] === 'percent' && (float) $d['value'] > 100) return back()->withErrors(['value'=>'Procentrabat kan højst være 100%.'])->withInput();
         $d['code']=strtoupper(trim($d['code'])); $d['enabled']=true; StoreCoupon::create($d);
         return back()->with('success','Rabatkode oprettet.');
