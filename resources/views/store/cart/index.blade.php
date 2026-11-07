@@ -75,7 +75,7 @@
             @if($summary['global_sale'])
             <div class="summaryLine"><span>{{ $summary['global_sale']['label'] }} · {{ number_format($summary['global_sale']['percent'],0,',','.') }}%</span><strong class="discountText">-{{ number_format((float)$summary['sale_discount'],2,',','.') }} DKK</strong></div>
             @endif
-            <div class="summaryLine"><span>Rabatkode@if($summary['coupon']) · {{$summary['coupon']['code']}}@endif</span><strong class="{{$summary['discount']>0?'discountText':''}}">-{{ number_format((float)$summary['discount'],2,',','.') }} DKK</strong></div>
+            <div class="summaryLine"><span>Rabatkode @if($summary['coupon']) · {{ $summary['coupon']['code'] }} @endif</span><strong class="{{$summary['discount']>0?'discountText':''}}">-{{ number_format((float)$summary['discount'],2,',','.') }} DKK</strong></div>
 
             @if($summary['coupon'])
                 <div class="cartCoupon applied">
