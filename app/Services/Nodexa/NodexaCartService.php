@@ -16,6 +16,7 @@ class NodexaCartService
         private FlaxResellerService $flax,
         private NodexaEventService $events,
         private ProvisionStoreOrderService $provision,
+        private GlobalStoreSaleService $sale,
     ) {
     }
 
@@ -102,25 +103,50 @@ class NodexaCartService
                 continue;
             }
 
+            $originalCents = $this->moneyToCents($item['price']);
+            $saleDiscountCents = $this->sale->discountCents($originalCents);
+            $salePriceCents = max(0, $originalCents - $saleDiscountCents);
+
+            $item['original_price'] = $originalCents / 100;
+            $item['sale_discount'] = $saleDiscountCents / 100;
+            $item['sale_price'] = $salePriceCents / 100;
+
             $items[] = $item;
-            $subtotalCents += $this->moneyToCents($item['price']);
+            $subtotalCents += $originalCents;
         }
 
-        $coupon = $this->couponForAmount($couponCode, $subtotalCents);
+        $sale = $this->sale->active();
+        $saleDiscountCents = array_sum(array_map(
+            fn (array $item) => $this->moneyToCents($item['sale_discount'] ?? 0),
+            $items
+        ));
+        $afterSaleCents = max(0, $subtotalCents - $saleDiscountCents);
+
+        // Coupon codes are intentionally calculated after the global sale.
+        $coupon = $this->couponForAmount($couponCode, $afterSaleCents);
         $discountCents = (int) ($coupon['discount_cents'] ?? 0);
-        $totalCents = max(0, $subtotalCents - $discountCents);
+        $totalCents = max(0, $afterSaleCents - $discountCents);
 
         return [
             'items' => $items,
             'subtotal' => $subtotalCents / 100,
+            'sale_discount' => $saleDiscountCents / 100,
+            'after_sale_subtotal' => $afterSaleCents / 100,
             'discount' => $discountCents / 100,
             'total' => $totalCents / 100,
             'subtotal_cents' => $subtotalCents,
+            'sale_discount_cents' => $saleDiscountCents,
+            'after_sale_subtotal_cents' => $afterSaleCents,
             'discount_cents' => $discountCents,
             'total_cents' => $totalCents,
             'currency' => 'DKK',
             'count' => count($items),
             'coupon' => $coupon,
+            'global_sale' => $sale ? [
+                'percent' => (float) $sale->percent,
+                'duration_months' => (int) $sale->duration_months,
+                'label' => (string) $sale->label,
+            ] : null,
         ];
     }
 
@@ -162,6 +188,9 @@ class NodexaCartService
                 'coupon_id' => $resolved['coupon']['id'] ?? null,
                 'coupon_code' => $resolved['coupon']['code'] ?? null,
                 'coupon_duration_months' => $resolved['coupon']['duration_months'] ?? null,
+                'global_sale_percent' => $resolved['global_sale']['percent'] ?? 0,
+                'global_sale_discount' => $resolved['sale_discount'],
+                'global_sale_duration_months' => $resolved['global_sale']['duration_months'] ?? 0,
                 'subtotal' => $resolved['subtotal'],
                 'discount' => $resolved['discount'],
                 'total' => $resolved['total'],
@@ -257,7 +286,8 @@ class NodexaCartService
             ->orderBy('id')
             ->get();
 
-        $discountAllocations = $this->allocateCheckoutDiscount($checkout, $items);
+        $saleAllocations = $this->allocateSaleDiscount($checkout, $items);
+        $discountAllocations = $this->allocateCouponDiscount($checkout, $items, $saleAllocations);
 
         $processed = 0;
         $failed = 0;
@@ -337,6 +367,11 @@ class NodexaCartService
 
                     $subscription = DB::table('nodexa_subscriptions')->where('order_id', $order->id)->first();
                     if ($subscription) {
+                        $this->applyRecurringSale(
+                            (int) $subscription->id,
+                            $checkout,
+                            (int) ($saleAllocations[$item->id] ?? 0)
+                        );
                         $this->applyRecurringDiscount(
                             (int) $subscription->id,
                             $checkout,
@@ -400,6 +435,11 @@ class NodexaCartService
                     $this->flax->activateInvoice($invoiceId);
 
                     if ($subscriptionId) {
+                        $this->applyRecurringSale(
+                            $subscriptionId,
+                            $checkout,
+                            (int) ($saleAllocations[$item->id] ?? 0)
+                        );
                         $this->applyRecurringDiscount(
                             $subscriptionId,
                             $checkout,
@@ -466,12 +506,45 @@ class NodexaCartService
             'failed' => $failed,
         ];
     }
-    private function allocateCheckoutDiscount(object $checkout, $items): array
+    private function allocateSaleDiscount(object $checkout, $items): array
+    {
+        $percent = max(0.0, min(100.0, (float) ($checkout->global_sale_percent ?? 0)));
+
+        if ($percent <= 0 || $items->isEmpty()) {
+            return [];
+        }
+
+        $allocations = [];
+
+        foreach ($items as $item) {
+            $itemCents = $this->moneyToCents((float) $item->unit_price);
+            $allocations[$item->id] = min(
+                $itemCents,
+                max(0, (int) round($itemCents * ($percent / 100)))
+            );
+        }
+
+        return $allocations;
+    }
+
+    private function allocateCouponDiscount(object $checkout, $items, array $saleAllocations): array
     {
         $discountCents = $this->moneyToCents((float) ($checkout->discount ?? 0));
-        $subtotalCents = $this->moneyToCents((float) ($checkout->subtotal ?? 0));
+        if ($discountCents <= 0 || $items->isEmpty()) {
+            return [];
+        }
 
-        if ($discountCents <= 0 || $subtotalCents <= 0 || $items->isEmpty()) {
+        $bases = [];
+        $baseTotal = 0;
+
+        foreach ($items as $item) {
+            $original = $this->moneyToCents((float) $item->unit_price);
+            $base = max(0, $original - (int) ($saleAllocations[$item->id] ?? 0));
+            $bases[$item->id] = $base;
+            $baseTotal += $base;
+        }
+
+        if ($baseTotal <= 0) {
             return [];
         }
 
@@ -483,8 +556,7 @@ class NodexaCartService
             if ($index === $count - 1) {
                 $allocation = $remaining;
             } else {
-                $itemCents = $this->moneyToCents((float) $item->unit_price);
-                $allocation = (int) round($discountCents * ($itemCents / $subtotalCents));
+                $allocation = (int) round($discountCents * (($bases[$item->id] ?? 0) / $baseTotal));
                 $allocation = max(0, min($remaining, $allocation));
             }
 
@@ -493,6 +565,23 @@ class NodexaCartService
         }
 
         return $allocations;
+    }
+
+    private function applyRecurringSale(int $subscriptionId, object $checkout, int $discountCents): void
+    {
+        $durationMonths = max(0, (int) ($checkout->global_sale_duration_months ?? 0));
+
+        if ($discountCents <= 0 || $durationMonths <= 0) {
+            return;
+        }
+
+        DB::table('nodexa_subscriptions')->where('id', $subscriptionId)->update([
+            'sale_discount_amount' => $discountCents / 100,
+            'sale_months_total' => $durationMonths,
+            // Month 1 is the combined checkout that has just been paid.
+            'sale_months_used' => 1,
+            'updated_at' => now(),
+        ]);
     }
 
     private function applyRecurringDiscount(int $subscriptionId, object $checkout, int $discountCents): void
