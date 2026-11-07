@@ -25,8 +25,8 @@
                 <div class="box-body">
                     <div class="form-group">
                         <label>API endpoint</label>
-                        <input class="form-control" type="url" name="api_url" value="{{ old('api_url',$settings->api_url ?? '') }}" placeholder="https://.../api-endpoint.php" required>
-                        <p class="help-block">Brug hele Flax reseller endpoint-URL’en inkl. <code>api-endpoint.php</code>.</p>
+                        <input class="form-control" type="url" name="api_url" value="{{ old('api_url',$settings->api_url ?? 'https://api.flaxhosting.dk/') }}" placeholder="https://api.flaxhosting.dk/" required>
+                        <p class="help-block">Flax Reseller API endpoint: <code>https://api.flaxhosting.dk/</code>. API-key og action sendes som POST-parametre.</p>
                     </div>
                     <div class="form-group">
                         <label>API key</label>
