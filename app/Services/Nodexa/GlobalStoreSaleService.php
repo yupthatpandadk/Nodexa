@@ -3,12 +3,17 @@
 namespace Pterodactyl\Services\Nodexa;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class GlobalStoreSaleService
 {
     public function settings(): object
     {
-        $row = DB::table('nodexa_store_sale_settings')->where('id', 1)->first();
+        // A deployment may temporarily run this code before the new sales
+        // settings migration has completed. An empty cart must still load.
+        $row = Schema::hasTable('nodexa_store_sale_settings')
+            ? DB::table('nodexa_store_sale_settings')->where('id', 1)->first()
+            : null;
 
         return (object) [
             'enabled' => (bool) ($row->enabled ?? false),
