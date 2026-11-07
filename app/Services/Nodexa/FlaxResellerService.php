@@ -709,14 +709,19 @@ class FlaxResellerService
                     ->withHeaders(['Authorization' => 'Bearer ' . $key])
                     ->delete($url . (str_contains($url, '?') ? '&' : '?') . $query);
             } else {
+                $query = http_build_query(['key' => $key, 'action' => $action]);
                 $response = Http::timeout(20)
                     ->acceptJson()
                     ->withHeaders(['Authorization' => 'Bearer ' . $key])
                     ->asForm()
-                    ->post($url, array_merge(['key' => $key, 'action' => $action], $params));
+                    ->post(
+                        $url . (str_contains($url, '?') ? '&' : '?') . $query,
+                        array_merge(['key' => $key, 'action' => $action], $params)
+                    );
             }
         } catch (\Throwable $exception) {
-            throw new RuntimeException('Kunne ikke kontakte Flax API: ' . $exception->getMessage(), 0, $exception);
+            $message = str_replace($key, '[redacted]', $exception->getMessage());
+            throw new RuntimeException('Kunne ikke kontakte Flax API: ' . $message, 0, $exception);
         }
 
         return $this->decodeResponse($response, $action);
