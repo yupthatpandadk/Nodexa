@@ -486,6 +486,20 @@ class FlaxResellerService
             throw new RuntimeException('Der findes ingen betalt faktura at provisionere servicen fra.');
         }
 
+        if ($service->processing_invoice_id) {
+            $startedAt = $service->processing_started_at ? Carbon::parse($service->processing_started_at) : null;
+
+            if ($startedAt && $startedAt->greaterThan(now()->subMinutes(10))) {
+                throw new RuntimeException('Flax-handlingen er stadig markeret som aktiv. Vent op til 10 minutter før manuel retry.');
+            }
+
+            DB::table('nodexa_flax_services')->where('id', $serviceId)->update([
+                'processing_invoice_id' => null,
+                'processing_started_at' => null,
+                'updated_at' => now(),
+            ]);
+        }
+
         $this->activateInvoice($invoice->id);
     }
 
@@ -763,6 +777,7 @@ class FlaxResellerService
     private function decodeResponse(Response $response, string $action): array
     {
         $json = $response->json();
+        $key = $this->apiKey(false);
 
         if (!is_array($json)) {
             throw new RuntimeException('Flax API returnerede ugyldigt JSON (HTTP ' . $response->status() . ').');
@@ -781,6 +796,14 @@ class FlaxResellerService
         if (($json['status'] ?? null) === 'error') {
             $message = $json['data'] ?? $json['message'] ?? 'Ukendt fejl';
             throw new RuntimeException('Flax API fejl: ' . (is_scalar($message) ? $message : json_encode($message)));
+        }
+
+        if ($key) {
+            array_walk_recursive($json, function (&$value) use ($key) {
+                if (is_string($value)) {
+                    $value = str_replace($key, '[redacted]', $value);
+                }
+            });
         }
 
         return $json;
