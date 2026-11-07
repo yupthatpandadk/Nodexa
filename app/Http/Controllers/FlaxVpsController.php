@@ -61,7 +61,7 @@ class FlaxVpsController extends Controller
         abort_unless($plan, 404);
 
         $data = $request->validate([
-            'hostname' => ['required', 'string', 'min:3', 'max:190', 'regex:/^[A-Za-z0-9][A-Za-z0-9.-]*[A-Za-z0-9]$/'],
+            'hostname' => ['required', 'string', 'min:3', 'max:190', 'regex:/^[A-Za-z0-9][A-Za-z0-9 ._-]*[A-Za-z0-9]$/'],
             'os_template_id' => 'required|integer|exists:nodexa_flax_os_templates,upstream_id',
         ]);
 
@@ -69,7 +69,7 @@ class FlaxVpsController extends Controller
             $result = $this->flax->createOrder(
                 $request->user()->id,
                 $plan->id,
-                strtolower(trim($data['hostname'])),
+                trim($data['hostname']),
                 (int) $data['os_template_id']
             );
         } catch (\Throwable $exception) {
