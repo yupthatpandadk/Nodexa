@@ -6,7 +6,7 @@
 
 A modern, self-hosted platform for managing game servers, customers, billing, support and infrastructure from one unified interface.
 
-![Version](https://img.shields.io/badge/version-1.5.5-7657ff?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.7.0-7657ff?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Linux-20232a?style=for-the-badge&logo=linux&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=for-the-badge&logo=php&logoColor=white)
 ![Docker](https://img.shields.io/badge/containers-Docker-2496ed?style=for-the-badge&logo=docker&logoColor=white)
@@ -61,6 +61,9 @@ The goal is simple: give administrators and customers everything they need witho
 
 - Hosting product catalogue
 - Customer checkout flow
+- Shared shopping cart and combined checkout
+- Storefront discount codes
+- Stripe hosted Checkout payments
 - Automatic server provisioning
 - Recurring subscriptions
 - Invoice generation
@@ -72,6 +75,24 @@ The goal is simple: give administrators and customers everything they need witho
 - Affiliate commissions
 - VPS product catalogue and Flax upstream provisioning
 - Monthly VPS renewals through the Flax reseller API
+
+### Stripe Checkout
+
+Nodexa includes Stripe-hosted Checkout for the combined shopping cart.
+
+Administrators can configure Stripe directly from **Admin → Storefront & Billing**:
+
+- Stripe Secret Key is stored encrypted at rest
+- Stripe Webhook Secret is stored encrypted at rest
+- Connection testing is available from the Admin Area
+- The webhook endpoint is `/webhooks/stripe`
+- Required checkout events are `checkout.session.completed`, `checkout.session.async_payment_succeeded` and `checkout.session.expired`
+
+Discount codes are calculated by Nodexa before the Stripe Session is created. The checkout subtotal and discount are converted to integer cents, and Stripe receives one authoritative line item containing exactly the final Nodexa total. Nodexa only fulfills an order after validating Stripe's `amount_total`, currency, client reference and order metadata against the stored checkout.
+
+Stripe webhook signatures are verified against the raw request payload and configured webhook secret. Stripe events and order fulfillment are idempotent so retries do not provision the same service twice.
+
+The current Stripe checkout pays the first combined order. Monthly service renewals continue through Nodexa's recurring invoice system.
 
 ### FlaxHosting VPS Reseller
 
@@ -300,6 +321,7 @@ The updater creates a local backup before updating, installs dependencies, rebui
 | Area | Route |
 | --- | --- |
 | Storefront | `/` |
+| Shopping Cart | `/cart` |
 | Client Area | `/client` |
 | Services Hub | `/client/hub` |
 | CFX EUP Keys | `/client/eup-keys` |
@@ -341,6 +363,8 @@ Nodexa includes multiple security-focused features:
 - Signed webhooks
 - Encrypted CFX EUP key storage
 - Encrypted Flax reseller API credential storage
+- Encrypted Stripe Secret Key and webhook secret storage
+- Stripe webhook signature and exact-amount verification
 - Duplicate key fingerprinting
 - Isolated server containers
 - Security activity tracking
@@ -359,7 +383,7 @@ public/                 Public web assets
 
 ## Version
 
-Current release: **Nodexa 1.5.5**
+Current release: **Nodexa 1.7.0**
 
 The installed version can be checked with:
 
