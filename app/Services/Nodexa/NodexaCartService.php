@@ -206,24 +206,50 @@ class NodexaCartService
 
     public function markPaid(int $checkoutId, string $paymentMethod = 'manual', ?string $paymentReference = null): array
     {
-        $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->first();
-        if (!$checkout) {
-            throw new RuntimeException('Den samlede checkout blev ikke fundet.');
-        }
+        $this->reserveCoupon($checkoutId);
 
-        if (in_array($checkout->status, ['paid', 'completed'], true)) {
+        $claim = DB::transaction(function () use ($checkoutId, $paymentMethod, $paymentReference) {
+            $checkout = DB::table('nodexa_cart_checkouts')
+                ->where('id', $checkoutId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$checkout) {
+                throw new RuntimeException('Den samlede checkout blev ikke fundet.');
+            }
+
+            if (in_array($checkout->status, ['paid', 'completed'], true)) {
+                return ['state' => 'completed', 'checkout' => $checkout];
+            }
+
+            if (
+                $checkout->status === 'processing'
+                && $checkout->updated_at
+                && \Carbon\Carbon::parse($checkout->updated_at)->greaterThan(now()->subMinutes(5))
+            ) {
+                return ['state' => 'processing', 'checkout' => $checkout];
+            }
+
+            DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
+                'status' => 'processing',
+                'paid_at' => $checkout->paid_at ?: now(),
+                'payment_method' => $paymentMethod,
+                'payment_reference' => $paymentReference,
+                'updated_at' => now(),
+            ]);
+
+            return ['state' => 'claimed', 'checkout' => $checkout];
+        });
+
+        if ($claim['state'] === 'completed') {
             return ['completed' => true, 'processed' => 0, 'failed' => 0];
         }
 
-        $this->reserveCoupon($checkoutId);
+        if ($claim['state'] === 'processing') {
+            return ['completed' => false, 'processing' => true, 'processed' => 0, 'failed' => 0];
+        }
 
-        DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
-            'status' => 'processing',
-            'paid_at' => $checkout->paid_at ?: now(),
-            'payment_method' => $paymentMethod,
-            'payment_reference' => $paymentReference,
-            'updated_at' => now(),
-        ]);
+        $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->first();
 
         $items = DB::table('nodexa_cart_checkout_items')
             ->where('checkout_id', $checkoutId)
