@@ -69,7 +69,7 @@ class FlaxResellerService
     public function testConnection(): array
     {
         try {
-            $response = $this->request('user_servers', 'GET');
+            $response = $this->request('user_servers', 'POST');
             $count = count($this->extractCollection($response, ['servers', 'data']));
 
             $this->storeTestResult('success', 'Forbindelsen til Flax virker. ' . $count . ' upstream service(s) fundet.');
@@ -84,7 +84,7 @@ class FlaxResellerService
 
     public function syncTemplates(): int
     {
-        $response = $this->request('virtfusion_templates', 'GET');
+        $response = $this->request('virtfusion_templates', 'POST');
         $templates = $this->extractCollection($response, ['templates', 'data']);
 
         $count = 0;
@@ -345,7 +345,7 @@ class FlaxResellerService
                 return;
             }
 
-            $response = $this->request('extend', 'GET', ['server_id' => $service->upstream_server_id]);
+            $response = $this->request('extend', 'POST', ['server_id' => $service->upstream_server_id]);
             $responseData = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
             $expiresAt = $response['expires_at'] ?? $responseData['expires_at'] ?? null;
 
@@ -641,7 +641,7 @@ class FlaxResellerService
         }
 
         if ($service->upstream_server_id && $service->status !== 'terminated') {
-            $this->request('terminate', 'DELETE', ['server_id' => $service->upstream_server_id]);
+            $this->request('terminate', 'POST', ['server_id' => $service->upstream_server_id]);
         }
 
         DB::transaction(function () use ($service) {
@@ -715,7 +715,7 @@ class FlaxResellerService
     private function fetchServerInfo(string $serverId, bool $throw = true): ?array
     {
         try {
-            $response = $this->request('info', 'GET', ['server_id' => $serverId]);
+            $response = $this->request('info', 'POST', ['server_id' => $serverId]);
 
             if (isset($response['data']) && is_array($response['data'])) {
                 return $response['data'];
@@ -745,26 +745,20 @@ class FlaxResellerService
 
         try {
             if ($method === 'GET') {
+                // Flax documents GET/POST for most reseller actions. GET is
+                // retained as a compatibility path, but Nodexa uses POST for
+                // VPS lifecycle calls so the API key is not placed in the URL.
                 $response = Http::timeout(15)
                     ->acceptJson()
-                    ->withHeaders(['Authorization' => 'Bearer ' . $key])
                     ->get($url, array_merge(['key' => $key, 'action' => $action], $params));
-            } elseif ($method === 'DELETE') {
-                $query = http_build_query(array_merge(['key' => $key, 'action' => $action], $params));
-                $response = Http::timeout(15)
-                    ->acceptJson()
-                    ->withHeaders(['Authorization' => 'Bearer ' . $key])
-                    ->delete($url . (str_contains($url, '?') ? '&' : '?') . $query);
             } else {
-                $query = http_build_query(['key' => $key, 'action' => $action]);
                 $response = Http::timeout(20)
                     ->acceptJson()
-                    ->withHeaders(['Authorization' => 'Bearer ' . $key])
                     ->asForm()
-                    ->post(
-                        $url . (str_contains($url, '?') ? '&' : '?') . $query,
-                        array_merge(['key' => $key, 'action' => $action], $params)
-                    );
+                    ->post($url, array_merge([
+                        'key' => $key,
+                        'action' => $action,
+                    ], $params));
             }
         } catch (\Throwable $exception) {
             $message = str_replace($key, '[redacted]', $exception->getMessage());
