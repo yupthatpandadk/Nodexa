@@ -1,6 +1,18 @@
 {
-  "latest": "1.5.7",
+  "latest": "1.5.8",
   "releases": [
+    {
+      "version": "1.5.8",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Client billing 500 fix",
+      "changes": [
+        "Rettet 500 Server Error på /client/billing.",
+        "Billing-viewet brugte det ugyldige classnavn CarbonCarbon::parse() ved faktura- og abonnementsdatoer.",
+        "Datoformattering bruger nu korrekt \\Carbon\\Carbon::parse().",
+        "Repoet er samtidig kontrolleret for resterende CarbonCarbon-referencer; ingen er tilbage."
+      ]
+    },
     {
       "version": "1.5.7",
       "date": "2026-11-07",
