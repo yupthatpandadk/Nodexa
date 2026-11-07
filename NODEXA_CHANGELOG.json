@@ -1,6 +1,18 @@
 {
-  "latest": "1.5.2",
+  "latest": "1.5.3",
   "releases": [
+    {
+      "version": "1.5.3",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Flax API canonical endpoint fix",
+      "changes": [
+        "Flax API requests bruger nu altid den dokumenterede canonical endpoint-form med trailing slash: https://api.flaxhosting.dk/.",
+        "Retter situationen hvor slash-less https://api.flaxhosting.dk kunne returnere/redirecte til ikke-JSON og give 'ugyldigt JSON (HTTP 200)'.",
+        "POST redirects bevarer nu metode og request body som ekstra sikkerhed.",
+        "Flax API-fejl for ikke-JSON responses viser nu Content-Type og en kort, renset response-preview uden at eksponere API-keyen."
+      ]
+    },
     {
       "version": "1.5.2",
       "date": "2026-11-07",
