@@ -14,18 +14,18 @@ use Pterodactyl\Services\Nodexa\NodexaEventService;
 class FlaxResellerController extends Controller
 {
     private const PRODUCT_PRESETS = [
-        ['id' => 1, 'name' => 'VPS-01',  'list_price' => 69.00,  'cost' => 51.75],
-        ['id' => 2, 'name' => 'VPS-02',  'list_price' => 109.00, 'cost' => 81.75],
-        ['id' => 3, 'name' => 'VPS-03',  'list_price' => 149.00, 'cost' => 111.75],
-        ['id' => 4, 'name' => 'VPS-04',  'list_price' => 199.00, 'cost' => 149.25],
-        ['id' => 5, 'name' => 'VPS-05',  'list_price' => 259.00, 'cost' => 194.25],
-        ['id' => 6, 'name' => 'VPS-06',  'list_price' => 319.00, 'cost' => 239.25],
-        ['id' => 7, 'name' => 'VPS-01+', 'list_price' => 99.00,  'cost' => 74.25],
-        ['id' => 8, 'name' => 'VPS-02+', 'list_price' => 129.00, 'cost' => 96.75],
-        ['id' => 9, 'name' => 'VPS-03+', 'list_price' => 189.00, 'cost' => 141.75],
-        ['id' => 10, 'name' => 'VPS-04+', 'list_price' => 219.00, 'cost' => 164.25],
-        ['id' => 11, 'name' => 'VPS-05+', 'list_price' => 339.00, 'cost' => 254.25],
-        ['id' => 12, 'name' => 'VPS-06+', 'list_price' => 469.00, 'cost' => 351.75],
+        ['id' => 1, 'name' => 'VPS-01',  'list_price' => 69.00,  'cost' => 51.75,  'vcpu' => 1,  'memory_mb' => 4096,  'disk_gb' => 40,  'bandwidth' => '1 Gbit/s · 20 TB traffic'],
+        ['id' => 2, 'name' => 'VPS-02',  'list_price' => 109.00, 'cost' => 81.75,  'vcpu' => 2,  'memory_mb' => 8192,  'disk_gb' => 80,  'bandwidth' => '1 Gbit/s · 20 TB traffic'],
+        ['id' => 3, 'name' => 'VPS-03',  'list_price' => 149.00, 'cost' => 111.75, 'vcpu' => 3,  'memory_mb' => 12288, 'disk_gb' => 120, 'bandwidth' => '1 Gbit/s · 20 TB traffic'],
+        ['id' => 4, 'name' => 'VPS-04',  'list_price' => 199.00, 'cost' => 149.25, 'vcpu' => 4,  'memory_mb' => 16384, 'disk_gb' => 160, 'bandwidth' => '1 Gbit/s · 20 TB traffic'],
+        ['id' => 5, 'name' => 'VPS-05',  'list_price' => 259.00, 'cost' => 194.25, 'vcpu' => 6,  'memory_mb' => 24576, 'disk_gb' => 200, 'bandwidth' => '1 Gbit/s · 20 TB traffic'],
+        ['id' => 6, 'name' => 'VPS-06',  'list_price' => 319.00, 'cost' => 239.25, 'vcpu' => 8,  'memory_mb' => 32768, 'disk_gb' => 250, 'bandwidth' => '1 Gbit/s · 20 TB traffic'],
+        ['id' => 7, 'name' => 'VPS-01+', 'list_price' => 99.00,  'cost' => 74.25,  'vcpu' => 2,  'memory_mb' => 4096,  'disk_gb' => 80,  'bandwidth' => '1 Gbit/s · Unlimited traffic'],
+        ['id' => 8, 'name' => 'VPS-02+', 'list_price' => 129.00, 'cost' => 96.75,  'vcpu' => 4,  'memory_mb' => 8192,  'disk_gb' => 160, 'bandwidth' => '1 Gbit/s · Unlimited traffic'],
+        ['id' => 9, 'name' => 'VPS-03+', 'list_price' => 189.00, 'cost' => 141.75, 'vcpu' => 6,  'memory_mb' => 12288, 'disk_gb' => 240, 'bandwidth' => '1 Gbit/s · Unlimited traffic'],
+        ['id' => 10, 'name' => 'VPS-04+', 'list_price' => 219.00, 'cost' => 164.25, 'vcpu' => 8,  'memory_mb' => 16384, 'disk_gb' => 320, 'bandwidth' => '1 Gbit/s · Unlimited traffic'],
+        ['id' => 11, 'name' => 'VPS-05+', 'list_price' => 339.00, 'cost' => 254.25, 'vcpu' => 12, 'memory_mb' => 24576, 'disk_gb' => 400, 'bandwidth' => '1 Gbit/s · Unlimited traffic'],
+        ['id' => 12, 'name' => 'VPS-06+', 'list_price' => 469.00, 'cost' => 351.75, 'vcpu' => 16, 'memory_mb' => 32768, 'disk_gb' => 500, 'bandwidth' => '1 Gbit/s · Unlimited traffic'],
     ];
 
     public function __construct(
@@ -161,6 +161,11 @@ class FlaxResellerController extends Controller
                         ->where('id', $existing->id)
                         ->update([
                             'upstream_monthly_price' => $preset['cost'],
+                            'vcpu' => $preset['vcpu'],
+                            'memory_mb' => $preset['memory_mb'],
+                            'disk_gb' => $preset['disk_gb'],
+                            'bandwidth' => $preset['bandwidth'],
+                            'ipv4_count' => 1,
                             'updated_at' => now(),
                         ]);
                     $updated++;
@@ -175,11 +180,11 @@ class FlaxResellerController extends Controller
                     'upstream_monthly_price' => $preset['price'],
                     'monthly_price' => $preset['list_price'],
                     'currency' => 'DKK',
-                    'memory_mb' => null,
-                    'vcpu' => null,
-                    'disk_gb' => null,
+                    'memory_mb' => $preset['memory_mb'],
+                    'vcpu' => $preset['vcpu'],
+                    'disk_gb' => $preset['disk_gb'],
                     'ipv4_count' => 1,
-                    'bandwidth' => null,
+                    'bandwidth' => $preset['bandwidth'],
                     'enabled' => false,
                     'featured' => false,
                     'sort_order' => $preset['id'],
