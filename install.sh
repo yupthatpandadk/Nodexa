@@ -70,6 +70,11 @@ update_panel() {
     composer install --no-dev --optimize-autoloader --no-interaction
   fi
 
+  # New routes/views must never run against stale Laravel caches, even if a
+  # later migration or frontend build fails and the EXIT trap brings the panel
+  # back online.
+  php artisan optimize:clear || true
+
   # Frontend source changes are not visible until the production bundle is rebuilt.
   if [[ -f package.json ]]; then
     info "Bygger Nodexa frontend..."
