@@ -1,6 +1,21 @@
 {
-  "latest": "1.5.6",
+  "latest": "1.5.7",
   "releases": [
+    {
+      "version": "1.5.7",
+      "date": "2026-11-07",
+      "type": "patch",
+      "title": "Flax VPS specs and mobile actions",
+      "changes": [
+        "Flax VPS-presets indeholder nu vCPU, RAM, disk, IPv4 og bandwidth for VPS-01 til VPS-06 samt VPS-01+ til VPS-06+.",
+        "Eksisterende importerede VPS-produkter udfyldes automatisk med de aktuelle specs via migration; kundepriser og aktiveringsstatus ændres ikke.",
+        "Standard VPS-serien bruger 1/2/3/4/6/8 vCPU, 4/8/12/16/24/32 GB RAM og 40/80/120/160/200/250 GB disk.",
+        "Plus-serien bruger 2/4/6/8/12/16 vCPU, 4/8/12/16/24/32 GB RAM og 80/160/240/320/400/500 GB disk.",
+        "Standard-serien viser 1 Gbit/s og 20 TB traffic; Plus-serien viser 1 Gbit/s og Unlimited traffic.",
+        "Gem ændringer-knappen i Flax VPS-produktlisten har fået en stabil action-række og ligger ikke længere skævt på mobil.",
+        "Slet-knappen bruger nu samme responsive action-layout i stedet for negativ margin/pull-right-positionering."
+      ]
+    },
     {
       "version": "1.5.6",
       "date": "2026-11-07",
