@@ -161,6 +161,7 @@ class NodexaCartService
                 'status' => 'awaiting_payment',
                 'coupon_id' => $resolved['coupon']['id'] ?? null,
                 'coupon_code' => $resolved['coupon']['code'] ?? null,
+                'coupon_duration_months' => $resolved['coupon']['duration_months'] ?? null,
                 'subtotal' => $resolved['subtotal'],
                 'discount' => $resolved['discount'],
                 'total' => $resolved['total'],
@@ -256,6 +257,8 @@ class NodexaCartService
             ->orderBy('id')
             ->get();
 
+        $discountAllocations = $this->allocateCheckoutDiscount($checkout, $items);
+
         $processed = 0;
         $failed = 0;
 
@@ -332,6 +335,15 @@ class NodexaCartService
                         ]
                     );
 
+                    $subscription = DB::table('nodexa_subscriptions')->where('order_id', $order->id)->first();
+                    if ($subscription) {
+                        $this->applyRecurringDiscount(
+                            (int) $subscription->id,
+                            $checkout,
+                            (int) ($discountAllocations[$item->id] ?? 0)
+                        );
+                    }
+
                     DB::table('nodexa_cart_checkout_items')->where('id', $item->id)->update([
                         'status' => 'completed',
                         'reference_id' => $order->id,
@@ -340,6 +352,7 @@ class NodexaCartService
                 } elseif ($item->type === 'flax_vps') {
                     $serviceId = $item->reference_id ? (int) $item->reference_id : null;
                     $invoiceId = null;
+                    $subscriptionId = null;
 
                     if ($serviceId) {
                         $existingService = DB::table('nodexa_flax_services')->where('id', $serviceId)->first();
@@ -348,6 +361,7 @@ class NodexaCartService
                         }
 
                         $invoiceId = (int) $existingService->first_invoice_id;
+                        $subscriptionId = (int) $existingService->subscription_id;
                     } else {
                         $result = $this->flax->createOrder(
                             (int) $checkout->user_id,
@@ -358,6 +372,7 @@ class NodexaCartService
 
                         $serviceId = (int) $result['serviceId'];
                         $invoiceId = (int) $result['invoiceId'];
+                        $subscriptionId = (int) $result['subscriptionId'];
 
                         // Persist the local service reference before calling the
                         // upstream API. If Flax fails afterwards, a retry resumes
@@ -383,6 +398,14 @@ class NodexaCartService
                     ]);
 
                     $this->flax->activateInvoice($invoiceId);
+
+                    if ($subscriptionId) {
+                        $this->applyRecurringDiscount(
+                            $subscriptionId,
+                            $checkout,
+                            (int) ($discountAllocations[$item->id] ?? 0)
+                        );
+                    }
 
                     DB::table('nodexa_cart_checkout_items')->where('id', $item->id)->update([
                         'status' => 'completed',
@@ -443,6 +466,53 @@ class NodexaCartService
             'failed' => $failed,
         ];
     }
+    private function allocateCheckoutDiscount(object $checkout, $items): array
+    {
+        $discountCents = $this->moneyToCents((float) ($checkout->discount ?? 0));
+        $subtotalCents = $this->moneyToCents((float) ($checkout->subtotal ?? 0));
+
+        if ($discountCents <= 0 || $subtotalCents <= 0 || $items->isEmpty()) {
+            return [];
+        }
+
+        $allocations = [];
+        $remaining = $discountCents;
+        $count = $items->count();
+
+        foreach ($items->values() as $index => $item) {
+            if ($index === $count - 1) {
+                $allocation = $remaining;
+            } else {
+                $itemCents = $this->moneyToCents((float) $item->unit_price);
+                $allocation = (int) round($discountCents * ($itemCents / $subtotalCents));
+                $allocation = max(0, min($remaining, $allocation));
+            }
+
+            $allocations[$item->id] = $allocation;
+            $remaining -= $allocation;
+        }
+
+        return $allocations;
+    }
+
+    private function applyRecurringDiscount(int $subscriptionId, object $checkout, int $discountCents): void
+    {
+        $durationMonths = max(0, (int) ($checkout->coupon_duration_months ?? 0));
+
+        if (!$checkout->coupon_code || $discountCents <= 0 || $durationMonths <= 0) {
+            return;
+        }
+
+        DB::table('nodexa_subscriptions')->where('id', $subscriptionId)->update([
+            'discount_code' => $checkout->coupon_code,
+            'discount_amount' => $discountCents / 100,
+            'discount_months_total' => $durationMonths,
+            // Month 1 is the combined checkout that has just been paid.
+            'discount_months_used' => 1,
+            'updated_at' => now(),
+        ]);
+    }
+
     public function reserveCoupon(int $checkoutId): void
     {
         DB::transaction(function () use ($checkoutId) {
@@ -534,6 +604,7 @@ class NodexaCartService
             'type' => $coupon->type,
             'value' => (float) $coupon->value,
             'label' => $label,
+            'duration_months' => max(1, (int) ($coupon->duration_months ?? 1)),
             'discount_cents' => $discountCents,
             'discount' => $discountCents / 100,
         ];
