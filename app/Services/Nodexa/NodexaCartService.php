@@ -133,6 +133,11 @@ class NodexaCartService
     public function createCheckout(int $userId, array $cart, ?string $couponCode = null): int
     {
         $resolved = $this->resolve($cart, $couponCode);
+
+        if (trim((string) $couponCode) !== '' && !$resolved['coupon']) {
+            throw new RuntimeException('Rabatkoden er ikke længere gyldig. Fjern den eller anvend en ny kode før betaling.');
+        }
+
         if ($resolved['count'] < 1) {
             throw new RuntimeException('Kurven er tom eller indeholder ikke længere tilgængelige produkter.');
         }
