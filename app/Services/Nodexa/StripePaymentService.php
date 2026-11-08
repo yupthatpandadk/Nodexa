@@ -359,16 +359,15 @@ class StripePaymentService
                         'updated_at' => now(),
                     ]);
                 }
-            } elseif ($type === 'checkout.session.expired' && $checkoutId > 0) {
+            } elseif (in_array($type, ['checkout.session.expired', 'checkout.session.async_payment_failed'], true) && $checkoutId > 0) {
                 $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->first();
+                $sessionId = (string) ($object['id'] ?? '');
 
-                if ($checkout && !$checkout->paid_at) {
+                // Delayed notifications for old sessions must never release newer holds.
+                if ($checkout && !$checkout->paid_at && $sessionId !== ''
+                    && hash_equals((string) $checkout->stripe_session_id, $sessionId)) {
+                    $this->wallet->releaseStripeSplit($checkoutId, $sessionId);
                     $this->cart->releaseCoupon($checkoutId);
-
-                    DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
-                        'stripe_status' => 'expired',
-                        'updated_at' => now(),
-                    ]);
                 }
             }
 
@@ -427,6 +426,8 @@ class StripePaymentService
             'stripe_currency' => strtolower((string) ($session['currency'] ?? '')),
             'updated_at' => now(),
         ]);
+
+        $this->wallet->settleStripeSplit($checkoutId, (string) $session['id']);
 
         return $this->cart->markPaid(
             $checkoutId,
@@ -491,7 +492,7 @@ class StripePaymentService
         if (($session['payment_status'] ?? '') !== 'paid'
             || ($session['metadata']['checkout_id'] ?? '') != (string) $checkout->id
             || ($session['client_reference_id'] ?? '') !== (string) $checkout->number
-            || (int) ($session['amount_total'] ?? -1) !== $this->moneyToCents($checkout->total)
+            || (int) ($session['amount_total'] ?? -1) !== ($this->moneyToCents($checkout->total) - (int) ($checkout->wallet_applied_cents ?? 0))
             || strtolower((string) ($session['currency'] ?? '')) !== 'dkk'
         ) {
             throw new RuntimeException('Stripe-betalingen kunne ikke verificeres for denne ordre.');
@@ -528,7 +529,7 @@ class StripePaymentService
             $capturedCents += (int) ($charge['amount_captured'] ?? 0);
         }
 
-        if ($capturedCents !== $this->moneyToCents($checkout->total)) {
+        if ($capturedCents !== ($this->moneyToCents($checkout->total) - (int) ($checkout->wallet_applied_cents ?? 0))) {
             throw new RuntimeException('Det faktiske Stripe-beløb matcher ikke ordren.');
         }
 
@@ -544,6 +545,24 @@ class StripePaymentService
         ) {
             throw new RuntimeException('Der er allerede en Stripe-refundering eller en uafklaret refundering.');
         }
+    }
+
+    public function cancelUnpaidCheckout(int $checkoutId, int $userId): void
+    {
+        $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)
+            ->where('user_id', $userId)->first();
+
+        if (!$checkout || $checkout->paid_at || $checkout->status !== 'awaiting_payment') {
+            throw new RuntimeException('Ordren kan ikke annulleres efter gennemført betaling.');
+        }
+
+        if (!$checkout->stripe_session_id) {
+            throw new RuntimeException('Der findes ingen aktiv Stripe-session at annullere.');
+        }
+
+        $this->expireUnpaidCheckoutSession((string) $checkout->stripe_session_id);
+        $this->wallet->releaseStripeSplit($checkoutId, (string) $checkout->stripe_session_id);
+        $this->cart->releaseCoupon($checkoutId);
     }
 
     public function expireUnpaidCheckoutSession(string $sessionId): void
@@ -613,6 +632,9 @@ class StripePaymentService
             $capturedCents += $captured;
         }
 
+        if ((int) ($checkout->wallet_applied_cents ?? 0) > 0) {
+            throw new RuntimeException('Denne ordre brugte også Wallet. Brug refundering til Wallet eller manuel afstemning af begge betalingsdele.');
+        }
         $expected = (int) round(((float) $checkout->total) * 100);
         if ($expected <= 0 || $capturedCents < $expected) {
             throw new RuntimeException('Stripe kunne ikke bekræfte ordrens fulde betalingsbeløb.');
