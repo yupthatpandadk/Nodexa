@@ -119,6 +119,8 @@ class WalletService
                 'paid_at' => now(),
                 'payment_method' => 'wallet',
                 'payment_reference' => $reference,
+                'wallet_applied_cents' => $amount,
+                'wallet_hold_state' => 'settled',
                 'updated_at' => now(),
             ]);
         }, 3);
