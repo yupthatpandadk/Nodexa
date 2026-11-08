@@ -27,6 +27,7 @@ Route::post('/operations/incidents/{incident}/updates', [Admin\OperationsControl
 Route::post('/operations/addons', [Admin\OperationsController::class, 'storeAddon'])->name('admin.operations.addons.store');
 Route::post('/operations/invoices/{invoice}/paid', [Admin\OperationsController::class, 'markInvoicePaid'])->name('admin.operations.invoices.paid');
 Route::post('/operations/cart-checkouts/{checkout}/paid', [Admin\OperationsController::class, 'markCartCheckoutPaid'])->name('admin.operations.cart-checkouts.paid');
+Route::delete('/operations/cart-checkouts/{checkout}', [Admin\OperationsController::class, 'removeCartCheckout'])->name('admin.operations.cart-checkouts.remove');
 Route::post('/operations/subscriptions/sync', [Admin\OperationsController::class, 'syncSubscriptions'])->name('admin.operations.subscriptions.sync');
 Route::post('/operations/affiliates/{affiliate}/payout', [Admin\OperationsController::class, 'payAffiliate'])->name('admin.operations.affiliates.payout');
 Route::post('/operations/automation/run', [Admin\OperationsController::class, 'runAutomation'])->name('admin.operations.automation');
