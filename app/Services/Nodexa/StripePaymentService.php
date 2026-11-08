@@ -13,7 +13,7 @@ class StripePaymentService
     private const API_BASE = 'https://api.stripe.com/v1';
     private const WEBHOOK_TOLERANCE = 300;
 
-    public function __construct(private NodexaCartService $cart)
+    public function __construct(private NodexaCartService $cart, private WalletService $wallet)
     {
     }
 
@@ -176,22 +176,20 @@ class StripePaymentService
             }
 
             if (($existing['status'] ?? null) === 'expired') {
+                $this->wallet->releaseStripeSplit($checkoutId, (string) $checkout->stripe_session_id);
                 $this->cart->releaseCoupon($checkoutId);
-
-                DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
-                    'stripe_session_id' => null,
-                    'stripe_status' => 'expired',
-                    'updated_at' => now(),
-                ]);
-
                 $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->first();
+            } elseif (($existing['status'] ?? null) !== 'open') {
+                throw new RuntimeException('Den eksisterende Stripe-session kan ikke genstartes automatisk. Kontakt support.');
             }
         }
 
         $this->cart->reserveCoupon($checkoutId);
 
+        $split = $this->wallet->prepareStripeSplit($checkoutId, $userId);
         $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->first();
-        $attempt = ((int) ($checkout->stripe_attempt ?? 0)) + 1;
+        $attempt = (int) $split['attempt'];
+        $stripeCents = (int) $split['stripe_cents'];
         $idempotencyKey = 'nodexa-checkout-' . $checkoutId . '-attempt-' . $attempt;
 
         $user = DB::table('users')->where('id', $userId)->first();
@@ -218,12 +216,13 @@ class StripePaymentService
             'customer_email' => $user->email,
             'billing_address_collection' => 'auto',
             'line_items[0][price_data][currency]' => strtolower($checkout->currency ?: 'DKK'),
-            'line_items[0][price_data][unit_amount]' => $expectedCents,
+            'line_items[0][price_data][unit_amount]' => $stripeCents,
             'line_items[0][price_data][product_data][name]' => 'Nodexa ordre ' . $checkout->number,
             'line_items[0][price_data][product_data][description]' => mb_substr($description ?: 'Nodexa hosting services', 0, 500),
             'line_items[0][quantity]' => 1,
             'metadata[checkout_id]' => (string) $checkoutId,
             'metadata[order_number]' => (string) $checkout->number,
+            'metadata[wallet_applied_cents]' => (string) $split['wallet_cents'],
             'payment_intent_data[metadata][checkout_id]' => (string) $checkoutId,
             'payment_intent_data[metadata][order_number]' => (string) $checkout->number,
         ];
@@ -238,39 +237,40 @@ class StripePaymentService
         }
 
         if (!$response->successful()) {
-            $this->cart->releaseCoupon($checkoutId);
+            // A definitive validation error means Stripe created no session.
+            // Transient errors preserve the hold and idempotency key for retry.
+            if ($response->status() >= 400 && $response->status() < 500
+                && $response->status() !== 429) {
+                $this->wallet->releaseStripeSplit($checkoutId, '', true);
+                $this->cart->releaseCoupon($checkoutId);
+            }
             throw new RuntimeException($this->stripeError($response));
         }
 
         $session = $response->json();
         if (!is_array($session) || empty($session['id']) || empty($session['url'])) {
-            $this->cart->releaseCoupon($checkoutId);
-            throw new RuntimeException('Stripe returnerede ikke en gyldig Checkout Session.');
+            // Stripe might have created a session, so retry the same attempt.
+            throw new RuntimeException('Stripe returnerede ikke en gyldig Checkout Session. Prøv igen.');
         }
 
         try {
             $this->assertSessionAmount($session, $checkout);
         } catch (\Throwable $exception) {
-            $this->cart->releaseCoupon($checkoutId);
-
+            // The session is known. Expire it before releasing the wallet hold.
             if (!empty($session['id'])) {
-                try {
-                    $this->request('POST', '/checkout/sessions/' . rawurlencode($session['id']) . '/expire');
-                } catch (\Throwable $ignored) {
-                    report($ignored);
-                }
+                $this->expireUnpaidCheckoutSession((string) $session['id']);
+                $this->wallet->releaseStripeSplit($checkoutId, '', true);
+                $this->cart->releaseCoupon($checkoutId);
             }
-
             throw $exception;
         }
 
         $currentCheckout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->first();
 
         DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
-            'stripe_attempt' => $attempt,
             'stripe_session_id' => $session['id'],
             'stripe_status' => $currentCheckout?->paid_at ? 'paid' : ($session['status'] ?? 'open'),
-            'stripe_amount_total' => (int) ($session['amount_total'] ?? $expectedCents),
+            'stripe_amount_total' => (int) ($session['amount_total'] ?? $stripeCents),
             'stripe_currency' => strtolower((string) ($session['currency'] ?? $checkout->currency ?? 'dkk')),
             'updated_at' => now(),
         ]);
@@ -438,6 +438,12 @@ class StripePaymentService
     private function assertSessionAmount(array $session, object $checkout): void
     {
         $expectedCents = $this->moneyToCents($checkout->total);
+        $expectedCents -= (int) ($checkout->wallet_applied_cents ?? 0);
+        if ($expectedCents < 250 || ($checkout->wallet_applied_cents ?? 0) > 0
+            && !in_array((string) ($checkout->wallet_hold_state ?? ''), ['held', 'settled'], true)
+        ) {
+            throw new RuntimeException('Wallet-reservationen matcher ikke den påkrævede Stripe-restbetaling.');
+        }
         $actualCents = (int) ($session['amount_total'] ?? -1);
         $expectedCurrency = strtolower((string) ($checkout->currency ?: 'DKK'));
         $actualCurrency = strtolower((string) ($session['currency'] ?? ''));
