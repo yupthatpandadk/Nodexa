@@ -210,37 +210,48 @@
                     <strong>{{ number_format((float)$summary['total'],2,',','.') }} <small>DKK</small></strong>
                 </div>
 
+                @php
+                    $totalWalletCents = (int) round((float) $summary['total'] * 100);
+                    $canPayFullyWallet = $totalWalletCents > 0 && $walletBalanceCents >= $totalWalletCents;
+                    $autoWalletCents = $canPayFullyWallet
+                        ? $totalWalletCents
+                        : min($walletBalanceCents, max(0, $totalWalletCents - 250));
+                    $remainingStripeCents = max(0, $totalWalletCents - $autoWalletCents);
+                @endphp
                 <div class="paymentNotice">
                     <span class="paymentNoticeIcon">₭</span>
-                    <p><strong>Vælg betalingsmetode.</strong> Wallet anvender din tilgængelige Nodexa-kredit. Stripe er en separat kortbetaling. Betalingsmetoden gælder hele ordrebeløbet på <b>{{ number_format((float)$summary['total'],2,',','.') }} DKK</b>, inklusive rabatter.</p>
+                    <p><strong>Din Wallet bruges automatisk først.</strong> Den resterende betaling gennemføres via Stripe, hvor du kan vælge tilgængelig betalingsmetode. Din saldo reserveres, mens Stripe-betalingen afventer.</p>
+                </div>
+
+                <div class="walletAutoBreakdown">
+                    <div><span>Samlet ordre</span><strong>{{ number_format($totalWalletCents/100,2,',','.') }} DKK</strong></div>
+                    <div><span>Betales automatisk med Wallet</span><strong class="walletAppliedAmount">−{{ number_format($autoWalletCents/100,2,',','.') }} DKK</strong></div>
+                    <div><span>Resterende {{ $canPayFullyWallet ? 'betaling' : 'via Stripe' }}</span>
+                         <strong>{{ number_format($remainingStripeCents/100,2,',','.') }} DKK</strong></div>
+                    <p>Wallet-saldo: {{ number_format($walletBalanceCents/100,2,',','.') }} DKK
+                        · <a href="{{ route('store.client.wallet') }}">Se Wallet</a></p>
+                    @if(!$canPayFullyWallet && $walletBalanceCents > $autoWalletCents)
+                        <p>Stripe kræver mindst 2,50 DKK, så en lille del af Wallet-saldoen bevares.</p>
+                    @endif
                 </div>
 
                 <form method="POST" action="{{ route('store.cart.place') }}" class="placeOrderForm">
                     @csrf
+                    <input type="hidden" name="payment_method" value="{{ $canPayFullyWallet ? 'wallet' : 'stripe' }}">
                     <div class="walletCheckoutChoices">
-                        @if($stripeEnabled)
-                        <label class="walletCheckoutOption">
-                            <input type="radio" name="payment_method" value="stripe" {{ old('payment_method','stripe') === 'stripe' ? 'checked' : '' }}>
-                            <span><strong>Stripe</strong><small>Betal sikkert med kort eller andre metoder hos Stripe.</small></span>
-                        </label>
-                        @endif
-                        <label class="walletCheckoutOption">
-                            <input type="radio" name="payment_method" value="wallet"
-                                {{ $walletBalanceCents < (int) round($summary['total'] * 100) ? 'disabled' : '' }}
-                                {{ old('payment_method', $stripeEnabled ? 'stripe' : 'wallet') === 'wallet' && $walletBalanceCents >= (int) round($summary['total'] * 100) ? 'checked' : '' }}>
-                            <span><strong>Nodexa Wallet</strong>
-                                <small>Tilgængelig: {{ number_format($walletBalanceCents/100,2,',','.') }} DKK
-                                @if($walletBalanceCents < (int) round($summary['total'] * 100)) · Ikke nok kredit @endif</small>
-                            </span>
-                            <a href="{{ route('store.client.wallet') }}" class="walletBalanceLink">Se saldo</a>
-                        </label>
-                        @if(!$stripeEnabled && $walletBalanceCents < (int) round($summary['total'] * 100))
-                        <p class="micro" style="padding:8px 0">Stripe er ikke aktiveret, og Wallet-saldoen dækker ikke købet. Du kan stadig oprette en ubetalt ordre, som admin efterfølgende kan behandle.</p>
-                        <label class="walletCheckoutOption"><input type="radio" name="payment_method" value="stripe" checked><span><strong>Opret ubetalt ordre</strong></span></label>
+                        <div class="walletCheckoutOption">
+                            <span><strong>{{ $canPayFullyWallet ? 'Betal med Nodexa Wallet' : 'Wallet + Stripe' }}</strong>
+                                <small>{{ $canPayFullyWallet ? 'Ingen yderligere betaling nødvendig' : 'Du vælger kort eller en anden tilgængelig betalingsmetode hos Stripe' }}</small></span>
+                        </div>
+                        @if(!$canPayFullyWallet && !$stripeEnabled)
+                            <p class="micro">Stripe er ikke aktiveret. Du kan oprette en ubetalt ordre, men Wallet-kredit bruges først, når en gyldig betaling kan gennemføres.</p>
                         @endif
                     </div>
                     <button class="placeOrderButton" type="submit">
-                        <span><small>Samlet beløb {{ number_format((float)$summary['total'],2,',','.') }} DKK</small>Gennemfør bestilling</span>
+                        <span>
+                            <small>{{ $canPayFullyWallet ? 'Kreditbetaling' : ($stripeEnabled ? 'Restbetaling via Stripe' : 'Ubetalt ordre') }} · {{ number_format($remainingStripeCents/100,2,',','.') }} DKK</small>
+                            {{ $canPayFullyWallet ? 'Betal med Wallet' : ($stripeEnabled ? 'Fortsæt til betaling' : 'Opret ordre') }}
+                        </span>
                         <b>→</b>
                     </button>
                 </form>
@@ -260,6 +271,7 @@
 
 @push('styles')
 <style>
+.walletAutoBreakdown{margin:14px 0 18px;padding:17px;background:#091b2b;border:1px solid #28425f;border-radius:12px;display:grid;gap:11px}.walletAutoBreakdown>div{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:12px}.walletAutoBreakdown>div span{color:#94abc3}.walletAutoBreakdown strong{color:#e6f4ff}.walletAutoBreakdown .walletAppliedAmount{color:#7fe2b7}.walletAutoBreakdown>div:nth-child(3){padding-top:12px;border-top:1px solid #28425f;font-weight:800}.walletAutoBreakdown p{font-size:10px;color:#8ba4bf;margin:0}.walletAutoBreakdown a{color:#9bc9ff;text-decoration:underline}
 .walletCheckoutChoices{display:grid;gap:8px;margin:14px 0 17px}.walletCheckoutOption{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #27445f;border-radius:11px;background:#091b2b;cursor:pointer}.walletCheckoutOption:has(input:checked){border-color:#6d82d8;background:#152741}.walletCheckoutOption input{accent-color:#6f9bff;width:17px;height:17px;flex:none}.walletCheckoutOption input:disabled{opacity:.45}.walletCheckoutOption span{flex:1;min-width:0}.walletCheckoutOption strong,.walletCheckoutOption small{display:block}.walletCheckoutOption strong{font-size:12px;color:#eaf3ff}.walletCheckoutOption small{font-size:10px;color:#7896b2;margin-top:3px}.walletBalanceLink{font-size:10px;color:#91beff;white-space:nowrap;text-decoration:underline}
 </style>
 
