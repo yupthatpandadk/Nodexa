@@ -301,6 +301,13 @@ class StripePaymentService
 
         $session = $this->retrieveSession($sessionId);
 
+        if (($session['status'] ?? '') === 'expired') {
+            $this->wallet->releaseStripeSplit($checkoutId, $sessionId);
+            $this->cart->releaseCoupon($checkoutId);
+
+            return ['paid' => false, 'message' => 'Stripe-sessionen er udløbet, og Wallet-kredit er frigivet.'];
+        }
+
         if (($session['payment_status'] ?? null) !== 'paid') {
             DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
                 'stripe_status' => $session['payment_status'] ?? $session['status'] ?? 'unpaid',
