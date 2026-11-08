@@ -8,6 +8,7 @@
         <a href="{{route('store.client')}}">⌂ <span>Oversigt</span></a>
         <a href="{{route('store.client.servers')}}">▣ <span>Mine servere</span></a><a href="{{route('store.client.vps')}}">☁ <span>Mine VPS’er</span></a>
         <a class="active" href="{{route('store.client.billing')}}">▤ <span>Billing & ordrer</span></a>
+        <a href="{{route('store.client.wallet')}}">◈ <span>Wallet & kredit</span></a>
         <a href="{{route('store.client.hub')}}">◆ <span>Services Hub</span></a>
         <a href="{{route('store.client.profile')}}">◎ <span>Min profil</span></a>
         <a href="{{route('store.client.tickets')}}">? <span>Support Tickets</span></a>
@@ -20,6 +21,10 @@
     @if(session('success'))<div class="notice" style="margin:12px 0">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="notice" style="margin:12px 0;border-color:#764454;color:#ffb9c5">{{ $errors->first() }}</div>@endif
 
+    <div class="notice" style="display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px">
+        <span>Brug eller se din Nodexa-kredit under Wallet.</span>
+        <a class="btn" href="{{route('store.client.wallet')}}">Åbn Wallet →</a>
+    </div>
     <div class="clientCards">
         <div class="clientStat"><span>BETALINGER</span><strong>{{$invoices->count()+$cartCheckouts->count()}}</strong></div>
         <div class="clientStat"><span>FORFALDNE</span><strong>{{$invoices->where('status','overdue')->count()}}</strong></div>
