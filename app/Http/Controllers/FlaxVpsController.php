@@ -225,7 +225,7 @@ class FlaxVpsController extends Controller
         $name = $liveName ?: ($template !== '' ? $template : 'Operativsystem ikke registreret');
 
         // Explicit whitelist: no file name or path is sourced from the API.
-        $slug = 'linux';
+        $slug = 'generic';
         $lower = mb_strtolower($name);
         foreach ([
             'windows' => ['windows'],
@@ -237,6 +237,9 @@ class FlaxVpsController extends Controller
             'centos' => ['centos'],
             'archlinux' => ['arch linux', 'archlinux'],
             'freebsd' => ['freebsd'],
+            'opensuse' => ['opensuse', 'open suse'],
+            'kalilinux' => ['kali linux', 'kalilinux'],
+            'linux' => ['linux'],
         ] as $icon => $aliases) {
             foreach ($aliases as $alias) {
                 if (str_contains($lower, $alias)) {
