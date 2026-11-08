@@ -196,13 +196,13 @@ class FlaxVpsController extends Controller
     public function savePassword(Request $request, int $service): RedirectResponse
     {
         $data = $request->validate([
-            'vps_password' => ['required', 'string', 'min:8', 'max:255'],
+            'password' => ['required', 'string', 'min:8', 'max:255'],
         ]);
 
         $owned = $this->ownedPasswordService($request, $service);
 
         DB::table('nodexa_flax_services')->where('id', $owned->id)->update([
-            'credential_password_encrypted' => Crypt::encryptString($data['vps_password']),
+            'credential_password_encrypted' => Crypt::encryptString($data['password']),
             'updated_at' => now(),
         ]);
 
