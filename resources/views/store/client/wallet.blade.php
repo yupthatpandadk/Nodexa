@@ -26,7 +26,14 @@
             @forelse($transactions as $transaction)
             <div class="walletTransaction">
                 <div>
-                    <strong>{{ $transaction->type === 'admin_credit' ? 'Kredit tilføjet' : ($transaction->type === 'refund_credit' ? 'Refundering til Wallet' : 'Wallet-betaling') }}</strong>
+                    <strong>{{ match($transaction->type) {
+                        'admin_credit' => 'Kredit tilføjet',
+                        'refund_credit' => 'Refundering til Wallet',
+                        'wallet_hold' => 'Wallet-kredit reserveret',
+                        'wallet_release' => 'Reservation frigivet',
+                        'wallet_payment' => 'Wallet-betaling',
+                        default => 'Wallet-transaktion',
+                    } }}</strong>
                     <span>{{ $transaction->description ?: 'Nodexa Wallet' }}</span>
                     <small>{{ \Carbon\Carbon::parse($transaction->created_at)->format('d.m.Y H:i') }}</small>
                 </div>
