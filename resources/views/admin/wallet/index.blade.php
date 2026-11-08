@@ -15,7 +15,9 @@
         @csrf
         <input type="hidden" name="request_id" value="{{ \Illuminate\Support\Str::uuid() }}">
         <div class="box-body">
-          <div class="form-group"><label>Kunde-ID</label><input class="form-control" name="user_id" type="number" min="1" required value="{{ old('user_id') }}" placeholder="F.eks. 24"></div>
+          <div class="form-group"><label>Kundens e-mail</label><input class="form-control" name="email" type="email" value="{{ old('email') }}" placeholder="kunde@eksempel.dk"></div>
+          <div class="form-group"><label>Alternativt kunde-ID</label><input class="form-control" name="user_id" type="number" min="1" value="{{ old('user_id') }}" placeholder="F.eks. 24"></div>
+          <p class="help-block">Angiv mindst én af de to. Hvis du angiver begge, skal de matche samme konto.</p>
           <div class="form-group"><label>Beløb (DKK)</label><input class="form-control" name="amount" type="text" inputmode="decimal" required placeholder="F.eks. 69,00" value="{{ old('amount') }}"></div>
           <div class="form-group"><label>Årsag (gemmes i historikken)</label><textarea class="form-control" name="reason" rows="3" maxlength="500" required>{{ old('reason') }}</textarea></div>
           <p class="help-block">Kredit er ikke en automatisk Stripe-refundering. Brug kun denne formular til godkendte, manuelle tilgodehavender.</p>
