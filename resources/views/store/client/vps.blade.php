@@ -28,7 +28,7 @@
                 <div><span>IP ADDRESS</span><strong>{{ $service->primary_ip ?: 'Afventer' }}</strong></div>
                 <div><span>POWER</span><strong>{{ $running === true ? 'Running' : ($running === false ? 'Stopped' : 'Unknown') }}</strong></div>
                 <div><span>RESOURCES</span><strong>{{ $service->vcpu ?: '—' }} vCPU · {{ $service->memory_mb ? number_format($service->memory_mb/1024,1,',','.') . ' GB' : '—' }}</strong></div>
-                <div><span>NÆSTE FAKTURA</span><strong>{{ $service->next_invoice_at ? CarbonCarbon::parse($service->next_invoice_at)->format('d.m.Y') : '—' }}</strong></div>
+                <div><span>NÆSTE FAKTURA</span><strong>{{ $service->next_invoice_at ? \Carbon\Carbon::parse($service->next_invoice_at)->format('d.m.Y') : '—' }}</strong></div>
             </div>
 
             @if($service->last_error)
@@ -50,8 +50,8 @@
 
             <div class="vpsFoot">
                 <span>{{ number_format((float)$service->monthly_price,2,',','.') }} {{ $service->currency }}/md</span>
-                @if($service->expires_at)<span>Flax expiry {{ CarbonCarbon::parse($service->expires_at)->format('d.m.Y H:i') }}</span>@endif
-                @if($service->last_synced_at)<span>Synk {{ CarbonCarbon::parse($service->last_synced_at)->diffForHumans() }}</span>@endif
+                @if($service->expires_at)<span>Flax expiry {{ \Carbon\Carbon::parse($service->expires_at)->format('d.m.Y H:i') }}</span>@endif
+                @if($service->last_synced_at)<span>Synk {{ \Carbon\Carbon::parse($service->last_synced_at)->diffForHumans() }}</span>@endif
             </div>
         </article>
         @empty
