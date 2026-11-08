@@ -5,6 +5,8 @@ namespace Pterodactyl\Http\Controllers;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -185,6 +187,7 @@ class FlaxVpsController extends Controller
             'primaryIp' => $this->flax->primaryIp($serviceRow->server_info),
             'running' => $this->flax->remoteRunning($serviceRow->server_info),
             'osInfo' => $this->osInfo($serviceRow->server_info, $serviceRow->os_label),
+            'canResetPassword' => $this->flax->supportsPasswordReset(),
             'hasPassword' => Schema::hasColumn('nodexa_flax_services', 'credential_password_encrypted')
                 && !empty($serviceRow->credential_password_encrypted),
         ]);
@@ -255,6 +258,69 @@ class FlaxVpsController extends Controller
             'source' => $liveName ? 'Flax serverinformation' : 'Registreret OS-skabelon',
             'verified_live' => $liveName !== null,
         ];
+    }
+
+    /**
+     * Request an actual VPS password reset with Flax and persist the newly
+     * returned password encrypted. Never claim success without a returned
+     * credential, and never expose it in a redirect URL or session flash.
+     */
+    public function resetPassword(Request $request, int $service): RedirectResponse
+    {
+        $owned = $this->ownedPasswordService($request, $service);
+        if ($owned->status !== 'active') {
+            return back()->withErrors(['vps' => 'Kun aktive VPS-servere kan nulstilles.']);
+        }
+
+        if (!$this->flax->supportsPasswordReset()) {
+            return back()->withErrors(['vps' => 'Flax har endnu ikke aktiveret et verificeret password-reset API til Nodexa.']);
+        }
+
+        $os = DB::table('nodexa_flax_os_templates')
+            ->where('upstream_id', $owned->os_template_id)->value('label');
+        $osInfo = $this->osInfo($owned->server_info, is_string($os) ? $os : '');
+        $osName = mb_strtolower((string) $osInfo['name']);
+
+        if (str_contains($osName, 'windows')) {
+            $osUser = 'Administrator';
+        } elseif (preg_match('/ubuntu|debian|fedora|almalinux|alma linux|rocky|centos|arch|kali|suse|linux/', $osName)) {
+            $osUser = 'root';
+        } else {
+            return back()->withErrors(['vps' => 'OS blev ikke genkendt. Password kan ikke nulstilles sikkert.']);
+        }
+
+        $rateKey = 'nodexa:vps:password-reset:' . (int) $request->user()->id . ':' . $service;
+        if (RateLimiter::tooManyAttempts($rateKey, 2)) {
+            return back()->withErrors(['vps' => 'For mange resetforsøg. Prøv igen senere.']);
+        }
+
+        $lock = Cache::lock('nodexa:vps:password-reset:lock:' . $service, 90);
+        if (!$lock->get()) {
+            return back()->withErrors(['vps' => 'Password-reset er allerede i gang for denne VPS.']);
+        }
+
+        try {
+            RateLimiter::hit($rateKey, 900);
+            $result = $this->flax->resetOsPassword($service, (int) $request->user()->id, $osUser);
+            $newPassword = $result['password'];
+
+            DB::table('nodexa_flax_services')
+                ->where('id', $service)
+                ->where('user_id', $request->user()->id)
+                ->update([
+                    'credential_password_encrypted' => Crypt::encryptString($newPassword),
+                    'updated_at' => now(),
+                ]);
+
+            return redirect()->route('store.client.vps.show', $service)
+                ->with('success', 'Flax returnerede et nyt VPS-password. Det er gemt krypteret i Nodexa og kan vises under Adgang til VPS.');
+        } catch (\Throwable $exception) {
+            // Exceptions must never contain or log a returned secret.
+            return redirect()->route('store.client.vps.show', $service)
+                ->withErrors(['vps' => $exception->getMessage()]);
+        } finally {
+            $lock->release();
+        }
     }
 
     /**
