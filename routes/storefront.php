@@ -65,6 +65,7 @@ Route::middleware('auth.session')->group(function () {
     Route::get('/cart/orders/{checkout}', [CartController::class, 'order'])->name('store.cart.order');
     Route::delete('/cart/orders/{checkout}', [CartController::class, 'destroy'])->name('store.cart.order.remove');
     Route::post('/cart/orders/{checkout}/stripe', [StripePaymentController::class, 'pay'])->name('store.cart.stripe.pay');
+    Route::post('/cart/orders/{checkout}/stripe/cancel', [StripePaymentController::class, 'cancel'])->name('store.cart.stripe.cancel');
     Route::post('/cart/orders/{checkout}/wallet', [CartController::class, 'payWallet'])->name('store.cart.wallet.pay');
     Route::get('/cart/orders/{checkout}/stripe/success', [StripePaymentController::class, 'success'])->name('store.cart.stripe.success');
     Route::get('/client', [StorefrontController::class, 'dashboard'])->name('store.client');
