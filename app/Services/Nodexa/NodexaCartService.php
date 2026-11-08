@@ -250,8 +250,16 @@ class NodexaCartService
                 throw new RuntimeException('Den samlede checkout blev ikke fundet.');
             }
 
-            if ($checkout->status === 'cancelled' || (bool) ($checkout->hidden_from_client ?? false)) {
-                throw new RuntimeException('Denne ordre er annulleret og kan ikke markeres betalt.');
+            if (in_array($checkout->status, ['cancelled', 'wallet_refunded', 'refunded'], true)
+                || (bool) ($checkout->hidden_from_client ?? false)
+            ) {
+                throw new RuntimeException('Denne ordre er annulleret eller refunderet og kan ikke markeres betalt.');
+            }
+
+            if ($checkout->paid_at && $checkout->payment_method
+                && $checkout->payment_method !== $paymentMethod
+            ) {
+                throw new RuntimeException('Betalingsmetoden kan ikke ændres på en allerede betalt ordre.');
             }
 
             if (in_array($checkout->status, ['paid', 'completed'], true)) {
