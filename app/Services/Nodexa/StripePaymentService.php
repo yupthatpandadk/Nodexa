@@ -455,6 +455,75 @@ class StripePaymentService
      * Expire an unpaid Checkout Session before allowing an order to be hidden.
      * Do not assume the session is unpaid from Nodexa's local status alone.
      */
+    /**
+     * Verify a paid Stripe order has not been refunded/disputed before staff
+     * exchanges that payment for Nodexa Wallet credit.
+     */
+    public function assertEligibleForWalletCredit(object $checkout): void
+    {
+        if ((string) $checkout->payment_method !== 'stripe' || !$checkout->stripe_session_id) {
+            throw new RuntimeException('Kun Stripe-betalinger med verificerbar session kan krediteres via Stripe.');
+        }
+
+        $session = $this->retrieveSession((string) $checkout->stripe_session_id);
+        if (($session['payment_status'] ?? '') !== 'paid'
+            || ($session['metadata']['checkout_id'] ?? '') != (string) $checkout->id
+            || ($session['client_reference_id'] ?? '') !== (string) $checkout->number
+            || (int) ($session['amount_total'] ?? -1) !== $this->moneyToCents($checkout->total)
+            || strtolower((string) ($session['currency'] ?? '')) !== 'dkk'
+        ) {
+            throw new RuntimeException('Stripe-betalingen kunne ikke verificeres for denne ordre.');
+        }
+
+        $paymentIntent = $session['payment_intent'] ?? null;
+        if (!is_string($paymentIntent) || !preg_match('/^pi_[A-Za-z0-9_]+$/', $paymentIntent)) {
+            throw new RuntimeException('Stripe PaymentIntent mangler.');
+        }
+
+        $charges = $this->request('GET', '/charges', ['payment_intent' => $paymentIntent, 'limit' => 100]);
+        if (!$charges->successful()) {
+            throw new RuntimeException($this->stripeError($charges));
+        }
+
+        $rows = $charges->json();
+        if (!is_array($rows) || !isset($rows['data']) || !is_array($rows['data']) || !empty($rows['has_more'])) {
+            throw new RuntimeException('Stripe-betalingens chargehistorik kunne ikke verificeres.');
+        }
+
+        $capturedCents = 0;
+        foreach ($rows['data'] as $charge) {
+            if (!is_array($charge) || empty($charge['paid'])) {
+                continue;
+            }
+
+            if (!empty($charge['disputed']) || !empty($charge['refunded'])
+                || (int) ($charge['amount_refunded'] ?? 0) > 0
+                || strtolower((string) ($charge['currency'] ?? '')) !== 'dkk'
+            ) {
+                throw new RuntimeException('Betalingen er allerede refunderet eller omtvistet i Stripe.');
+            }
+
+            $capturedCents += (int) ($charge['amount_captured'] ?? 0);
+        }
+
+        if ($capturedCents !== $this->moneyToCents($checkout->total)) {
+            throw new RuntimeException('Det faktiske Stripe-beløb matcher ikke ordren.');
+        }
+
+        $refunds = $this->request('GET', '/refunds', ['payment_intent' => $paymentIntent, 'limit' => 100]);
+        if (!$refunds->successful()) {
+            throw new RuntimeException($this->stripeError($refunds));
+        }
+
+        $refundData = $refunds->json();
+        if (!is_array($refundData) || !isset($refundData['data'])
+            || !is_array($refundData['data']) || !empty($refundData['has_more'])
+            || count($refundData['data']) > 0
+        ) {
+            throw new RuntimeException('Der er allerede en Stripe-refundering eller en uafklaret refundering.');
+        }
+    }
+
     public function expireUnpaidCheckoutSession(string $sessionId): void
     {
         $session = $this->retrieveSession($sessionId);
