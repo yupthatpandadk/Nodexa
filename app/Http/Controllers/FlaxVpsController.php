@@ -3,8 +3,11 @@
 namespace Pterodactyl\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 use Pterodactyl\Services\Nodexa\FlaxResellerService;
 use Pterodactyl\Services\Nodexa\GlobalStoreSaleService;
@@ -181,7 +184,81 @@ class FlaxVpsController extends Controller
             'service' => $serviceRow,
             'primaryIp' => $this->flax->primaryIp($serviceRow->server_info),
             'running' => $this->flax->remoteRunning($serviceRow->server_info),
+            'hasPassword' => Schema::hasColumn('nodexa_flax_services', 'credential_password_encrypted')
+                && !empty($serviceRow->credential_password_encrypted),
         ]);
+    }
+
+    /**
+     * Store a customer-managed copy of their VPS login password.
+     * This is NOT a provider password reset. Never store plaintext.
+     */
+    public function savePassword(Request $request, int $service): RedirectResponse
+    {
+        $data = $request->validate([
+            'vps_password' => ['required', 'string', 'min:8', 'max:255'],
+        ]);
+
+        $owned = $this->ownedPasswordService($request, $service);
+
+        DB::table('nodexa_flax_services')->where('id', $owned->id)->update([
+            'credential_password_encrypted' => Crypt::encryptString($data['vps_password']),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('store.client.vps.show', $service)
+            ->with('success', 'Adgangskoden blev gemt krypteret i Nodexa. Den er IKKE ændret hos Flax eller på VPS’en.');
+    }
+
+    public function revealPassword(Request $request, int $service): JsonResponse
+    {
+        $owned = $this->ownedPasswordService($request, $service);
+
+        if (empty($owned->credential_password_encrypted)) {
+            return response()->json(['message' => 'Der er endnu ikke gemt en adgangskode i Nodexa.'], 404)
+                ->header('Cache-Control', 'private, no-store, max-age=0');
+        }
+
+        try {
+            $password = Crypt::decryptString($owned->credential_password_encrypted);
+        } catch (\Throwable $exception) {
+            return response()->json(['message' => 'Den gemte adgangskode kunne ikke dekrypteres.'], 500)
+                ->header('Cache-Control', 'private, no-store, max-age=0');
+        }
+
+        return response()->json(['password' => $password])
+            ->header('Cache-Control', 'private, no-store, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('X-Content-Type-Options', 'nosniff');
+    }
+
+    public function deletePassword(Request $request, int $service): RedirectResponse
+    {
+        $owned = $this->ownedPasswordService($request, $service);
+
+        DB::table('nodexa_flax_services')->where('id', $owned->id)->update([
+            'credential_password_encrypted' => null,
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('store.client.vps.show', $service)
+            ->with('success', 'Den gemte adgangskode blev fjernet fra Nodexa. VPS’ens faktiske login er uændret.');
+    }
+
+    private function ownedPasswordService(Request $request, int $service): object
+    {
+        abort_unless(Schema::hasColumn('nodexa_flax_services', 'credential_password_encrypted'), 503);
+
+        $owned = DB::table('nodexa_flax_services')
+            ->where('id', $service)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        abort_unless($owned, 404);
+        abort_unless($owned->upstream_server_id
+            && in_array($owned->status, ['active', 'suspended'], true), 403);
+
+        return $owned;
     }
 
     public function action(Request $request, int $service): RedirectResponse
