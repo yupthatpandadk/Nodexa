@@ -13,6 +13,12 @@ return [
     |
     */
 
+    // Flax reseller integrations must only use an action explicitly provided
+    // by Flax. Leave unset until Flax confirms the password reset API action.
+    'nodexa_flax' => [
+        'password_reset_action' => env('NODEXA_FLAX_PASSWORD_RESET_ACTION', ''),
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
