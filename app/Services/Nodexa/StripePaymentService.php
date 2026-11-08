@@ -138,6 +138,13 @@ class StripePaymentService
 
         $expectedCents = $this->moneyToCents($checkout->total);
 
+        if ($expectedCents > 0 && !$checkout->stripe_session_id
+            && $this->wallet->balanceCents($userId) >= $expectedCents
+        ) {
+            $result = $this->wallet->payCheckout($checkoutId, $userId);
+            return ['url' => $this->orderUrl($checkoutId), 'paid' => true, 'result' => $result];
+        }
+
         if ($expectedCents <= 0) {
             $this->cart->reserveCoupon($checkoutId);
             $result = $this->cart->markPaid($checkoutId, 'discount', 'zero-total');
