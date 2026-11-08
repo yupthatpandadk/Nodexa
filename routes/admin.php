@@ -83,6 +83,7 @@ Route::post('/store/global-sale', [Admin\StoreController::class, 'globalSale'])-
 Route::post('/store/stripe', [Admin\StoreController::class, 'stripeSettings'])->name('admin.store.stripe.settings');
 Route::post('/store/stripe/test', [Admin\StoreController::class, 'stripeTest'])->name('admin.store.stripe.test');
 Route::patch('/store/orders/{order}/status', [Admin\StoreController::class, 'orderStatus'])->name('admin.store.orders.status');
+Route::delete('/store/orders/{order}', [Admin\StoreController::class, 'removeOrder'])->name('admin.store.orders.remove');
 
 // Nodexa Roles & Permissions
 Route::get('/roles', [Admin\RoleController::class, 'index'])->name('admin.roles');
