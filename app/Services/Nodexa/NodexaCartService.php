@@ -616,7 +616,7 @@ class NodexaCartService
     {
         DB::transaction(function () use ($checkoutId) {
             $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->lockForUpdate()->first();
-            if (!$checkout || !$checkout->coupon_id || $checkout->coupon_reserved_at) {
+            if (!$checkout || $checkout->status === 'cancelled' || (bool) ($checkout->hidden_from_client ?? false) || !$checkout->coupon_id || $checkout->coupon_reserved_at) {
                 return;
             }
 
