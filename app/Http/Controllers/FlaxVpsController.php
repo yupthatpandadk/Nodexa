@@ -312,8 +312,12 @@ class FlaxVpsController extends Controller
                     'updated_at' => now(),
                 ]);
 
+            $message = !empty($result['queued'])
+                ? 'Flax har sat password-reset i kø og returneret den forventede kode. Den er gemt krypteret i Nodexa, men virker først, når Flax har gennemført nulstillingen.'
+                : 'Flax returnerede et nyt VPS-password. Det er gemt krypteret i Nodexa og kan vises under Adgang til VPS.';
+
             return redirect()->route('store.client.vps.show', $service)
-                ->with('success', 'Flax returnerede et nyt VPS-password. Det er gemt krypteret i Nodexa og kan vises under Adgang til VPS.');
+                ->with('success', $message);
         } catch (\Throwable $exception) {
             // Exceptions must never contain or log a returned secret.
             return redirect()->route('store.client.vps.show', $service)
