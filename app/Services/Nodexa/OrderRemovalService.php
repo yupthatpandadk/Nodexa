@@ -35,8 +35,12 @@ class OrderRemovalService
         // A late, unconfirmed Stripe Checkout Session may still take money.
         // Expire it before we archive the order or release any reserved coupon.
         if ($checkout->stripe_session_id) {
-            $this->stripe->expireUnpaidCheckoutSession((string) $checkout->stripe_session_id);
-        } elseif ((int) ($checkout->stripe_attempt ?? 0) > 0) {
+            $sessionId = (string) $checkout->stripe_session_id;
+            $this->stripe->expireUnpaidCheckoutSession($sessionId);
+            $this->wallet->releaseStripeSplit($checkoutId, $sessionId);
+        } elseif ((int) ($checkout->stripe_attempt ?? 0) > 0
+            && ($checkout->stripe_status !== 'expired' || $checkout->wallet_hold_state === 'held')
+        ) {
             throw new RuntimeException('Stripe-sessionens status er ukendt. Kontakt support før ordren fjernes.');
         }
 
