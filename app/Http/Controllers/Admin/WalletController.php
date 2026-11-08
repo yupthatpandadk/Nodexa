@@ -38,11 +38,24 @@ class WalletController extends Controller
     public function credit(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'user_id' => 'required|integer|exists:users,id',
+            'user_id' => 'nullable|integer|exists:users,id|required_without:email',
+            'email' => 'nullable|email|max:255',
             'amount' => ['required', 'string', 'regex:/^[0-9]{1,6}(?:[.,][0-9]{1,2})?$/'],
             'reason' => 'required|string|min:5|max:500',
             'request_id' => 'required|uuid',
         ]);
+
+        $userId = (int) ($data['user_id'] ?? 0);
+        if (!empty($data['email'])) {
+            $emailUserId = (int) (DB::table('users')->where('email', $data['email'])->value('id') ?? 0);
+            if ($emailUserId < 1) {
+                return back()->withInput()->withErrors(['wallet' => 'Kunden med den angivne e-mail blev ikke fundet.']);
+            }
+            if ($userId > 0 && $userId !== $emailUserId) {
+                return back()->withInput()->withErrors(['wallet' => 'Kunde-ID og e-mail tilhører ikke den samme konto.']);
+            }
+            $userId = $emailUserId;
+        }
 
         $amount = str_replace(',', '.', $data['amount']);
         [$whole, $decimal] = array_pad(explode('.', $amount, 2), 2, '0');
@@ -50,7 +63,7 @@ class WalletController extends Controller
 
         try {
             $this->wallet->credit(
-                (int) $data['user_id'],
+                $userId,
                 $cents,
                 'admin_credit',
                 'admin-credit-' . $data['request_id'],
@@ -67,13 +80,13 @@ class WalletController extends Controller
             'credit.granted',
             'Wallet credit granted: ' . number_format($cents / 100, 2) . ' DKK',
             'user',
-            (int) $data['user_id'],
+            $userId,
             ['amount_cents' => $cents, 'request_id' => $data['request_id']],
             $request
         );
 
         $this->events->notify(
-            (int) $data['user_id'],
+            $userId,
             'Kredit tilføjet til Wallet',
             number_format($cents / 100, 2, ',', '.') . ' DKK er tilføjet til din Nodexa Wallet.',
             'billing',
