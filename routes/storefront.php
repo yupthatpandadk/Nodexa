@@ -10,6 +10,7 @@ use Pterodactyl\Http\Controllers\CfxEupController;
 use Pterodactyl\Http\Controllers\FlaxVpsController;
 use Pterodactyl\Http\Controllers\CartController;
 use Pterodactyl\Http\Controllers\WalletController;
+use Pterodactyl\Http\Controllers\SubscriptionController;
 use Pterodactyl\Http\Controllers\StripePaymentController;
 use Pterodactyl\Http\Controllers\StripeWebhookController;
 
@@ -71,6 +72,8 @@ Route::middleware('auth.session')->group(function () {
     Route::get('/client', [StorefrontController::class, 'dashboard'])->name('store.client');
     Route::get('/client/servers', [StorefrontController::class, 'clientServers'])->name('store.client.servers');
     Route::get('/client/billing', [StorefrontController::class, 'clientBilling'])->name('store.client.billing');
+    Route::post('/client/billing/subscriptions/{subscription}/cancel', [SubscriptionController::class, 'cancel'])->whereNumber('subscription')->middleware('throttle:5,1')->name('store.client.subscription.cancel');
+    Route::post('/client/billing/subscriptions/{subscription}/undo', [SubscriptionController::class, 'undo'])->whereNumber('subscription')->middleware('throttle:5,1')->name('store.client.subscription.undo');
     Route::get('/client/wallet', [WalletController::class, 'index'])->name('store.client.wallet');
     Route::get('/client/profile', [StorefrontController::class, 'clientProfile'])->name('store.client.profile');
     Route::get('/client/eup-keys', [CfxEupController::class, 'index'])->name('store.client.eup-keys');
