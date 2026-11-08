@@ -41,6 +41,7 @@ class StorefrontController extends Controller
 
         $orders = StoreOrder::with(['product','server'])
             ->where('user_id', $user->id)
+            ->where('hidden_from_client', false)
             ->latest()
             ->get();
 
