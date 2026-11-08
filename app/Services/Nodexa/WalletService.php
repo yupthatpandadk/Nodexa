@@ -126,6 +126,138 @@ class WalletService
         return $this->cart->markPaid($checkoutId, 'wallet', $reference);
     }
 
+    /**
+     * Automatically hold as much DKK credit as possible for the Stripe portion.
+     * Keep Stripe remainder >= 2.50 DKK (Stripe's DKK minimum).
+     * Persist the attempt BEFORE the external API call so an ambiguous network
+     * error can retry the same Stripe idempotency key without another debit.
+     */
+    public function prepareStripeSplit(int $checkoutId, int $userId): array
+    {
+        return DB::transaction(function () use ($checkoutId, $userId) {
+            $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)
+                ->where('user_id', $userId)->lockForUpdate()->first();
+
+            if (!$checkout || $checkout->status !== 'awaiting_payment'
+                || $checkout->paid_at || (bool) ($checkout->hidden_from_client ?? false)
+                || $checkout->stripe_session_id
+                || $checkout->payment_method
+            ) {
+                throw new RuntimeException('Ordren kan ikke starte en ny Stripe-betaling.');
+            }
+
+            if (strtoupper((string) $checkout->currency) !== 'DKK') {
+                throw new RuntimeException('Kombineret betaling understøtter kun DKK.');
+            }
+
+            $total = (int) round((float) $checkout->total * 100);
+            if ($total < 250) {
+                throw new RuntimeException('Stripe kræver mindst 2,50 DKK for en restbetaling.');
+            }
+
+            $attempt = (int) ($checkout->stripe_attempt ?? 0);
+            $holdState = (string) ($checkout->wallet_hold_state ?? 'none');
+            if ($checkout->stripe_status === 'creating') {
+                if ($holdState !== 'held' && $holdState !== 'none') {
+                    throw new RuntimeException('Wallet-reservationen er ukendt. Kontakt support.');
+                }
+                return ['attempt' => $attempt, 'wallet_cents' => (int) $checkout->wallet_applied_cents,
+                    'stripe_cents' => $total - (int) $checkout->wallet_applied_cents];
+            }
+
+            $attempt++;
+            $wallet = $this->walletForUpdate($userId);
+            $walletCents = min((int) $wallet->balance_cents, max(0, $total - 250));
+            if ($walletCents > 0) {
+                $this->post($wallet, -$walletCents, 'wallet_hold',
+                    'stripe-wallet-hold-' . $checkoutId . '-' . $attempt,
+                    'Reserveret til Stripe-ordre ' . $checkout->number,
+                    $userId, 'cart_checkout', $checkoutId);
+            }
+
+            DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
+                'stripe_attempt' => $attempt,
+                'stripe_status' => 'creating',
+                'wallet_applied_cents' => $walletCents,
+                'wallet_hold_state' => $walletCents > 0 ? 'held' : 'none',
+                'updated_at' => now(),
+            ]);
+
+            return ['attempt' => $attempt, 'wallet_cents' => $walletCents,
+                'stripe_cents' => $total - $walletCents];
+        }, 3);
+    }
+
+    /**
+     * Release an unused hold once Stripe has confirmed the session expired,
+     * or when Stripe definitively rejected creating the session.
+     */
+    public function releaseStripeSplit(int $checkoutId, string $sessionId = '', bool $noSessionCreated = false): void
+    {
+        DB::transaction(function () use ($checkoutId, $sessionId, $noSessionCreated) {
+            $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)
+                ->lockForUpdate()->first();
+
+            if (!$checkout || $checkout->paid_at || $checkout->status !== 'awaiting_payment') {
+                return;
+            }
+
+            if (!$noSessionCreated && ($sessionId === ''
+                || !hash_equals((string) $checkout->stripe_session_id, $sessionId))) {
+                return;
+            }
+
+            $amount = (int) ($checkout->wallet_applied_cents ?? 0);
+            if ($amount > 0 && $checkout->wallet_hold_state === 'held') {
+                $wallet = $this->walletForUpdate((int) $checkout->user_id);
+                $this->post($wallet, $amount, 'wallet_release',
+                    'stripe-wallet-release-' . $checkoutId . '-' . (int) $checkout->stripe_attempt,
+                    'Frigivet reservation for ordre ' . $checkout->number,
+                    (int) $checkout->user_id, 'cart_checkout', $checkoutId);
+            } elseif ($amount > 0 && $checkout->wallet_hold_state !== 'released') {
+                throw new RuntimeException('Wallet-reservationens tilstand er ugyldig.');
+            }
+
+            DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
+                'wallet_applied_cents' => 0,
+                'wallet_hold_state' => 'released',
+                'stripe_session_id' => null,
+                'stripe_status' => 'expired',
+                'updated_at' => now(),
+            ]);
+        }, 3);
+    }
+
+    /**
+     * Record that a successful Stripe payment consumed the existing wallet
+     * hold. No further debit occurs here.
+     */
+    public function settleStripeSplit(int $checkoutId, string $sessionId): void
+    {
+        DB::transaction(function () use ($checkoutId, $sessionId) {
+            $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)
+                ->lockForUpdate()->first();
+
+            if (!$checkout || !hash_equals((string) $checkout->stripe_session_id, $sessionId)) {
+                throw new RuntimeException('Stripe-sessionen passer ikke til Wallet-reservationen.');
+            }
+
+            if ($checkout->wallet_hold_state === 'settled'
+                || ((int) $checkout->wallet_applied_cents === 0 && $checkout->wallet_hold_state === 'none')) {
+                return;
+            }
+
+            if ($checkout->wallet_hold_state !== 'held') {
+                throw new RuntimeException('Wallet-reservationen er ikke aktiv ved Stripe-betalingen.');
+            }
+
+            DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
+                'wallet_hold_state' => 'settled',
+                'updated_at' => now(),
+            ]);
+        }, 3);
+    }
+
     private function walletForUpdate(int $userId): object
     {
         if ($userId < 1 || !DB::table('users')->where('id', $userId)->exists()) {
