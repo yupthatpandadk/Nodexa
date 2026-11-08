@@ -384,6 +384,12 @@ class OperationsController extends Controller
             return back()->with('success', 'Fakturaen er allerede betalt.');
         }
 
+        if (!in_array($row->status, ['unpaid', 'overdue'], true)) {
+            return back()->withErrors([
+                'billing' => 'Kun ubetalte eller forfaldne fakturaer kan markeres betalt.',
+            ]);
+        }
+
         DB::table('nodexa_invoices')->where('id', $invoice)->update([
             'status' => 'paid',
             'paid_at' => now(),
@@ -446,7 +452,11 @@ class OperationsController extends Controller
             if ($subscription?->server_id) {
                 $server = Server::query()->find($subscription->server_id);
 
-                if ($server && $server->isSuspended() && !$hasOverdue) {
+                $canReactivate = $subscription && in_array($subscription->status, ['active', 'cancel_pending'], true)
+                    && ($subscription->status !== 'cancel_pending'
+                        || ($subscription->cancel_at && \Carbon\Carbon::parse($subscription->cancel_at)->isFuture()));
+
+                if ($server && $server->isSuspended() && !$hasOverdue && $canReactivate) {
                     try {
                         $this->suspension->toggle($server, SuspensionService::ACTION_UNSUSPEND);
                     } catch (\Throwable $exception) {
