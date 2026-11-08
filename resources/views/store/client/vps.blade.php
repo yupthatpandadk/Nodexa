@@ -18,7 +18,7 @@
             <div class="vpsTop">
                 <div>
                     <div class="miniLabel">{{ $service->product_name }}</div>
-                    <h2>{{ $service->hostname }}</h2>
+                    <h2><a class="vpsNameLink" href="{{ route('store.client.vps.show', $service->id) }}" aria-label="Åbn kontrolpanel for {{ $service->hostname }}">{{ $service->hostname }}</a></h2>
                     <p>{{ $service->os_label ?: 'VirtFusion VPS' }}</p>
                 </div>
                 <span class="serviceState {{ $service->status==='active'?'good':($service->status==='suspended'?'bad':'warn') }}">● {{ strtoupper(str_replace('_',' ',$service->status)) }}</span>
@@ -36,6 +36,7 @@
             @endif
 
             <div class="vpsActions">
+                <a class="btn primary" href="{{ route('store.client.vps.show', $service->id) }}">Åbn kontrolpanel →</a>
                 @if($service->status==='active' && $service->upstream_server_id)
                     <form method="POST" action="{{ route('store.client.vps.action',$service->id) }}">@csrf<input type="hidden" name="action" value="boot"><button class="btn">Start</button></form>
                     <form method="POST" action="{{ route('store.client.vps.action',$service->id) }}">@csrf<input type="hidden" name="action" value="restart"><button class="btn">Restart</button></form>
@@ -63,7 +64,7 @@
 
 @push('styles')
 <style>
-.clientHead{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px}.clientHead h1{font-size:38px;margin:5px 0}.clientHead p{margin:0}.vpsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.vpsCard{border:1px solid var(--line);border-radius:17px;background:#07131f;padding:20px}.vpsTop{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.vpsTop h2{font-size:20px;margin:5px 0 2px}.vpsTop p{margin:0;color:#7188a3;font-size:11px}.serviceState{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:900;white-space:nowrap}.serviceState.good{background:#0d3025;color:#88e7bf}.serviceState.warn{background:#30250d;color:#ffd077}.serviceState.bad{background:#34161d;color:#ff9eae}.vpsStats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px}.vpsStats>div{border:1px solid #17304a;border-radius:11px;background:#081522;padding:12px}.vpsStats span{display:block;color:#66809c;font-size:8px;font-weight:850;letter-spacing:.08em}.vpsStats strong{display:block;margin-top:4px;font-size:12px;overflow-wrap:anywhere}.vpsActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.vpsActions form{margin:0}.vpsActions .btn{min-height:36px;padding:0 12px;font-size:11px}.vpsFoot{display:flex;gap:14px;flex-wrap:wrap;margin-top:15px;padding-top:13px;border-top:1px solid var(--line);font-size:9px;color:#627b97}@media(max-width:850px){.vpsGrid{grid-template-columns:1fr}}@media(max-width:580px){.clientHead{align-items:flex-start;flex-direction:column}.vpsStats{grid-template-columns:1fr}.vpsTop{flex-direction:column}}
+.clientHead{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px}.clientHead h1{font-size:38px;margin:5px 0}.clientHead p{margin:0}.vpsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.vpsCard{border:1px solid var(--line);border-radius:17px;background:#07131f;padding:20px}.vpsTop{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.vpsTop h2{font-size:20px;margin:5px 0 2px}.vpsNameLink{color:inherit;text-decoration:none}.vpsNameLink:hover,.vpsNameLink:focus-visible{color:#88baff;text-decoration:underline}.vpsTop p{margin:0;color:#7188a3;font-size:11px}.serviceState{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:900;white-space:nowrap}.serviceState.good{background:#0d3025;color:#88e7bf}.serviceState.warn{background:#30250d;color:#ffd077}.serviceState.bad{background:#34161d;color:#ff9eae}.vpsStats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px}.vpsStats>div{border:1px solid #17304a;border-radius:11px;background:#081522;padding:12px}.vpsStats span{display:block;color:#66809c;font-size:8px;font-weight:850;letter-spacing:.08em}.vpsStats strong{display:block;margin-top:4px;font-size:12px;overflow-wrap:anywhere}.vpsActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.vpsActions form{margin:0}.vpsActions .btn{min-height:36px;padding:0 12px;font-size:11px}.vpsFoot{display:flex;gap:14px;flex-wrap:wrap;margin-top:15px;padding-top:13px;border-top:1px solid var(--line);font-size:9px;color:#627b97}@media(max-width:850px){.vpsGrid{grid-template-columns:1fr}}@media(max-width:580px){.clientHead{align-items:flex-start;flex-direction:column}.vpsStats{grid-template-columns:1fr}.vpsTop{flex-direction:column}}
 </style>
 @endpush
 @endsection
