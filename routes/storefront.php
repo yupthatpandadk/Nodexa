@@ -9,6 +9,7 @@ use Pterodactyl\Http\Controllers\ClientHubController;
 use Pterodactyl\Http\Controllers\CfxEupController;
 use Pterodactyl\Http\Controllers\FlaxVpsController;
 use Pterodactyl\Http\Controllers\CartController;
+use Pterodactyl\Http\Controllers\WalletController;
 use Pterodactyl\Http\Controllers\StripePaymentController;
 use Pterodactyl\Http\Controllers\StripeWebhookController;
 
@@ -64,10 +65,12 @@ Route::middleware('auth.session')->group(function () {
     Route::get('/cart/orders/{checkout}', [CartController::class, 'order'])->name('store.cart.order');
     Route::delete('/cart/orders/{checkout}', [CartController::class, 'destroy'])->name('store.cart.order.remove');
     Route::post('/cart/orders/{checkout}/stripe', [StripePaymentController::class, 'pay'])->name('store.cart.stripe.pay');
+    Route::post('/cart/orders/{checkout}/wallet', [CartController::class, 'payWallet'])->name('store.cart.wallet.pay');
     Route::get('/cart/orders/{checkout}/stripe/success', [StripePaymentController::class, 'success'])->name('store.cart.stripe.success');
     Route::get('/client', [StorefrontController::class, 'dashboard'])->name('store.client');
     Route::get('/client/servers', [StorefrontController::class, 'clientServers'])->name('store.client.servers');
     Route::get('/client/billing', [StorefrontController::class, 'clientBilling'])->name('store.client.billing');
+    Route::get('/client/wallet', [WalletController::class, 'index'])->name('store.client.wallet');
     Route::get('/client/profile', [StorefrontController::class, 'clientProfile'])->name('store.client.profile');
     Route::get('/client/eup-keys', [CfxEupController::class, 'index'])->name('store.client.eup-keys');
     Route::get('/client/vps', [FlaxVpsController::class, 'client'])->name('store.client.vps');
