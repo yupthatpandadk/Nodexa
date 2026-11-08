@@ -14,6 +14,7 @@ use Pterodactyl\Services\Nodexa\CfxEupService;
 use Pterodactyl\Services\Nodexa\FlaxResellerService;
 use Pterodactyl\Services\Nodexa\NodexaAutomationService;
 use Pterodactyl\Services\Nodexa\NodexaCartService;
+use Pterodactyl\Services\Nodexa\OrderRemovalService;
 use Pterodactyl\Services\Nodexa\NodexaEventService;
 use Pterodactyl\Services\Servers\BuildModificationService;
 use Pterodactyl\Services\Servers\SuspensionService;
@@ -28,6 +29,7 @@ class OperationsController extends Controller
         private CfxEupService $cfxEup,
         private FlaxResellerService $flaxReseller,
         private NodexaCartService $cart,
+        private OrderRemovalService $removal,
     ) {
     }
 
@@ -269,6 +271,31 @@ class OperationsController extends Controller
         ]);
 
         return back()->with('success', 'Service add-on er oprettet.');
+    }
+
+    public function removeCartCheckout(Request $request, int $checkout): RedirectResponse
+    {
+        $order = DB::table('nodexa_cart_checkouts')->where('id', $checkout)->first();
+        abort_unless($order, 404);
+
+        try {
+            $number = $this->removal->removeCheckout($checkout, (int) $order->user_id);
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['billing' => $exception->getMessage()]);
+        }
+
+        $this->events->audit(
+            (int) $request->user()->id,
+            'billing',
+            'cart_checkout.cancelled',
+            'Unpaid checkout cancelled and archived by admin',
+            'cart_checkout',
+            $checkout,
+            ['number' => $number],
+            $request
+        );
+
+        return back()->with('success', 'Ubetalt ordre ' . $number . ' blev annulleret og skjult for kunden.');
     }
 
     public function markCartCheckoutPaid(Request $request, int $checkout): RedirectResponse
