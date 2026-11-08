@@ -273,6 +273,31 @@ class OperationsController extends Controller
         return back()->with('success', 'Service add-on er oprettet.');
     }
 
+    public function archiveRefundedCartCheckout(Request $request, int $checkout): RedirectResponse
+    {
+        $order = DB::table('nodexa_cart_checkouts')->where('id', $checkout)->first();
+        abort_unless($order, 404);
+
+        try {
+            $number = $this->removal->archiveRefundedCheckout($checkout, (int) $order->user_id);
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['billing' => $exception->getMessage()]);
+        }
+
+        $this->events->audit(
+            (int) $request->user()->id,
+            'billing',
+            'cart_checkout.refunded_archived',
+            'Failed paid checkout archived after Stripe refund verification',
+            'cart_checkout',
+            $checkout,
+            ['number' => $number],
+            $request
+        );
+
+        return back()->with('success', 'Refunderet fejlordre ' . $number . ' er arkiveret. Betalingshistorikken er bevaret.');
+    }
+
     public function removeCartCheckout(Request $request, int $checkout): RedirectResponse
     {
         $order = DB::table('nodexa_cart_checkouts')->where('id', $checkout)->first();
