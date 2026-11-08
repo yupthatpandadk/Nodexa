@@ -75,6 +75,7 @@ Route::middleware('auth.session')->group(function () {
     Route::get('/client/profile', [StorefrontController::class, 'clientProfile'])->name('store.client.profile');
     Route::get('/client/eup-keys', [CfxEupController::class, 'index'])->name('store.client.eup-keys');
     Route::get('/client/vps', [FlaxVpsController::class, 'client'])->name('store.client.vps');
+    Route::get('/client/vps/{service}', [FlaxVpsController::class, 'clientService'])->whereNumber('service')->name('store.client.vps.show');
     Route::post('/client/vps/{service}/action', [FlaxVpsController::class, 'action'])->name('store.client.vps.action');
     Route::post('/vps/{product}/order', [FlaxVpsController::class, 'order'])->name('store.vps.order');
     Route::get('/vps/orders/{service}/checkout', [FlaxVpsController::class, 'checkout'])->name('store.vps.checkout');
