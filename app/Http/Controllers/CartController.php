@@ -176,21 +176,18 @@ class CartController extends Controller
 
     public function place(Request $request): RedirectResponse
     {
-        $data = $request->validate(['payment_method' => 'nullable|in:stripe,wallet']);
-        $paymentMethod = $data['payment_method'] ?? 'stripe';
+        $request->validate(['payment_method' => 'nullable|in:stripe,wallet']);
         $items = (array) $request->session()->get(self::SESSION_KEY, []);
-
-        if ($paymentMethod === 'wallet') {
-            try {
-                $preview = $this->cart->resolve($items, $request->session()->get(self::COUPON_KEY));
-                $amount = (int) round(((float) $preview['total']) * 100);
-                if ($amount <= 0 || $this->wallet->balanceCents((int) $request->user()->id) < $amount) {
-                    throw new \RuntimeException('Wallet-saldoen dækker ikke denne ordre. Vælg Stripe eller få mere kredit.');
-                }
-            } catch (\Throwable $exception) {
-                return redirect()->route('store.cart.checkout')->withErrors(['wallet' => $exception->getMessage()]);
-            }
+        try {
+            $preview = $this->cart->resolve($items, $request->session()->get(self::COUPON_KEY));
+            $totalCents = (int) round(((float) ($preview['total'] ?? 0)) * 100);
+            $walletCents = $this->wallet->balanceCents((int) $request->user()->id);
+        } catch (\Throwable $exception) {
+            return redirect()->route('store.cart.checkout')->withErrors(['wallet' => $exception->getMessage()]);
         }
+
+        // Wallet is always applied first. Use Stripe for the remaining balance.
+        $paymentMethod = $totalCents > 0 && $walletCents >= $totalCents ? 'wallet' : 'stripe';
 
         try {
             $checkoutId = $this->cart->createCheckout(
