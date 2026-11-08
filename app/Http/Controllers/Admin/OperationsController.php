@@ -275,6 +275,10 @@ class OperationsController extends Controller
 
     public function archiveRefundedCartCheckout(Request $request, int $checkout): RedirectResponse
     {
+        $request->validate([
+            'confirmed_no_service' => ['accepted'],
+        ]);
+
         $order = DB::table('nodexa_cart_checkouts')->where('id', $checkout)->first();
         abort_unless($order, 404);
 
