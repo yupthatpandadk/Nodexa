@@ -147,6 +147,43 @@ class FlaxVpsController extends Controller
         return view('store.client.vps', compact('services'));
     }
 
+    /**
+     * Individual customer VPS control panel. The owner filter is mandatory:
+     * an authenticated customer must never view another customer's VPS.
+     */
+    public function clientService(Request $request, int $service): View
+    {
+        $serviceRow = DB::table('nodexa_flax_services as s')
+            ->leftJoin('nodexa_flax_products as p', 'p.id', '=', 's.product_id')
+            ->leftJoin('nodexa_flax_os_templates as os', 'os.upstream_id', '=', 's.os_template_id')
+            ->leftJoin('nodexa_subscriptions as sub', 'sub.id', '=', 's.subscription_id')
+            ->where('s.id', $service)
+            ->where('s.user_id', $request->user()->id)
+            ->select([
+                's.*',
+                'p.name as product_name',
+                'p.vcpu',
+                'p.memory_mb',
+                'p.disk_gb',
+                'p.ipv4_count',
+                'p.bandwidth',
+                'p.monthly_price',
+                'p.currency',
+                'os.label as os_label',
+                'sub.next_invoice_at',
+                'sub.status as subscription_status',
+            ])
+            ->first();
+
+        abort_unless($serviceRow, 404);
+
+        return view('store.client.vps-show', [
+            'service' => $serviceRow,
+            'primaryIp' => $this->flax->primaryIp($serviceRow->server_info),
+            'running' => $this->flax->remoteRunning($serviceRow->server_info),
+        ]);
+    }
+
     public function action(Request $request, int $service): RedirectResponse
     {
         $data = $request->validate([
@@ -170,6 +207,9 @@ class FlaxVpsController extends Controller
             return back()->withErrors(['vps' => $exception->getMessage()]);
         }
 
-        return back()->with('success', 'VPS-handlingen er sendt til Flax.');
+        return redirect()->route('store.client.vps.show', $service)
+            ->with('success', $data['action'] === 'refresh'
+                ? 'Status for denne VPS er opdateret.'
+                : 'VPS-handlingen er sendt til Flax.');
     }
 }
