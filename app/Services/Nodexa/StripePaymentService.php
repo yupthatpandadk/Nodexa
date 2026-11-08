@@ -119,6 +119,16 @@ class StripePaymentService
             throw new RuntimeException('Ordren blev ikke fundet.');
         }
 
+        if ($checkout->payment_method === 'wallet' || ($checkout->paid_at && $checkout->status !== 'completed')) {
+            throw new RuntimeException('Ordren er allerede betalt via en anden metode og kan ikke betales igen.');
+        }
+
+        if (in_array($checkout->status, ['cancelled', 'wallet_refunded', 'refunded'], true)
+            || (bool) ($checkout->hidden_from_client ?? false)
+        ) {
+            throw new RuntimeException('Ordren er annulleret eller refunderet.');
+        }
+
         if (in_array($checkout->status, ['paid', 'completed'], true)) {
             return [
                 'url' => $this->orderUrl($checkoutId),
@@ -389,6 +399,12 @@ class StripePaymentService
         $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->first();
         if (!$checkout) {
             throw new RuntimeException('Stripe-sessionens Nodexa-ordre findes ikke.');
+        }
+
+        if ($checkout->payment_method === 'wallet'
+            || in_array($checkout->status, ['cancelled', 'wallet_refunded', 'refunded'], true)
+        ) {
+            throw new RuntimeException('Ordren er allerede behandlet via Wallet eller er annulleret.');
         }
 
         if ($checkout->stripe_session_id && !hash_equals((string) $checkout->stripe_session_id, (string) ($session['id'] ?? ''))) {
