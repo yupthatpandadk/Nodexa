@@ -72,6 +72,14 @@ class WalletController extends Controller
             $request
         );
 
+        $this->events->notify(
+            (int) $data['user_id'],
+            'Kredit tilføjet til Wallet',
+            number_format($cents / 100, 2, ',', '.') . ' DKK er tilføjet til din Nodexa Wallet.',
+            'billing',
+            '/client/wallet'
+        );
+
         return redirect()->route('admin.wallet')->with('success', 'Wallet-kredit er tilføjet.');
     }
 
@@ -101,6 +109,17 @@ class WalletController extends Controller
             ['order_number' => $number, 'customer_consent_confirmed' => true],
             $request
         );
+
+        $checkoutRow = DB::table('nodexa_cart_checkouts')->where('id', $checkout)->first();
+        if ($checkoutRow) {
+            $this->events->notify(
+                (int) $checkoutRow->user_id,
+                'Refundering til Wallet',
+                number_format((float) $checkoutRow->total, 2, ',', '.') . ' DKK fra ordre ' . $number . ' er blevet krediteret din Wallet.',
+                'billing',
+                '/client/wallet'
+            );
+        }
 
         return back()->with('success', 'Ordre ' . $number . ' er omdannet til Wallet-kredit. Der er ikke sendt en Stripe-refundering.');
     }
