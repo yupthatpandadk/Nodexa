@@ -52,7 +52,17 @@
         <div class="orderLine"><span class="muted">Rabat{{$checkout->coupon_code?' · '.$checkout->coupon_code:''}}</span><strong style="color:#67d9a2">-{{ number_format((float)$checkout->discount,2,',','.') }} DKK</strong></div>
         <div class="orderLine"><span class="muted">Rabatperiode</span><strong>{{ $checkout->coupon_duration_months ?? 1 }} måned(er)</strong></div>
         @endif
-        <div class="orderLine"><span class="muted">{{ $checkout->payment_method === 'wallet' ? 'Wallet / ordre-total' : 'Stripe / ordre-total' }}</span><strong>{{ number_format((float)$checkout->total,2,',','.') }} DKK</strong></div>
+        @php
+            $orderCents = (int) round((float) $checkout->total * 100);
+            $orderWalletCents = $checkout->payment_method === 'wallet'
+                ? $orderCents
+                : (int) ($checkout->wallet_applied_cents ?? 0);
+            $orderStripeCents = max(0, $orderCents - $orderWalletCents);
+        @endphp
+        @if($orderWalletCents > 0)
+            <div class="orderLine"><span class="muted">Nodexa Wallet {{ $checkout->wallet_hold_state === 'held' ? '(reserveret)' : '' }}</span><strong style="color:#78ddaf">−{{ number_format($orderWalletCents / 100,2,',','.') }} DKK</strong></div>
+        @endif
+        <div class="orderLine"><span class="muted">{{ $orderStripeCents > 0 ? 'Resterende betaling med Stripe' : 'Resterende betaling' }}</span><strong>{{ number_format($orderStripeCents / 100,2,',','.') }} DKK</strong></div>
         <div class="orderLine"><span class="muted">Status</span><span class="statusBadge {{ in_array($checkout->status,['paid','completed'])?'good':($checkout->status==='partial'?'bad':'warn') }}">{{ strtoupper(str_replace('_',' ',$checkout->status)) }}</span></div>
 
         @if($checkout->status==='awaiting_payment')
@@ -65,11 +75,17 @@
                 <div class="micro" style="margin:12px 0 4px">Wallet-saldo: {{ number_format($walletBalanceCents/100,2,',','.') }} DKK. <a href="{{route('store.client.wallet')}}" style="color:#a1cfff">Se Wallet</a></div>
             @endif
             @if($stripeEnabled)
-                <div class="notice" style="margin-top:14px">Stripe trækker præcis <strong>{{ number_format((float)$checkout->total,2,',','.') }} DKK</strong>. Nodexa godkender ikke betalingen, hvis Stripe returnerer et andet beløb eller en anden valuta.</div>
+                <div class="notice" style="margin-top:14px">Wallet-kredit bruges først. Stripe betaler det resterende beløb på <strong>{{ number_format($orderStripeCents / 100,2,',','.') }} DKK</strong>. Betalingen bliver først færdigregistreret, når Stripe bekræfter restbeløbet.</div>
                 <form method="POST" action="{{ route('store.cart.stripe.pay',$checkout->id) }}">
                     @csrf
-                    <button class="btn primary stripePayButton" style="width:100%;margin-top:12px" type="submit">Betal {{ number_format((float)$checkout->total,2,',','.') }} DKK med Stripe →</button>
+                    <button class="btn primary stripePayButton" style="width:100%;margin-top:12px" type="submit">Betal resten med Stripe →</button>
                 </form>
+            @if($checkout->stripe_session_id && !$checkout->paid_at)
+                <form method="POST" action="{{ route('store.cart.stripe.cancel', $checkout->id) }}" style="margin-top:10px" onsubmit="return confirm('Afbryd Stripe-betalingen og frigiv reserveret Wallet-kredit?');">
+                    @csrf
+                    <button class="btn" type="submit" style="width:100%">Annullér Stripe-betaling og frigiv kredit</button>
+                </form>
+            @endif
             @else
                 <div class="notice" style="margin-top:14px">Stripe er ikke aktiveret endnu. Ordren kan registreres betalt af admin.</div>
                 <button class="btn primary" style="width:100%;margin-top:12px;opacity:.5" disabled>Stripe ikke konfigureret</button>
