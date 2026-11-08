@@ -244,7 +244,7 @@ class SubscriptionCancellationService
 
         DB::table('nodexa_subscriptions')
             ->where('id', $subscription->id)
-            ->where('status', 'cancel_pending')
+            ->whereIn('status', ['cancel_pending', 'cancelled'])
             ->update([
                 'status' => 'cancelled',
                 'next_invoice_at' => null,
