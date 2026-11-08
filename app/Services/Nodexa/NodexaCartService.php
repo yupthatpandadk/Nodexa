@@ -262,6 +262,13 @@ class NodexaCartService
                 throw new RuntimeException('Betalingsmetoden kan ikke ændres på en allerede betalt ordre.');
             }
 
+            if (!$checkout->paid_at && $paymentMethod !== 'stripe'
+                && ($checkout->stripe_session_id || $checkout->stripe_status === 'creating'
+                    || $checkout->wallet_hold_state === 'held')
+            ) {
+                throw new RuntimeException('Der er allerede en Stripe-betaling eller Wallet-reservation i gang. Annullér denne først.');
+            }
+
             if (in_array($checkout->status, ['paid', 'completed'], true)) {
                 return ['state' => 'completed', 'checkout' => $checkout];
             }
