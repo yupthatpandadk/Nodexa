@@ -192,7 +192,9 @@ class CfxEupService
         }
 
         $subscription = DB::table('nodexa_subscriptions')->where('id', $invoice->subscription_id)->first();
-        if (!$subscription || $subscription->service_type !== 'cfx_eup' || !$subscription->service_reference) {
+        if (!$subscription || $subscription->service_type !== 'cfx_eup' || !$subscription->service_reference
+            || in_array($subscription->status, ['cancel_pending', 'cancelled'], true)
+        ) {
             return;
         }
 
