@@ -195,7 +195,7 @@ class SubscriptionCancellationService
             }
 
             // Never mark the cancellation finished if provider deletion failed.
-            $this->flax->terminateService((int) $vps->id);
+            $this->flax->terminateService((int) $vps->id, false);
         } elseif ($type === 'cfx_eup') {
             if (!$subscription->service_reference) {
                 throw new RuntimeException('EUP-reference mangler. Automatisk ophør er blokeret.');
