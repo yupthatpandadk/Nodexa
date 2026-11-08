@@ -236,7 +236,9 @@ class FlaxResellerService
         }
 
         $subscription = DB::table('nodexa_subscriptions')->where('id', $invoice->subscription_id)->first();
-        if (!$subscription || ($subscription->service_type ?? null) !== 'flax_vps' || !$subscription->service_reference) {
+        if (!$subscription || ($subscription->service_type ?? null) !== 'flax_vps' || !$subscription->service_reference
+            || in_array($subscription->status, ['cancel_pending', 'cancelled'], true)
+        ) {
             return;
         }
 
