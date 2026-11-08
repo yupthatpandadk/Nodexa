@@ -15,10 +15,11 @@ class RunAutomationCommand extends Command
         $result = $automation->run();
 
         $this->info(sprintf(
-            'Nodexa automation complete: %d health checks, %d backups, %d invoices, %d Flax VPS syncs.',
+            'Nodexa automation complete: %d health checks, %d backups, %d invoices, %d cancellations, %d Flax VPS syncs.',
             $result['health'],
             $result['backups'],
             $result['billing'],
+            $result['cancelled'] ?? 0,
             $result['flax'] ?? 0,
         ));
 
