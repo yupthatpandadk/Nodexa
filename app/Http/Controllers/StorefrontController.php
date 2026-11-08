@@ -7,10 +7,11 @@ use Illuminate\Support\Facades\DB;
 use Pterodactyl\Models\StoreProduct;
 use Pterodactyl\Models\StoreOrder;
 use Pterodactyl\Services\Nodexa\GlobalStoreSaleService;
+use Pterodactyl\Services\Nodexa\OrderRemovalService;
 
 class StorefrontController extends Controller
 {
-    public function __construct(private GlobalStoreSaleService $sale)
+    public function __construct(private GlobalStoreSaleService $sale, private OrderRemovalService $removal)
     {
     }
 
@@ -128,6 +129,7 @@ class StorefrontController extends Controller
     {
         $orders = StoreOrder::with(['product','server'])
             ->where('user_id', $request->user()->id)
+            ->where('hidden_from_client', false)
             ->latest()
             ->get();
 
@@ -141,6 +143,7 @@ class StorefrontController extends Controller
 
         $cartCheckouts = DB::table('nodexa_cart_checkouts')
             ->where('user_id', $request->user()->id)
+            ->where('hidden_from_client', false)
             ->orderByDesc('id')
             ->get();
 
@@ -208,11 +211,26 @@ class StorefrontController extends Controller
     {
         abort_unless($order->user_id === $request->user()->id,403);
         $order->load('product');
+        abort_if($order->hidden_from_client, 404);
         return view('store.checkout',compact('order'));
+    }
+
+    public function destroyOrder(Request $request, StoreOrder $order)
+    {
+        abort_unless((int) $order->user_id === (int) $request->user()->id, 403);
+
+        try {
+            $this->removal->removeLegacyOrder((int) $order->id, (int) $request->user()->id);
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['order' => $exception->getMessage()]);
+        }
+
+        return redirect()->route('store.orders')
+            ->with('success', 'Den ubetalte ordre er annulleret og fjernet fra oversigten.');
     }
 
     public function orders(Request $request)
     {
-        return view('store.orders',['orders'=>StoreOrder::with(['product','server'])->where('user_id',$request->user()->id)->latest()->get()]);
+        return view('store.orders',['orders'=>StoreOrder::with(['product','server'])->where('user_id',$request->user()->id)->where('hidden_from_client', false)->latest()->get()]);
     }
 }
