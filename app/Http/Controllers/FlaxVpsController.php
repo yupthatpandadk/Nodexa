@@ -184,9 +184,74 @@ class FlaxVpsController extends Controller
             'service' => $serviceRow,
             'primaryIp' => $this->flax->primaryIp($serviceRow->server_info),
             'running' => $this->flax->remoteRunning($serviceRow->server_info),
+            'osInfo' => $this->osInfo($serviceRow->server_info, $serviceRow->os_label),
             'hasPassword' => Schema::hasColumn('nodexa_flax_services', 'credential_password_encrypted')
                 && !empty($serviceRow->credential_password_encrypted),
         ]);
+    }
+
+    /**
+     * Identify the installed OS from the upstream server information where
+     * available. Fall back to the OS template registered when the VPS was
+     * provisioned, and never guess an unrecognized distribution.
+     */
+    private function osInfo(?string $serverInfo, ?string $templateLabel): array
+    {
+        $info = json_decode((string) $serverInfo, true);
+        $info = is_array($info) ? $info : [];
+
+        $liveValues = [
+            data_get($info, 'operatingSystem.label'),
+            data_get($info, 'operatingSystem.name'),
+            data_get($info, 'os.label'),
+            data_get($info, 'os.name'),
+            data_get($info, 'template.label'),
+            data_get($info, 'template.name'),
+            data_get($info, 'operatingSystem'),
+            data_get($info, 'os'),
+        ];
+
+        $known = '/windows|ubuntu|debian|fedora|almalinux|alma linux|rocky linux|rockylinux|centos|arch linux|archlinux|freebsd|open.?suse|kali linux|linux/i';
+        $liveName = null;
+
+        foreach ($liveValues as $value) {
+            if (is_string($value) && preg_match($known, $value)) {
+                $liveName = trim($value);
+                break;
+            }
+        }
+
+        $template = trim((string) $templateLabel);
+        $name = $liveName ?: ($template !== '' ? $template : 'Operativsystem ikke registreret');
+
+        // Explicit whitelist: no file name or path is sourced from the API.
+        $slug = 'linux';
+        $lower = mb_strtolower($name);
+        foreach ([
+            'windows' => ['windows'],
+            'ubuntu' => ['ubuntu'],
+            'debian' => ['debian'],
+            'fedora' => ['fedora'],
+            'almalinux' => ['almalinux', 'alma linux'],
+            'rockylinux' => ['rocky linux', 'rockylinux'],
+            'centos' => ['centos'],
+            'archlinux' => ['arch linux', 'archlinux'],
+            'freebsd' => ['freebsd'],
+        ] as $icon => $aliases) {
+            foreach ($aliases as $alias) {
+                if (str_contains($lower, $alias)) {
+                    $slug = $icon;
+                    break 2;
+                }
+            }
+        }
+
+        return [
+            'name' => $name,
+            'icon' => $slug,
+            'source' => $liveName ? 'Flax serverinformation' : 'Registreret OS-skabelon',
+            'verified_live' => $liveName !== null,
+        ];
     }
 
     /**
