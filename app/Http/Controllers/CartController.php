@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Pterodactyl\Models\StoreProduct;
 use Pterodactyl\Services\Nodexa\NodexaCartService;
+use Pterodactyl\Services\Nodexa\OrderRemovalService;
 use Pterodactyl\Services\Nodexa\StripePaymentService;
 use Illuminate\Support\Facades\DB;
 
@@ -19,6 +20,7 @@ class CartController extends Controller
     public function __construct(
         private NodexaCartService $cart,
         private StripePaymentService $stripe,
+        private OrderRemovalService $removal,
     ) {
     }
 
@@ -204,11 +206,25 @@ class CartController extends Controller
             ->with('success', 'Din samlede ordre er oprettet.');
     }
 
+    public function destroy(Request $request, int $checkout): RedirectResponse
+    {
+        try {
+            $number = $this->removal->removeCheckout($checkout, (int) $request->user()->id);
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['order' => $exception->getMessage()]);
+        }
+
+        return redirect()
+            ->route('store.client.billing')
+            ->with('success', 'Den ubetalte ordre ' . $number . ' er annulleret og fjernet fra oversigten.');
+    }
+
     public function order(Request $request, int $checkout): View
     {
         $row = DB::table('nodexa_cart_checkouts')
             ->where('id', $checkout)
             ->where('user_id', $request->user()->id)
+            ->where('hidden_from_client', false)
             ->first();
 
         abort_unless($row, 404);
