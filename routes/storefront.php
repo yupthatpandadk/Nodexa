@@ -62,6 +62,7 @@ Route::middleware('auth.session')->group(function () {
     Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('store.cart.checkout');
     Route::post('/cart/checkout', [CartController::class, 'place'])->name('store.cart.place');
     Route::get('/cart/orders/{checkout}', [CartController::class, 'order'])->name('store.cart.order');
+    Route::delete('/cart/orders/{checkout}', [CartController::class, 'destroy'])->name('store.cart.order.remove');
     Route::post('/cart/orders/{checkout}/stripe', [StripePaymentController::class, 'pay'])->name('store.cart.stripe.pay');
     Route::get('/cart/orders/{checkout}/stripe/success', [StripePaymentController::class, 'success'])->name('store.cart.stripe.success');
     Route::get('/client', [StorefrontController::class, 'dashboard'])->name('store.client');
@@ -102,4 +103,5 @@ Route::middleware('auth.session')->group(function () {
     Route::post('/store/{product:slug}/order', [StorefrontController::class, 'order'])->name('store.order');
     Route::get('/billing/orders', [StorefrontController::class, 'orders'])->name('store.orders');
     Route::get('/billing/orders/{order}/checkout', [StorefrontController::class, 'checkout'])->name('store.checkout');
+    Route::delete('/billing/orders/{order}', [StorefrontController::class, 'destroyOrder'])->name('store.order.remove');
 });
