@@ -325,11 +325,23 @@ class OperationsController extends Controller
 
     public function markCartCheckoutPaid(Request $request, int $checkout): RedirectResponse
     {
+        $order = DB::table('nodexa_cart_checkouts')->where('id', $checkout)->first();
+        abort_unless($order, 404);
+
+        // A retry must keep the original Stripe payment reference. It must
+        // never rewrite a paid Stripe order as a manual payment.
+        $method = $order->paid_at
+            ? ($order->payment_method ?: 'stripe')
+            : $request->input('payment_method', 'manual');
+        $reference = $order->paid_at
+            ? ($order->payment_reference ?: null)
+            : (trim((string) $request->input('payment_reference')) ?: null);
+
         try {
             $result = $this->cart->markPaid(
                 $checkout,
-                $request->input('payment_method', 'manual'),
-                trim((string) $request->input('payment_reference')) ?: null
+                $method,
+                $reference
             );
         } catch (\Throwable $exception) {
             report($exception);
