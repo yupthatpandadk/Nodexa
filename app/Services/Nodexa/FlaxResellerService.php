@@ -622,7 +622,10 @@ class FlaxResellerService
             );
         }
 
-        return ['password' => $password];
+        return [
+            'password' => $password,
+            'queued' => (int) (data_get($result, 'data.queueId') ?? data_get($result, 'queueId') ?? 0) > 0,
+        ];
     }
 
     public function supportsPasswordReset(): bool
