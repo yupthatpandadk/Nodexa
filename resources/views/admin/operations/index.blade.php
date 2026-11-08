@@ -136,14 +136,35 @@
                 @foreach($invoices as $invoice)<tr><td><strong>{{ $invoice->number }}</strong></td><td>{{ $invoice->user_email }}</td><td>{{ number_format($invoice->total,2,',','.') }} {{ $invoice->currency }}</td><td><span class="label {{ $invoice->status==='paid'?'label-success':($invoice->status==='overdue'?'label-danger':'label-warning') }}">{{ $invoice->status }}</span></td><td>{{ $invoice->due_at }}</td><td>@if($invoice->status!=='paid')<form method="POST" action="{{ route('admin.operations.invoices.paid',$invoice->id) }}">@csrf<input type="hidden" name="payment_method" value="manual"><button class="btn btn-xs btn-success">Markér betalt</button></form>@endif</td></tr>@endforeach
                 </table>
             </div>
-            <div class="box-body"><h4>Abonnementer</h4><div class="table-responsive"><table class="table table-condensed"><tr><th>Kunde</th><th>Server</th><th>Beløb</th><th>Næste faktura</th><th>Status</th></tr>@foreach($subscriptions as $subscription)<tr><td>{{ $subscription->user_email }}</td><td>{{ $subscription->server_name ?: '—' }}</td><td>{{ number_format($subscription->amount,2,',','.') }} {{ $subscription->currency }}</td><td>{{ $subscription->next_invoice_at }}</td><td>{{ $subscription->status }}</td></tr>@endforeach</table></div></div>
+            <div class="box-body"><h4>Abonnementer</h4><div class="table-responsive">
+                <table class="table table-condensed">
+                    <thead><tr><th>Kunde</th><th>Server/abonnement</th><th>Beløb</th><th>Næste faktura</th><th>Status</th><th>Ophørsdato</th></tr></thead>
+                    <tbody>
+                    @foreach($subscriptions as $subscription)
+                        <tr>
+                            <td>{{ $subscription->user_email }}</td>
+                            <td>#{{ $subscription->id }} · {{ $subscription->server_name ?: ($subscription->description ?: ($subscription->service_type ?: 'Gameserver')) }}</td>
+                            <td>{{ number_format((float) $subscription->amount,2,',','.') }} {{ $subscription->currency }}</td>
+                            <td>{{ $subscription->next_invoice_at }}</td>
+                            <td>
+                                <span class="label {{ $subscription->status === 'active' ? 'label-success' : ($subscription->status === 'cancel_pending' ? 'label-warning' : 'label-default') }}">{{ $subscription->status }}</span>
+                                @if($subscription->cancellation_last_error)
+                                    <div class="text-danger" style="margin-top:6px;font-size:11px"><strong>Opsigelsesfejl:</strong> {{ $subscription->cancellation_last_error }}</div>
+                                @endif
+                            </td>
+                            <td>{{ $subscription->cancel_at ?: '—' }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+                </div></div>
         </div>
     </div>
 
     <div class="col-md-4">
         <div class="box box-info">
             <div class="box-header with-border"><h3 class="box-title"><i class="fa fa-cogs"></i> Automation</h3></div>
-            <div class="box-body"><p class="text-muted">Kører automatisk hvert 5. minut via Laravel scheduler: node health, backup policies, fakturering og overdue suspension.</p><form method="POST" action="{{ route('admin.operations.automation') }}">@csrf<button class="btn btn-primary btn-block"><i class="fa fa-play"></i> Kør nu</button></form></div>
+            <div class="box-body"><p class="text-muted">Kører automatisk hvert 5. minut via Laravel scheduler: node health, backup policies, fakturering, opsigelser og overdue suspension.</p><form method="POST" action="{{ route('admin.operations.automation') }}">@csrf<button class="btn btn-primary btn-block"><i class="fa fa-play"></i> Kør nu</button></form></div>
         </div>
 
         <div class="box">
