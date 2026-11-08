@@ -56,6 +56,14 @@
         <div class="orderLine"><span class="muted">Status</span><span class="statusBadge {{ in_array($checkout->status,['paid','completed'])?'good':($checkout->status==='partial'?'bad':'warn') }}">{{ strtoupper(str_replace('_',' ',$checkout->status)) }}</span></div>
 
         @if($checkout->status==='awaiting_payment')
+            @if(!$checkout->stripe_session_id && $walletBalanceCents >= (int) round(((float) $checkout->total) * 100) && $walletBalanceCents > 0)
+                <form method="POST" action="{{ route('store.cart.wallet.pay',$checkout->id) }}">
+                    @csrf
+                    <button class="btn primary" type="submit" style="width:100%;margin-top:12px;background:#164f54;border:1px solid #3c8a83">Betal med Wallet · {{ number_format($checkout->total,2,',','.') }} DKK</button>
+                </form>
+            @else
+                <div class="micro" style="margin:12px 0 4px">Wallet-saldo: {{ number_format($walletBalanceCents/100,2,',','.') }} DKK. <a href="{{route('store.client.wallet')}}" style="color:#a1cfff">Se Wallet</a></div>
+            @endif
             @if($stripeEnabled)
                 <div class="notice" style="margin-top:14px">Stripe trækker præcis <strong>{{ number_format((float)$checkout->total,2,',','.') }} DKK</strong>. Nodexa godkender ikke betalingen, hvis Stripe returnerer et andet beløb eller en anden valuta.</div>
                 <form method="POST" action="{{ route('store.cart.stripe.pay',$checkout->id) }}">
