@@ -72,6 +72,13 @@
             <div class="notice" style="margin-top:14px">Betalingen er registreret{{ $checkout->payment_method ? ' via '.ucfirst($checkout->payment_method) : '' }}, og ordrelinjerne er behandlet.</div>
         @endif
 
+        @if($checkout->status === 'awaiting_payment' && !$checkout->paid_at)
+            <form method="POST" action="{{ route('store.cart.order.remove', $checkout->id) }}" style="margin-top:10px" onsubmit="return confirm('Vil du annullere og fjerne denne ubetalte ordre? En eventuel Stripe-betalingsside bliver lukket.');">
+                @csrf
+                @method('DELETE')
+                <button class="btn" type="submit" style="width:100%;border-color:#6d3544;color:#f5a5b5;background:#261722">Slet ubetalt ordre</button>
+            </form>
+        @endif
         <a class="btn" style="width:100%;margin-top:8px" href="{{ route('store.client.billing') }}">Åbn Billing</a>
     </aside>
 </div>
