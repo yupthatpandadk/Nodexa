@@ -21,6 +21,19 @@ class StripePaymentController extends Controller
         return redirect()->away($session['url']);
     }
 
+    public function cancel(Request $request, int $checkout, StripePaymentService $stripe): RedirectResponse
+    {
+        try {
+            $stripe->cancelUnpaidCheckout($checkout, (int) $request->user()->id);
+        } catch (\Throwable $exception) {
+            report($exception);
+            return back()->withErrors(['stripe' => $exception->getMessage()]);
+        }
+
+        return redirect()->route('store.cart.order', $checkout)
+            ->with('success', 'Stripe-betalingen er annulleret. Reserveret Wallet-kredit er frigivet.');
+    }
+
     public function success(Request $request, int $checkout, StripePaymentService $stripe): RedirectResponse
     {
         $sessionId = trim((string) $request->query('session_id'));
