@@ -52,7 +52,7 @@
         <div class="orderLine"><span class="muted">Rabat{{$checkout->coupon_code?' · '.$checkout->coupon_code:''}}</span><strong style="color:#67d9a2">-{{ number_format((float)$checkout->discount,2,',','.') }} DKK</strong></div>
         <div class="orderLine"><span class="muted">Rabatperiode</span><strong>{{ $checkout->coupon_duration_months ?? 1 }} måned(er)</strong></div>
         @endif
-        <div class="orderLine"><span class="muted">Stripe / ordre-total</span><strong>{{ number_format((float)$checkout->total,2,',','.') }} DKK</strong></div>
+        <div class="orderLine"><span class="muted">{{ $checkout->payment_method === 'wallet' ? 'Wallet / ordre-total' : 'Stripe / ordre-total' }}</span><strong>{{ number_format((float)$checkout->total,2,',','.') }} DKK</strong></div>
         <div class="orderLine"><span class="muted">Status</span><span class="statusBadge {{ in_array($checkout->status,['paid','completed'])?'good':($checkout->status==='partial'?'bad':'warn') }}">{{ strtoupper(str_replace('_',' ',$checkout->status)) }}</span></div>
 
         @if($checkout->status==='awaiting_payment')
