@@ -133,7 +133,7 @@
             </div>
             <div class="box-body table-responsive">
                 <table class="table"><tr><th>Faktura</th><th>Kunde</th><th>Beløb</th><th>Status</th><th>Forfalder</th><th></th></tr>
-                @foreach($invoices as $invoice)<tr><td><strong>{{ $invoice->number }}</strong></td><td>{{ $invoice->user_email }}</td><td>{{ number_format($invoice->total,2,',','.') }} {{ $invoice->currency }}</td><td><span class="label {{ $invoice->status==='paid'?'label-success':($invoice->status==='overdue'?'label-danger':'label-warning') }}">{{ $invoice->status }}</span></td><td>{{ $invoice->due_at }}</td><td>@if($invoice->status!=='paid')<form method="POST" action="{{ route('admin.operations.invoices.paid',$invoice->id) }}">@csrf<input type="hidden" name="payment_method" value="manual"><button class="btn btn-xs btn-success">Markér betalt</button></form>@endif</td></tr>@endforeach
+                @foreach($invoices as $invoice)<tr><td><strong>{{ $invoice->number }}</strong></td><td>{{ $invoice->user_email }}</td><td>{{ number_format($invoice->total,2,',','.') }} {{ $invoice->currency }}</td><td><span class="label {{ $invoice->status==='paid'?'label-success':($invoice->status==='overdue'?'label-danger':'label-warning') }}">{{ $invoice->status }}</span></td><td>{{ $invoice->due_at }}</td><td>@if(in_array($invoice->status,['unpaid','overdue'],true))<form method="POST" action="{{ route('admin.operations.invoices.paid',$invoice->id) }}">@csrf<input type="hidden" name="payment_method" value="manual"><button class="btn btn-xs btn-success">Markér betalt</button></form>@endif</td></tr>@endforeach
                 </table>
             </div>
             <div class="box-body"><h4>Abonnementer</h4><div class="table-responsive">
