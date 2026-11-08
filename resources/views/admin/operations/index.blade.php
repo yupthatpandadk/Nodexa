@@ -75,7 +75,7 @@
         <div class="box box-success">
             <div class="box-header with-border"><h3 class="box-title"><i class="fa fa-credit-card"></i> Billing & Subscriptions</h3><form method="POST" action="{{ route('admin.operations.subscriptions.sync') }}" style="display:inline" class="pull-right">@csrf<button class="btn btn-xs btn-default">Synk abonnementer fra aktive ordrer</button></form></div>
             <div class="box-body table-responsive">
-                <h4>Samlede checkouts</h4>
+                <h4>Samlede checkouts <a class="btn btn-xs btn-default pull-right" href="{{ route('admin.wallet') }}"><i class="fa fa-credit-card"></i> Åbn Wallet</a></h4>
                 <table class="table table-condensed">
                     <tr><th>Ordre</th><th>Kunde</th><th>Beløb</th><th>Status</th><th></th></tr>
                     @forelse($cartCheckouts as $cartCheckout)
@@ -98,7 +98,22 @@
                                 <button class="btn btn-xs btn-danger" type="submit">Slet ubetalt ordre</button>
                             </form>
                             @elseif($cartCheckout->status === 'partial' && $cartCheckout->paid_at)
-                                <small class="text-danger" style="display:block">Betalt fejlordre: Refundér først hele betalingen i Stripe. Denne handling refunderer ikke penge.</small>
+                                @if(in_array($cartCheckout->payment_method, ['stripe','wallet'], true))
+                                <form method="POST" action="{{ route('admin.wallet.refund-checkout',$cartCheckout->id) }}" style="margin:9px 0;padding:9px;border:1px solid #bba15f;border-radius:5px" onsubmit="return confirm('Kreditér hele beløbet til kundens Wallet? Dette sender IKKE penge tilbage til Stripe-kortet.');">
+                                    @csrf
+                                    <strong style="display:block;margin-bottom:6px">Refundér til Wallet</strong>
+                                    <label style="font-weight:normal;display:block;font-size:11px">
+                                        <input name="confirmed_no_service" type="checkbox" value="1" required>
+                                        Ingen service er leveret (kontrolleret hos Flax/Pterodactyl).
+                                    </label>
+                                    <label style="font-weight:normal;display:block;font-size:11px">
+                                        <input name="confirmed_customer_consent" type="checkbox" value="1" required>
+                                        Kunden har accepteret Wallet-kredit i stedet for tilbagebetaling.
+                                    </label>
+                                    <button class="btn btn-xs btn-warning" type="submit">Overfør hele beløbet til Wallet</button>
+                                </form>
+                                @endif
+                                <small class="text-danger" style="display:block">Alternativ: Refundér først hele betalingen i Stripe og arkivér herefter nedenfor.</small>
                                 <form method="POST" action="{{ route('admin.operations.cart-checkouts.archive-refunded',$cartCheckout->id) }}" style="margin-top:5px" onsubmit="return confirm('Arkivér kun hvis hele betalingen er refunderet, og ingen service blev oprettet. Nodexa kontrollerer refusionen i Stripe.');">
                                     @csrf
                                     <label style="display:block;font-size:11px;font-weight:normal;margin:5px 0">
