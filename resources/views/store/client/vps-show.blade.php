@@ -233,7 +233,11 @@
                         <div><dt>Næste faktura</dt><dd>{{ $service->next_invoice_at ? \Carbon\Carbon::parse($service->next_invoice_at)->format('d.m.Y') : '—' }}</dd></div>
                         <div><dt>Udløber</dt><dd>{{ $service->expires_at ? \Carbon\Carbon::parse($service->expires_at)->format('d.m.Y H:i') : '—' }}</dd></div>
                     </dl>
-                    <a class="nvp-outline nvp-full-link" href="{{ route('store.client.billing') }}">Billing & ordrer →</a>
+                    @if($service->subscription_id)
+                        <a class="nvp-outline nvp-full-link" href="{{ route('store.client.billing') }}#subscription-{{ $service->subscription_id }}">Administrér / opsig abonnement →</a>
+                    @else
+                        <a class="nvp-outline nvp-full-link" href="{{ route('store.client.billing') }}">Billing & ordrer →</a>
+                    @endif
                 </section>
             </aside>
         </div>
