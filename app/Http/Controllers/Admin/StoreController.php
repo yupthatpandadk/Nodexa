@@ -117,6 +117,10 @@ class StoreController extends Controller
     }
 
     public function orderStatus(Request $r, StoreOrder $order, ProvisionStoreOrderService $provision, NodexaEventService $events){
+        if ($order->hidden_from_client) {
+            return back()->withErrors(['order' => 'Den annullerede ordre kan ikke genaktiveres. Opret en ny ordre i stedet.']);
+        }
+
         $status=$r->validate(['status'=>'required|in:awaiting_payment,paid,active,cancelled,refunded'])['status'];
         if ($status === 'paid' && !$order->paid_at) $order->paid_at=now();
         if ($status === 'cancelled') $order->cancelled_at=now();
