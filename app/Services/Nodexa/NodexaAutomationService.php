@@ -20,6 +20,7 @@ class NodexaAutomationService
         private NodexaEventService $events,
         private CfxEupService $cfxEup,
         private FlaxResellerService $flaxReseller,
+        private SubscriptionCancellationService $cancellations,
     ) {
     }
 
@@ -27,10 +28,13 @@ class NodexaAutomationService
     {
         $health = $this->runHealthChecks();
         $backups = $this->runBackupPolicies();
+        // Process period-end cancellations before any new renewal invoices.
+        $cancelled = Schema::hasTable('nodexa_subscriptions')
+            ? $this->cancellations->processDue() : 0;
         $billing = $this->runBilling();
         $flax = Schema::hasTable('nodexa_flax_services') ? $this->flaxReseller->syncStaleServices() : 0;
 
-        return compact('health', 'backups', 'billing', 'flax');
+        return compact('health', 'backups', 'billing', 'flax', 'cancelled');
     }
 
     public function runHealthChecks(): int
@@ -209,7 +213,20 @@ class NodexaAutomationService
             ->where('next_invoice_at', '<=', now())
             ->get();
 
-        foreach ($subscriptions as $subscription) {
+        foreach ($subscriptions as $candidate) {
+            // Lock the same subscription row that customer cancellation uses.
+            // Billing and cancellation therefore cannot race or invoice after
+            // a successful cancellation request.
+            $issued = DB::transaction(function () use ($candidate) {
+                $subscription = DB::table('nodexa_subscriptions')
+                    ->where('id', $candidate->id)->lockForUpdate()->first();
+                if (!$subscription || $subscription->status !== 'active'
+                    || !$subscription->next_invoice_at || $subscription->next_invoice_at > now()
+                    || $subscription->cancel_at
+                ) {
+                    return null;
+                }
+
             $number = 'NX-' . now()->format('Ym') . '-' . strtoupper(Str::random(8));
             $description = trim((string) ($subscription->description ?? '')) ?: 'Nodexa hosting subscription';
 
@@ -324,31 +341,36 @@ class NodexaAutomationService
                     . ' er anvendt (måned ' . $discountMonthNumber . '/' . $discountMonthsTotal . ').';
             }
 
-            $this->events->notify(
-                $subscription->user_id,
-                'Ny faktura ' . $number,
-                $notification,
-                'billing',
-                '/client/billing'
-            );
-
-            $this->events->emit('invoice.created', [
-                'invoice_id' => $invoiceId,
+            return [
+                'user_id' => (int) $subscription->user_id,
                 'number' => $number,
-                'subtotal' => $subtotal,
-                'sale_discount' => $saleDiscount,
-                'coupon_discount' => $couponDiscount,
-                'discount' => $discount,
-                'total' => $total,
-                'currency' => $subscription->currency,
-                'sale_month' => $saleMonthNumber,
-                'sale_months_total' => $saleMonthsTotal,
-                'discount_code' => $couponDiscount > 0 ? $subscription->discount_code : null,
-                'discount_month' => $discountMonthNumber,
-                'discount_months_total' => $discountMonthsTotal,
-                'service_type' => $subscription->service_type ?? null,
-            ], $subscription->user_id);
+                'notification' => $notification,
+                'event' => [
+                    'invoice_id' => $invoiceId,
+                    'number' => $number,
+                    'subtotal' => $subtotal,
+                    'sale_discount' => $saleDiscount,
+                    'coupon_discount' => $couponDiscount,
+                    'discount' => $discount,
+                    'total' => $total,
+                    'currency' => $subscription->currency,
+                    'sale_month' => $saleMonthNumber,
+                    'sale_months_total' => $saleMonthsTotal,
+                    'discount_code' => $couponDiscount > 0 ? $subscription->discount_code : null,
+                    'discount_month' => $discountMonthNumber,
+                    'discount_months_total' => $discountMonthsTotal,
+                    'service_type' => $subscription->service_type ?? null,
+                ],
+            ];
+            }, 3);
 
+            if (!$issued) {
+                continue;
+            }
+
+            $this->events->notify($issued['user_id'], 'Ny faktura ' . $issued['number'],
+                $issued['notification'], 'billing', '/client/billing');
+            $this->events->emit('invoice.created', $issued['event'], $issued['user_id']);
             $created++;
         }
         $reminders = DB::table('nodexa_invoices')
