@@ -89,7 +89,9 @@ class WalletService
                 || $checkout->payment_method
                 || $checkout->payment_reference
                 || $checkout->stripe_session_id
-                || ($checkout->stripe_attempt ?? 0) > 0
+                || (($checkout->stripe_attempt ?? 0) > 0
+                    && !($checkout->stripe_status === 'expired'
+                        && in_array((string) ($checkout->wallet_hold_state ?? ''), ['none', 'released'], true)))
                 || $checkout->stripe_payment_intent_id
             ) {
                 throw new RuntimeException('Ordren behandles allerede eller har en Stripe-session. Wallet kan ikke anvendes på denne ordre.');
@@ -200,6 +202,10 @@ class WalletService
 
             if (!$checkout || $checkout->paid_at || $checkout->status !== 'awaiting_payment') {
                 return;
+            }
+
+            if ($noSessionCreated && $checkout->stripe_session_id) {
+                throw new RuntimeException('Stripe-sessionen er oprettet. Wallet kan ikke frigives uden bekræftet annullering.');
             }
 
             if (!$noSessionCreated && ($sessionId === ''
