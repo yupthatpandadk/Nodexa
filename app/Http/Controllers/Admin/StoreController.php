@@ -94,6 +94,28 @@ class StoreController extends Controller
             : back()->withErrors(['stripe'=>$result['message']]);
     }
 
+    public function removeOrder(Request $request, StoreOrder $order, \Pterodactyl\Services\Nodexa\OrderRemovalService $removal, NodexaEventService $events)
+    {
+        try {
+            $removal->removeLegacyOrder((int) $order->id, (int) $order->user_id);
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['order' => $exception->getMessage()]);
+        }
+
+        $events->audit(
+            (int) $request->user()->id,
+            'billing',
+            'legacy_order.cancelled',
+            'Unpaid legacy order cancelled by admin',
+            'store_order',
+            (int) $order->id,
+            [],
+            $request
+        );
+
+        return back()->with('success', 'Den ubetalte ordre er annulleret og fjernet fra kundens oversigt.');
+    }
+
     public function orderStatus(Request $r, StoreOrder $order, ProvisionStoreOrderService $provision, NodexaEventService $events){
         $status=$r->validate(['status'=>'required|in:awaiting_payment,paid,active,cancelled,refunded'])['status'];
         if ($status === 'paid' && !$order->paid_at) $order->paid_at=now();
