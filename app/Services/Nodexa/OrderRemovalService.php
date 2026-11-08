@@ -67,6 +67,127 @@ class OrderRemovalService
         return (string) $checkout->number;
     }
 
+    /**
+     * Archive a failed, already-paid Stripe order only after Stripe confirms a
+     * complete refund. Financial and Stripe records are retained for audit.
+     */
+    public function archiveRefundedCheckout(int $checkoutId, int $userId): string
+    {
+        $checkout = DB::table('nodexa_cart_checkouts')
+            ->where('id', $checkoutId)->where('user_id', $userId)->first();
+
+        if (!$checkout) {
+            throw new RuntimeException('Ordren blev ikke fundet.');
+        }
+
+        $this->assertFailedWithoutActiveServices($checkoutId, $checkout);
+        $this->stripe->assertCheckoutFullyRefunded($checkout);
+
+        DB::transaction(function () use ($checkoutId, $userId) {
+            $locked = DB::table('nodexa_cart_checkouts')
+                ->where('id', $checkoutId)->where('user_id', $userId)
+                ->lockForUpdate()->first();
+
+            if (!$locked) {
+                throw new RuntimeException('Ordren blev ikke fundet.');
+            }
+
+            $this->assertFailedWithoutActiveServices($checkoutId, $locked);
+
+            $items = DB::table('nodexa_cart_checkout_items')->where('checkout_id', $checkoutId)->get();
+
+            foreach ($items as $item) {
+                if (!$item->reference_id) {
+                    continue;
+                }
+
+                if ($item->type === 'flax_vps') {
+                    $service = DB::table('nodexa_flax_services')
+                        ->where('id', $item->reference_id)->lockForUpdate()->first();
+
+                    if (!$service || $service->upstream_server_id || $service->processing_invoice_id
+                        || !in_array($service->status, ['awaiting_payment', 'provisioning_failed'], true)
+                    ) {
+                        throw new RuntimeException('En VPS er muligvis oprettet. Kontrollér Flax før arkivering.');
+                    }
+
+                    DB::table('nodexa_flax_services')->where('id', $service->id)->update([
+                        'status' => 'cancelled', 'updated_at' => now(),
+                    ]);
+                    if ($service->first_invoice_id) {
+                        DB::table('nodexa_invoices')->where('id', $service->first_invoice_id)->update([
+                            'status' => 'refunded', 'updated_at' => now(),
+                        ]);
+                    }
+                    if ($service->subscription_id) {
+                        DB::table('nodexa_subscriptions')->where('id', $service->subscription_id)->update([
+                            'status' => 'cancelled', 'next_invoice_at' => null, 'updated_at' => now(),
+                        ]);
+                    }
+                } elseif ($item->type === 'game_server') {
+                    $order = StoreOrder::query()->where('id', $item->reference_id)->lockForUpdate()->first();
+                    if (!$order || $order->server_id || $order->provisioned_at) {
+                        throw new RuntimeException('En gameserver er muligvis oprettet og skal undersøges.');
+                    }
+
+                    $order->status = 'refunded';
+                    $order->save();
+
+                    DB::table('nodexa_subscriptions')->where('order_id', $order->id)->update([
+                        'status' => 'cancelled', 'next_invoice_at' => null, 'updated_at' => now(),
+                    ]);
+                } else {
+                    throw new RuntimeException('Ukendt varetype. Ordren kan ikke arkiveres automatisk.');
+                }
+            }
+
+            DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
+                'status' => 'refunded',
+                'cancelled_at' => now(),
+                'hidden_from_client' => true,
+                'updated_at' => now(),
+            ]);
+        });
+
+        return (string) $checkout->number;
+    }
+
+    private function assertFailedWithoutActiveServices(int $checkoutId, object $checkout): void
+    {
+        if ($checkout->status !== 'partial' || !$checkout->paid_at
+            || (bool) ($checkout->hidden_from_client ?? false)
+        ) {
+            throw new RuntimeException('Kun fejlede, betalte ordrer kan arkiveres efter refundering.');
+        }
+
+        $items = DB::table('nodexa_cart_checkout_items')->where('checkout_id', $checkoutId)->get();
+        if ($items->isEmpty()) {
+            throw new RuntimeException('Ordren har ingen linjer at verificere.');
+        }
+
+        foreach ($items as $item) {
+            if (in_array($item->status, ['completed', 'processing'], true)) {
+                throw new RuntimeException('Ordren indeholder en igangværende eller leveret service.');
+            }
+
+            if ($item->reference_id && $item->type === 'flax_vps') {
+                $service = DB::table('nodexa_flax_services')->where('id', $item->reference_id)->first();
+                if (!$service || $service->upstream_server_id || $service->processing_invoice_id
+                    || !in_array($service->status, ['awaiting_payment', 'provisioning_failed'], true)
+                ) {
+                    throw new RuntimeException('VPS-servicen skal kontrolleres, før ordren kan arkiveres.');
+                }
+            } elseif ($item->reference_id && $item->type === 'game_server') {
+                $order = StoreOrder::query()->find($item->reference_id);
+                if (!$order || $order->server_id || $order->provisioned_at) {
+                    throw new RuntimeException('Gameserveren skal kontrolleres, før ordren kan arkiveres.');
+                }
+            } elseif ($item->reference_id) {
+                throw new RuntimeException('Ukendt service-reference i ordren.');
+            }
+        }
+    }
+
     public function removeLegacyOrder(int $orderId, int $userId): void
     {
         DB::transaction(function () use ($orderId, $userId) {
