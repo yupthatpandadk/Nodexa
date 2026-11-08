@@ -28,6 +28,7 @@ class AdminPermission
         'site-access' => 'site_access',
         'knowledgebase' => 'knowledgebase',
         'operations' => 'operations',
+        'wallet' => 'operations',
         'cfx-eup' => 'cfx_eup',
         'flax-reseller' => 'flax_reseller',
         'flax' => 'flax_reseller',
