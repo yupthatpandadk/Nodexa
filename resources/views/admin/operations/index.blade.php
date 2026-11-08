@@ -85,12 +85,20 @@
                         <td>{{ number_format((float)$cartCheckout->total,2,',','.') }} {{ $cartCheckout->currency }}</td>
                         <td><span class="label {{ in_array($cartCheckout->status,['paid','completed'])?'label-success':($cartCheckout->status==='partial'?'label-danger':'label-warning') }}">{{ $cartCheckout->status }}</span></td>
                         <td>
-                            @if(!in_array($cartCheckout->status,['paid','completed']))
-                            <form method="POST" action="{{ route('admin.operations.cart-checkouts.paid',$cartCheckout->id) }}">
+                            @if(in_array($cartCheckout->status,['awaiting_payment','partial'],true))
+                            <form method="POST" action="{{ route('admin.operations.cart-checkouts.paid',$cartCheckout->id) }}" style="display:inline-block;margin-right:6px">
                                 @csrf
                                 <input type="hidden" name="payment_method" value="manual">
-                                <button class="btn btn-xs btn-success">Markér hele ordren betalt</button>
+                                <button class="btn btn-xs btn-success">{{ $cartCheckout->status === 'partial' ? 'Retry levering' : 'Markér hele ordren betalt' }}</button>
                             </form>
+                            @endif
+                            @if($cartCheckout->status === 'awaiting_payment' && !$cartCheckout->paid_at)
+                            <form method="POST" action="{{ route('admin.operations.cart-checkouts.remove',$cartCheckout->id) }}" style="display:inline-block" onsubmit="return confirm('Annuller ubetalt checkout og skjul den for kunden? Betalingshistorikken bevares.');">
+                                @csrf @method('DELETE')
+                                <button class="btn btn-xs btn-danger" type="submit">Slet ubetalt ordre</button>
+                            </form>
+                            @elseif($cartCheckout->status === 'partial' && $cartCheckout->paid_at)
+                                <small class="text-danger" style="display:block">Betalt fejlordre: kontrollér leveringen eller refundér via Stripe, før ordren arkiveres.</small>
                             @endif
                         </td>
                     </tr>
