@@ -250,6 +250,10 @@ class NodexaCartService
                 throw new RuntimeException('Den samlede checkout blev ikke fundet.');
             }
 
+            if ($checkout->status === 'cancelled' || (bool) ($checkout->hidden_from_client ?? false)) {
+                throw new RuntimeException('Denne ordre er annulleret og kan ikke markeres betalt.');
+            }
+
             if (in_array($checkout->status, ['paid', 'completed'], true)) {
                 return ['state' => 'completed', 'checkout' => $checkout];
             }
