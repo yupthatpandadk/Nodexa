@@ -17,6 +17,8 @@
 </aside>
 <main>
     <div class="clientHead"><div><div class="eyebrow">Client Area / Billing</div><h1>Billing & fakturaer</h1><p class="muted">Abonnementer, fakturaer, ordrer og checkout samlet ét sted.</p></div></div>
+    @if(session('success'))<div class="notice" style="margin:12px 0">{{ session('success') }}</div>@endif
+    @if($errors->any())<div class="notice" style="margin:12px 0;border-color:#764454;color:#ffb9c5">{{ $errors->first() }}</div>@endif
 
     <div class="clientCards">
         <div class="clientStat"><span>BETALINGER</span><strong>{{$invoices->count()+$cartCheckouts->count()}}</strong></div>
@@ -36,6 +38,12 @@
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <span class="statusBadge {{ in_array($cartCheckout->status,['paid','completed'])?'good':($cartCheckout->status==='partial'?'bad':'warn') }}">{{ strtoupper(str_replace('_',' ',$cartCheckout->status)) }}</span>
                 <a class="btn" href="{{ route('store.cart.order',$cartCheckout->id) }}">Se ordre</a>
+                @if($cartCheckout->status === 'awaiting_payment' && !$cartCheckout->paid_at)
+                    <form method="POST" action="{{ route('store.cart.order.remove',$cartCheckout->id) }}" onsubmit="return confirm('Slet denne ubetalte ordre?');">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn" style="color:#f3a0b0;border-color:#633447;background:#251621">Slet</button>
+                    </form>
+                @endif
             </div>
         </div>
         @empty<div class="notice">Ingen samlede ordrer endnu.</div>@endforelse
@@ -68,7 +76,12 @@
         @forelse($orders as $o)
         <div class="clientRow">
             <div><div class="miniLabel">ORDER #{{$o->id}}</div><h3>{{$o->product->name ?? 'Serverprodukt'}}</h3><p>{{$o->server_name}} · {{number_format($o->amount,2,',','.')}} {{$o->currency}}</p></div>
-            <div style="display:flex;gap:8px;align-items:center"><span class="statusBadge">{{$o->status}}</span>@if($o->status==='awaiting_payment')<a class="btn" href="{{route('store.checkout',$o)}}">Checkout</a>@endif</div>
+            <div style="display:flex;gap:8px;align-items:center"><span class="statusBadge">{{$o->status}}</span>@if($o->status==='awaiting_payment')<a class="btn" href="{{route('store.checkout',$o)}}">Checkout</a>@endif@if(in_array($o->status,['awaiting_payment','failed'],true) && !$o->paid_at && !$o->payment_reference && !$o->server_id)
+                <form method="POST" action="{{route('store.order.remove',$o)}}" onsubmit="return confirm('Slet denne ubetalte ordre?');">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="btn" style="color:#f3a0b0;border-color:#633447;background:#251621">Slet</button>
+                </form>
+                @endif</div>
         </div>
         @empty<div class="notice">Ingen ordrer på kontoen endnu.</div>@endforelse
     </div>
