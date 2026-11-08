@@ -175,7 +175,7 @@
                         <form method="POST" action="{{ route('store.client.vps.password.save', $service->id) }}" class="nvp-password-form" autocomplete="off">
                             @csrf
                             <label class="nvp-password-label" for="nvpPasswordSave">{{ $hasPassword ? 'Erstat gemt adgangskode' : 'Gem adgangskode' }}</label>
-                            <input id="nvpPasswordSave" class="nvp-password-input" type="password" name="vps_password" minlength="8" maxlength="255" required autocomplete="new-password" placeholder="Indtast serverens nuværende kode">
+                            <input id="nvpPasswordSave" class="nvp-password-input" type="password" name="password" minlength="8" maxlength="255" required autocomplete="new-password" placeholder="Indtast serverens nuværende kode">
                             <button class="nvp-action nvp-action-primary" type="submit">{{ $hasPassword ? 'Opdatér gemt kode' : 'Gem password' }}</button>
                         </form>
                         @if($hasPassword)
