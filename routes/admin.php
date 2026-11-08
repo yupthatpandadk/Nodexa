@@ -18,6 +18,9 @@ Route::delete('/flax-reseller/products/{product}', [Admin\FlaxResellerController
 Route::post('/flax-reseller/services/{service}/action', [Admin\FlaxResellerController::class, 'serviceAction'])->name('admin.flax.services.action');
 
 // Nodexa Operations Suite
+Route::get('/wallet', [Admin\\WalletController::class, 'index'])->name('admin.wallet');
+Route::post('/wallet/credit', [Admin\\WalletController::class, 'credit'])->name('admin.wallet.credit');
+Route::post('/wallet/refund-checkout/{checkout}', [Admin\\WalletController::class, 'refundCheckout'])->name('admin.wallet.refund-checkout');
 Route::get('/operations', [Admin\OperationsController::class, 'index'])->name('admin.operations');
 Route::post('/operations/components', [Admin\OperationsController::class, 'storeComponent'])->name('admin.operations.components.store');
 Route::patch('/operations/components/{component}', [Admin\OperationsController::class, 'updateComponent'])->name('admin.operations.components.update');
