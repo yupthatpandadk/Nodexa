@@ -686,11 +686,24 @@ class FlaxResellerService
             return null;
         }
 
-        return $data['network']['interfaces'][0]['ipv4'][0]['address']
-            ?? $data['ips'][0]
-            ?? $data['ip']
-            ?? $data['primary_ip']
-            ?? null;
+        // Flax/VirtFusion responses may contain an array rather than a
+        // string in ips[0]. Do not let that raise a TypeError on /client/vps.
+        $candidates = [
+            $data['network']['interfaces'][0]['ipv4'][0]['address'] ?? null,
+            $data['ips'][0]['address'] ?? null,
+            $data['ips'][0]['ip'] ?? null,
+            $data['ips'][0] ?? null,
+            $data['ip'] ?? null,
+            $data['primary_ip'] ?? null,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && trim($candidate) !== '') {
+                return trim($candidate);
+            }
+        }
+
+        return null;
     }
 
     public function remoteRunning(?string $serverInfo): ?bool
