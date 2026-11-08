@@ -99,8 +99,12 @@
                             </form>
                             @elseif($cartCheckout->status === 'partial' && $cartCheckout->paid_at)
                                 <small class="text-danger" style="display:block">Betalt fejlordre: Refundér først hele betalingen i Stripe. Denne handling refunderer ikke penge.</small>
-                                <form method="POST" action="{{ route('admin.operations.cart-checkouts.archive-refunded',$cartCheckout->id) }}" style="margin-top:5px" onsubmit="return confirm('Er hele betalingen refunderet i Stripe? Nodexa verificerer dette og arkiverer kun ordren, hvis ingen services er leveret.');">
+                                <form method="POST" action="{{ route('admin.operations.cart-checkouts.archive-refunded',$cartCheckout->id) }}" style="margin-top:5px" onsubmit="return confirm('Arkivér kun hvis hele betalingen er refunderet, og ingen service blev oprettet. Nodexa kontrollerer refusionen i Stripe.');">
                                     @csrf
+                                    <label style="display:block;font-size:11px;font-weight:normal;margin:5px 0">
+                                        <input type="checkbox" name="confirmed_no_service" value="1" required>
+                                        Jeg har kontrolleret Flax/Pterodactyl og bekræfter, at ingen service blev leveret.
+                                    </label>
                                     <button class="btn btn-xs btn-warning" type="submit">Arkivér refunderet fejlordre</button>
                                 </form>
                             @endif
