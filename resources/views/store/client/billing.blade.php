@@ -76,7 +76,8 @@
         @forelse($orders as $o)
         <div class="clientRow">
             <div><div class="miniLabel">ORDER #{{$o->id}}</div><h3>{{$o->product->name ?? 'Serverprodukt'}}</h3><p>{{$o->server_name}} · {{number_format($o->amount,2,',','.')}} {{$o->currency}}</p></div>
-            <div style="display:flex;gap:8px;align-items:center"><span class="statusBadge">{{$o->status}}</span>@if($o->status==='awaiting_payment')<a class="btn" href="{{route('store.checkout',$o)}}">Checkout</a>@endif@if(in_array($o->status,['awaiting_payment','failed'],true) && !$o->paid_at && !$o->payment_reference && !$o->server_id)
+            <div style="display:flex;gap:8px;align-items:center"><span class="statusBadge">{{$o->status}}</span>@if($o->status==='awaiting_payment')<a class="btn" href="{{route('store.checkout',$o)}}">Checkout</a>@endif
+                @if(in_array($o->status,['awaiting_payment','failed'],true) && !$o->paid_at && !$o->payment_reference && !$o->server_id)
                 <form method="POST" action="{{route('store.order.remove',$o)}}" onsubmit="return confirm('Slet denne ubetalte ordre?');">
                     @csrf @method('DELETE')
                     <button type="submit" class="btn" style="color:#f3a0b0;border-color:#633447;background:#251621">Slet</button>
