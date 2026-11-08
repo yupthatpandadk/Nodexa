@@ -15,6 +15,7 @@ class OrderRemovalService
     public function __construct(
         private StripePaymentService $stripe,
         private NodexaCartService $cart,
+        private WalletService $wallet,
     ) {
     }
 
@@ -148,6 +149,130 @@ class OrderRemovalService
                 'updated_at' => now(),
             ]);
         });
+
+        return (string) $checkout->number;
+    }
+
+    /**
+     * Exchange a fully paid, entirely failed order for site credit.
+     * This is NOT a Stripe refund; staff must have customer consent and
+     * verify that the upstream provider has delivered nothing.
+     */
+    public function refundFailedCheckoutToWallet(int $checkoutId, int $actorUserId): string
+    {
+        $checkout = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->first();
+        if (!$checkout) {
+            throw new RuntimeException('Ordren findes ikke.');
+        }
+
+        $this->assertFailedWithoutActiveServices($checkoutId, $checkout);
+
+        if (!in_array((string) $checkout->payment_method, ['stripe', 'wallet'], true)) {
+            throw new RuntimeException('Kun betalinger via Stripe eller Wallet kan konverteres til kredit.');
+        }
+
+        if (strtoupper((string) $checkout->currency) !== 'DKK'
+            || (int) round((float) $checkout->total * 100) <= 0
+        ) {
+            throw new RuntimeException('Wallet-kredit kræver en positiv betaling i DKK.');
+        }
+
+        if ($checkout->payment_method === 'stripe') {
+            $this->stripe->assertEligibleForWalletCredit($checkout);
+        } else {
+            $debit = DB::table('nodexa_wallet_transactions')
+                ->where('idempotency_key', 'wallet-checkout-' . $checkoutId)
+                ->where('user_id', $checkout->user_id)
+                ->where('type', 'wallet_payment')->first();
+
+            if (!$debit || (int) $debit->amount_cents !== -((int) round((float) $checkout->total * 100))) {
+                throw new RuntimeException('Wallet-betalingen kan ikke verificeres.');
+            }
+        }
+
+        DB::transaction(function () use ($checkoutId, $actorUserId) {
+            $locked = DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)
+                ->lockForUpdate()->first();
+
+            if (!$locked) {
+                throw new RuntimeException('Ordren blev ikke fundet.');
+            }
+
+            $this->assertFailedWithoutActiveServices($checkoutId, $locked);
+
+            $amountCents = (int) round((float) $locked->total * 100);
+            $items = DB::table('nodexa_cart_checkout_items')
+                ->where('checkout_id', $checkoutId)->get();
+
+            // Cancel only LOCAL failed records. An operator must first confirm
+            // there is no server at Flax/Pterodactyl that could bill again.
+            foreach ($items as $item) {
+                if (!$item->reference_id) {
+                    continue;
+                }
+
+                if ($item->type === 'flax_vps') {
+                    $service = DB::table('nodexa_flax_services')
+                        ->where('id', $item->reference_id)->lockForUpdate()->first();
+
+                    if (!$service || $service->upstream_server_id || $service->processing_invoice_id
+                        || !in_array($service->status, ['awaiting_payment', 'provisioning_failed'], true)
+                    ) {
+                        throw new RuntimeException('VPS findes muligvis hos Flax. Kredit er blokeret.');
+                    }
+
+                    DB::table('nodexa_flax_services')->where('id', $service->id)->update([
+                        'status' => 'cancelled', 'updated_at' => now(),
+                    ]);
+
+                    if ($service->first_invoice_id) {
+                        DB::table('nodexa_invoices')->where('id', $service->first_invoice_id)->update([
+                            'status' => 'wallet_credited', 'updated_at' => now(),
+                        ]);
+                    }
+
+                    if ($service->subscription_id) {
+                        DB::table('nodexa_subscriptions')->where('id', $service->subscription_id)->update([
+                            'status' => 'cancelled', 'next_invoice_at' => null, 'updated_at' => now(),
+                        ]);
+                    }
+                } elseif ($item->type === 'game_server') {
+                    $order = StoreOrder::query()->where('id', $item->reference_id)
+                        ->lockForUpdate()->first();
+
+                    if (!$order || $order->server_id || $order->provisioned_at) {
+                        throw new RuntimeException('Gameserver findes muligvis. Kredit er blokeret.');
+                    }
+
+                    $order->status = 'wallet_credited';
+                    $order->save();
+
+                    DB::table('nodexa_subscriptions')->where('order_id', $order->id)->update([
+                        'status' => 'cancelled', 'next_invoice_at' => null, 'updated_at' => now(),
+                    ]);
+                } else {
+                    throw new RuntimeException('Ukendt servicerække.');
+                }
+            }
+
+            $this->wallet->credit(
+                (int) $locked->user_id,
+                $amountCents,
+                'refund_credit',
+                'wallet-refund-checkout-' . $checkoutId,
+                'Kredit for ikke-leveret ordre ' . $locked->number,
+                $actorUserId,
+                'cart_checkout',
+                $checkoutId
+            );
+
+            DB::table('nodexa_cart_checkouts')->where('id', $checkoutId)->update([
+                'status' => 'wallet_refunded',
+                'cancelled_at' => now(),
+                'hidden_from_client' => true,
+                'updated_at' => now(),
+            ]);
+        }, 3);
 
         return (string) $checkout->number;
     }
