@@ -153,7 +153,32 @@ class StorefrontController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        return view('store.client.billing', compact('orders', 'invoices', 'subscriptions', 'cartCheckouts'));
+        // Display the actual purchased product name instead of only the
+        // subscription number. All lookups remain limited to this customer.
+        $vpsNames = DB::table('nodexa_flax_services')
+            ->where('user_id', $request->user()->id)->pluck('hostname', 'id');
+        $eupNames = DB::table('nodexa_cfx_eup_orders')
+            ->where('user_id', $request->user()->id)->pluck('description', 'id');
+        $ownedOrders = $orders->keyBy('id');
+        $subscriptionLabels = [];
+
+        foreach ($subscriptions as $subscription) {
+            $kind = (string) ($subscription->service_type ?? '');
+            $label = trim((string) ($subscription->description ?? ''));
+
+            if ($kind === 'flax_vps') {
+                $label = $vpsNames->get((int) $subscription->service_reference) ?: $label ?: 'VPS Hosting';
+            } elseif ($kind === 'cfx_eup') {
+                $label = $eupNames->get((int) $subscription->service_reference) ?: $label ?: 'CFX EUP';
+            } elseif ($kind === '' || $kind === 'game_server') {
+                $order = $ownedOrders->get((int) $subscription->order_id);
+                $label = $order?->server_name ?: $order?->product?->name ?: $label ?: 'Gameserver';
+            }
+
+            $subscriptionLabels[$subscription->id] = $label ?: 'Abonnement';
+        }
+
+        return view('store.client.billing', compact('orders', 'invoices', 'subscriptions', 'cartCheckouts', 'subscriptionLabels'));
     }
 
     public function clientProfile(Request $request)
