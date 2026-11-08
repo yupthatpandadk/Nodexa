@@ -475,6 +475,59 @@ class StripePaymentService
         }
     }
 
+    /**
+     * Ensure Stripe reports that the complete captured amount has been refunded.
+     * This is a read-only check; the refund itself must be issued in Stripe.
+     */
+    public function assertCheckoutFullyRefunded(object $checkout): void
+    {
+        if (!$checkout->stripe_session_id || $checkout->payment_method !== 'stripe') {
+            throw new RuntimeException('Denne ordre har ikke en verificerbar Stripe-betaling.');
+        }
+
+        $session = $this->retrieveSession((string) $checkout->stripe_session_id);
+        if ((string) ($session['metadata']['checkout_id'] ?? '') !== (string) $checkout->id
+            || (string) ($session['client_reference_id'] ?? '') !== (string) $checkout->number
+        ) {
+            throw new RuntimeException('Stripe-sessionen matcher ikke ordren.');
+        }
+
+        $paymentIntent = $session['payment_intent'] ?? null;
+        if (!is_string($paymentIntent) || !preg_match('/^pi_[A-Za-z0-9_]+$/', $paymentIntent)) {
+            throw new RuntimeException('Stripe PaymentIntent mangler. Refusionen kan ikke verificeres.');
+        }
+
+        $response = $this->request('GET', '/charges', ['payment_intent' => $paymentIntent, 'limit' => 100]);
+        if (!$response->successful()) {
+            throw new RuntimeException($this->stripeError($response));
+        }
+
+        $json = $response->json();
+        if (!is_array($json) || !isset($json['data']) || !is_array($json['data']) || !empty($json['has_more'])) {
+            throw new RuntimeException('Stripe kunne ikke bekræfte en komplet refusion.');
+        }
+
+        $capturedCents = 0;
+        foreach ($json['data'] as $charge) {
+            if (!is_array($charge) || empty($charge['paid'])) {
+                continue;
+            }
+
+            $captured = (int) ($charge['amount_captured'] ?? 0);
+            $refunded = (int) ($charge['amount_refunded'] ?? 0);
+            if ($captured > 0 && $refunded < $captured) {
+                throw new RuntimeException('Betalingen er endnu ikke fuldt refunderet i Stripe.');
+            }
+
+            $capturedCents += $captured;
+        }
+
+        $expected = (int) round(((float) $checkout->total) * 100);
+        if ($expected <= 0 || $capturedCents < $expected) {
+            throw new RuntimeException('Stripe kunne ikke bekræfte en fuld refusion af ordrens beløb.');
+        }
+    }
+
     private function retrieveSession(string $sessionId): array
     {
         if (!preg_match('/^cs_[A-Za-z0-9_]+$/', $sessionId)) {
