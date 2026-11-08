@@ -9,6 +9,7 @@ use Illuminate\View\View;
 use Pterodactyl\Models\StoreProduct;
 use Pterodactyl\Services\Nodexa\NodexaCartService;
 use Pterodactyl\Services\Nodexa\OrderRemovalService;
+use Pterodactyl\Services\Nodexa\WalletService;
 use Pterodactyl\Services\Nodexa\StripePaymentService;
 use Illuminate\Support\Facades\DB;
 
@@ -21,6 +22,7 @@ class CartController extends Controller
         private NodexaCartService $cart,
         private StripePaymentService $stripe,
         private OrderRemovalService $removal,
+        private WalletService $wallet,
     ) {
     }
 
@@ -168,12 +170,27 @@ class CartController extends Controller
         return view('store.cart.checkout', [
             'summary' => $summary,
             'stripeEnabled' => $this->stripe->isEnabled(),
+            'walletBalanceCents' => $this->wallet->balanceCents((int) $request->user()->id),
         ]);
     }
 
     public function place(Request $request): RedirectResponse
     {
+        $data = $request->validate(['payment_method' => 'nullable|in:stripe,wallet']);
+        $paymentMethod = $data['payment_method'] ?? 'stripe';
         $items = (array) $request->session()->get(self::SESSION_KEY, []);
+
+        if ($paymentMethod === 'wallet') {
+            try {
+                $preview = $this->cart->resolve($items, $request->session()->get(self::COUPON_KEY));
+                $amount = (int) round(((float) $preview['total']) * 100);
+                if ($amount <= 0 || $this->wallet->balanceCents((int) $request->user()->id) < $amount) {
+                    throw new \RuntimeException('Wallet-saldoen dækker ikke denne ordre. Vælg Stripe eller få mere kredit.');
+                }
+            } catch (\Throwable $exception) {
+                return redirect()->route('store.cart.checkout')->withErrors(['wallet' => $exception->getMessage()]);
+            }
+        }
 
         try {
             $checkoutId = $this->cart->createCheckout(
@@ -186,6 +203,10 @@ class CartController extends Controller
         }
 
         $request->session()->forget([self::SESSION_KEY, self::COUPON_KEY]);
+
+        if ($paymentMethod === 'wallet') {
+            return $this->payWallet($request, $checkoutId);
+        }
 
         if ($this->stripe->isEnabled()) {
             try {
@@ -204,6 +225,24 @@ class CartController extends Controller
         return redirect()
             ->route('store.cart.order', $checkoutId)
             ->with('success', 'Din samlede ordre er oprettet.');
+    }
+
+    public function payWallet(Request $request, int $checkout): RedirectResponse
+    {
+        try {
+            $result = $this->wallet->payCheckout($checkout, (int) $request->user()->id);
+        } catch (\Throwable $exception) {
+            report($exception);
+            return redirect()->route('store.cart.order', $checkout)
+                ->withErrors(['wallet' => $exception->getMessage()]);
+        }
+
+        $message = !empty($result['completed'])
+            ? 'Wallet-betalingen er gennemført, og alle services er behandlet.'
+            : 'Wallet-betalingen er registreret. En eller flere services kræver opfølgning fra admin.';
+
+        return redirect()->route('store.cart.order', $checkout)
+            ->with(!empty($result['completed']) ? 'success' : 'warning', $message);
     }
 
     public function destroy(Request $request, int $checkout): RedirectResponse
@@ -242,6 +281,7 @@ class CartController extends Controller
             'checkout' => $row,
             'items' => $items,
             'stripeEnabled' => $this->stripe->isEnabled(),
+            'walletBalanceCents' => $this->wallet->balanceCents((int) $request->user()->id),
         ]);
     }
 }
