@@ -715,7 +715,7 @@ class FlaxResellerService
         }
     }
 
-    public function terminateService(int $serviceId): void
+    public function terminateService(int $serviceId, bool $cancelOpenInvoices = true): void
     {
         $service = DB::table('nodexa_flax_services')->where('id', $serviceId)->first();
         if (!$service) {
@@ -726,7 +726,7 @@ class FlaxResellerService
             $this->request('terminate', 'POST', ['server_id' => $service->upstream_server_id]);
         }
 
-        DB::transaction(function () use ($service) {
+        DB::transaction(function () use ($service, $cancelOpenInvoices) {
             DB::table('nodexa_flax_services')->where('id', $service->id)->update([
                 'status' => 'terminated',
                 'terminated_at' => now(),
@@ -741,10 +741,15 @@ class FlaxResellerService
                     'updated_at' => now(),
                 ]);
 
-                DB::table('nodexa_invoices')
-                    ->where('subscription_id', $service->subscription_id)
-                    ->whereIn('status', ['unpaid', 'overdue'])
-                    ->update(['status' => 'cancelled', 'updated_at' => now()]);
+                // Cancellation at paid-through period end does not forgive
+                // invoices issued earlier. Administrative termination may
+                // still cancel open invoices explicitly.
+                if ($cancelOpenInvoices) {
+                    DB::table('nodexa_invoices')
+                        ->where('subscription_id', $service->subscription_id)
+                        ->whereIn('status', ['unpaid', 'overdue'])
+                        ->update(['status' => 'cancelled', 'updated_at' => now()]);
+                }
             }
         });
 
