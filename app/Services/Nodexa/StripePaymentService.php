@@ -451,6 +451,30 @@ class StripePaymentService
         }
     }
 
+    /**
+     * Expire an unpaid Checkout Session before allowing an order to be hidden.
+     * Do not assume the session is unpaid from Nodexa's local status alone.
+     */
+    public function expireUnpaidCheckoutSession(string $sessionId): void
+    {
+        $session = $this->retrieveSession($sessionId);
+        $status = (string) ($session['status'] ?? '');
+        $paymentStatus = (string) ($session['payment_status'] ?? '');
+
+        if ($status === 'expired') {
+            return;
+        }
+
+        if ($status !== 'open' || $paymentStatus === 'paid') {
+            throw new RuntimeException('Stripe Checkout er allerede gennemført eller behandles. Ordren kan ikke slettes.');
+        }
+
+        $response = $this->request('POST', '/checkout/sessions/' . rawurlencode($sessionId) . '/expire');
+        if (!$response->successful() || ($response->json('status') !== 'expired')) {
+            throw new RuntimeException('Stripe Checkout kunne ikke annulleres sikkert. Prøv igen eller kontakt support.');
+        }
+    }
+
     private function retrieveSession(string $sessionId): array
     {
         if (!preg_match('/^cs_[A-Za-z0-9_]+$/', $sessionId)) {
