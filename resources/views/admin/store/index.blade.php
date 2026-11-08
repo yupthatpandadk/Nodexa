@@ -112,7 +112,14 @@ Lyt til: <code>checkout.session.completed</code>, <code>checkout.session.async_p
 </table></div></div>
 
 <div class="box"><div class="box-header"><h3 class="box-title">Ordrer & provisioning</h3></div><div class="box-body table-responsive"><table class="table"><tr><th>#</th><th>Kunde</th><th>Server</th><th>Beløb</th><th>Status</th><th>Handling</th></tr>
-@foreach($orders as $o)<tr><td>#{{$o->id}}</td><td>{{$o->user->email??'—'}}<br><small>{{$o->product->name??'—'}}</small></td><td>{{$o->server_name??'—'}}@if($o->server)<br><a href="{{route('admin.servers.view',$o->server)}}">Server #{{$o->server->id}}</a>@endif</td><td>{{$o->amount}} {{$o->currency}}</td><td><span class="label {{$o->status==='active'?'label-success':($o->status==='awaiting_payment'?'label-warning':'label-default')}}">{{str_replace('_',' ',$o->status)}}</span></td><td><form method="POST" action="{{route('admin.store.orders.status',$o)}}">@csrf @method('PATCH')<select name="status" class="form-control input-sm" onchange="this.form.submit()"><option value="">Skift status…</option>@foreach(['awaiting_payment'=>'Afventer betaling','paid'=>'Betalt + provisionér','active'=>'Aktiv','cancelled'=>'Annulleret','refunded'=>'Refunderet'] as $v=>$l)<option value="{{$v}}">{{$l}}</option>@endforeach</select></form></td></tr>@endforeach
+@foreach($orders as $o)<tr><td>#{{$o->id}}</td><td>{{$o->user->email??'—'}}<br><small>{{$o->product->name??'—'}}</small></td><td>{{$o->server_name??'—'}}@if($o->server)<br><a href="{{route('admin.servers.view',$o->server)}}">Server #{{$o->server->id}}</a>@endif</td><td>{{$o->amount}} {{$o->currency}}</td><td><span class="label {{$o->status==='active'?'label-success':($o->status==='awaiting_payment'?'label-warning':'label-default')}}">{{str_replace('_',' ',$o->status)}}</span></td><td><form method="POST" action="{{route('admin.store.orders.status',$o)}}">@csrf @method('PATCH')<select name="status" class="form-control input-sm" onchange="this.form.submit()"><option value="">Skift status…</option>@foreach(['awaiting_payment'=>'Afventer betaling','paid'=>'Betalt + provisionér','active'=>'Aktiv','cancelled'=>'Annulleret','refunded'=>'Refunderet'] as $v=>$l)<option value="{{$v}}">{{$l}}</option>@endforeach</select></form>
+@if(in_array($o->status,['awaiting_payment','failed'],true) && !$o->paid_at && !$o->server_id && !$o->payment_reference)
+<form method="POST" action="{{route('admin.store.orders.remove',$o)}}" style="margin-top:5px" onsubmit="return confirm('Annuller og fjern denne ubetalte ordre fra kundens oversigt?');">
+@csrf @method('DELETE')
+<button class="btn btn-xs btn-danger" type="submit">Slet ubetalt ordre</button>
+</form>
+@endif
+</td></tr>@endforeach
 </table></div></div></div>
 </div></div>
 @endsection
