@@ -123,7 +123,16 @@ class StorefrontController extends Controller
             ->get()
             ->keyBy('server_id');
 
-        return view('store.client.servers', compact('servers', 'serverOrders'));
+        $serverSubscriptions = DB::table('nodexa_subscriptions')
+            ->where('user_id', $user->id)
+            ->whereNotNull('server_id')
+            ->whereIn('status', ['active', 'cancel_pending'])
+            ->where(function ($query) {
+                $query->whereNull('service_type')->orWhere('service_type', 'game_server');
+            })
+            ->pluck('id', 'server_id');
+
+        return view('store.client.servers', compact('servers', 'serverOrders', 'serverSubscriptions'));
     }
 
     public function clientBilling(Request $request)
