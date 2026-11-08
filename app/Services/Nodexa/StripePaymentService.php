@@ -524,7 +524,34 @@ class StripePaymentService
 
         $expected = (int) round(((float) $checkout->total) * 100);
         if ($expected <= 0 || $capturedCents < $expected) {
-            throw new RuntimeException('Stripe kunne ikke bekræfte en fuld refusion af ordrens beløb.');
+            throw new RuntimeException('Stripe kunne ikke bekræfte ordrens fulde betalingsbeløb.');
+        }
+
+        // amount_refunded can change before a refund has actually succeeded.
+        // Require succeeded Refund objects, not pending/failed refund attempts.
+        $refundResponse = $this->request('GET', '/refunds', ['payment_intent' => $paymentIntent, 'limit' => 100]);
+        if (!$refundResponse->successful()) {
+            throw new RuntimeException($this->stripeError($refundResponse));
+        }
+
+        $refunds = $refundResponse->json();
+        if (!is_array($refunds) || !isset($refunds['data']) || !is_array($refunds['data']) || !empty($refunds['has_more'])) {
+            throw new RuntimeException('Stripe kunne ikke bekræfte alle refunderinger.');
+        }
+
+        $succeeded = 0;
+        foreach ($refunds['data'] as $refund) {
+            if (!is_array($refund) || ($refund['status'] ?? null) !== 'succeeded'
+                || ($refund['payment_intent'] ?? null) !== $paymentIntent
+                || strtolower((string) ($refund['currency'] ?? '')) !== strtolower((string) $checkout->currency)
+            ) {
+                continue;
+            }
+            $succeeded += (int) ($refund['amount'] ?? 0);
+        }
+
+        if ($succeeded < $expected) {
+            throw new RuntimeException('Betalingen er ikke fuldt refunderet med status succeeded i Stripe.');
         }
     }
 
