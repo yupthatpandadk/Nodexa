@@ -15,7 +15,7 @@
             <div>
                 <div class="nvp-kicker">VPS KONTROLPANEL <span>·</span> #{{ $service->id }}</div>
                 <h1>{{ $service->hostname }}</h1>
-                <p>{{ $service->product_name ?: 'VPS Hosting' }} · {{ $service->os_label ?: 'Operativsystem ikke angivet' }}</p>
+                <p>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($service->product_name, 'VPS Hosting') }} · {{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($service->os_label, 'Operativsystem ikke angivet') }}</p>
             </div>
             <div class="nvp-header-actions">
                 <span class="nvp-status {{ $service->status === 'active' ? 'is-active' : ($service->status === 'provisioning_failed' || $service->status === 'suspended' ? 'is-error' : 'is-pending') }}">
@@ -36,13 +36,13 @@
             <div class="nvp-notice nvp-notice-error">
                 <strong>Provisionering fejlede.</strong>
                 @if($service->last_error)
-                    <span>{{ $service->last_error }}</span>
+                    <span>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::serviceError() }}</span>
                 @else
                     <span>Support kan undersøge fejlen og forsøge igen uden en ny ordre.</span>
                 @endif
             </div>
         @elseif($service->last_error)
-            <div class="nvp-notice nvp-notice-error">{{ $service->last_error }}</div>
+            <div class="nvp-notice nvp-notice-error">{{ \Pterodactyl\Services\Nodexa\CustomerBranding::serviceError() }}</div>
         @endif
 
         <div class="nvp-layout">
@@ -63,12 +63,12 @@
                     </div>
                     <div class="nvp-os-banner">
                         <span class="nvp-os-icon">
-                            <img src="{{ asset('images/os/' . $osInfo['icon'] . '.svg') }}" alt="{{ $osInfo['name'] }} logo" loading="eager" width="46" height="46">
+                            <img src="{{ asset('images/os/' . $osInfo['icon'] . '.svg') }}" alt="{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($osInfo['name']) }} logo" loading="eager" width="46" height="46">
                         </span>
                         <span class="nvp-os-copy">
                             <small>OPERATIVSYSTEM</small>
-                            <strong>{{ $osInfo['name'] }}</strong>
-                            <span>{{ $osInfo['source'] }}{{ !$osInfo['verified_live'] ? ' · Synkronisér status for nye oplysninger' : '' }}</span>
+                            <strong>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($osInfo['name']) }}</strong>
+                            <span>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($osInfo['source']) }}{{ !$osInfo['verified_live'] ? ' · Synkronisér status for nye oplysninger' : '' }}</span>
                         </span>
                     </div>
                     <div class="nvp-stats">
@@ -77,7 +77,7 @@
                             <strong class="{{ $running === true ? 'nvp-text-green' : '' }}">
                                 {{ $running === true ? 'Kører' : ($running === false ? 'Stoppet' : 'Ukendt') }}
                             </strong>
-                            <small>{{ $service->status === 'active' ? 'Status fra Flax' : 'Afventer aktiv service' }}</small>
+                            <small>{{ $service->status === 'active' ? 'Serverstatus' : 'Afventer aktiv service' }}</small>
                         </div>
                         <div class="nvp-stat">
                             <span>PRIMÆR IP</span>
@@ -105,7 +105,7 @@
                         </div>
                     </div>
                     @if($service->status === 'active' && $service->upstream_server_id)
-                        <p class="nvp-panel-desc">Alle handlinger gælder kun denne VPS. Status hentes fra Flax efter hver handling.</p>
+                        <p class="nvp-panel-desc">Alle handlinger gælder kun denne VPS. Status hentes automatisk efter hver handling.</p>
                         <div class="nvp-power-actions">
                             <form method="POST" action="{{ route('store.client.vps.action', $service->id) }}">
                                 @csrf
@@ -136,7 +136,7 @@
                         </div>
                     @elseif($service->status === 'provisioning_failed')
                         <div class="nvp-empty">
-                            <strong>VPS'en er ikke oprettet hos Flax</strong>
+                            <strong>VPS'en er endnu ikke oprettet</strong>
                             <p>Kontakt support, så den eksisterende ordre kan undersøges og provisioneringen forsøges igen.</p>
                             <a class="nvp-action" href="{{ route('store.client.tickets.create') }}">Kontakt support →</a>
                         </div>
@@ -154,7 +154,7 @@
                     <span class="nvp-eyebrow">SERVERKONFIGURATION</span>
                     <h2>Ressourcer</h2>
                     <dl class="nvp-detail-list">
-                        <div><dt>Produkt</dt><dd>{{ $service->product_name ?: 'VPS Hosting' }}</dd></div>
+                        <div><dt>Produkt</dt><dd>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($service->product_name, 'VPS Hosting') }}</dd></div>
                         <div><dt>CPU</dt><dd>{{ $service->vcpu ?: '—' }} vCPU</dd></div>
                         <div><dt>RAM</dt><dd>{{ $service->memory_mb ? number_format($service->memory_mb / 1024, 1, ',', '.') . ' GB' : '—' }}</dd></div>
                         <div><dt>Disk</dt><dd>{{ $service->disk_gb ? $service->disk_gb . ' GB' : '—' }}</dd></div>
@@ -198,29 +198,29 @@
                     @else
                         <p class="nvp-panel-desc nvp-password-empty">Password kan først gemmes, når VPS'en er provisioneret og tilgængelig.</p>
                     @endif
-                    <p class="nvp-password-hint">Adgangskoden opbevares krypteret. Hvis du bruger den automatiske Flax-reset nedenfor, opdateres den gemte kode med passwordet fra Flax. Manuelt gemte adgangskoder ændrer ikke VPS'ens login.</p>
+                    <p class="nvp-password-hint">Adgangskoden opbevares krypteret. Når automatisk nulstilling er tilgængelig, opdateres det gemte password direkte fra Nodexas VPS-system. Manuelt gemte adgangskoder ændrer ikke VPS'ens login.</p>
                     @if($service->upstream_server_id && $service->status === 'active')
                         <div class="nvp-reset-panel">
                             <div class="nvp-reset-heading">
                                 <strong>↻ Nulstil VPS-password</strong>
-                                <small>Via Flax API</small>
+                                <small>Via Nodexa</small>
                             </div>
                             @if($canResetPassword)
-                                <p class="nvp-reset-copy">Nodexa anmoder Flax om at oprette et nyt OS-password. Hvis Flax returnerer den nye kode, gemmes den krypteret og kan vises eller kopieres ovenfor. Det kan afbryde eksisterende login-sessioner.</p>
-                                <form method="POST" action="{{ route('store.client.vps.password.reset', $service->id) }}" class="nvp-reset-form" onsubmit="return confirm('Vil du virkelig nulstille adgangskoden på denne VPS hos Flax? Den nuværende kode vil holde op med at virke, når ændringen gennemføres.');">
+                                <p class="nvp-reset-copy">Nodexa nulstiller VPS-adgangskoden og gemmer den nye kode krypteret, når nulstillingen er bekræftet. Det kan afbryde eksisterende login-sessioner.</p>
+                                <form method="POST" action="{{ route('store.client.vps.password.reset', $service->id) }}" class="nvp-reset-form" onsubmit="return confirm('Vil du virkelig nulstille adgangskoden på denne VPS? Den nuværende kode vil holde op med at virke, når ændringen gennemføres.');">
                                     @csrf
-                                    <button class="nvp-action nvp-action-reset" type="submit">Nulstil password hos Flax</button>
+                                    <button class="nvp-action nvp-action-reset" type="submit">Nulstil VPS-password</button>
                                 </form>
                             @else
-                                <p class="nvp-reset-copy">Automatisk nulstilling er ikke aktiveret: Flax har endnu ikke bekræftet reset-action i reseller-API'et. Kontakt Nodexa-support for opsætning.</p>
+                                <p class="nvp-reset-copy">Automatisk nulstilling er midlertidigt utilgængelig. Kontakt Nodexa Support for hjælp.</p>
                                 <button type="button" class="nvp-action nvp-action-reset" disabled aria-disabled="true">API-reset ikke tilgængelig endnu</button>
-                                <a class="nvp-password-guide" href="https://flaxhosting.com/knowledgebase/10/Sadan-skifter-du-din-kode-til-din-vps..html" target="_blank" rel="noopener noreferrer">Flax’ nuværende reset-vejledning ↗</a>
+                                <a class="nvp-password-guide" href="{{ route('store.client.tickets.create') }}">Kontakt Nodexa Support →</a>
                             @endif
                         </div>
                     @elseif($service->upstream_server_id)
                         <p class="nvp-panel-desc">VPS skal være aktiv, før password kan nulstilles via API.</p>
                     @else
-                        <p class="nvp-panel-desc">Password-reset kræver, at VPS'en er oprettet hos Flax.</p>
+                        <p class="nvp-panel-desc">Password-reset kræver, at VPS'en er oprettet.</p>
                     @endif
                 </section>
 
