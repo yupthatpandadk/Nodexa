@@ -148,6 +148,18 @@ class ProxmoxVmTemplateService
                 throw new RuntimeException('Proxmox-forbindelsen er ikke aktiv.');
             }
 
+            // Check again immediately before reserving a new VM. A
+            // previously configured source may have been deleted or changed.
+            $sourceConfig = $this->api($connection, 'GET',
+                '/nodes/' . rawurlencode($template->node)
+                . '/qemu/' . $template->source_vmid . '/config'
+            );
+            if (!in_array($sourceConfig['template'] ?? null, [1, '1', true], true)) {
+                throw new RuntimeException(
+                    'Kilde-VM’en er ikke længere en gyldig Proxmox-template.'
+                );
+            }
+
             // Proxmox's nextid is a suggestion, not a reservation. Holding
             // this connection row lock prevents Nodexa from reserving the
             // same ID for concurrent deployments on this integration.
@@ -216,6 +228,17 @@ class ProxmoxVmTemplateService
 
     public function processPending(int $limit = 20): int
     {
+        // A worker/process can die after sending a mutation but before
+        // saving its UPID. The outcome is unknown and must not be replayed.
+        DB::table('nodexa_proxmox_deployments')
+            ->whereIn('status', ['reserved', 'clone_requesting', 'start_requesting'])
+            ->where('updated_at', '<', now()->subMinutes(10))
+            ->update([
+                'status' => 'unknown',
+                'last_error' => 'Uafklaret VM-opgave. Kontrollér VM-ID i Proxmox før nyt forsøg.',
+                'updated_at' => now(),
+            ]);
+
         $ids = DB::table('nodexa_proxmox_deployments')
             ->whereIn('status', ['cloning', 'ready', 'starting'])
             ->orderBy('id')
