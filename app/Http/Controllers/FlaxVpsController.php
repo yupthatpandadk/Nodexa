@@ -202,6 +202,49 @@ class FlaxVpsController extends Controller
      * available. Fall back to the OS template registered when the VPS was
      * provisioned, and never guess an unrecognized distribution.
      */
+    /**
+     * Lazily retrieve VPS backup metadata. Never expose upstream response
+     * bodies or storage URLs to the browser.
+     */
+    public function clientBackups(Request $request, int $service): JsonResponse
+    {
+        // Use the same owner restriction as the password and power controls.
+        $owned = DB::table('nodexa_flax_services')
+            ->where('id', $service)
+            ->where('user_id', $request->user()->id)
+            ->first(['id', 'status', 'upstream_server_id']);
+
+        abort_unless($owned, 404);
+
+        if (!$owned->upstream_server_id
+            || !in_array($owned->status, ['active', 'suspended'], true)) {
+            return response()->json([
+                'message' => 'Backups kan først vises, når VPS-serveren er oprettet.',
+            ], 409)->header('Cache-Control', 'private, no-store, max-age=0');
+        }
+
+        try {
+            $backups = $this->flax->listVpsBackups(
+                $service,
+                (int) $request->user()->id
+            );
+
+            return response()->json(['backups' => $backups])
+                ->header('Cache-Control', 'private, no-store, max-age=0')
+                ->header('X-Content-Type-Options', 'nosniff');
+        } catch (\Throwable $exception) {
+            \Illuminate\Support\Facades\Log::warning('Nodexa VPS backup list unavailable', [
+                'service_id' => $service,
+                'reason' => 'provider_lookup_failed',
+            ]);
+
+            return response()->json([
+                'message' => 'Backups kunne ikke hentes. Prøv igen senere, eller kontakt Nodexa Support.',
+            ], 503)->header('Cache-Control', 'private, no-store, max-age=0')
+                ->header('X-Content-Type-Options', 'nosniff');
+        }
+    }
+
     private function osInfo(?string $serverInfo, ?string $templateLabel): array
     {
         $info = json_decode((string) $serverInfo, true);
