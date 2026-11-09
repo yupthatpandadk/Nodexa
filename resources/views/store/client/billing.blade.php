@@ -73,7 +73,7 @@
         <div class="clientRow clientSubscriptionRow" id="subscription-{{ $subscription->id }}">
             <div class="clientSubscriptionInfo">
                 <div class="miniLabel">ABONNEMENT #{{ $subscription->id }}</div>
-                <h3>{{ $subscriptionLabels[$subscription->id] ?? 'Nodexa Hosting' }}</h3>
+                <h3>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($subscriptionLabels[$subscription->id] ?? null, 'Nodexa Hosting') }}</h3>
                 <p class="clientSubscriptionPrice">{{ number_format((float) $subscription->amount, 2, ',', '.') }} {{ $subscription->currency }} / {{ $subscription->interval }}</p>
                 @if($subscription->status === 'cancel_pending' && $subscription->cancel_at)
                     <p class="clientCancellationDate">Opsagt · ophører {{ \Carbon\Carbon::parse($subscription->cancel_at)->format('d.m.Y H:i') }}</p>
@@ -132,7 +132,7 @@
         <div class="sectionTitleRow"><div><div class="miniLabel">ORDERS</div><h2>Ordrehistorik</h2></div></div>
         @forelse($orders as $o)
         <div class="clientRow">
-            <div><div class="miniLabel">ORDER #{{$o->id}}</div><h3>{{$o->product->name ?? 'Serverprodukt'}}</h3><p>{{$o->server_name}} · {{number_format($o->amount,2,',','.')}} {{$o->currency}}</p></div>
+            <div><div class="miniLabel">ORDER #{{$o->id}}</div><h3>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($o->product?->name, 'Serverprodukt') }}</h3><p>{{$o->server_name}} · {{number_format($o->amount,2,',','.')}} {{$o->currency}}</p></div>
             <div style="display:flex;gap:8px;align-items:center"><span class="statusBadge">{{$o->status}}</span>@if($o->status==='awaiting_payment')<a class="btn" href="{{route('store.checkout',$o)}}">Checkout</a>@endif
                 @if(in_array($o->status,['awaiting_payment','failed'],true) && !$o->paid_at && !$o->payment_reference && !$o->server_id)
                 <form method="POST" action="{{route('store.order.remove',$o)}}" onsubmit="return confirm('Slet denne ubetalte ordre?');">
