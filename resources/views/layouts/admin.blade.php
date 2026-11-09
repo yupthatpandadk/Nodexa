@@ -135,6 +135,13 @@
                                 <i class="fa fa-sitemap"></i> <span>Nodes</span>
                             </a>
                         </li>
+                        @if(Auth::user()->root_admin)
+                        <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.proxmox') ?: 'active' }}">
+                            <a href="{{ route('admin.proxmox') }}">
+                                <i class="fa fa-cubes"></i> <span>Proxmox VE</span>
+                            </a>
+                        </li>
+                        @endif
                         <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.servers') ?: 'active' }}">
                             <a href="{{ route('admin.servers') }}">
                                 <i class="fa fa-server"></i> <span>Servers</span>
