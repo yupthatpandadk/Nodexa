@@ -51,8 +51,13 @@ class SupportTicketController extends Controller
                 ->first(['id', 'hostname']);
 
             if ($vps) {
-                $vpsTicketSubject = 'Hjælp til VPS #' . $vps->id . ' – ' . $vps->hostname;
-                $vpsTicketMessage = "VPS: {$vps->hostname} (#{$vps->id})\n\nBeskriv problemet her:";
+                if ($r->query('topic') === 'upgrade') {
+                    $vpsTicketSubject = 'Opgradering af VPS #' . $vps->id . ' – ' . $vps->hostname;
+                    $vpsTicketMessage = "VPS: {$vps->hostname} (#{$vps->id})\n\nJeg ønsker at opgradere:\n- CPU:\n- RAM:\n- Disk:\n\nØnsket ændring og eventuelle spørgsmål:";
+                } else {
+                    $vpsTicketSubject = 'Hjælp til VPS #' . $vps->id . ' – ' . $vps->hostname;
+                    $vpsTicketMessage = "VPS: {$vps->hostname} (#{$vps->id})\n\nBeskriv problemet her:";
+                }
             }
         }
 
