@@ -96,7 +96,7 @@ class CartController extends Controller
 
         return redirect()
             ->route('store.cart')
-            ->with('success', $plan->name . ' er lagt i kurven.');
+            ->with('success', \Pterodactyl\Services\Nodexa\CustomerBranding::label($plan->name) . ' er lagt i kurven.');
     }
 
     public function applyCoupon(Request $request): RedirectResponse
@@ -115,7 +115,7 @@ class CartController extends Controller
         try {
             $coupon = $this->cart->validateCoupon($data['code'], $base['subtotal_cents']);
         } catch (\Throwable $exception) {
-            return back()->withErrors(['coupon' => $exception->getMessage()]);
+            return back()->withErrors(['coupon' => \Pterodactyl\Services\Nodexa\CustomerBranding::errorMessage($exception)]);
         }
 
         $request->session()->put(self::COUPON_KEY, $coupon['code']);
@@ -183,7 +183,7 @@ class CartController extends Controller
             $totalCents = (int) round(((float) ($preview['total'] ?? 0)) * 100);
             $walletCents = $this->wallet->balanceCents((int) $request->user()->id);
         } catch (\Throwable $exception) {
-            return redirect()->route('store.cart.checkout')->withErrors(['wallet' => $exception->getMessage()]);
+            return redirect()->route('store.cart.checkout')->withErrors(['wallet' => \Pterodactyl\Services\Nodexa\CustomerBranding::errorMessage($exception)]);
         }
 
         // Wallet is always applied first. Use Stripe for the remaining balance.
@@ -196,7 +196,7 @@ class CartController extends Controller
                 $request->session()->get(self::COUPON_KEY)
             );
         } catch (\Throwable $exception) {
-            return redirect()->route('store.cart')->withErrors(['cart' => $exception->getMessage()]);
+            return redirect()->route('store.cart')->withErrors(['cart' => \Pterodactyl\Services\Nodexa\CustomerBranding::errorMessage($exception)]);
         }
 
         $request->session()->forget([self::SESSION_KEY, self::COUPON_KEY]);
@@ -215,7 +215,7 @@ class CartController extends Controller
 
                 return redirect()
                     ->route('store.cart.order', $checkoutId)
-                    ->withErrors(['stripe' => $exception->getMessage()]);
+                    ->withErrors(['stripe' => \Pterodactyl\Services\Nodexa\CustomerBranding::errorMessage($exception)]);
             }
         }
 
@@ -231,7 +231,7 @@ class CartController extends Controller
         } catch (\Throwable $exception) {
             report($exception);
             return redirect()->route('store.cart.order', $checkout)
-                ->withErrors(['wallet' => $exception->getMessage()]);
+                ->withErrors(['wallet' => \Pterodactyl\Services\Nodexa\CustomerBranding::errorMessage($exception)]);
         }
 
         $message = !empty($result['completed'])
@@ -247,7 +247,7 @@ class CartController extends Controller
         try {
             $number = $this->removal->removeCheckout($checkout, (int) $request->user()->id);
         } catch (\Throwable $exception) {
-            return back()->withErrors(['order' => $exception->getMessage()]);
+            return back()->withErrors(['order' => \Pterodactyl\Services\Nodexa\CustomerBranding::errorMessage($exception)]);
         }
 
         return redirect()
