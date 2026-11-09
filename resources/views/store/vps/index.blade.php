@@ -1,12 +1,12 @@
 @extends('store.layout')
 @section('title','VPS Hosting')
-@section('description','Bestil VPS hosting gennem Nodexa. VPS’en provisioneres automatisk via Flax reseller-infrastrukturen.')
+@section('description','Bestil VPS hosting gennem Nodexa. VPS’en provisioneres automatisk via Nodexas VPS-platform.')
 @section('content')
 <section class="pagehero">
     <div class="container">
         <div class="pill"><span class="statusdot"></span> VPS HOSTING</div>
         <h1>VPS hosting.<br><span class="gradient">Direkte fra Nodexa.</span></h1>
-        <p class="lead">Vælg din VPS-pakke, operativsystem og hostname. Efter betaling provisionerer Nodexa automatisk VPS’en hos Flax.</p>
+        <p class="lead">Vælg din VPS-pakke, operativsystem og hostname. Efter betaling provisionerer Nodexa automatisk VPS’en på Nodexas serverplatform.</p>
     </div>
 </section>
 
@@ -17,7 +17,7 @@
     </div>
 
     @if(!$configured)
-        <div class="notice" style="margin-bottom:20px">VPS-bestilling er midlertidigt utilgængelig, fordi reseller-integrationen ikke er aktiveret.</div>
+        <div class="notice" style="margin-bottom:20px">VPS-bestilling er midlertidigt utilgængelig, fordi VPS-tjenesten ikke er tilgængelig.</div>
     @endif
 
     <div class="grid">
@@ -27,8 +27,8 @@
                 <span class="tag">VPS</span>
                 @if($product->featured)<span class="miniLabel" style="color:#a996ff">★ ANBEFALET</span>@endif
             </div>
-            <h3 style="font-size:25px;margin-bottom:6px">{{ $product->name }}</h3>
-            <p class="muted" style="min-height:48px">{{ $product->description ?: 'Virtuel privat server med automatisk provisionering.' }}</p>
+            <h3 style="font-size:25px;margin-bottom:6px">{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($product->name) }}</h3>
+            <p class="muted" style="min-height:48px">{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($product->description, 'Virtuel privat server med automatisk provisionering.') }}</p>
             @if($globalSale)
             <div class="miniLabel" style="color:#75e3b1;margin:8px 0 4px">{{ $globalSale->label }} · -{{ number_format($globalSale->percent,0,',','.') }}%</div>
             <div style="font-size:11px;color:#637b96;text-decoration:line-through">{{ number_format((float)$product->monthly_price,2,',','.') }} kr</div>
@@ -49,7 +49,7 @@
         @empty
         <article class="card" style="grid-column:1/-1;text-align:center;padding:55px">
             <div class="miniLabel">VPS CATALOG</div><h3 style="font-size:25px">Ingen VPS-pakker endnu</h3>
-            <p class="muted">VPS-produkter bliver vist her, når de er aktiveret i Admin → Flax Reseller.</p>
+            <p class="muted">VPS-produkter bliver vist her, når de er aktiveret i Nodexas VPS-katalog.</p>
         </article>
         @endforelse
     </div>
@@ -58,10 +58,10 @@
 
 <section class="section alt">
 <div class="container">
-    <div class="sectionhead"><div><div class="eyebrow">AUTOMATION</div><h2>Bestil hos Nodexa. Provisionér hos Flax.</h2></div></div>
+    <div class="sectionhead"><div><div class="eyebrow">AUTOMATION</div><h2>Bestil, betal og administrér hos Nodexa.</h2></div></div>
     <div class="grid">
         <div class="card"><div class="miniLabel">01 · ORDER</div><h3>Nodexa checkout</h3><p class="muted">Kunden bestiller VPS’en fra Nodexa og får Nodexa-fakturaer.</p></div>
-        <div class="card"><div class="miniLabel">02 · PROVISION</div><h3>Flax reseller API</h3><p class="muted">Efter registreret betaling opretter Nodexa automatisk VPS’en hos Flax.</p></div>
+        <div class="card"><div class="miniLabel">02 · PROVISION</div><h3>Automatisk VPS-provisionering</h3><p class="muted">Efter registreret betaling opretter Nodexa automatisk VPS’en på Nodexas serverplatform.</p></div>
         <div class="card"><div class="miniLabel">03 · MANAGE</div><h3>Én kundeportal</h3><p class="muted">Start, shutdown, restart, status og billing håndteres fra Nodexa Client Area.</p></div>
     </div>
 </div>
