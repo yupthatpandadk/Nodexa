@@ -8,6 +8,12 @@ Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
     
 // Nodexa Proxmox VE (owner-only, read-only inventory)
 Route::get('/proxmox', [Admin\ProxmoxController::class, 'index'])->name('admin.proxmox');
+Route::get('/proxmox/templates', [Admin\ProxmoxVmTemplatesController::class, 'index'])->name('admin.proxmox.templates');
+Route::post('/proxmox/templates', [Admin\ProxmoxVmTemplatesController::class, 'store'])->middleware('throttle:5,1')->name('admin.proxmox.templates.store');
+Route::delete('/proxmox/templates/{template}', [Admin\ProxmoxVmTemplatesController::class, 'destroy'])->whereNumber('template')->middleware('throttle:5,1')->name('admin.proxmox.templates.delete');
+Route::post('/proxmox/templates/{template}/deploy', [Admin\ProxmoxVmTemplatesController::class, 'deploy'])->whereNumber('template')->middleware('throttle:3,1')->name('admin.proxmox.templates.deploy');
+Route::post('/proxmox/deployments/refresh', [Admin\ProxmoxVmTemplatesController::class, 'refresh'])->middleware('throttle:10,1')->name('admin.proxmox.deployments.refresh');
+
 Route::post('/proxmox', [Admin\ProxmoxController::class, 'store'])->middleware('throttle:5,1')->name('admin.proxmox.store');
 Route::patch('/proxmox/{connection}', [Admin\ProxmoxController::class, 'update'])->whereNumber('connection')->middleware('throttle:5,1')->name('admin.proxmox.update');
 Route::post('/proxmox/{connection}/sync', [Admin\ProxmoxController::class, 'sync'])->whereNumber('connection')->middleware('throttle:10,1')->name('admin.proxmox.sync');
