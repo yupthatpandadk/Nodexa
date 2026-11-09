@@ -25,6 +25,18 @@ final class CustomerBranding
         return trim((string) $text);
     }
 
+    public static function errorMessage(\Throwable $exception): string
+    {
+        $message = $exception->getMessage();
+        // Provider-specific errors, internal table names, API credentials and
+        // endpoint paths must not be rendered to a customer.
+        if ($message === '' || preg_match('~flax|virtfusion|reseller|api[-_ ]?key|api-endpoint|upstream|nodexa_flax_~i', $message)) {
+            return self::serviceError();
+        }
+
+        return self::label($message, self::serviceError());
+    }
+
     public static function serviceError(): string
     {
         // Upstream responses can contain provider branding, API routes,
