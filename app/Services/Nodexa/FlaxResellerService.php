@@ -951,6 +951,23 @@ class FlaxResellerService
                     ->asForm()
                     ->post($requestUrl, $body);
             }
+
+            // Password lookup is read-only. The provider has historically
+            // served the same reseller API via /api-endpoint.php as well as
+            // the API root. Only retry a *read* on an unmistakable endpoint
+            // mismatch, never when credentials/ownership are rejected.
+            //
+            // Do NOT retry resetPassword here: it is a state-changing action
+            // and a timeout or ambiguous response could cause a second reset.
+            if ($action === 'get_password' && (
+                in_array($response->status(), [404, 405], true)
+                || ($response->successful() && !is_array($response->json()))
+            )) {
+                $fallback = $this->buildEndpointUrl($baseUrl) . '?' . http_build_query(
+                    array_merge(['key' => $key, 'action' => $action], $params)
+                );
+                $response = $client->asForm()->post($fallback, $params);
+            }
         } catch (\Throwable $exception) {
             $message = str_replace($key, '[redacted]', $exception->getMessage());
             throw new RuntimeException('Kunne ikke kontakte Flax API: ' . $message, 0, $exception);
