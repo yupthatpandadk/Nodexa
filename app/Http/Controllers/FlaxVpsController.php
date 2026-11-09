@@ -409,10 +409,27 @@ class FlaxVpsController extends Controller
         // into HTML or cache it in the browser.
         $remote = null;
         $remoteUnavailable = false;
+        $lookupError = null;
+
         try {
             $remote = $this->flax->getStoredOsPassword($service, $userId);
+        } catch (\Pterodactyl\Services\Nodexa\VpsCredentialLookupException $exception) {
+            $remoteUnavailable = true;
+            $lookupError = $exception->getMessage();
+
+            // Log only a safe category, never the provider response, key or
+            // password. Admins can now see why automatic retrieval failed.
+            \Illuminate\Support\Facades\Log::warning('Nodexa VPS password lookup failed', [
+                'service_id' => $service,
+                'reason' => $exception->reason,
+            ]);
         } catch (\Throwable $exception) {
             $remoteUnavailable = true;
+            $lookupError = 'VPS-password kunne ikke hentes på grund af en intern fejl. Kontakt Nodexa Support.';
+            \Illuminate\Support\Facades\Log::warning('Nodexa VPS password lookup exception', [
+                'service_id' => $service,
+                'reason' => 'unexpected_failure',
+            ]);
         }
 
         if (is_string($remote) && $remote !== '') {
@@ -492,7 +509,7 @@ class FlaxVpsController extends Controller
                     'password' => $saved,
                     'source' => 'local',
                     'message' => $remoteUnavailable
-                        ? 'Viser en tidligere gemt kopi. Det aktuelle password kunne ikke kontrolleres.'
+                        ? 'Viser en tidligere gemt kopi. ' . ($lookupError ?? 'Det aktuelle password kunne ikke kontrolleres.')
                         : 'Intet password er gemt automatisk. Viser en tidligere gemt kopi.',
                 ])->header('Cache-Control', 'private, no-store, max-age=0')
                     ->header('Pragma', 'no-cache')
@@ -506,7 +523,7 @@ class FlaxVpsController extends Controller
 
         return response()->json([
             'message' => $remoteUnavailable
-                ? 'Password kunne ikke hentes automatisk. Prøv igen, eller kontakt Nodexa Support.'
+                ? ($lookupError ?? 'Password kunne ikke hentes automatisk. Kontakt Nodexa Support.')
                 : 'Der er endnu ikke gemt et VPS-password. Kontakt Nodexa Support, hvis du mangler adgang.',
         ], $remoteUnavailable ? 503 : 404)->header('Cache-Control', 'private, no-store, max-age=0')
             ->header('X-Content-Type-Options', 'nosniff');
