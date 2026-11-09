@@ -905,20 +905,28 @@ class FlaxResellerService
 
         $key = $this->apiKey();
         $baseUrl = $this->normalizeApiUrl($settings->api_url);
-        $endpoint = $this->buildEndpointUrl($baseUrl);
         $method = strtoupper($method);
 
-        // Flax' eget WHMCS-modul kalder /api-endpoint.php med key/action i
-        // query-string og sender samtidig Authorization: Bearer <key>.
-        // Server/action-parametre ligger også i query-string; POST-body bruges
-        // til action-specifikke data. For kompatibilitet sender Nodexa de samme
-        // parametre i body ved POST, men key/action forbliver altid i query.
-        $query = array_merge([
-            'key' => $key,
-            'action' => $action,
-        ], $params);
-
-        $requestUrl = $endpoint . '?' . http_build_query($query);
+        // New reseller API docs: POST directly to the API root, with key,
+        // action and server_id in the FORM BODY for get_password/resetPassword.
+        // Keep all existing VPS billing/power actions on the legacy endpoint,
+        // since those integrations are already operational.
+        $useDocumentedPasswordApi = in_array($action, ['get_password', 'resetPassword'], true);
+        if ($useDocumentedPasswordApi) {
+            $requestUrl = rtrim($baseUrl, '/') . '/';
+            $body = array_merge([
+                'key' => $key,
+                'action' => $action,
+            ], $params);
+        } else {
+            $endpoint = $this->buildEndpointUrl($baseUrl);
+            $query = array_merge([
+                'key' => $key,
+                'action' => $action,
+            ], $params);
+            $requestUrl = $endpoint . '?' . http_build_query($query);
+            $body = $params;
+        }
 
         try {
             $client = Http::timeout($method === 'GET' ? 15 : 20)
@@ -941,7 +949,7 @@ class FlaxResellerService
             } else {
                 $response = $client
                     ->asForm()
-                    ->post($requestUrl, $params);
+                    ->post($requestUrl, $body);
             }
         } catch (\Throwable $exception) {
             $message = str_replace($key, '[redacted]', $exception->getMessage());
