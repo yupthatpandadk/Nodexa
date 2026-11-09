@@ -111,7 +111,12 @@ class EggHostingPackageService
 
     public function allProfiles(): array
     {
-        return array_map(fn (string $category): array => $this->packages($category), array_keys(self::GAME_LABELS));
+        $result = [];
+        foreach (array_keys(self::GAME_LABELS) as $category) {
+            $result[$category] = $this->packages($category);
+        }
+
+        return $result;
     }
 
     /**
