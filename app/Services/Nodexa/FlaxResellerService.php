@@ -558,24 +558,71 @@ class FlaxResellerService
     }
 
     /**
-     * Queue an actual VPS OS-password reset through Flax's reseller endpoint.
-     * This is deliberately disabled until Flax supplies the exact API action.
-     * A successful HTTP response is NOT proof of a reset: require an
-     * explicit newly generated password in the response before saving it.
+     * Retrieve the latest VPS password saved by the reseller API.
+     * This action does NOT change the server's login.
      *
-     * @return array{password:string}
+     * The upstream API limits this action to VPS resources, authorized owners
+     * and developer access. The Nodexa owner check is enforced independently.
+     */
+    public function getStoredOsPassword(int $serviceId, int $userId): ?string
+    {
+        $service = DB::table('nodexa_flax_services')
+            ->where('id', $serviceId)
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$service || !in_array($service->status, ['active', 'suspended'], true)
+            || !$service->upstream_server_id) {
+            throw new RuntimeException('VPS-serveren er ikke tilgængelig for denne konto.');
+        }
+
+        // API docs: POST action=get_password, server_id=<upstream VPS ID>.
+        // data.available=false means the provider has no saved credential.
+        // Never log the response: data.password is a sensitive secret.
+        $result = $this->request('get_password', 'POST', [
+            'server_id' => (string) $service->upstream_server_id,
+        ]);
+
+        $returnedServerId = data_get($result, 'data.server_id');
+        if ($returnedServerId !== null
+            && (string) $returnedServerId !== (string) $service->upstream_server_id) {
+            throw new RuntimeException('Password-svaret kunne ikke knyttes sikkert til denne VPS.');
+        }
+
+        if (data_get($result, 'data.available') === false) {
+            return null;
+        }
+
+        $password = data_get($result, 'data.password');
+
+        if (!is_string($password) || $password === '') {
+            return null;
+        }
+
+        if (strlen($password) > 1024) {
+            throw new RuntimeException('Password-svaret havde et ugyldigt format.');
+        }
+
+        return $password;
+    }
+
+    /**
+     * Reset the OS credential via the documented reseller action, then fetch
+     * the latest stored password using get_password.
+     *
+     * Some resets are asynchronous: a still-unchanged stored password must
+     * not be offered as a successfully reset password.
+     *
+     * @return array{password:?string,queued:bool,previous_hash:?string}
      */
     public function resetOsPassword(int $serviceId, int $userId, string $osUser): array
     {
-        $action = trim((string) config('services.nodexa_flax.password_reset_action', ''));
-        if ($action === '' || !preg_match('/^[a-z][a-z0-9_]{1,63}$/i', $action)) {
-            throw new RuntimeException(
-                'Flax password-reset API er ikke konfigureret. Kontakt Flax og få deres dokumenterede reset-action, før funktionen kan bruges.'
-            );
+        if (!$this->supportsPasswordReset()) {
+            throw new RuntimeException('Automatisk password-reset er midlertidigt utilgængelig.');
         }
 
         if (!in_array($osUser, ['Administrator', 'root'], true)) {
-            throw new RuntimeException('Operativsystemets login-bruger kan ikke nulstilles sikkert.');
+            throw new RuntimeException('Operativsystemets login-bruger blev ikke genkendt.');
         }
 
         $service = DB::table('nodexa_flax_services')
@@ -584,22 +631,31 @@ class FlaxResellerService
             ->first();
 
         if (!$service || $service->status !== 'active' || !$service->upstream_server_id) {
-            throw new RuntimeException('Denne VPS er ikke aktiv eller tilhører ikke din konto.');
+            throw new RuntimeException('VPS-serveren er ikke aktiv eller tilhører ikke din konto.');
         }
 
-        // Never include the provider response or newly issued password in
-        // logs, error messages or application events.
+        // Obtain a baseline so a queued reset cannot accidentally expose the
+        // prior password returned by an eventually consistent API.
+        $oldPassword = null;
         try {
-            $result = $this->request($action, 'POST', [
+            $oldPassword = $this->getStoredOsPassword($serviceId, $userId);
+        } catch (\Throwable $exception) {
+            // Reading the old password is optional and must not block reset.
+        }
+
+        try {
+            // Documented action and parameters: resetPassword, server_id, user.
+            // The API uses root by default; specify Administrator for Windows.
+            $result = $this->request('resetPassword', 'POST', [
                 'server_id' => (string) $service->upstream_server_id,
                 'user' => $osUser,
-                'sendMail' => 'false',
             ]);
         } catch (\Throwable $exception) {
-            throw new RuntimeException('Flax kunne ikke bekræfte password-reset. Kontrollér API-adgangen eller kontakt support.');
+            // Avoid exposing raw provider payloads, which may contain secrets.
+            throw new RuntimeException('Password-reset kunne ikke bekræftes. Kontakt Nodexa Support før et nyt forsøg.');
         }
 
-        $password = null;
+        $expected = null;
         foreach ([
             data_get($result, 'data.expectedPassword'),
             data_get($result, 'data.newPassword'),
@@ -608,33 +664,42 @@ class FlaxResellerService
             data_get($result, 'expectedPassword'),
             data_get($result, 'newPassword'),
             data_get($result, 'new_password'),
-            data_get($result, 'password'),
         ] as $candidate) {
-            if (is_string($candidate) && strlen($candidate) >= 8 && strlen($candidate) <= 255) {
-                $password = $candidate;
+            if (is_string($candidate) && $candidate !== '' && strlen($candidate) <= 1024) {
+                $expected = $candidate;
                 break;
             }
         }
 
-        if (!$password) {
-            // The reset might have been accepted even if the new secret is not
-            // exposed. Never misrepresent this as a completed password reset.
-            throw new RuntimeException(
-                'Flax returnerede ikke et nyt password. Reset kan være sat i kø. Undlad at nulstille igen, før support har kontrolleret status.'
-            );
+        $fetched = null;
+        try {
+            // Always fetch from the dedicated provider API after reset.
+            $fetched = $this->getStoredOsPassword($serviceId, $userId);
+        } catch (\Throwable $exception) {
+            // Reset may already have been accepted; allow safe later retrieval.
         }
+
+        $changed = $fetched !== null
+            && ($oldPassword === null || !hash_equals($oldPassword, $fetched));
+
+        $password = $changed ? $fetched : $expected;
+        $queued = data_get($result, 'data.queueId') !== null
+            || data_get($result, 'queueId') !== null
+            || in_array(strtolower((string) data_get($result, 'status')), ['queued', 'pending'], true);
 
         return [
             'password' => $password,
-            'queued' => (int) (data_get($result, 'data.queueId') ?? data_get($result, 'queueId') ?? 0) > 0,
+            'queued' => $queued || $password === null,
+            'previous_hash' => $oldPassword !== null
+                ? hash_hmac('sha256', $oldPassword, (string) config('app.key'))
+                : null,
         ];
     }
 
     public function supportsPasswordReset(): bool
     {
-        $action = trim((string) config('services.nodexa_flax.password_reset_action', ''));
-        return $this->isConfigured()
-            && preg_match('/^[a-z][a-z0-9_]{1,63}$/i', $action) === 1;
+        // Flax has documented the resetPassword reseller action.
+        return $this->isConfigured();
     }
 
     public function power(int $serviceId, int $userId, string $action): void
