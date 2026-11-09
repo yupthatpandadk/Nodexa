@@ -174,14 +174,14 @@
                         <label class="nvp-password-label" for="nvpStoredPassword">Senest gemte VPS-password</label>
                         <div class="nvp-password-display">
                             <input type="password" id="nvpStoredPassword" class="nvp-password-input" placeholder="••••••••••••" autocomplete="off" readonly aria-label="VPS-password">
-                            <button type="button" class="nvp-outline" id="nvpPasswordReveal" data-url="{{ route('store.client.vps.password.reveal', $service->id) }}">Hent / Vis</button>
+                            <button type="button" class="nvp-outline" id="nvpPasswordReveal" data-url="{{ route('store.client.vps.password.reveal', $service->id) }}">Vis</button>
                             <button type="button" class="nvp-outline" id="nvpPasswordCopy">Kopiér</button>
                         </div>
                         <p id="nvpPasswordMessage" class="nvp-password-feedback" role="status" aria-live="polite">
                             @if($passwordResetPending)
-                                Afventer ny kode efter nulstilling. Tryk Hent / Vis for at kontrollere status.
+                                Afventer ny kode efter nulstilling. Tryk Vis for at kontrollere status.
                             @else
-                                Hentes sikkert fra Nodexas VPS-system, når du trykker Hent / Vis.
+                                Hentes sikkert fra Nodexas VPS-system, når du trykker Vis.
                             @endif
                         </p>
                         <p class="nvp-password-hint">Det senest gemte password vises, hvis det findes. Ændringer foretaget direkte inde i operativsystemet registreres ikke nødvendigvis automatisk.</p>
@@ -209,11 +209,11 @@
                                 <small>Via Nodexa</small>
                             </div>
                             @if($passwordResetPending)
-                                <p class="nvp-reset-copy">Den seneste nulstilling er endnu ikke bekræftet. Af sikkerhedshensyn kan du ikke starte en ny nulstilling, før status er undersøgt. Prøv Hent / Vis for at kontrollere, om en ny kode er tilgængelig.</p>
+                                <p class="nvp-reset-copy">Den seneste nulstilling er endnu ikke bekræftet. Af sikkerhedshensyn kan du ikke starte en ny nulstilling, før status er undersøgt. Prøv Vis for at kontrollere, om en ny kode er tilgængelig.</p>
                                 <button type="button" class="nvp-action nvp-action-reset" disabled aria-disabled="true">Afventer bekræftelse</button>
                                 <a class="nvp-password-guide" href="{{ route('store.client.tickets.create') }}">Få hjælp hos Nodexa Support →</a>
                             @elseif($canResetPassword)
-                                <p class="nvp-reset-copy">Nodexa nulstiller serverens password og henter den senest gemte kode automatisk. Hvis nulstillingen stadig behandles, kan du prøve Hent / Vis igen. Det kan afbryde eksisterende login-sessioner.</p>
+                                <p class="nvp-reset-copy">Nodexa nulstiller serverens password og henter den senest gemte kode automatisk. Hvis nulstillingen stadig behandles, kan du prøve Vis igen. Det kan afbryde eksisterende login-sessioner.</p>
                                 <form method="POST" action="{{ route('store.client.vps.password.reset', $service->id) }}" class="nvp-reset-form" onsubmit="return confirm('Vil du virkelig nulstille adgangskoden på denne VPS? Den nuværende kode vil holde op med at virke, når ændringen gennemføres.');">
                                     @csrf
                                     <button class="nvp-action nvp-action-reset" type="submit">Nulstil VPS-password</button>
@@ -268,7 +268,7 @@
         clearHandle = null;
         input.value = '';
         input.type = 'password';
-        reveal.textContent = 'Hent / Vis';
+        reveal.textContent = 'Vis';
     }
 
     function showMessage(text, failed) {
