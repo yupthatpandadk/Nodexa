@@ -62,6 +62,10 @@ class NodexaEventService
 
     public function emit(string $event, array $payload, ?int $userId = null): void
     {
+        // White-label customer webhook event names. Old event subscriptions
+        // remain accepted, but outbound payloads use the public name.
+        $publicEvent = preg_replace('/^flax_vps\./i', 'vps.', $event) ?: $event;
+
         try {
             $webhooks = DB::table('nodexa_webhooks')
                 ->where('enabled', true)
@@ -81,12 +85,15 @@ class NodexaEventService
             $events = json_decode((string) $webhook->events, true);
             $events = is_array($events) ? $events : [];
 
-            if (!in_array('*', $events, true) && !in_array($event, $events, true)) {
+            if (!in_array('*', $events, true)
+                && !in_array($publicEvent, $events, true)
+                && !in_array($event, $events, true)
+            ) {
                 continue;
             }
 
             $body = [
-                'event' => $event,
+                'event' => $publicEvent,
                 'occurred_at' => now()->toIso8601String(),
                 'data' => $payload,
             ];
@@ -97,7 +104,7 @@ class NodexaEventService
                 $response = Http::timeout(5)
                     ->withHeaders([
                         'Content-Type' => 'application/json',
-                        'X-Nodexa-Event' => $event,
+                        'X-Nodexa-Event' => $publicEvent,
                         'X-Nodexa-Signature' => 'sha256=' . $signature,
                     ])
                     ->withBody($json ?: '{}', 'application/json')
@@ -105,7 +112,7 @@ class NodexaEventService
 
                 DB::table('nodexa_webhook_deliveries')->insert([
                     'webhook_id' => $webhook->id,
-                    'event' => $event,
+                    'event' => $publicEvent,
                     'response_code' => $response->status(),
                     'error' => $response->successful() ? null : substr($response->body(), 0, 2000),
                     'created_at' => now(),
@@ -119,7 +126,7 @@ class NodexaEventService
             } catch (\Throwable $exception) {
                 DB::table('nodexa_webhook_deliveries')->insert([
                     'webhook_id' => $webhook->id,
-                    'event' => $event,
+                    'event' => $publicEvent,
                     'response_code' => null,
                     'error' => substr($exception->getMessage(), 0, 2000),
                     'created_at' => now(),
