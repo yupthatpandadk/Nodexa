@@ -14,6 +14,72 @@
 <label><input type="checkbox" name="enabled" value="1" checked> Aktiv</label>&nbsp;&nbsp;<label><input type="checkbox" name="featured" value="1"> Fremhævet</label>
 </div><div class="box-footer"><button class="btn btn-primary btn-block">Opret produkt</button></div></form></div>
 
+<div class="box box-info" id="egg-hosting-packages">
+    <div class="box-header with-border">
+        <h3 class="box-title"><i class="fa fa-cubes"></i> Pterodactyl Egg-pakker</h3>
+        <span class="label label-info pull-right">Starter · Plus · Pro · Ultimate</span>
+    </div>
+    <form method="POST" action="{{ route('admin.store.egg-packages.generate') }}">
+        @csrf
+        <div class="box-body">
+            <p style="font-size:12px;line-height:1.6">
+                Opret fire serverpakker med tilpasset RAM, CPU, disk, backups,
+                databaser og pris ud fra det Egg, du har installeret i Pterodactyl.
+                <strong>Alle nye pakker oprettes som skjulte</strong>, indtil du godkender dem.
+            </p>
+            <div class="form-group">
+                <label for="eggPresetEgg">Pterodactyl Egg</label>
+                <select name="egg_id" id="eggPresetEgg" class="form-control" required>
+                    <option value="">Vælg et installeret Egg...</option>
+                    @foreach($eggs as $egg)
+                        <option value="{{ $egg->id }}" data-suggested-category="{{ $eggPackageDetection[$egg->id] ?? 'generic' }}" {{ (string)old('egg_id') === (string)$egg->id ? 'selected' : '' }}>
+                            {{ $egg->name }} · {{ $egg->nest?->name ?? 'Andre' }} (#{{ $egg->id }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="eggPresetCategory">Kategori</label>
+                <select name="category" id="eggPresetCategory" class="form-control" required>
+                    <option value="auto" {{ old('category', 'auto') === 'auto' ? 'selected' : '' }}>Automatisk ud fra Egg</option>
+                    @foreach($eggPackageCategories as $key => $label)
+                        <option value="{{ $key }}" {{ old('category') === $key ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <p class="help-block">Forslagene tager højde for spiltypen. Tilpas månedlig pris inden oprettelse, og kontrollér serverens kapacitet og omkostninger før aktivering.</p>
+            <div class="table-responsive">
+                <table class="table table-condensed" style="margin-bottom:4px">
+                    <thead><tr><th>Pakke</th><th>Ressourcer (forslag)</th><th>Pris (DKK/md.)</th></tr></thead>
+                    <tbody>
+                        @foreach($eggPackageTiers as $tier => $tierLabel)
+                        <tr>
+                            <td style="white-space:nowrap">
+                                <label style="font-weight:600">
+                                    <input type="checkbox" name="tiers[]" value="{{ $tier }}" {{ in_array($tier, old('tiers', array_keys($eggPackageTiers))) ? 'checked' : '' }}>
+                                    {{ $tierLabel }}
+                                </label>
+                            </td>
+                            <td><span id="eggPresetSpecs-{{ $tier }}" style="font-size:11px;color:#718096">Vælg et Egg</span></td>
+                            <td style="min-width:110px">
+                                <input type="number" name="prices[{{ $tier }}]" class="form-control input-sm" min="0.01" max="99999" step="0.01" value="{{ old('prices.'.$tier) }}" placeholder="Forslag" aria-label="Pris for {{ $tierLabel }}">
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <p class="help-block" id="eggPresetHint" role="status">Prisfelterne kan være tomme for at anvende den foreslåede pris.</p>
+        </div>
+        <div class="box-footer">
+            <button type="submit" class="btn btn-info btn-block" {{ $eggs->isEmpty() ? 'disabled' : '' }}>
+                <i class="fa fa-magic"></i> Opret valgte pakker som skjulte produkter
+            </button>
+            <p class="help-block" style="margin-bottom:0">Eksisterende pakker, ordrer og servere ændres ikke. Genimport springer allerede oprettede pakker over.</p>
+        </div>
+    </form>
+</div>
+
 <div class="box box-success">
 <div class="box-header">
     <h3 class="box-title"><i class="fa fa-percent"></i> Globalt udsalg</h3>
@@ -108,7 +174,28 @@ Lyt til: <code>checkout.session.completed</code>, <code>checkout.session.async_p
 <div class="row"><div class="col-sm-4"><div class="small-box bg-aqua"><div class="inner"><h3>{{$products->count()}}</h3><p>Produkter</p></div><div class="icon"><i class="fa fa-cubes"></i></div></div></div><div class="col-sm-4"><div class="small-box bg-yellow"><div class="inner"><h3>{{$orders->where('status','awaiting_payment')->count()}}</h3><p>Afventer betaling</p></div><div class="icon"><i class="fa fa-clock-o"></i></div></div></div><div class="col-sm-4"><div class="small-box bg-green"><div class="inner"><h3>{{$orders->where('status','active')->count()}}</h3><p>Aktive ordrer</p></div><div class="icon"><i class="fa fa-check"></i></div></div></div></div>
 
 <div class="box"><div class="box-header"><h3 class="box-title">Produkter</h3><a href="{{route('store.index')}}" target="_blank" class="btn btn-xs btn-primary pull-right">Åbn storefront</a></div><div class="box-body table-responsive"><table class="table"><tr><th>Produkt</th><th>Ressourcer</th><th>Pris</th><th>Status</th><th></th></tr>
-@foreach($products as $p)<tr><td><b>{{$p->name}}</b><br><small>{{$p->game}}</small></td><td><small>{{$p->memory}}MB RAM · {{$p->cpu}}% CPU · {{$p->disk}}MB disk</small></td><td>{{$p->price_monthly}} DKK</td><td>{{$p->enabled?'Aktiv':'Skjult'}}{{$p->featured?' · ★':''}}</td><td><form method="POST" action="{{route('admin.store.products.update',$p)}}">@csrf @method('PATCH')<input type="hidden" name="enabled" value="{{$p->enabled?0:1}}"><input type="hidden" name="featured" value="{{$p->featured?1:0}}"><button class="btn btn-xs btn-default">{{$p->enabled?'Deaktivér':'Aktivér'}}</button></form></td></tr>@endforeach
+@foreach($products as $p)<tr><td><b>{{$p->name}}</b><br><small>{{$p->game}}</small></td><td><small>{{$p->memory}}MB RAM · {{$p->cpu}}% CPU · {{$p->disk}}MB disk</small></td><td>{{$p->price_monthly}} DKK</td><td>{{$p->enabled?'Aktiv':'Skjult'}}{{$p->featured?' · ★':''}}</td><td><form method="POST" action="{{route('admin.store.products.update',$p)}}">@csrf @method('PATCH')<input type="hidden" name="enabled" value="{{$p->enabled?0:1}}"><input type="hidden" name="featured" value="{{$p->featured?1:0}}"><button class="btn btn-xs btn-default">{{$p->enabled?'Deaktivér':'Aktivér'}}</button></form>
+<details class="eggProductEditor" style="margin-top:7px;min-width:190px">
+    <summary style="font-size:11px;cursor:pointer;color:#2878ba">Redigér pakke og pris</summary>
+    <form method="POST" action="{{ route('admin.store.products.details', $p) }}" style="padding:9px 0 0;display:grid;gap:7px;min-width:195px">
+        @csrf @method('PATCH')
+        <label style="font-size:11px">Navn<input name="name" class="form-control input-sm" value="{{ $p->name }}" required maxlength="100"></label>
+        <label style="font-size:11px">Kategori<input name="game" class="form-control input-sm" value="{{ $p->game }}" required maxlength="80"></label>
+        <label style="font-size:11px">Beskrivelse<textarea name="description" class="form-control input-sm" rows="2" maxlength="2000">{{ $p->description }}</textarea></label>
+        <label style="font-size:11px">Pris DKK/md.<input name="price_monthly" type="number" step=".01" min="0" max="99999" class="form-control input-sm" value="{{ $p->price_monthly }}" required></label>
+        <div class="row" style="margin:0">
+            @foreach(['memory'=>'RAM MB','cpu'=>'CPU %','disk'=>'Disk MB','databases'=>'Databaser','backups'=>'Backups','allocations'=>'Allocations'] as $key => $label)
+                <label class="col-xs-6" style="padding:2px 3px;font-size:11px">
+                    {{ $label }}
+                    <input class="form-control input-sm" type="number" name="{{ $key }}" min="{{ $key === 'memory' ? 128 : ($key === 'disk' ? 256 : ($key === 'cpu' ? 10 : ($key === 'allocations' ? 1 : 0))) }}" value="{{ $p->$key }}" required>
+                </label>
+            @endforeach
+        </div>
+        <button type="submit" class="btn btn-xs btn-primary">Gem ændringer</button>
+        <small class="text-muted">Gælder kun nye bestillinger.</small>
+    </form>
+</details>
+</td></tr>@endforeach
 </table></div></div>
 
 <div class="box"><div class="box-header"><h3 class="box-title">Ordrer & provisioning</h3></div><div class="box-body table-responsive"><table class="table"><tr><th>#</th><th>Kunde</th><th>Server</th><th>Beløb</th><th>Status</th><th>Handling</th></tr>
@@ -124,4 +211,39 @@ Lyt til: <code>checkout.session.completed</code>, <code>checkout.session.async_p
 </td></tr>@endforeach
 </table></div></div></div>
 </div></div>
+<script>
+(function () {
+    var egg = document.getElementById('eggPresetEgg');
+    var category = document.getElementById('eggPresetCategory');
+    if (!egg || !category) return;
+    var profiles = @json($eggPackageProfiles);
+    var tiers = @json(array_keys($eggPackageTiers));
+
+    function refreshPreview() {
+        var selected = egg.options[egg.selectedIndex];
+        var game = category.value === 'auto'
+            ? (selected && selected.dataset.suggestedCategory || 'generic')
+            : category.value;
+        var packages = profiles[game] || profiles.generic;
+        tiers.forEach(function (tier) {
+            var p = packages[tier];
+            var info = document.getElementById('eggPresetSpecs-' + tier);
+            var input = document.querySelector('[name="prices[' + tier + ']"]');
+            if (!p) return;
+            if (info) {
+                info.textContent = (p.memory / 1024) + ' GB RAM · ' + p.cpu
+                    + '% CPU · ' + (p.disk / 1024) + ' GB SSD · '
+                    + p.backups + ' backups';
+            }
+            if (input) input.placeholder = p.price.toFixed(2) + ' kr';
+        });
+        var hint = document.getElementById('eggPresetHint');
+        if (hint) hint.textContent = 'Prisfelter uden indtastning bruger de viste forslag. Priser er vejledende og kan ændres før offentliggørelse.';
+    }
+
+    egg.addEventListener('change', refreshPreview);
+    category.addEventListener('change', refreshPreview);
+    refreshPreview();
+})();
+</script>
 @endsection
