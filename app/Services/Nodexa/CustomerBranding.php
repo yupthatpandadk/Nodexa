@@ -20,7 +20,8 @@ final class CustomerBranding
         // Never expose upstream provider website addresses or brand names in
         // a customer-facing product label, description or stored notification.
         $text = preg_replace('~https?://(?:www\.)?flaxhosting\.com(?:/[^\s]*)?~i', 'Nodexa support', $text);
-        $text = preg_replace('~\bflax\s*hosting\b|\bflax\b|\bvirtfusion\b~iu', 'Nodexa', $text);
+        $text = preg_replace('~flax(?:\\s*hosting)?|virtfusion~iu', 'Nodexa', $text);
+        $text = preg_replace('~(?:Nodexa[\\s·\\-/]+){2,}~iu', 'Nodexa ', $text);
 
         return trim((string) $text);
     }
