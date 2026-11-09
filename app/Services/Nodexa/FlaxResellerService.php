@@ -615,7 +615,7 @@ class FlaxResellerService
      *
      * @return array{password:?string,queued:bool,previous_hash:?string}
      */
-    public function resetOsPassword(int $serviceId, int $userId, string $osUser): array
+    public function resetOsPassword(int $serviceId, int $userId, string $osUser, ?string $knownPreviousHash = null): array
     {
         if (!$this->supportsPasswordReset()) {
             throw new RuntimeException('Automatisk password-reset er midlertidigt utilgængelig.');
@@ -663,8 +663,15 @@ class FlaxResellerService
             // Reset may already have been accepted; allow safe later retrieval.
         }
 
+        $previousHash = $oldPassword !== null
+            ? hash_hmac('sha256', $oldPassword, (string) config('app.key'))
+            : $knownPreviousHash;
+
         $changed = $fetched !== null
-            && ($oldPassword === null || !hash_equals($oldPassword, $fetched));
+            && ($previousHash === null || !hash_equals(
+                $previousHash,
+                hash_hmac('sha256', $fetched, (string) config('app.key'))
+            ));
 
         // Only a fresh result from get_password counts as the new credential.
         // A reset acknowledgment may precede actual password persistence.
@@ -676,9 +683,7 @@ class FlaxResellerService
         return [
             'password' => $password,
             'queued' => $queued || $password === null,
-            'previous_hash' => $oldPassword !== null
-                ? hash_hmac('sha256', $oldPassword, (string) config('app.key'))
-                : null,
+            'previous_hash' => $previousHash,
         ];
     }
 
