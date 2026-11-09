@@ -35,8 +35,8 @@ final class VpsPasswordResetException extends RuntimeException
         // Extract only metadata to aid operator diagnosis. Never store,
         // log or show raw response bodies or provider URLs / API keys.
         $message = $exception->getMessage();
-        preg_match('/\\bHTTP\\s+(\\d{3})\\b/i', $message, $status);
-        preg_match('~Content-Type:\\s*([a-z0-9.+-]+/[a-z0-9.+-]+)~i', $message, $type);
+        preg_match('/\bHTTP\s+(\d{3})\b/i', $message, $status);
+        preg_match('~Content-Type:\s*([a-z0-9.+-]+/[a-z0-9.+-]+)~i', $message, $type);
         $mime = strtolower($type[1] ?? '');
         $responseType = $mime === ''
             ? null
