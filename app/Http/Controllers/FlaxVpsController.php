@@ -274,6 +274,12 @@ class FlaxVpsController extends Controller
             return back()->withErrors(['vps' => 'Kun aktive VPS-servere kan nulstilles.']);
         }
 
+        if (!empty($owned->credential_reset_pending_at)) {
+            return back()->withErrors([
+                'vps' => 'En nulstilling afventer stadig nyt password. Tryk Hent / Vis i stedet for at nulstille igen.',
+            ]);
+        }
+
         if (!$this->flax->supportsPasswordReset()) {
             return back()->withErrors(['vps' => 'Automatisk nulstilling er ikke tilgængelig lige nu. Kontakt Nodexa Support.']);
         }
@@ -303,7 +309,19 @@ class FlaxVpsController extends Controller
 
         try {
             RateLimiter::hit($rateKey, 900);
-            $result = $this->flax->resetOsPassword($service, (int) $request->user()->id, $osUser);
+            $previousHash = null;
+            if (!empty($owned->credential_password_encrypted)) {
+                try {
+                    $previousPassword = Crypt::decryptString($owned->credential_password_encrypted);
+                    $previousHash = hash_hmac('sha256', $previousPassword, (string) config('app.key'));
+                } catch (\Throwable $ignored) {
+                    // An unreadable local copy cannot validate the prior code.
+                }
+            }
+
+            $result = $this->flax->resetOsPassword(
+                $service, (int) $request->user()->id, $osUser, $previousHash
+            );
             $newPassword = $result['password'] ?? null;
 
             if (is_string($newPassword) && $newPassword !== '') {
