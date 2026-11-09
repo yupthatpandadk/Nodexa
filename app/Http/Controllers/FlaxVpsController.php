@@ -416,27 +416,53 @@ class FlaxVpsController extends Controller
         }
 
         if (is_string($remote) && $remote !== '') {
-            if (!empty($owned->credential_reset_pending_at)
-                && !empty($owned->credential_reset_previous_hash)) {
-                $currentHash = hash_hmac('sha256', $remote, (string) config('app.key'));
-                if (hash_equals($owned->credential_reset_previous_hash, $currentHash)) {
-                    return response()->json([
-                        'message' => 'Nulstillingen afventer stadig et nyt password. Prøv at hente det igen om lidt.',
-                        'pending' => true,
-                    ], 409)->header('Cache-Control', 'private, no-store, max-age=0')
-                        ->header('X-Content-Type-Options', 'nosniff');
+            $decision = DB::transaction(function () use ($service, $userId, $remote) {
+                // Re-read under a row lock: a reset may have started while
+                // get_password was in flight. Never overwrite a pending reset
+                // with an earlier/stale API response.
+                $current = DB::table('nodexa_flax_services')
+                    ->where('id', $service)
+                    ->where('user_id', $userId)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$current || !in_array($current->status, ['active', 'suspended'], true)) {
+                    return 'missing';
                 }
+
+                if (!empty($current->credential_reset_pending_at)
+                    && !empty($current->credential_reset_previous_hash)) {
+                    $currentHash = hash_hmac('sha256', $remote, (string) config('app.key'));
+                    if (hash_equals($current->credential_reset_previous_hash, $currentHash)) {
+                        return 'pending';
+                    }
+                }
+
+                DB::table('nodexa_flax_services')
+                    ->where('id', $service)
+                    ->where('user_id', $userId)
+                    ->update([
+                        'credential_password_encrypted' => Crypt::encryptString($remote),
+                        'credential_reset_pending_at' => null,
+                        'credential_reset_previous_hash' => null,
+                        'updated_at' => now(),
+                    ]);
+
+                return 'ready';
+            }, 3);
+
+            if ($decision === 'missing') {
+                return response()->json(['message' => 'Denne VPS er ikke længere tilgængelig.'], 404)
+                    ->header('Cache-Control', 'private, no-store, max-age=0');
             }
 
-            DB::table('nodexa_flax_services')
-                ->where('id', $owned->id)
-                ->where('user_id', $userId)
-                ->update([
-                    'credential_password_encrypted' => Crypt::encryptString($remote),
-                    'credential_reset_pending_at' => null,
-                    'credential_reset_previous_hash' => null,
-                    'updated_at' => now(),
-                ]);
+            if ($decision === 'pending') {
+                return response()->json([
+                    'message' => 'Nulstillingen afventer stadig et nyt password. Prøv at hente det igen om lidt.',
+                    'pending' => true,
+                ], 409)->header('Cache-Control', 'private, no-store, max-age=0')
+                    ->header('X-Content-Type-Options', 'nosniff');
+            }
 
             return response()->json([
                 'password' => $remote,
