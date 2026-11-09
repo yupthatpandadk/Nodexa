@@ -1,12 +1,12 @@
 @extends('store.layout')
-@section('title',$product->name.' VPS')
-@section('description',$product->description ?: 'Konfigurér og bestil din VPS.')
+@section('title',\Pterodactyl\Services\Nodexa\CustomerBranding::label($product->name).' VPS')
+@section('description',\Pterodactyl\Services\Nodexa\CustomerBranding::label($product->description, 'Konfigurér og bestil din VPS.'))
 @section('content')
 <section class="pagehero">
 <div class="container">
-    <span class="tag">VPS · FLAX RESELLER</span>
-    <h1>{{ $product->name }}</h1>
-    <p class="lead">{{ $product->description ?: 'Vælg VPS-navn og operativsystem. VPS’en oprettes automatisk efter betaling.' }}</p>
+    <span class="tag">NODEXA VPS HOSTING</span>
+    <h1>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($product->name) }}</h1>
+    <p class="lead">{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($product->description, 'Vælg VPS-navn og operativsystem. VPS’en oprettes automatisk efter betaling.') }}</p>
     <div class="steps"><div class="step active"><i>1</i><span>Konfiguration</span></div><i class="stepSep"></i><div class="step"><i>2</i><span>Checkout</span></div><i class="stepSep"></i><div class="step"><i>3</i><span>Provisionering</span></div></div>
 </div>
 </section>
@@ -24,13 +24,13 @@
                 <span class="resource"><b>{{ $product->disk_gb ?: '—' }} GB</b>&nbsp; SSD</span>
                 <span class="resource"><b>{{ $product->ipv4_count }}</b>&nbsp; IPv4</span>
                 <span class="resource"><b>{{ $product->bandwidth ?: 'Efter pakke' }}</b>&nbsp; bandwidth</span>
-                <span class="resource"><b>Flax</b>&nbsp; upstream</span>
+                <span class="resource"><b>Nodexa</b>&nbsp; VPS Hosting</span>
             </div>
         </div>
         <div class="card" style="margin-top:15px">
             <div class="sectionNo">LIFECYCLE</div>
-            <h3>Automatisk reseller provisioning</h3>
-            <p class="muted">Første betaling opretter VPS’en hos Flax. Efterfølgende Nodexa-fakturaer forlænger upstream-servicen automatisk. Forfaldne fakturaer kan suspendere VPS’en.</p>
+            <h3>Automatisk serveroprettelse</h3>
+            <p class="muted">Første betaling opretter din VPS. Efterfølgende Nodexa-fakturaer forlænger tjenesten automatisk. Forfaldne fakturaer kan suspendere VPS’en.</p>
         </div>
     </div>
 
@@ -45,9 +45,9 @@
         @endif
 
         @if(!$configured)
-            <div class="notice">VPS-reseller-integrationen er ikke aktiv lige nu.</div>
+            <div class="notice">VPS-bestilling er midlertidigt utilgængelig.</div>
         @elseif($templates->isEmpty())
-            <div class="notice">Der er endnu ikke synkroniseret OS-templates fra Flax.</div>
+            <div class="notice">Ingen operativsystemer er tilgængelige lige nu.</div>
         @endif
 
         @auth
@@ -60,7 +60,7 @@
             <select class="input" id="os_template_id" name="os_template_id" required>
                 <option value="">Vælg OS…</option>
                 @foreach($templates as $template)
-                    <option value="{{ $template->upstream_id }}" {{ (string)old('os_template_id')===(string)$template->upstream_id?'selected':'' }}>{{ $template->label }}</option>
+                    <option value="{{ $template->upstream_id }}" {{ (string)old('os_template_id')===(string)$template->upstream_id?'selected':'' }}>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($template->label) }}</option>
                 @endforeach
             </select>
 
