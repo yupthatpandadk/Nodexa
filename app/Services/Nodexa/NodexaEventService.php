@@ -20,8 +20,8 @@ class NodexaEventService
             DB::table('nodexa_notifications')->insert([
                 'user_id' => $userId,
                 'type' => $type,
-                'title' => $title,
-                'message' => $message,
+                'title' => CustomerBranding::label($title),
+                'message' => CustomerBranding::label($message),
                 'url' => $url,
                 'metadata' => $metadata ? json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
                 'created_at' => now(),
