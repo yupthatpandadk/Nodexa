@@ -147,7 +147,7 @@ class FlaxResellerService
         }
 
         return DB::transaction(function () use ($userId, $product, $hostname, $osTemplateId, $template) {
-            $description = $product->name . ' VPS';
+            $description = CustomerBranding::label($product->name) . ' VPS';
 
             $subscriptionId = DB::table('nodexa_subscriptions')->insertGetId([
                 'user_id' => $userId,
@@ -182,7 +182,7 @@ class FlaxResellerService
 
             DB::table('nodexa_invoice_items')->insert([
                 'invoice_id' => $invoiceId,
-                'description' => $description . ' — ' . $hostname . ' — ' . $template->label,
+                'description' => $description . ' — ' . $hostname . ' — ' . CustomerBranding::label($template->label),
                 'quantity' => 1,
                 'unit_price' => $product->monthly_price,
                 'total' => $product->monthly_price,
@@ -210,7 +210,7 @@ class FlaxResellerService
             $this->events->notify(
                 $userId,
                 'VPS ordre oprettet',
-                $description . ' er oprettet. VPS’en provisioneres automatisk hos Flax, når første faktura er betalt.',
+                $description . ' er oprettet. VPS’en oprettes automatisk af Nodexa, når første faktura er betalt.',
                 'billing',
                 '/client/vps'
             );
@@ -333,7 +333,7 @@ class FlaxResellerService
                 $this->events->notify(
                     $service->user_id,
                     'Din VPS er klar',
-                    $service->hostname . ' er nu provisioneret hos Flax og kan administreres fra Nodexa.',
+                    $service->hostname . ' er nu oprettet og kan administreres fra Nodexa.',
                     'service',
                     '/client/vps'
                 );
@@ -383,7 +383,7 @@ class FlaxResellerService
             $this->events->notify(
                 $service->user_id,
                 'VPS abonnement fornyet',
-                $service->hostname . ' er forlænget hos Flax for den nye faktureringsperiode.',
+                $service->hostname . ' er forlænget for den nye faktureringsperiode.',
                 'billing',
                 '/client/vps'
             );
@@ -425,7 +425,7 @@ class FlaxResellerService
         $this->events->notify(
             $service->user_id,
             'VPS suspenderet',
-            $service->hostname . ' er suspenderet hos Flax på grund af en forfalden faktura.',
+            $service->hostname . ' er midlertidigt suspenderet på grund af en forfalden faktura.',
             'warning',
             '/client/billing'
         );
@@ -464,7 +464,7 @@ class FlaxResellerService
         $this->events->notify(
             $service->user_id,
             'VPS genaktiveret',
-            $service->hostname . ' er genaktiveret hos Flax, fordi de udestående fakturaer er betalt.',
+            $service->hostname . ' er genaktiveret, fordi de udestående fakturaer er betalt.',
             'service',
             '/client/vps'
         );
@@ -756,7 +756,7 @@ class FlaxResellerService
         $this->events->notify(
             $service->user_id,
             'VPS afsluttet',
-            $service->hostname . ' er afsluttet og fjernet hos Flax.',
+            $service->hostname . ' er afsluttet efter opsigelsen.',
             'service',
             '/client/vps'
         );
