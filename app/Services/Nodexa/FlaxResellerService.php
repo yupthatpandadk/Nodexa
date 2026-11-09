@@ -644,7 +644,11 @@ class FlaxResellerService
         try {
             $oldPassword = $this->getStoredOsPassword($serviceId, $userId);
         } catch (\Throwable $exception) {
-            // Reading the old password is optional and must not block reset.
+            // Require a functioning password-read endpoint before altering
+            // the live login. Otherwise a completed reset could permanently
+            // lock out a customer because the new secret cannot be fetched.
+            // An explicit data.available=false is fine; it means no baseline.
+            throw new VpsPasswordResetException('lookup_unavailable');
         }
 
         try {
