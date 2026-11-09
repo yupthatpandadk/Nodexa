@@ -1,7 +1,7 @@
 @extends('store.layout')
 @section('title','Services Hub · Client Area')
 
-@push('styles')
+@push('styles')<style>#notifications{scroll-margin-top:112px}</style>
 <style>
 .hub{padding:38px 0 82px}.hubHead{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:24px}.hubHead h1{font-size:36px;margin:5px 0}.hubHead p{margin:0;color:#8198b3}.hubGrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}.hubCard{grid-column:span 6;border:1px solid #17314b;border-radius:17px;background:#081522;padding:20px}.hubCard.full{grid-column:1/-1}.hubCard.third{grid-column:span 4}.hubTitle{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}.hubTitle h2{font-size:18px;margin:0}.hubTitle span{font-size:10px;color:#6f89a5;font-weight:850}.progress{height:10px;background:#102238;border-radius:999px;overflow:hidden}.progress>span{display:block;height:100%;background:linear-gradient(90deg,#3d8dff,#7657ff);border-radius:inherit}.checkGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}.check{padding:10px 11px;border:1px solid #18324c;border-radius:10px;color:#88a0ba;font-size:12px}.check.done{color:#bdebd8;background:#0a201a;border-color:#245441}.rows{display:grid;gap:8px}.rowCard{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 13px;border:1px solid #15304a;border-radius:11px;background:#07131f}.rowCard strong{display:block;font-size:13px}.rowCard small{display:block;color:#6d86a2;margin-top:3px}.badge{display:inline-flex;padding:5px 8px;border-radius:999px;background:#102840;color:#8ecbff;font-size:9px;font-weight:900;text-transform:uppercase}.badge.good{background:#0d3025;color:#88e7bf}.badge.warn{background:#30250d;color:#ffd077}.badge.bad{background:#34161d;color:#ff9eae}.formGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.field label{display:block;color:#88a0bb;font-size:10px;font-weight:800;margin:0 0 5px}.field input,.field select{width:100%;background:#07131f;border:1px solid #1b3855;border-radius:9px;color:#eaf3ff;padding:10px 11px;outline:none}.field input:focus,.field select:focus{border-color:#3e79b0}.hubCard form{margin:0}.tiny{font-size:10px;color:#6f87a2}.tokenBox{padding:13px;border:1px solid #335f83;background:#081d2d;border-radius:10px;overflow-wrap:anywhere;color:#bce1ff;font:12px/1.6 Menlo,monospace;margin-bottom:12px}.sectionSep{height:1px;background:#15304a;margin:18px 0}.inlineActions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.linkish{color:#81c8ff}.linkish:hover{color:#fff}.empty{padding:18px;border:1px dashed #294966;border-radius:11px;color:#758da8;text-align:center;font-size:12px}.noticeHub{padding:12px 13px;border-radius:10px;border:1px solid #27527a;background:#0a1d2f;color:#a7c9e6;font-size:12px;margin-bottom:16px}@media(max-width:900px){.hubCard,.hubCard.third{grid-column:1/-1}}@media(max-width:620px){.hubHead{align-items:flex-start;flex-direction:column}.formGrid,.checkGrid{grid-template-columns:1fr}.rowCard{align-items:flex-start;flex-direction:column}}
 </style>
@@ -30,7 +30,7 @@
             </div>
         </section>
 
-        <section class="hubCard">
+        <section class="hubCard" id="notifications">
             <div class="hubTitle"><h2>Notifikationer</h2><form method="POST" action="{{ route('store.client.hub.notifications.read-all') }}">@csrf<button class="btn" type="submit">Markér alle læst</button></form></div>
             <div class="rows">
                 @forelse($notifications as $notification)
