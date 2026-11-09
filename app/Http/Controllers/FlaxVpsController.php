@@ -307,9 +307,9 @@ class FlaxVpsController extends Controller
             return back()->withErrors(['vps' => 'Password-reset er allerede i gang for denne VPS.']);
         }
 
+        $previousHash = null;
         try {
             RateLimiter::hit($rateKey, 900);
-            $previousHash = null;
             if (!empty($owned->credential_password_encrypted)) {
                 try {
                     $previousPassword = Crypt::decryptString($owned->credential_password_encrypted);
@@ -368,10 +368,40 @@ class FlaxVpsController extends Controller
 
             return redirect()->route('store.client.vps.show', $service)
                 ->with('success', 'Nulstilling er startet. Den nye adgangskode er endnu ikke tilgængelig. Tryk Vis password igen om lidt for at hente den automatisk.');
-        } catch (\Throwable $exception) {
-            // Exceptions must never contain or log a returned secret.
+        } catch (\Pterodactyl\Services\Nodexa\VpsPasswordResetException $exception) {
+            // Never log raw API payloads, URLs, credentials or exception chains.
+            \Illuminate\Support\Facades\Log::warning('Nodexa VPS password reset failed', [
+                'service_id' => $service,
+                'reason' => $exception->reason,
+            ]);
+
+            if ($exception->isAmbiguous()) {
+                // A timeout or invalid response may occur AFTER the upstream
+                // reset was accepted. Withhold old credentials and prevent
+                // another customer reset until the result is checked.
+                DB::table('nodexa_flax_services')
+                    ->where('id', $service)
+                    ->where('user_id', $request->user()->id)
+                    ->update([
+                        'credential_reset_pending_at' => now(),
+                        'credential_reset_previous_hash' => $previousHash,
+                        'updated_at' => now(),
+                    ]);
+            }
+
             return redirect()->route('store.client.vps.show', $service)
-                ->withErrors(['vps' => \Pterodactyl\Services\Nodexa\CustomerBranding::serviceError()]);
+                ->withErrors(['vps' => $exception->getMessage()]);
+        } catch (\Throwable $exception) {
+            // Even unexpected validation, database or cache errors must never
+            // reveal server internals or API secrets to a customer.
+            \Illuminate\Support\Facades\Log::warning('Nodexa VPS password reset internal failure', [
+                'service_id' => $service,
+                'reason' => 'internal_failure',
+                'type' => class_basename($exception),
+            ]);
+
+            return redirect()->route('store.client.vps.show', $service)
+                ->withErrors(['vps' => 'Nodexa kunne ikke færdiggøre password-handlingen. Kontakt Nodexa Support med VPS-ID ' . $service . '.']);
         } finally {
             $lock->release();
         }
