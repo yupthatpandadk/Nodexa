@@ -1024,11 +1024,11 @@ class FlaxResellerService
         $baseUrl = $this->normalizeApiUrl($settings->api_url);
         $method = strtoupper($method);
 
-        // New reseller API docs: POST directly to the API root, with key,
-        // action and server_id in the FORM BODY for get_password/resetPassword.
+        // Documented read/reset API actions use the reseller API root, with
+        // key, action and server_id in the FORM BODY.
         // Keep all existing VPS billing/power actions on the legacy endpoint,
         // since those integrations are already operational.
-        $useDocumentedPasswordApi = in_array($action, ['get_password', 'resetPassword'], true);
+        $useDocumentedPasswordApi = in_array($action, ['get_password', 'resetPassword', 'list_backups'], true);
         $useVerifiedLegacyReset = $action === 'resetPassword'
             && $this->verifiedPasswordTransport === 'legacy';
         $usedLegacyPasswordTransport = $useVerifiedLegacyReset;
@@ -1073,10 +1073,8 @@ class FlaxResellerService
                     ->post($requestUrl, $body);
             }
 
-            // Password lookup is read-only. The provider has historically
-            // served the same reseller API via /api-endpoint.php as well as
-            // the API root. Only retry a *read* on an unmistakable endpoint
-            // mismatch, never when credentials/ownership are rejected.
+            // Password and backup lookup actions are read-only. Retry only
+            // those on a clear endpoint mismatch, never on permission denial.
             //
             // Do NOT retry resetPassword here: it is a state-changing action
             // and a timeout or ambiguous response could cause a second reset.
@@ -1108,12 +1106,26 @@ class FlaxResellerService
                     || (!array_key_exists('available', $readData)
                         && !array_key_exists('password', $readData)));
 
-            if ($action === 'get_password' && (
+            // list_backups is also documented as a read-only action on the
+            // API root. Fall back only on missing/unrecognized route responses.
+            $backupPayload = $action === 'list_backups' ? $response->json() : null;
+            $backupError = is_array($backupPayload)
+                ? ($backupPayload['error'] ?? $backupPayload['message'] ?? '')
+                : '';
+            $backupUnknownAction = is_string($backupError)
+                && preg_match('/(?:unknown|unsupported|invalid).{0,35}action|action.{0,35}(?:unknown|unsupported|invalid)/i', $backupError) === 1;
+
+            $readFallback = ($action === 'get_password' && (
                 in_array($response->status(), [404, 405], true)
                 || ($response->successful() && !is_array($readPayload))
                 || $unsupportedReadAction
                 || $missingReadSchema
-            )) {
+            )) || ($action === 'list_backups' && (
+                in_array($response->status(), [404, 405], true)
+                || ($response->successful() && !is_array($backupPayload))
+                || $backupUnknownAction
+            ));
+            if ($readFallback) {
                 $fallback = $this->buildEndpointUrl($baseUrl) . '?' . http_build_query(
                     array_merge(['key' => $key, 'action' => $action], $params)
                 );
