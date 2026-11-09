@@ -384,6 +384,9 @@ class FlaxVpsController extends Controller
             \Illuminate\Support\Facades\Log::warning('Nodexa VPS password reset failed', [
                 'service_id' => $service,
                 'reason' => $exception->reason,
+                'http_status' => $exception->httpStatus,
+                'response_type' => $exception->responseType,
+                'api_transport' => $exception->transport,
             ]);
 
             if ($exception->isAmbiguous()) {
