@@ -83,14 +83,14 @@ class NodexaCartService
                     'key' => (string) $key,
                     'type' => 'flax_vps',
                     'product_id' => $product->id,
-                    'name' => $product->name,
-                    'description' => 'Flax VirtFusion VPS',
+                    'name' => CustomerBranding::label($product->name, 'Nodexa VPS'),
+                    'description' => 'Nodexa VPS Hosting',
                     'price' => (float) $product->monthly_price,
                     'currency' => $product->currency ?: 'DKK',
                     'configuration' => [
                         'hostname' => trim((string) ($configuration['hostname'] ?? '')),
                         'os_template_id' => $templateId,
-                        'os_label' => $template->label,
+                        'os_label' => CustomerBranding::label($template->label),
                     ],
                     'meta' => [
                         'vcpu' => $product->vcpu,
