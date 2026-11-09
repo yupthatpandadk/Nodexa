@@ -568,6 +568,71 @@ class FlaxResellerService
      * The upstream API limits this action to VPS resources, authorized owners
      * and developer access. The Nodexa owner check is enforced independently.
      */
+    /**
+     * Read-only VPS backup listing for the owner. The provider's reseller API
+     * documents list_backups(server_id); no create/restore/delete backup
+     * actions are documented, so none are exposed to customers.
+     *
+     * Return only a safe display whitelist, never upstream backup URLs,
+     * credentials, tokens or internal provider records.
+     *
+     * @return array<int,array{label:string,created:string,status:string,size:string}>
+     */
+    public function listVpsBackups(int $serviceId, int $userId): array
+    {
+        $service = DB::table('nodexa_flax_services')
+            ->where('id', $serviceId)
+            ->where('user_id', $userId)
+            ->first(['id', 'upstream_server_id', 'status']);
+
+        if (!$service) {
+            throw new RuntimeException('VPS blev ikke fundet på din konto.');
+        }
+
+        if (!$service->upstream_server_id
+            || !in_array($service->status, ['active', 'suspended'], true)) {
+            throw new RuntimeException('Backupoversigten er ikke tilgængelig for denne VPS endnu.');
+        }
+
+        $result = $this->request('list_backups', 'POST', [
+            'server_id' => (string) $service->upstream_server_id,
+        ]);
+
+        // Both data.backups and flat backups are used by reseller APIs.
+        $raw = data_get($result, 'data.backups');
+        if (!is_array($raw)) {
+            $raw = $result['backups'] ?? $result['data'] ?? [];
+        }
+
+        if (!is_array($raw) || !array_is_list($raw)) {
+            // Malformed payload should never be mistaken for zero backups.
+            throw new RuntimeException('Backupoversigten er midlertidigt utilgængelig.');
+        }
+
+        $backups = [];
+        foreach (array_slice($raw, 0, 40) as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $label = $entry['name'] ?? $entry['label'] ?? $entry['description'] ?? null;
+            $created = $entry['created_at'] ?? $entry['createdAt'] ?? $entry['date'] ?? null;
+            $state = $entry['status'] ?? $entry['state'] ?? null;
+            $size = $entry['size_human'] ?? $entry['sizeFormatted'] ?? null;
+
+            $backups[] = [
+                'label' => is_string($label) && trim($label) !== ''
+                    ? mb_substr(trim($label), 0, 90) : 'Backup',
+                'created' => is_string($created) ? mb_substr($created, 0, 45)
+                    : (is_numeric($created) ? (string) $created : '—'),
+                'status' => is_string($state) ? mb_substr($state, 0, 35) : 'Ukendt',
+                'size' => is_string($size) ? mb_substr($size, 0, 35) : '—',
+            ];
+        }
+
+        return $backups;
+    }
+
     public function getStoredOsPassword(int $serviceId, int $userId): ?string
     {
         $service = DB::table('nodexa_flax_services')
