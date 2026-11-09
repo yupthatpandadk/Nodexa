@@ -589,7 +589,7 @@ class FlaxResellerService
             throw new RuntimeException('Password-svaret kunne ikke knyttes sikkert til denne VPS.');
         }
 
-        if (data_get($result, 'data.available') === false) {
+        if (in_array(data_get($result, 'data.available'), [false, 0, 'false', '0'], true)) {
             return null;
         }
 
@@ -655,22 +655,6 @@ class FlaxResellerService
             throw new RuntimeException('Password-reset kunne ikke bekræftes. Kontakt Nodexa Support før et nyt forsøg.');
         }
 
-        $expected = null;
-        foreach ([
-            data_get($result, 'data.expectedPassword'),
-            data_get($result, 'data.newPassword'),
-            data_get($result, 'data.new_password'),
-            data_get($result, 'data.password'),
-            data_get($result, 'expectedPassword'),
-            data_get($result, 'newPassword'),
-            data_get($result, 'new_password'),
-        ] as $candidate) {
-            if (is_string($candidate) && $candidate !== '' && strlen($candidate) <= 1024) {
-                $expected = $candidate;
-                break;
-            }
-        }
-
         $fetched = null;
         try {
             // Always fetch from the dedicated provider API after reset.
@@ -682,7 +666,9 @@ class FlaxResellerService
         $changed = $fetched !== null
             && ($oldPassword === null || !hash_equals($oldPassword, $fetched));
 
-        $password = $changed ? $fetched : $expected;
+        // Only a fresh result from get_password counts as the new credential.
+        // A reset acknowledgment may precede actual password persistence.
+        $password = $changed ? $fetched : null;
         $queued = data_get($result, 'data.queueId') !== null
             || data_get($result, 'queueId') !== null
             || in_array(strtolower((string) data_get($result, 'status')), ['queued', 'pending'], true);
