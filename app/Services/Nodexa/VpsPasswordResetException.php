@@ -15,6 +15,7 @@ final class VpsPasswordResetException extends RuntimeException
     {
         parent::__construct(match ($reason) {
             'access_denied' => 'Nodexa har ikke API-rettigheder til at nulstille passwordet på denne VPS. Kontakt Nodexa Support.',
+            'lookup_unavailable' => 'Nodexa kan ikke verificere password-hentning fra VPS-systemet. Nulstillingen blev ikke startet, så du undgår at miste adgang. Kontakt Nodexa Support.',
             'rate_limited' => 'Password-reset er midlertidigt begrænset. Prøv ikke igen med det samme.',
             'endpoint_unavailable' => 'VPS-tjenestens reset-funktion blev ikke fundet. Kontakt Nodexa Support.',
             'network_unavailable' => 'Nodexa modtog ikke et sikkert svar på nulstillingen. Status er ukendt. Forsøg ikke igen, før support har kontrolleret den.',
