@@ -979,10 +979,28 @@ class FlaxResellerService
                     $readError
                 ) === 1;
 
+            $readRejected = is_array($readPayload)
+                && (($readPayload['success'] ?? null) === false
+                    || ($readPayload['status'] ?? null) === 'error');
+
+            // An API landing page may return HTTP 200 + valid JSON without
+            // the documented get_password data object. That is NOT a valid
+            // "no stored password" result; try the legacy read-only endpoint.
+            $readData = is_array($readPayload)
+                ? ($readPayload['data'] ?? $readPayload)
+                : null;
+            $missingReadSchema = $response->successful()
+                && !$readRejected
+                && is_array($readPayload)
+                && (!is_array($readData)
+                    || (!array_key_exists('available', $readData)
+                        && !array_key_exists('password', $readData)));
+
             if ($action === 'get_password' && (
                 in_array($response->status(), [404, 405], true)
                 || ($response->successful() && !is_array($readPayload))
                 || $unsupportedReadAction
+                || $missingReadSchema
             )) {
                 $fallback = $this->buildEndpointUrl($baseUrl) . '?' . http_build_query(
                     array_merge(['key' => $key, 'action' => $action], $params)
