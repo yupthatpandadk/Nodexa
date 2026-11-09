@@ -74,3 +74,42 @@ not proof of the currently accepted OS login.
 
 Note: `get_password` is only documented for VPS credentials; it does not
 retrieve Wisp/SFTP credentials.
+
+
+## Troubleshooting: "Password kunne ikke hentes" or "VPS-handlingen kunne ikke gennemføres"
+
+When `get_password` returns a documented `data.available=false`, no saved
+credential exists upstream. This is different from a malformed response, HTTP
+permission denial, missing endpoint or network timeout. The customer view now
+reports a safe, actionable category instead of exposing raw upstream messages.
+
+Read-only diagnostic for **Nodexa internal VPS ID 4** (never prints a
+password or API key):
+
+```bash
+cd /var/www/pterodactyl
+sudo php artisan nodexa:vps-password:diagnose 4
+```
+
+The application log records safe entries for reset failures, e.g.
+`Nodexa VPS password reset failed` with `service_id` and `reason`, but
+never the upstream response, password or API key.
+
+Newer and older API deployments may differ: Nodexa first uses the documented
+API-root POST form action, then retries **only the read-only** `get_password`
+lookup against `/api-endpoint.php` when the root returns a missing endpoint
+or unrelated JSON. Never automatically replay the state-changing
+`resetPassword` action after a timeout or invalid response.
+
+The reset button is only enabled after the credential pending-state database
+migration is present. If a reset response is ambiguous, Nodexa records a pending
+state and blocks further self-service reset attempts until the result can be
+verified; an outdated password must not be shown as the new one.
+
+**If the VPS password still cannot be fetched**, inspect whether the reseller
+API key has developer/owner permission for `get_password` and `resetPassword`
+and whether the provider has stored a password for this specific VPS. Nodexa
+cannot recover a credential that the provider has not stored.
+
+Do not include API tokens, password values, or full raw provider responses in
+customer support messages or screenshots.
