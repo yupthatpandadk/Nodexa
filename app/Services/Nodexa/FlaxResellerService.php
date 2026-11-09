@@ -579,14 +579,18 @@ class FlaxResellerService
         // API docs: POST action=get_password, server_id=<upstream VPS ID>.
         // data.available=false means the provider has no saved credential.
         // Never log the response: data.password is a sensitive secret.
-        $result = $this->request('get_password', 'POST', [
-            'server_id' => (string) $service->upstream_server_id,
-        ]);
+        try {
+            $result = $this->request('get_password', 'POST', [
+                'server_id' => (string) $service->upstream_server_id,
+            ]);
+        } catch (\Throwable $exception) {
+            throw VpsCredentialLookupException::fromProvider($exception);
+        }
 
         $returnedServerId = data_get($result, 'data.server_id');
         if ($returnedServerId !== null
             && (string) $returnedServerId !== (string) $service->upstream_server_id) {
-            throw new RuntimeException('Password-svaret kunne ikke knyttes sikkert til denne VPS.');
+            throw new VpsCredentialLookupException('server_mismatch');
         }
 
         if (in_array(data_get($result, 'data.available'), [false, 0, 'false', '0'], true)) {
@@ -600,7 +604,7 @@ class FlaxResellerService
         }
 
         if (strlen($password) > 1024) {
-            throw new RuntimeException('Password-svaret havde et ugyldigt format.');
+            throw new VpsCredentialLookupException('invalid_response');
         }
 
         return $password;
