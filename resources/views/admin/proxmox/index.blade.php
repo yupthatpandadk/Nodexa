@@ -9,6 +9,10 @@
 @endsection
 
 @section('content')
+<div class="alert" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:#12283e;border:1px solid #2e5678;color:#d6eaff;border-radius:9px;padding:13px 17px">
+    <div><strong><i class="fa fa-clone"></i> VM Templates</strong><div style="font-size:12px;color:#a5bfd7;margin-top:4px">Vælg Ubuntu, Debian, Linux eller Windows Server, og opret en ny VM direkte via Nodexa.</div></div>
+    <a href="{{ route('admin.proxmox.templates') }}" class="btn btn-primary btn-sm"><i class="fa fa-th-large"></i> Åbn VM Templates →</a>
+</div>
 @if(session('success'))
     <div class="alert alert-success"><i class="fa fa-check-circle"></i> {{ session('success') }}</div>
 @endif
