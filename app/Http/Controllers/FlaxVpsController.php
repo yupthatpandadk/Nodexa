@@ -336,7 +336,7 @@ class FlaxVpsController extends Controller
                     ]);
 
                 $message = !empty($result['queued'])
-                    ? 'Nulstillingen er sat i kø. Det forventede password er gemt krypteret og kan vises i Nodexa, men kan først bruges, når serveren er færdig med nulstillingen.'
+                    ? 'Nulstillingen er sat i kø, men den nye adgangskode er allerede gemt i VPS-systemet. Den kan vises i Nodexa og bliver anvendelig, når serveren har gennemført nulstillingen.'
                     : 'VPS-passwordet er nulstillet og gemt krypteret i Nodexa. Tryk Vis for at hente den senest gemte adgangskode.';
 
                 return redirect()->route('store.client.vps.show', $service)
