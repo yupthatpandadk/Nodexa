@@ -79,6 +79,7 @@ Route::middleware('auth.session')->group(function () {
     Route::get('/client/eup-keys', [CfxEupController::class, 'index'])->name('store.client.eup-keys');
     Route::get('/client/vps', [FlaxVpsController::class, 'client'])->name('store.client.vps');
     Route::get('/client/vps/{service}', [FlaxVpsController::class, 'clientService'])->whereNumber('service')->name('store.client.vps.show');
+    Route::get('/client/vps/{service}/backups', [FlaxVpsController::class, 'clientBackups'])->whereNumber('service')->middleware('throttle:15,1')->name('store.client.vps.backups');
     Route::post('/client/vps/{service}/password', [FlaxVpsController::class, 'savePassword'])->whereNumber('service')->middleware('throttle:10,1')->name('store.client.vps.password.save');
     Route::post('/client/vps/{service}/password/reset', [FlaxVpsController::class, 'resetPassword'])->whereNumber('service')->middleware('throttle:2,15')->name('store.client.vps.password.reset');
     Route::post('/client/vps/{service}/password/reveal', [FlaxVpsController::class, 'revealPassword'])->whereNumber('service')->middleware('throttle:5,1')->name('store.client.vps.password.reveal');
