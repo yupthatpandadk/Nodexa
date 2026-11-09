@@ -5,7 +5,7 @@
 <div class="container">
     <div class="eyebrow">VPS CHECKOUT</div>
     <h1>Gennemgå din VPS-ordre.</h1>
-    <p class="lead">VPS’en provisioneres hos Flax, når betalingen er registreret i Nodexa.</p>
+    <p class="lead">Nodexa opretter din VPS automatisk, når betalingen er registreret.</p>
     <div class="steps"><div class="step"><i>1</i><span>Konfiguration</span></div><i class="stepSep"></i><div class="step active"><i>2</i><span>Checkout</span></div><i class="stepSep"></i><div class="step"><i>3</i><span>Provisionering</span></div></div>
 </div>
 </section>
@@ -15,12 +15,12 @@
 <div class="checkout-grid">
     <div class="card">
         <div class="sectionNo">VPS SERVICE #{{ $service->id }}</div>
-        <h2>{{ $service->product_name }}</h2>
+        <h2>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($service->product_name) }}</h2>
         <p class="muted">{{ $service->hostname }}</p>
         <div style="margin-top:20px">
             @foreach([
                 'VPS-navn'=>$service->hostname,
-                'Operativsystem'=>$service->os_label,
+                'Operativsystem'=>\Pterodactyl\Services\Nodexa\CustomerBranding::label($service->os_label),
                 'vCPU'=>$service->vcpu ?: '—',
                 'RAM'=>$service->memory_mb ? number_format($service->memory_mb/1024,1,',','.') . ' GB' : '—',
                 'Disk'=>$service->disk_gb ? $service->disk_gb . ' GB' : '—',
@@ -37,7 +37,7 @@
         <div class="price">{{ number_format((float)$service->monthly_price,2,',','.') }} kr <small>/ måned</small></div>
         <div class="orderLine"><span class="muted">Faktura</span><strong>{{ $service->invoice_number ?: '—' }}</strong></div>
         <div class="orderLine"><span class="muted">Status</span><span class="statusBadge">{{ str_replace('_',' ',$service->invoice_status ?: $service->status) }}</span></div>
-        <div class="notice" style="margin-top:14px">Når fakturaen markeres betalt, kalder Nodexa Flax API’et og opretter VPS’en automatisk.</div>
+        <div class="notice" style="margin-top:14px">Nodexa opretter automatisk din VPS, når fakturaen er registreret som betalt.</div>
         <a class="btn primary" style="width:100%;margin-top:12px" href="{{ route('store.client.billing') }}">Åbn Billing →</a>
         <a class="btn" style="width:100%;margin-top:9px" href="{{ route('store.client.vps') }}">Mine VPS’er</a>
     </aside>
