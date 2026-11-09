@@ -188,7 +188,9 @@ class FlaxVpsController extends Controller
             'primaryIp' => $this->flax->primaryIp($serviceRow->server_info),
             'running' => $this->flax->remoteRunning($serviceRow->server_info),
             'osInfo' => $this->osInfo($serviceRow->server_info, $serviceRow->os_label),
-            'canResetPassword' => $this->flax->supportsPasswordReset(),
+            'canResetPassword' => $this->flax->supportsPasswordReset()
+                && Schema::hasColumn('nodexa_flax_services', 'credential_reset_pending_at')
+                && Schema::hasColumn('nodexa_flax_services', 'credential_reset_previous_hash'),
             'hasPassword' => Schema::hasColumn('nodexa_flax_services', 'credential_password_encrypted')
                 && !empty($serviceRow->credential_password_encrypted),
             'passwordResetPending' => !empty($serviceRow->credential_reset_pending_at),
@@ -270,6 +272,15 @@ class FlaxVpsController extends Controller
     public function resetPassword(Request $request, int $service): RedirectResponse
     {
         $owned = $this->ownedPasswordService($request, $service);
+        if (!$this->credentialResetStorageReady()) {
+            \Illuminate\Support\Facades\Log::warning('Nodexa VPS password reset prerequisites missing', [
+                'service_id' => $service,
+                'reason' => 'database_migration_pending',
+            ]);
+            return back()->withErrors([
+                'vps' => 'Passwordfunktionen mangler en systemopdatering. Kontakt Nodexa Support.',
+            ]);
+        }
         if ($owned->status !== 'active') {
             return back()->withErrors(['vps' => 'Kun aktive VPS-servere kan nulstilles.']);
         }
@@ -433,6 +444,11 @@ class FlaxVpsController extends Controller
     public function revealPassword(Request $request, int $service): JsonResponse
     {
         $owned = $this->ownedPasswordService($request, $service);
+        if (!$this->credentialResetStorageReady()) {
+            return response()->json([
+                'message' => 'Passwordfunktionen mangler en systemopdatering. Kontakt Nodexa Support.',
+            ], 503)->header('Cache-Control', 'private, no-store, max-age=0');
+        }
         $userId = (int) $request->user()->id;
 
         // Fetch the latest stored password on demand. Never preload a secret
@@ -570,6 +586,12 @@ class FlaxVpsController extends Controller
 
         return redirect()->route('store.client.vps.show', $service)
             ->with('success', 'Den gemte adgangskode blev fjernet fra Nodexa. VPS’ens faktiske login er uændret.');
+    }
+
+    private function credentialResetStorageReady(): bool
+    {
+        return Schema::hasColumn('nodexa_flax_services', 'credential_reset_pending_at')
+            && Schema::hasColumn('nodexa_flax_services', 'credential_reset_previous_hash');
     }
 
     private function ownedPasswordService(Request $request, int $service): object
