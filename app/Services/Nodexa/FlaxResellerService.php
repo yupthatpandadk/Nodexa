@@ -655,8 +655,9 @@ class FlaxResellerService
                 'user' => $osUser,
             ]);
         } catch (\Throwable $exception) {
-            // Avoid exposing raw provider payloads, which may contain secrets.
-            throw new RuntimeException('Password-reset kunne ikke bekræftes. Kontakt Nodexa Support før et nyt forsøg.');
+            // Never pass the raw provider response or credentials through to
+            // the user, audit trail or application log.
+            throw VpsPasswordResetException::fromProvider($exception);
         }
 
         $fetched = null;
