@@ -113,3 +113,48 @@ cannot recover a credential that the provider has not stored.
 
 Do not include API tokens, password values, or full raw provider responses in
 customer support messages or screenshots.
+
+## Invalid reset response and pending recovery (November 2026)
+
+A provider may expose `get_password` on one API route and return an HTML or
+otherwise invalid response for `resetPassword` sent to a different route.
+
+Nodexa now **first validates the read-only get_password response** and
+remembers which of the API root or the legacy `api-endpoint.php` answered
+correctly in the current PHP request. Its subsequent *single*
+`resetPassword` request uses that same verified transport. It never
+automatically retries a state-changing reset on another endpoint.
+
+If a reset response is ambiguous, Nodexa performs another read-only
+`get_password` lookup. If the newest stored password is demonstrably
+different, it is stored encrypted. Otherwise the service remains pending.
+Pending means **unknown provider outcome**, not proof of successful reset.
+
+For operators, the Laravel log entry `Nodexa VPS password reset failed`
+includes only `service_id`, `reason`, `http_status`, `response_type`
+(`json`, `html` or `other`) and `api_transport` (`root` or
+`legacy`). It intentionally contains no response body or credentials.
+
+Run this **read-only** diagnosis before considering any new reset:
+
+```sh
+cd /var/www/pterodactyl
+sudo php artisan nodexa:vps-password:diagnose 4
+sudo grep -hF 'Nodexa VPS password reset failed' storage/logs/laravel*.log | tail -n 5
+```
+
+A reset that was attempted before these changes might remain stuck in
+`credential_reset_pending_at`. There is **no automatic timeout that permits
+another reset**: the outcome has to be checked directly with the provider.
+
+**Only after an operator independently confirms the current VPS login and
+whether the earlier reset completed**, they may clear the uncertainty using:
+
+```sh
+cd /var/www/pterodactyl
+sudo php artisan nodexa:vps-password:resolve 4 --confirm-provider-checked
+```
+
+This operator-only recovery action does NOT reset the server's password.
+It clears the pending marker and erases any possibly outdated locally cached
+password. It must not be run just to get the reset button enabled again.
