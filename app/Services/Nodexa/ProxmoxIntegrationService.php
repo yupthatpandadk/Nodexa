@@ -95,6 +95,10 @@ class ProxmoxIntegrationService
             'enabled' => (bool) ($input['enabled'] ?? true),
             'status' => 'untested',
             'last_error' => null,
+            'last_checked_at' => null,
+            'snapshot_at' => null,
+            'nodes_snapshot' => null,
+            'guests_snapshot' => null,
             'updated_at' => now(),
         ];
 
