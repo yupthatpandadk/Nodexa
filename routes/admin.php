@@ -93,6 +93,8 @@ Route::get('/tickets/{ticket}/attachments/{attachment}', [Admin\SupportTicketCon
 // Nodexa Storefront & Billing
 Route::get('/store', [Admin\StoreController::class, 'index'])->name('admin.store');
 Route::post('/store/products', [Admin\StoreController::class, 'store'])->name('admin.store.products.store');
+Route::post('/store/egg-packages/generate', [Admin\StoreController::class, 'generateEggPackages'])->middleware('throttle:10,1')->name('admin.store.egg-packages.generate');
+Route::patch('/store/products/{product}/details', [Admin\StoreController::class, 'updateDetails'])->name('admin.store.products.details');
 Route::patch('/store/products/{product}', [Admin\StoreController::class, 'update'])->name('admin.store.products.update');
 Route::delete('/store/products/{product}', [Admin\StoreController::class, 'destroy'])->name('admin.store.products.destroy');
 Route::post('/store/coupons', [Admin\StoreController::class, 'coupon'])->name('admin.store.coupons.store');
