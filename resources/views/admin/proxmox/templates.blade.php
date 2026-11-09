@@ -48,6 +48,7 @@
                         </div>
                         <form method="POST" action="{{ route('admin.proxmox.templates.deploy', $link->id) }}" class="pve-vm-launch" onsubmit="return confirm('Opret en ny, uafhængig Proxmox-VM fra denne skabelon og start den automatisk, når kloningen er færdig?');">
                             @csrf
+                            <input type="hidden" name="request_id" value="{{ \Illuminate\Support\Str::uuid() }}">
                             <label for="pve-name-{{ $link->id }}">Navn på din nye VM</label>
                             <input id="pve-name-{{ $link->id }}" type="text" name="name" class="form-control" required minlength="2" maxlength="63" pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="fx {{ $key }}-01" autocomplete="off">
                             <input type="hidden" name="auto_start" value="1">
