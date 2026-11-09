@@ -963,9 +963,21 @@ class FlaxResellerService
             //
             // Do NOT retry resetPassword here: it is a state-changing action
             // and a timeout or ambiguous response could cause a second reset.
+            $readPayload = $action === 'get_password' ? $response->json() : null;
+            $readError = is_array($readPayload)
+                ? ($readPayload['error'] ?? $readPayload['message'] ?? '')
+                : '';
+
+            $unsupportedReadAction = is_string($readError)
+                && preg_match(
+                    '/(?:unknown|invalid|unsupported|ukendt|ikke fundet).{0,35}action|action.{0,35}(?:unknown|invalid|unsupported|not found)/i',
+                    $readError
+                ) === 1;
+
             if ($action === 'get_password' && (
                 in_array($response->status(), [404, 405], true)
-                || ($response->successful() && !is_array($response->json()))
+                || ($response->successful() && !is_array($readPayload))
+                || $unsupportedReadAction
             )) {
                 $fallback = $this->buildEndpointUrl($baseUrl) . '?' . http_build_query(
                     array_merge(['key' => $key, 'action' => $action], $params)
