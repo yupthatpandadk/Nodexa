@@ -35,7 +35,7 @@
             <div class="rows">
                 @forelse($notifications as $notification)
                 <div class="rowCard">
-                    <div><strong>{{ $notification->title }}</strong><small>{{ $notification->message }} · {{ CarbonCarbon::parse($notification->created_at)->diffForHumans() }}</small></div>
+                    <div><strong>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($notification->title) }}</strong><small>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($notification->message) }} · {{ \Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}</small></div>
                     @if(!$notification->read_at)<form method="POST" action="{{ route('store.client.hub.notifications.read',$notification->id) }}">@csrf<button class="btn" type="submit">Læst</button></form>@else<span class="badge good">Læst</span>@endif
                 </div>
                 @empty<div class="empty">Ingen notifikationer endnu.</div>@endforelse
@@ -46,7 +46,7 @@
             <div class="hubTitle"><h2>Billing & fakturaer</h2><a class="linkish" href="{{ route('store.client.billing') }}">Åbn billing →</a></div>
             <div class="rows">
                 @forelse($invoices->take(8) as $invoice)
-                <div class="rowCard"><div><strong>{{ $invoice->number }}</strong><small>{{ number_format($invoice->total,2,',','.') }} {{ $invoice->currency }} · Forfalder {{ $invoice->due_at ? CarbonCarbon::parse($invoice->due_at)->format('d.m.Y') : '—' }}</small></div><span class="badge {{ $invoice->status==='paid'?'good':($invoice->status==='overdue'?'bad':'warn') }}">{{ $invoice->status }}</span></div>
+                <div class="rowCard"><div><strong>{{ $invoice->number }}</strong><small>{{ number_format($invoice->total,2,',','.') }} {{ $invoice->currency }} · Forfalder {{ $invoice->due_at ? \Carbon\Carbon::parse($invoice->due_at)->format('d.m.Y') : '—' }}</small></div><span class="badge {{ $invoice->status==='paid'?'good':($invoice->status==='overdue'?'bad':'warn') }}">{{ $invoice->status }}</span></div>
                 @empty<div class="empty">Ingen Nodexa-fakturaer endnu.</div>@endforelse
             </div>
         </section>
@@ -144,7 +144,7 @@
             <div class="hubTitle"><h2>API Tokens</h2><span>/api/nodexa</span></div>
             <form method="POST" action="{{ route('store.client.hub.tokens.create') }}">@csrf<div class="field"><label>Navn</label><input name="name" required placeholder="Mit API token"></div><div class="inlineActions" style="margin-top:10px"><label class="tiny"><input type="checkbox" name="scopes[]" value="profile.read" checked> profile.read</label><label class="tiny"><input type="checkbox" name="scopes[]" value="servers.read" checked> servers.read</label><label class="tiny"><input type="checkbox" name="scopes[]" value="billing.read"> billing.read</label></div><button class="btn primary" style="margin-top:10px">Opret token</button></form>
             <div class="sectionSep"></div>
-            <div class="rows">@forelse($tokens as $token)<div class="rowCard"><div><strong>{{ $token->name }}</strong><small>{{ $token->token_prefix }}•••• · Sidst brugt {{ $token->last_used_at ? CarbonCarbon::parse($token->last_used_at)->diffForHumans() : 'aldrig' }}</small></div><form method="POST" action="{{ route('store.client.hub.tokens.revoke',$token->id) }}">@csrf @method('DELETE')<button class="btn">Revoke</button></form></div>@empty<div class="empty">Ingen API tokens.</div>@endforelse</div>
+            <div class="rows">@forelse($tokens as $token)<div class="rowCard"><div><strong>{{ $token->name }}</strong><small>{{ $token->token_prefix }}•••• · Sidst brugt {{ $token->last_used_at ? \Carbon\Carbon::parse($token->last_used_at)->diffForHumans() : 'aldrig' }}</small></div><form method="POST" action="{{ route('store.client.hub.tokens.revoke',$token->id) }}">@csrf @method('DELETE')<button class="btn">Revoke</button></form></div>@empty<div class="empty">Ingen API tokens.</div>@endforelse</div>
             <p class="tiny" style="margin-top:10px">Endpoints: <code>/api/nodexa/me</code>, <code>/api/nodexa/servers</code>, <code>/api/nodexa/invoices</code>.</p>
         </section>
 
@@ -152,7 +152,7 @@
             <div class="hubTitle"><h2>Sikkerhed & aktivitet</h2><span>{{ $user->use_totp ? '2FA aktiv' : '2FA ikke aktiv' }}</span></div>
             <div class="rows">
                 @forelse($securityActivity as $entry)
-                <div class="rowCard"><div><strong>{{ $entry->action }}</strong><small>{{ $entry->area }} · {{ CarbonCarbon::parse($entry->created_at)->format('d.m.Y H:i') }} @if($entry->ip)· {{ $entry->ip }}@endif</small></div></div>
+                <div class="rowCard"><div><strong>{{ $entry->action }}</strong><small>{{ $entry->area }} · {{ \Carbon\Carbon::parse($entry->created_at)->format('d.m.Y H:i') }} @if($entry->ip)· {{ $entry->ip }}@endif</small></div></div>
                 @empty<div class="empty">Ingen Nodexa-aktivitet logget endnu.</div>@endforelse
             </div>
         </section>
