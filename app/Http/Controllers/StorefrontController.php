@@ -92,18 +92,6 @@ class StorefrontController extends Controller
             + $flaxServices->whereIn('status', ['awaiting_payment', 'provisioning', 'provisioning_failed'])->count();
 
         $totalOrderCount = $orders->count() + $eupServices->count() + $flaxServices->count();
-        $unreadNotifications = 0;
-        try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('nodexa_notifications')) {
-                $unreadNotifications = DB::table('nodexa_notifications')
-                    ->where('user_id', $user->id)
-                    ->whereNull('read_at')
-                    ->count();
-            }
-        } catch (\Throwable $exception) {
-            report($exception);
-        }
-
         return view('store.client.index', [
             'orders' => $orders,
             'activeServers' => $activeServers,
@@ -114,7 +102,6 @@ class StorefrontController extends Controller
             'activeServiceCount' => $activeServiceCount,
             'pendingServiceCount' => $pendingServiceCount,
             'totalOrderCount' => $totalOrderCount,
-            'unreadNotifications' => $unreadNotifications,
             'user' => $user,
         ]);
     }
