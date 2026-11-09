@@ -5,6 +5,14 @@ use Pterodactyl\Http\Controllers\Admin;
 use Pterodactyl\Http\Middleware\Admin\Servers\ServerInstalled;
 
 Route::get('/', [Admin\BaseController::class, 'index'])->name('admin.index');
+    
+// Nodexa Proxmox VE (owner-only, read-only inventory)
+Route::get('/proxmox', [Admin\ProxmoxController::class, 'index'])->name('admin.proxmox');
+Route::post('/proxmox', [Admin\ProxmoxController::class, 'store'])->middleware('throttle:5,1')->name('admin.proxmox.store');
+Route::patch('/proxmox/{connection}', [Admin\ProxmoxController::class, 'update'])->whereNumber('connection')->middleware('throttle:5,1')->name('admin.proxmox.update');
+Route::post('/proxmox/{connection}/sync', [Admin\ProxmoxController::class, 'sync'])->whereNumber('connection')->middleware('throttle:10,1')->name('admin.proxmox.sync');
+Route::delete('/proxmox/{connection}', [Admin\ProxmoxController::class, 'destroy'])->whereNumber('connection')->middleware('throttle:5,1')->name('admin.proxmox.delete');
+
 
 // Flax VPS Reseller
 Route::get('/flax-reseller', [Admin\FlaxResellerController::class, 'index'])->name('admin.flax-reseller');
