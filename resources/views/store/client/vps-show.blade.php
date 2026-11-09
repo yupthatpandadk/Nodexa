@@ -189,6 +189,10 @@
                         <div><dt>IPv4</dt><dd>{{ $service->ipv4_count ?? '—' }}</dd></div>
                         <div><dt>Trafik</dt><dd>{{ $service->bandwidth ?: '—' }}</dd></div>
                     </dl>
+                    @if($service->status === 'active')
+                        <a class="nvp-outline nvp-full-link" href="{{ route('store.client.tickets.create', ['vps' => $service->id, 'topic' => 'upgrade']) }}">Anmod om opgradering →</a>
+                        <p class="nvp-backup-note">Opgradering af CPU, RAM og disk aftales med Nodexa Support og foretages ikke automatisk.</p>
+                    @endif
                 </section>
 
                 <section class="nvp-panel" id="nvpCredentials" aria-labelledby="nvp-password-heading">
