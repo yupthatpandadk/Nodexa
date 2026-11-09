@@ -672,9 +672,39 @@ class FlaxResellerService
                 'user' => $osUser,
             ]);
         } catch (\Throwable $exception) {
-            // Never pass the raw provider response or credentials through to
-            // the user, audit trail or application log.
-            throw VpsPasswordResetException::fromProvider($exception);
+            // A successful reset can return an empty or malformed response.
+            // Check the read-only credential endpoint ONCE, but never issue
+            // a second reset. Only treat a distinctly new password as proof
+            // that the reset was accepted upstream.
+            $failure = VpsPasswordResetException::fromProvider(
+                $exception,
+                $this->verifiedPasswordTransport
+            );
+
+            if ($failure->isAmbiguous()) {
+                $previousHash = $oldPassword !== null
+                    ? hash_hmac('sha256', $oldPassword, (string) config('app.key'))
+                    : $knownPreviousHash;
+                try {
+                    $after = $this->getStoredOsPassword($serviceId, $userId);
+                    if (is_string($after) && $after !== ''
+                        && ($previousHash === null || !hash_equals(
+                            $previousHash,
+                            hash_hmac('sha256', $after, (string) config('app.key'))
+                        ))) {
+                        return [
+                            'password' => $after,
+                            'queued' => true,
+                            'previous_hash' => $previousHash,
+                        ];
+                    }
+                } catch (\Throwable $readException) {
+                    // The state is ambiguous. The customer remains blocked
+                    // from retrying until the provider can be checked.
+                }
+            }
+
+            throw $failure;
         }
 
         $fetched = null;
