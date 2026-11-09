@@ -111,7 +111,17 @@ class ProxmoxVmTemplatesController extends Controller
         $data = $request->validate([
             'name' => 'required|string|min:2|max:63|regex:/^[a-z0-9][a-z0-9-]*[a-z0-9]$/',
             'auto_start' => 'nullable|boolean',
+            'request_id' => 'required|uuid',
         ]);
+
+        // One-time form nonce prevents double-clicks, browser resubmission,
+        // and automatic retries from silently creating multiple VMs.
+        $idempotencyKey = 'nodexa:pve:deploy-form:'
+            . (int) $request->user()->id . ':' . $data['request_id'];
+        if (!Cache::add($idempotencyKey, true, 86400)) {
+            return redirect()->route('admin.proxmox.templates')
+                ->withErrors(['deployment' => 'Denne VM-oprettelse er allerede modtaget. Kontrollér VM-oprettelser nederst på siden.']);
+        }
 
         try {
             $deploymentId = $this->templates->deploy(
