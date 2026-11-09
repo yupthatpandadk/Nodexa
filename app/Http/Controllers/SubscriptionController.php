@@ -27,7 +27,7 @@ class SubscriptionController extends Controller
             );
         } catch (\Throwable $exception) {
             return redirect()->route('store.client.billing')
-                ->withErrors(['subscription' => $exception->getMessage()]);
+                ->withErrors(['subscription' => \Pterodactyl\Services\Nodexa\CustomerBranding::errorMessage($exception)]);
         }
 
         return redirect()->route('store.client.billing')
@@ -41,7 +41,7 @@ class SubscriptionController extends Controller
             $this->cancellations->undoCancellation($subscription, (int) $request->user()->id);
         } catch (\Throwable $exception) {
             return redirect()->route('store.client.billing')
-                ->withErrors(['subscription' => $exception->getMessage()]);
+                ->withErrors(['subscription' => \Pterodactyl\Services\Nodexa\CustomerBranding::errorMessage($exception)]);
         }
 
         return redirect()->route('store.client.billing')
