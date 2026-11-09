@@ -15,7 +15,7 @@ class StripePaymentController extends Controller
         } catch (\Throwable $exception) {
             report($exception);
 
-            return back()->withErrors(['stripe' => $exception->getMessage()]);
+            return back()->withErrors(['stripe' => \Pterodactyl\Services\Nodexa\CustomerBranding::errorMessage($exception)]);
         }
 
         return redirect()->away($session['url']);
@@ -27,7 +27,7 @@ class StripePaymentController extends Controller
             $stripe->cancelUnpaidCheckout($checkout, (int) $request->user()->id);
         } catch (\Throwable $exception) {
             report($exception);
-            return back()->withErrors(['stripe' => $exception->getMessage()]);
+            return back()->withErrors(['stripe' => \Pterodactyl\Services\Nodexa\CustomerBranding::errorMessage($exception)]);
         }
 
         return redirect()->route('store.cart.order', $checkout)
@@ -51,7 +51,7 @@ class StripePaymentController extends Controller
 
             return redirect()
                 ->route('store.cart.order', $checkout)
-                ->withErrors(['stripe' => $exception->getMessage()]);
+                ->withErrors(['stripe' => \Pterodactyl\Services\Nodexa\CustomerBranding::errorMessage($exception)]);
         }
 
         if (!$result['paid']) {
