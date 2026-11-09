@@ -83,7 +83,8 @@ class FlaxVpsController extends Controller
                 (int) $data['os_template_id']
             );
         } catch (\Throwable $exception) {
-            return back()->withInput()->withErrors(['vps' => $exception->getMessage()]);
+            report($exception);
+            return back()->withInput()->withErrors(['vps' => \Pterodactyl\Services\Nodexa\CustomerBranding::serviceError()]);
         }
 
         return redirect()->route('store.vps.checkout', $result['serviceId']);
@@ -255,7 +256,7 @@ class FlaxVpsController extends Controller
         return [
             'name' => $name,
             'icon' => $slug,
-            'source' => $liveName ? 'Flax serverinformation' : 'Registreret OS-skabelon',
+            'source' => $liveName ? 'Aktuel serverinformation' : 'Registreret OS-skabelon',
             'verified_live' => $liveName !== null,
         ];
     }
@@ -273,7 +274,7 @@ class FlaxVpsController extends Controller
         }
 
         if (!$this->flax->supportsPasswordReset()) {
-            return back()->withErrors(['vps' => 'Flax har endnu ikke aktiveret et verificeret password-reset API til Nodexa.']);
+            return back()->withErrors(['vps' => 'Automatisk nulstilling er ikke tilgængelig lige nu. Kontakt Nodexa Support.']);
         }
 
         $os = DB::table('nodexa_flax_os_templates')
@@ -313,15 +314,15 @@ class FlaxVpsController extends Controller
                 ]);
 
             $message = !empty($result['queued'])
-                ? 'Flax har sat password-reset i kø og returneret den forventede kode. Den er gemt krypteret i Nodexa, men virker først, når Flax har gennemført nulstillingen.'
-                : 'Flax returnerede et nyt VPS-password. Det er gemt krypteret i Nodexa og kan vises under Adgang til VPS.';
+                ? 'Password-reset er sat i kø. Den nye adgangskode er gemt krypteret i Nodexa, men kan først bruges, når nulstillingen er gennemført.'
+                : 'VPS-passwordet er nulstillet og gemt krypteret i Nodexa. Du kan vise det under Adgang til VPS.';
 
             return redirect()->route('store.client.vps.show', $service)
                 ->with('success', $message);
         } catch (\Throwable $exception) {
             // Exceptions must never contain or log a returned secret.
             return redirect()->route('store.client.vps.show', $service)
-                ->withErrors(['vps' => $exception->getMessage()]);
+                ->withErrors(['vps' => \Pterodactyl\Services\Nodexa\CustomerBranding::serviceError()]);
         } finally {
             $lock->release();
         }
@@ -345,7 +346,7 @@ class FlaxVpsController extends Controller
         ]);
 
         return redirect()->route('store.client.vps.show', $service)
-            ->with('success', 'Adgangskoden blev gemt krypteret i Nodexa. Den er IKKE ændret hos Flax eller på VPS’en.');
+            ->with('success', 'Adgangskoden blev gemt krypteret i Nodexa. Den ændrer ikke passwordet på selve VPS’en.');
     }
 
     public function revealPassword(Request $request, int $service): JsonResponse
@@ -419,12 +420,13 @@ class FlaxVpsController extends Controller
                 $this->flax->power($service, $request->user()->id, $data['action']);
             }
         } catch (\Throwable $exception) {
-            return back()->withErrors(['vps' => $exception->getMessage()]);
+            report($exception);
+            return back()->withErrors(['vps' => \Pterodactyl\Services\Nodexa\CustomerBranding::serviceError()]);
         }
 
         return redirect()->route('store.client.vps.show', $service)
             ->with('success', $data['action'] === 'refresh'
                 ? 'Status for denne VPS er opdateret.'
-                : 'VPS-handlingen er sendt til Flax.');
+                : 'VPS-handlingen er sendt til behandling.');
     }
 }
