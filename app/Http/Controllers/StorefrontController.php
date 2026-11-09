@@ -204,7 +204,23 @@ class StorefrontController extends Controller
 
     public function clientProfile(Request $request)
     {
-        return view('store.client.profile', ['user' => $request->user()]);
+        $recentActivity = collect();
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('nodexa_audit_logs')) {
+                $recentActivity = DB::table('nodexa_audit_logs')
+                    ->where('user_id', $request->user()->id)
+                    ->orderByDesc('id')
+                    ->limit(8)
+                    ->get(['area', 'action', 'created_at']);
+            }
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+
+        return view('store.client.profile', [
+            'user' => $request->user(),
+            'recentActivity' => $recentActivity,
+        ]);
     }
 
     public function show(StoreProduct $product)
