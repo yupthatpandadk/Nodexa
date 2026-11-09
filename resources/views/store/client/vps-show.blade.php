@@ -208,7 +208,11 @@
                                 <strong>↻ Nulstil VPS-password</strong>
                                 <small>Via Nodexa</small>
                             </div>
-                            @if($canResetPassword)
+                            @if($passwordResetPending)
+                                <p class="nvp-reset-copy">Den seneste nulstilling er endnu ikke bekræftet. Af sikkerhedshensyn kan du ikke starte en ny nulstilling, før status er undersøgt. Prøv Hent / Vis for at kontrollere, om en ny kode er tilgængelig.</p>
+                                <button type="button" class="nvp-action nvp-action-reset" disabled aria-disabled="true">Afventer bekræftelse</button>
+                                <a class="nvp-password-guide" href="{{ route('store.client.tickets.create') }}">Få hjælp hos Nodexa Support →</a>
+                            @elseif($canResetPassword)
                                 <p class="nvp-reset-copy">Nodexa nulstiller serverens password og henter den senest gemte kode automatisk. Hvis nulstillingen stadig behandles, kan du prøve Hent / Vis igen. Det kan afbryde eksisterende login-sessioner.</p>
                                 <form method="POST" action="{{ route('store.client.vps.password.reset', $service->id) }}" class="nvp-reset-form" onsubmit="return confirm('Vil du virkelig nulstille adgangskoden på denne VPS? Den nuværende kode vil holde op med at virke, når ændringen gennemføres.');">
                                     @csrf
