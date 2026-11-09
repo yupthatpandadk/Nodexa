@@ -39,6 +39,10 @@ class Kernel extends ConsoleKernel
         // invoices and overdue service handling.
         $schedule->command('nodexa:automation')->everyFiveMinutes()->withoutOverlapping();
 
+        // Proxmox VM clones are asynchronous. Poll completion and start only
+        // after the clone task reports success; never replay ambiguous POSTs.
+        $schedule->command('nodexa:proxmox:process')->everyMinute()->withoutOverlapping();
+
         $schedule->command('nodexa:support:automation')->everyFiveMinutes()->withoutOverlapping();
         $schedule->command('nodexa:support:mail')->everyMinute()->withoutOverlapping();
 
