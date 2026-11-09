@@ -12,6 +12,10 @@ use RuntimeException;
 
 class FlaxResellerService
 {
+    // Selected only by a *successful, read-only* get_password probe in the
+    // same PHP request. Never discover reset routes by sending reset twice.
+    private ?string $verifiedPasswordTransport = null;
+
     public function __construct(private NodexaEventService $events)
     {
     }
@@ -649,6 +653,7 @@ class FlaxResellerService
         // Obtain a baseline so a queued reset cannot accidentally expose the
         // prior password returned by an eventually consistent API.
         $oldPassword = null;
+        $this->verifiedPasswordTransport = null;
         try {
             $oldPassword = $this->getStoredOsPassword($serviceId, $userId);
         } catch (\Throwable $exception) {
@@ -929,7 +934,11 @@ class FlaxResellerService
         // Keep all existing VPS billing/power actions on the legacy endpoint,
         // since those integrations are already operational.
         $useDocumentedPasswordApi = in_array($action, ['get_password', 'resetPassword'], true);
-        if ($useDocumentedPasswordApi) {
+        $useVerifiedLegacyReset = $action === 'resetPassword'
+            && $this->verifiedPasswordTransport === 'legacy';
+        $usedLegacyPasswordTransport = $useVerifiedLegacyReset;
+
+        if ($useDocumentedPasswordApi && !$useVerifiedLegacyReset) {
             $requestUrl = rtrim($baseUrl, '/') . '/';
             $body = array_merge([
                 'key' => $key,
@@ -1014,13 +1023,25 @@ class FlaxResellerService
                     array_merge(['key' => $key, 'action' => $action], $params)
                 );
                 $response = $client->asForm()->post($fallback, $params);
+                $usedLegacyPasswordTransport = true;
             }
         } catch (\Throwable $exception) {
             $message = str_replace($key, '[redacted]', $exception->getMessage());
             throw new RuntimeException('Kunne ikke kontakte Flax API: ' . $message, 0, $exception);
         }
 
-        return $this->decodeResponse($response, $action);
+        $decoded = $this->decodeResponse($response, $action);
+
+        if ($action === 'get_password') {
+            $data = $decoded['data'] ?? $decoded;
+            if (is_array($data)
+                && (array_key_exists('available', $data) || array_key_exists('password', $data))) {
+                $this->verifiedPasswordTransport = $usedLegacyPasswordTransport
+                    ? 'legacy' : 'root';
+            }
+        }
+
+        return $decoded;
     }
 
     private function decodeResponse(Response $response, string $action): array
