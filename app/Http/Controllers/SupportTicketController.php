@@ -38,7 +38,31 @@ class SupportTicketController extends Controller
 
     public function create(Request $r)
     {
-        return view('store.client.tickets.create', ['servers' => $r->user()->servers()->orderBy('name')->get(), 'departments' => SupportDepartment::where('enabled', true)->where('hidden', false)->orderBy('name')->get()]);
+        $vpsTicketSubject = '';
+        $vpsTicketMessage = '';
+
+        // Allow customers to open support prefilled for one of their VPS
+        // products. Do not accept a user-supplied hostname or upstream ID.
+        $serviceId = filter_var($r->query('vps'), FILTER_VALIDATE_INT);
+        if ($serviceId && $serviceId > 0) {
+            $vps = DB::table('nodexa_flax_services')
+                ->where('id', $serviceId)
+                ->where('user_id', $r->user()->id)
+                ->first(['id', 'hostname']);
+
+            if ($vps) {
+                $vpsTicketSubject = 'Hjælp til VPS #' . $vps->id . ' – ' . $vps->hostname;
+                $vpsTicketMessage = "VPS: {$vps->hostname} (#{$vps->id})\n\nBeskriv problemet her:";
+            }
+        }
+
+        return view('store.client.tickets.create', [
+            'servers' => $r->user()->servers()->orderBy('name')->get(),
+            'departments' => SupportDepartment::where('enabled', true)
+                ->where('hidden', false)->orderBy('name')->get(),
+            'vpsTicketSubject' => $vpsTicketSubject,
+            'vpsTicketMessage' => $vpsTicketMessage,
+        ]);
     }
 
     public function store(Request $r)
