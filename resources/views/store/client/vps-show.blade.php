@@ -86,7 +86,7 @@
                         </div>
                         <div class="nvp-stat">
                             <span>OPERATIVSYSTEM</span>
-                            <strong>{{ $service->os_label ?: 'Ikke angivet' }}</strong>
+                            <strong>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($service->os_label, 'Ikke angivet') }}</strong>
                             <small>Installeret OS / skabelon</small>
                         </div>
                         <div class="nvp-stat">
