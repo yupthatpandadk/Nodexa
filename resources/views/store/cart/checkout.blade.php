@@ -70,7 +70,7 @@
                                     </div>
 
                                     <div class="serviceSpecs">
-                                        <span><small>Operativsystem</small><b>{{ $item['configuration']['os_label'] }}</b></span>
+                                        <span><small>Operativsystem</small><b>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($item['configuration']['os_label'] ?? null, 'OS') }}</b></span>
                                         <span><small>CPU</small><b>{{ $item['meta']['vcpu'] ?: '—' }} vCPU</b></span>
                                         <span><small>RAM</small><b>{{ $item['meta']['memory_mb'] ? rtrim(rtrim(number_format($item['meta']['memory_mb']/1024,1,',','.'),'0'),',') . ' GB' : '—' }}</b></span>
                                         <span><small>Disk</small><b>{{ $item['meta']['disk_gb'] ?: '—' }} GB</b></span>
