@@ -191,6 +191,7 @@ class FlaxVpsController extends Controller
             'canResetPassword' => $this->flax->supportsPasswordReset(),
             'hasPassword' => Schema::hasColumn('nodexa_flax_services', 'credential_password_encrypted')
                 && !empty($serviceRow->credential_password_encrypted),
+            'passwordResetPending' => !empty($serviceRow->credential_reset_pending_at),
         ]);
     }
 
@@ -303,22 +304,52 @@ class FlaxVpsController extends Controller
         try {
             RateLimiter::hit($rateKey, 900);
             $result = $this->flax->resetOsPassword($service, (int) $request->user()->id, $osUser);
-            $newPassword = $result['password'];
+            $newPassword = $result['password'] ?? null;
+
+            if (is_string($newPassword) && $newPassword !== '') {
+                DB::table('nodexa_flax_services')
+                    ->where('id', $service)
+                    ->where('user_id', $request->user()->id)
+                    ->update([
+                        'credential_password_encrypted' => Crypt::encryptString($newPassword),
+                        'credential_reset_pending_at' => null,
+                        'credential_reset_previous_hash' => null,
+                        'updated_at' => now(),
+                    ]);
+
+                $message = !empty($result['queued'])
+                    ? 'Nulstillingen er sat i kø. Det forventede password er gemt krypteret og kan vises i Nodexa, men kan først bruges, når serveren er færdig med nulstillingen.'
+                    : 'VPS-passwordet er nulstillet og gemt krypteret i Nodexa. Tryk Vis for at hente den senest gemte adgangskode.';
+
+                return redirect()->route('store.client.vps.show', $service)
+                    ->with('success', $message);
+            }
+
+            // A reset can succeed before the provider stores the generated
+            // credential. Keep the last password fingerprint and withhold it
+            // from the customer until get_password reports a different value.
+            $previousHash = $result['previous_hash'] ?? null;
+            if ($previousHash === null && !empty($owned->credential_password_encrypted)) {
+                try {
+                    $oldSecret = Crypt::decryptString($owned->credential_password_encrypted);
+                    $previousHash = hash_hmac('sha256', $oldSecret, (string) config('app.key'));
+                } catch (\Throwable $ignored) {
+                    // Do not expose decryption failures or untrusted secrets.
+                }
+            }
 
             DB::table('nodexa_flax_services')
                 ->where('id', $service)
                 ->where('user_id', $request->user()->id)
                 ->update([
-                    'credential_password_encrypted' => Crypt::encryptString($newPassword),
+                    'credential_password_encrypted' => null,
+                    'credential_reset_pending_at' => now(),
+                    'credential_reset_previous_hash' => $previousHash,
                     'updated_at' => now(),
                 ]);
 
-            $message = !empty($result['queued'])
-                ? 'Password-reset er sat i kø. Den nye adgangskode er gemt krypteret i Nodexa, men kan først bruges, når nulstillingen er gennemført.'
-                : 'VPS-passwordet er nulstillet og gemt krypteret i Nodexa. Du kan vise det under Adgang til VPS.';
-
             return redirect()->route('store.client.vps.show', $service)
-                ->with('success', $message);
+                ->with('success', 'Nulstilling er startet. Den nye adgangskode er endnu ikke tilgængelig. Tryk Vis password igen om lidt for at hente den automatisk.');
         } catch (\Throwable $exception) {
             // Exceptions must never contain or log a returned secret.
             return redirect()->route('store.client.vps.show', $service)
@@ -342,6 +373,8 @@ class FlaxVpsController extends Controller
 
         DB::table('nodexa_flax_services')->where('id', $owned->id)->update([
             'credential_password_encrypted' => Crypt::encryptString($data['password']),
+            'credential_reset_pending_at' => null,
+            'credential_reset_previous_hash' => null,
             'updated_at' => now(),
         ]);
 
@@ -352,22 +385,86 @@ class FlaxVpsController extends Controller
     public function revealPassword(Request $request, int $service): JsonResponse
     {
         $owned = $this->ownedPasswordService($request, $service);
+        $userId = (int) $request->user()->id;
 
-        if (empty($owned->credential_password_encrypted)) {
-            return response()->json(['message' => 'Der er endnu ikke gemt en adgangskode i Nodexa.'], 404)
-                ->header('Cache-Control', 'private, no-store, max-age=0');
-        }
-
+        // Fetch the latest stored password on demand. Never preload a secret
+        // into HTML or cache it in the browser.
+        $remote = null;
+        $remoteUnavailable = false;
         try {
-            $password = Crypt::decryptString($owned->credential_password_encrypted);
+            $remote = $this->flax->getStoredOsPassword($service, $userId);
         } catch (\Throwable $exception) {
-            return response()->json(['message' => 'Den gemte adgangskode kunne ikke dekrypteres.'], 500)
-                ->header('Cache-Control', 'private, no-store, max-age=0');
+            $remoteUnavailable = true;
         }
 
-        return response()->json(['password' => $password])
-            ->header('Cache-Control', 'private, no-store, max-age=0')
-            ->header('Pragma', 'no-cache')
+        if (is_string($remote) && $remote !== '') {
+            if (!empty($owned->credential_reset_pending_at)
+                && !empty($owned->credential_reset_previous_hash)) {
+                $currentHash = hash_hmac('sha256', $remote, (string) config('app.key'));
+                if (hash_equals($owned->credential_reset_previous_hash, $currentHash)) {
+                    return response()->json([
+                        'message' => 'Nulstillingen afventer stadig et nyt password. Prøv at hente det igen om lidt.',
+                        'pending' => true,
+                    ], 409)->header('Cache-Control', 'private, no-store, max-age=0')
+                        ->header('X-Content-Type-Options', 'nosniff');
+                }
+            }
+
+            DB::table('nodexa_flax_services')
+                ->where('id', $owned->id)
+                ->where('user_id', $userId)
+                ->update([
+                    'credential_password_encrypted' => Crypt::encryptString($remote),
+                    'credential_reset_pending_at' => null,
+                    'credential_reset_previous_hash' => null,
+                    'updated_at' => now(),
+                ]);
+
+            return response()->json([
+                'password' => $remote,
+                'source' => 'provider',
+                'message' => 'Senest gemte VPS-password blev hentet automatisk.',
+            ])->header('Cache-Control', 'private, no-store, max-age=0')
+                ->header('Pragma', 'no-cache')
+                ->header('X-Content-Type-Options', 'nosniff');
+        }
+
+        if (!empty($owned->credential_reset_pending_at)) {
+            return response()->json([
+                'message' => 'Det nye password er endnu ikke tilgængeligt. Prøv igen om lidt.',
+                'pending' => true,
+            ], 409)->header('Cache-Control', 'private, no-store, max-age=0')
+                ->header('X-Content-Type-Options', 'nosniff');
+        }
+
+        // If the provider has no known credential (or the API temporarily
+        // fails), an old manually saved copy can still be shown, but it must
+        // be clearly labeled as NOT verified against the live VPS login.
+        if (!empty($owned->credential_password_encrypted)) {
+            try {
+                $saved = Crypt::decryptString($owned->credential_password_encrypted);
+
+                return response()->json([
+                    'password' => $saved,
+                    'source' => 'local',
+                    'message' => $remoteUnavailable
+                        ? 'Viser en tidligere gemt kopi. Det aktuelle password kunne ikke kontrolleres.'
+                        : 'Intet password er gemt automatisk. Viser en tidligere gemt kopi.',
+                ])->header('Cache-Control', 'private, no-store, max-age=0')
+                    ->header('Pragma', 'no-cache')
+                    ->header('X-Content-Type-Options', 'nosniff');
+            } catch (\Throwable $exception) {
+                return response()->json([
+                    'message' => 'Den gemte adgangskode kunne ikke læses. Kontakt Nodexa Support.',
+                ], 500)->header('Cache-Control', 'private, no-store, max-age=0');
+            }
+        }
+
+        return response()->json([
+            'message' => $remoteUnavailable
+                ? 'Password kunne ikke hentes automatisk. Prøv igen, eller kontakt Nodexa Support.'
+                : 'Der er endnu ikke gemt et VPS-password. Kontakt Nodexa Support, hvis du mangler adgang.',
+        ], $remoteUnavailable ? 503 : 404)->header('Cache-Control', 'private, no-store, max-age=0')
             ->header('X-Content-Type-Options', 'nosniff');
     }
 
