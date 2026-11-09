@@ -42,6 +42,20 @@ class VpsPasswordResetExceptionTest extends TestCase
         $this->assertTrue($failure->isAmbiguous());
     }
 
+    public function test_diagnostics_keep_only_safe_response_metadata(): void
+    {
+        $failure = VpsPasswordResetException::fromProvider(
+            new RuntimeException('Flax API returnerede ugyldigt JSON (HTTP 200) · Content-Type: text/html · Svar: confidential token'),
+            'legacy'
+        );
+
+        $this->assertSame('invalid_response', $failure->reason);
+        $this->assertSame(200, $failure->httpStatus);
+        $this->assertSame('html', $failure->responseType);
+        $this->assertSame('legacy', $failure->transport);
+        $this->assertStringNotContainsString('confidential token', $failure->getMessage());
+    }
+
     public function test_password_read_preflight_prevents_resets_when_lookup_fails(): void
     {
         $failure = new VpsPasswordResetException('lookup_unavailable');
