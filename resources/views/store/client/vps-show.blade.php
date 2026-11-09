@@ -45,9 +45,18 @@
             <div class="nvp-notice nvp-notice-error">{{ \Pterodactyl\Services\Nodexa\CustomerBranding::serviceError() }}</div>
         @endif
 
+        <nav class="nvp-tabs" aria-label="VPS kontrolpanel navigation">
+            <a href="#vps-overview">Oversigt</a>
+            <a href="#vps-power">Strømstyring</a>
+            <a href="#vps-backups">Backups</a>
+            <a href="#nvpCredentials">Adgang</a>
+            <a href="#vps-billing">Fakturering</a>
+            <a href="#vps-help">Support</a>
+        </nav>
+
         <div class="nvp-layout">
             <main class="nvp-main">
-                <section class="nvp-panel" aria-labelledby="nvp-overview-title">
+                <section class="nvp-panel" id="vps-overview" aria-labelledby="nvp-overview-title">
                     <div class="nvp-panel-heading">
                         <div>
                             <span class="nvp-eyebrow">OVERSIGT</span>
@@ -97,7 +106,7 @@
                     </div>
                 </section>
 
-                <section class="nvp-panel" aria-labelledby="nvp-power-title">
+                <section class="nvp-panel" id="vps-power" aria-labelledby="nvp-power-title">
                     <div class="nvp-panel-heading">
                         <div>
                             <span class="nvp-eyebrow">SERVERSTYRING</span>
@@ -145,6 +154,25 @@
                             <strong>Strømstyring er ikke tilgængelig</strong>
                             <p>Den aktuelle servicestatus er {{ str_replace('_', ' ', $service->status) }}.</p>
                         </div>
+                    @endif
+                </section>
+                <section class="nvp-panel" id="vps-backups" aria-labelledby="nvp-backups-title">
+                    <div class="nvp-panel-heading">
+                        <div>
+                            <span class="nvp-eyebrow">DATASIKKERHED</span>
+                            <h2 id="nvp-backups-title">Backups</h2>
+                        </div>
+                        @if($service->upstream_server_id && in_array($service->status, ['active', 'suspended'], true))
+                            <button type="button" class="nvp-outline" id="nvpFetchBackups" data-url="{{ route('store.client.vps.backups', $service->id) }}">Hent backups</button>
+                        @endif
+                    </div>
+                    <p class="nvp-panel-desc">Se eksisterende backups på din VPS. Oversigten indlæses kun, når du vælger det.</p>
+                    @if($service->upstream_server_id && in_array($service->status, ['active', 'suspended'], true))
+                        <div id="nvpBackupState" class="nvp-backup-empty" role="status" aria-live="polite">Tryk <strong>Hent backups</strong> for at se dine gemte backups.</div>
+                        <ul id="nvpBackupList" class="nvp-backup-list" hidden aria-label="VPS backups"></ul>
+                        <p class="nvp-backup-note">Denne side viser backupoversigten. Oprettelse, gendannelse og sletning aktiveres først, når de handlinger er bekræftet i API'et.</p>
+                    @else
+                        <div class="nvp-backup-empty">Backups bliver tilgængelige, når VPS-serveren er oprettet og aktiv.</div>
                     @endif
                 </section>
             </main>
@@ -236,7 +264,15 @@
                     @endif
                 </section>
 
-                <section class="nvp-panel">
+                <section class="nvp-panel" id="vps-help">
+                    <span class="nvp-eyebrow">HJÆLP TIL DENNE VPS</span>
+                    <h2>Support</h2>
+                    <p class="nvp-panel-desc nvp-help-desc">Opret en supporthenvendelse om {{ $service->hostname }}. Nodexa udfylder VPS-navnet og det interne service-ID automatisk.</p>
+                    <a class="nvp-outline nvp-full-link" href="{{ route('store.client.tickets.create', ['vps' => $service->id]) }}">Opret supportticket →</a>
+                    <a class="nvp-outline nvp-full-link" href="{{ route('store.client.tickets') }}">Mine supporttickets →</a>
+                </section>
+
+                <section class="nvp-panel" id="vps-billing">
                     <span class="nvp-eyebrow">ABONNEMENT</span>
                     <h2>Fakturering</h2>
                     <dl class="nvp-detail-list">
@@ -362,9 +398,76 @@
 })();
 </script>
 
+<script>
+(function () {
+    const button = document.getElementById('nvpFetchBackups');
+    const status = document.getElementById('nvpBackupState');
+    const list = document.getElementById('nvpBackupList');
+    if (!button || !status || !list) return;
+
+    button.addEventListener('click', async function () {
+        button.disabled = true;
+        button.textContent = 'Henter...';
+        status.hidden = false;
+        status.textContent = 'Henter backupoversigten fra Nodexa...';
+        list.hidden = true;
+        list.replaceChildren();
+
+        try {
+            const response = await fetch(button.dataset.url, {
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok || !Array.isArray(result.backups)) {
+                throw new Error(result.message || 'Backupoversigten kunne ikke indlæses.');
+            }
+
+            if (result.backups.length === 0) {
+                status.textContent = 'Der er ingen registrerede backups for denne VPS.';
+                return;
+            }
+
+            result.backups.forEach(function (backup) {
+                const item = document.createElement('li');
+                item.className = 'nvp-backup-item';
+
+                const copy = document.createElement('div');
+                copy.className = 'nvp-backup-copy';
+                const name = document.createElement('strong');
+                name.textContent = backup.label || 'Backup';
+                const date = document.createElement('small');
+                date.textContent = backup.created || 'Dato ikke oplyst';
+                copy.append(name, date);
+
+                const meta = document.createElement('span');
+                meta.className = 'nvp-backup-status';
+                meta.textContent = [backup.status, backup.size].filter(
+                    value => value && value !== '—'
+                ).join(' · ') || 'Registreret';
+
+                item.append(copy, meta);
+                list.append(item);
+            });
+
+            status.hidden = true;
+            list.hidden = false;
+        } catch (_error) {
+            // Do not expose technical upstream errors or internal addresses.
+            status.textContent = 'Backups kunne ikke vises lige nu. Prøv igen senere.';
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Opdatér backups';
+        }
+    });
+})();
+</script>
+
 @push('styles')
 <style>
-.nvp-password-identity{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #20344b;padding:13px 0 14px;margin-top:9px;gap:12px;font-size:12px}.nvp-password-identity span{color:#8da4bd}.nvp-password-identity strong{color:#e6f2ff;font-weight:750}.nvp-password-label{font-size:11px;font-weight:750;color:#acc2d9;display:block;margin:15px 0 7px}.nvp-password-display{display:flex;align-items:center;gap:6px;min-width:0}.nvp-password-input{font:inherit;font-size:12px;background:#06101e;border:1px solid #29445e;border-radius:8px;color:#e6f2ff;min-height:41px;padding:9px 12px;outline:none;min-width:0;width:100%}.nvp-password-input:focus{border-color:#679dcd;box-shadow:0 0 0 2px rgba(87,157,222,.15)}.nvp-password-display .nvp-outline{flex:0 0 auto;min-height:41px;padding:8px;font-size:11px}.nvp-password-display .nvp-icon-button{display:inline-flex;align-items:center;justify-content:center;flex:0 0 41px;width:41px;min-width:41px;height:41px;padding:0}.nvp-password-display .nvp-icon-button svg{width:18px;height:18px;flex:0 0 auto}.nvp-password-display .nvp-icon-button svg[hidden]{display:none!important}.nvp-password-display .nvp-icon-button:focus-visible{outline:2px solid #85b7ed;outline-offset:2px}.nvp-password-feedback{color:#7d98b7;font-size:10px;margin:6px 0 4px}.nvp-password-feedback.is-error{color:#ff9fab}.nvp-password-form{display:grid;gap:9px;margin-top:16px}.nvp-password-form .nvp-password-label{margin:0}.nvp-password-form .nvp-action{justify-self:start}.nvp-password-remove{margin-top:12px}.nvp-password-remove button{background:none;border:0;padding:0;color:#e59eaa;text-decoration:underline;cursor:pointer;font-size:11px}.nvp-password-empty{margin-top:15px}.nvp-password-hint{font-size:11px;line-height:1.6;color:#8097b0;margin:17px 0 8px}.nvp-password-guide{font-size:11px;color:#8ec5ff;text-decoration:underline}.nvp-password-display .nvp-password-input{flex:1 1 100px}@media(max-width:380px){.nvp-password-display{flex-wrap:nowrap}.nvp-password-display .nvp-password-input{flex:1 1 72px;min-width:60px}.nvp-password-display .nvp-icon-button{flex:0 0 38px;width:38px;min-width:38px}}.nvp-os-banner{display:flex;align-items:center;gap:16px;padding:17px;margin:0 0 20px;border:1px solid #2a4564;border-radius:12px;background:linear-gradient(105deg,#0d263d,#0b1c2e)}.nvp-os-icon{width:66px;height:66px;flex:none;display:grid;place-items:center;border:1px solid #304d6a;border-radius:15px;background:#11273c}.nvp-os-icon img{display:block;width:46px;height:46px;object-fit:contain}.nvp-os-copy{min-width:0;display:grid;gap:3px}.nvp-os-copy small{font-weight:850;font-size:9px;letter-spacing:.14em;color:#83a1c0}.nvp-os-copy strong{font-size:19px;font-weight:780;letter-spacing:-.02em;color:#f1f8ff;overflow-wrap:anywhere}.nvp-os-copy>span{font-size:10px;color:#86a1bb}.nvp-reset-panel{border-top:1px solid #20344b;padding-top:16px;margin-top:16px}.nvp-reset-panel>summary{display:flex;align-items:center;justify-content:center;gap:10px;list-style:none;cursor:pointer;user-select:none}.nvp-reset-panel>summary::-webkit-details-marker{display:none}.nvp-action-reset{width:100%;border-color:#37577b;color:#dbeafc;background:#12263c}.nvp-reset-panel[open]>summary{border-radius:9px 9px 0 0}.nvp-reset-content{border:1px solid #2d4662;border-top:0;border-radius:0 0 9px 9px;background:#0a1b2b;padding:15px;font-size:12px;color:#a8bed5}.nvp-reset-content>strong{display:block;color:#e6f1ff;font-size:13px}.nvp-reset-content p{line-height:1.6;margin:7px 0 11px}.nvp-reset-content ol{padding-left:18px;margin:0 0 15px}.nvp-reset-content li{margin-bottom:7px}.nvp-reset-content .nvp-action{display:inline-flex;max-width:100%}@media(max-width:520px){.nvp-os-banner{padding:13px;gap:12px}.nvp-os-icon{width:53px;height:53px;border-radius:11px}.nvp-os-icon img{width:36px;height:36px}.nvp-os-copy strong{font-size:15px}}.nvp-reset-heading{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nvp-reset-heading strong{color:#e9f2ff;font-size:13px}.nvp-reset-heading small{font-size:10px;color:#90aac7}.nvp-reset-copy{color:#a4b9d1;font-size:11px;line-height:1.6;margin:12px 0 13px}.nvp-reset-panel .nvp-action{min-height:42px;width:100%}.nvp-reset-panel .nvp-action:disabled{opacity:.5;cursor:not-allowed}.nvp-reset-panel .nvp-password-guide{display:block;margin-top:12px}.nvp-reset-form{margin:0}.nvp-page{padding:29px 0 85px;background:#050b14}.nvp-page .container{width:min(1180px,calc(100% - 32px))}.nvp-breadcrumb{display:flex;gap:10px;align-items:center;color:#7f96b2;font-size:12px;flex-wrap:wrap;margin-bottom:24px}.nvp-breadcrumb a:hover{color:#f2f6ff}.nvp-breadcrumb strong{color:#c8d8ef;font-weight:650}.nvp-breadcrumb span{color:#42607c}.nvp-header{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:25px}.nvp-kicker,.nvp-eyebrow{font-size:10px;letter-spacing:.13em;font-weight:800;color:#7190b1}.nvp-kicker span{padding:0 5px}.nvp-header h1{font-size:clamp(29px,4vw,42px);line-height:1.18;letter-spacing:-.04em;margin:8px 0 7px}.nvp-header p{color:#8ca2be;font-size:13px;margin:0}.nvp-header-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.nvp-outline{display:inline-flex;justify-content:center;align-items:center;border:1px solid #29415c;color:#d9e7f8;padding:9px 13px;border-radius:9px;font-size:12px;font-weight:650;background:#0b1826;cursor:pointer;min-height:39px}.nvp-outline:hover{background:#15263b}.nvp-status{display:inline-flex;align-items:center;gap:8px;border-radius:8px;padding:8px 11px;font-size:10px;letter-spacing:.035em;font-weight:800;background:#3b301c;color:#e8c985}.nvp-status-dot{width:7px;height:7px;border-radius:50%;background:currentColor}.nvp-status.is-active{background:#102f26;color:#71dcaf}.nvp-status.is-error{background:#3a1e23;color:#f2a2a9}.nvp-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(275px,.85fr);gap:17px;align-items:start}.nvp-main,.nvp-sidebar{display:grid;gap:17px;min-width:0}.nvp-panel{border:1px solid #20344b;border-radius:14px;background:#091522;padding:23px;min-width:0}.nvp-panel h2{font-size:21px;letter-spacing:-.025em;margin:5px 0 0;font-weight:750}.nvp-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}.nvp-panel-heading form{margin:0}.nvp-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.nvp-stat{border:1px solid #1c3047;border-radius:10px;padding:17px;background:#0c1b2a;min-width:0}.nvp-stat>span{font-size:9px;font-weight:850;letter-spacing:.09em;color:#6f8dab;display:block}.nvp-stat>strong{display:block;color:#e8f1ff;font-size:17px;overflow-wrap:anywhere;line-height:1.35;margin:8px 0 4px}.nvp-stat>small{color:#7c96b2;font-size:11px}.nvp-stat .nvp-text-green{color:#77ddb2}.nvp-mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.nvp-panel-desc{font-size:12px;color:#8ca1bb;margin:-7px 0 19px}.nvp-power-actions{display:flex;flex-wrap:wrap;gap:10px}.nvp-power-actions form{margin:0}.nvp-action{display:inline-flex;justify-content:center;align-items:center;gap:6px;min-height:42px;border-radius:9px;padding:10px 16px;background:#14273a;color:#e8f1ff;border:1px solid #35516d;font-family:inherit;font-size:12px;font-weight:750;cursor:pointer}.nvp-action:hover{background:#1e364f}.nvp-action-primary{background:#1b518e;border-color:#326cad;color:#fff}.nvp-action-primary:hover{background:#2263aa}.nvp-action-danger{color:#f5abb4;border-color:#5f3541;background:#291923}.nvp-action-danger:hover{background:#38222e}.nvp-action:disabled{opacity:.45;cursor:not-allowed}.nvp-detail-list{margin:17px 0 0}.nvp-detail-list div{display:flex;align-items:baseline;justify-content:space-between;gap:15px;padding:12px 0;border-bottom:1px solid #1b3045}.nvp-detail-list div:last-child{border-bottom:0}.nvp-detail-list dt{color:#839ab6;font-size:12px}.nvp-detail-list dd{margin:0;text-align:right;color:#e4edfa;font-size:12px;font-weight:650;overflow-wrap:anywhere}.nvp-full-link{margin-top:17px;width:100%}.nvp-notice{border:1px solid #36526b;background:#102337;color:#c8def8;border-radius:10px;padding:12px 15px;margin-bottom:17px;font-size:12px}.nvp-notice strong{display:block;margin-bottom:3px}.nvp-notice-error{background:#2b1b25;color:#f2bbc7;border-color:#69404e}.nvp-notice-success{background:#102e26;color:#b4f4da;border-color:#2c604f}.nvp-empty{border:1px dashed #2d4460;border-radius:10px;background:#0c1b2a;padding:22px}.nvp-empty strong{display:block;color:#e0edfa;font-size:14px}.nvp-empty p{font-size:12px;color:#90a7c2;margin:8px 0 17px}.nvp-empty .nvp-action{margin-top:0}@media(max-width:890px){.nvp-layout{grid-template-columns:1fr}.nvp-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.nvp-header{align-items:flex-start;flex-direction:column}.nvp-header-actions{width:100%;justify-content:space-between}.nvp-sidebar{grid-template-columns:1fr}.nvp-stats{grid-template-columns:1fr}.nvp-panel{padding:17px}.nvp-panel-heading{align-items:flex-start;flex-wrap:wrap}.nvp-power-actions form{flex:1 1 42%}.nvp-power-actions button{width:100%}}
+.nvp-password-identity{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #20344b;padding:13px 0 14px;margin-top:9px;gap:12px;font-size:12px}.nvp-password-identity span{color:#8da4bd}.nvp-password-identity strong{color:#e6f2ff;font-weight:750}.nvp-password-label{font-size:11px;font-weight:750;color:#acc2d9;display:block;margin:15px 0 7px}.nvp-password-display{display:flex;align-items:center;gap:6px;min-width:0}.nvp-password-input{font:inherit;font-size:12px;background:#06101e;border:1px solid #29445e;border-radius:8px;color:#e6f2ff;min-height:41px;padding:9px 12px;outline:none;min-width:0;width:100%}.nvp-password-input:focus{border-color:#679dcd;box-shadow:0 0 0 2px rgba(87,157,222,.15)}.nvp-password-display .nvp-outline{flex:0 0 auto;min-height:41px;padding:8px;font-size:11px}.nvp-password-display .nvp-icon-button{display:inline-flex;align-items:center;justify-content:center;flex:0 0 41px;width:41px;min-width:41px;height:41px;padding:0}.nvp-password-display .nvp-icon-button svg{width:18px;height:18px;flex:0 0 auto}.nvp-password-display .nvp-icon-button svg[hidden]{display:none!important}.nvp-password-display .nvp-icon-button:focus-visible{outline:2px solid #85b7ed;outline-offset:2px}.nvp-password-feedback{color:#7d98b7;font-size:10px;margin:6px 0 4px}.nvp-password-feedback.is-error{color:#ff9fab}.nvp-password-form{display:grid;gap:9px;margin-top:16px}.nvp-password-form .nvp-password-label{margin:0}.nvp-password-form .nvp-action{justify-self:start}.nvp-password-remove{margin-top:12px}.nvp-password-remove button{background:none;border:0;padding:0;color:#e59eaa;text-decoration:underline;cursor:pointer;font-size:11px}.nvp-password-empty{margin-top:15px}.nvp-password-hint{font-size:11px;line-height:1.6;color:#8097b0;margin:17px 0 8px}.nvp-password-guide{font-size:11px;color:#8ec5ff;text-decoration:underline}.nvp-password-display .nvp-password-input{flex:1 1 100px}@media(max-width:380px){.nvp-password-display{flex-wrap:nowrap}.nvp-password-display .nvp-password-input{flex:1 1 72px;min-width:60px}.nvp-password-display .nvp-icon-button{flex:0 0 38px;width:38px;min-width:38px}}.nvp-os-banner{display:flex;align-items:center;gap:16px;padding:17px;margin:0 0 20px;border:1px solid #2a4564;border-radius:12px;background:linear-gradient(105deg,#0d263d,#0b1c2e)}.nvp-os-icon{width:66px;height:66px;flex:none;display:grid;place-items:center;border:1px solid #304d6a;border-radius:15px;background:#11273c}.nvp-os-icon img{display:block;width:46px;height:46px;object-fit:contain}.nvp-os-copy{min-width:0;display:grid;gap:3px}.nvp-os-copy small{font-weight:850;font-size:9px;letter-spacing:.14em;color:#83a1c0}.nvp-os-copy strong{font-size:19px;font-weight:780;letter-spacing:-.02em;color:#f1f8ff;overflow-wrap:anywhere}.nvp-os-copy>span{font-size:10px;color:#86a1bb}.nvp-reset-panel{border-top:1px solid #20344b;padding-top:16px;margin-top:16px}.nvp-reset-panel>summary{display:flex;align-items:center;justify-content:center;gap:10px;list-style:none;cursor:pointer;user-select:none}.nvp-reset-panel>summary::-webkit-details-marker{display:none}.nvp-action-reset{width:100%;border-color:#37577b;color:#dbeafc;background:#12263c}.nvp-reset-panel[open]>summary{border-radius:9px 9px 0 0}.nvp-reset-content{border:1px solid #2d4662;border-top:0;border-radius:0 0 9px 9px;background:#0a1b2b;padding:15px;font-size:12px;color:#a8bed5}.nvp-reset-content>strong{display:block;color:#e6f1ff;font-size:13px}.nvp-reset-content p{line-height:1.6;margin:7px 0 11px}.nvp-reset-content ol{padding-left:18px;margin:0 0 15px}.nvp-reset-content li{margin-bottom:7px}.nvp-reset-content .nvp-action{display:inline-flex;max-width:100%}@media(max-width:520px){.nvp-os-banner{padding:13px;gap:12px}.nvp-os-icon{width:53px;height:53px;border-radius:11px}.nvp-os-icon img{width:36px;height:36px}.nvp-os-copy strong{font-size:15px}}.nvp-reset-heading{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nvp-reset-heading strong{color:#e9f2ff;font-size:13px}.nvp-reset-heading small{font-size:10px;color:#90aac7}.nvp-reset-copy{color:#a4b9d1;font-size:11px;line-height:1.6;margin:12px 0 13px}.nvp-reset-panel .nvp-action{min-height:42px;width:100%}.nvp-reset-panel .nvp-action:disabled{opacity:.5;cursor:not-allowed}.nvp-reset-panel .nvp-password-guide{display:block;margin-top:12px}.nvp-reset-form{margin:0}.nvp-page [id^="vps-"],.nvp-page #nvpCredentials{scroll-margin-top:145px}.nvp-tabs{position:sticky;top:76px;z-index:20;display:flex;align-items:center;gap:4px;overflow-x:auto;scrollbar-width:thin;padding:7px;margin-bottom:21px;border:1px solid #22374e;border-radius:12px;background:#081521;box-shadow:0 10px 28px rgba(0,0,0,.17)}.nvp-tabs a{flex:0 0 auto;padding:9px 13px;font-size:12px;font-weight:650;color:#99b1ce;border-radius:8px;white-space:nowrap}.nvp-tabs a:hover,.nvp-tabs a:focus-visible{color:#f0f7ff;background:#14304d;outline-offset:2px}.nvp-backup-empty{padding:17px;border:1px dashed #2a415b;border-radius:10px;background:#0b1b2a;color:#a0b6cf;font-size:12px}.nvp-backup-list{list-style:none;padding:0;margin:4px 0 0;display:grid;gap:8px}.nvp-backup-list[hidden]{display:none}.nvp-backup-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid #233c56;border-radius:9px;background:#0b1b2a}.nvp-backup-copy{min-width:0;display:grid;gap:4px}.nvp-backup-copy strong{font-size:12px;color:#eff6ff;overflow-wrap:anywhere}.nvp-backup-copy small{font-size:11px;color:#849ab3}.nvp-backup-status{font-size:11px;color:#8fbbe8;text-align:right;overflow-wrap:anywhere}.nvp-backup-note{font-size:11px;color:#7a92aa;line-height:1.55;margin:13px 0 0}.nvp-help-desc{margin:15px 0 8px;line-height:1.6}.nvp-panel#vps-help .nvp-full-link+.nvp-full-link{margin-top:8px}@media(max-width:800px){.nvp-tabs{top:65px;margin-inline:-3px}}@media(max-width:600px){.nvp-tabs{margin-bottom:14px}.nvp-tabs a{min-height:40px;display:inline-flex;align-items:center}.nvp-backup-item{flex-direction:column;align-items:flex-start}.nvp-backup-status{text-align:left}}
+.nvp-page{padding:29px 0 85px;background:#050b14}.nvp-page .container{width:min(1180px,calc(100% - 32px))}.nvp-breadcrumb{display:flex;gap:10px;align-items:center;color:#7f96b2;font-size:12px;flex-wrap:wrap;margin-bottom:24px}.nvp-breadcrumb a:hover{color:#f2f6ff}.nvp-breadcrumb strong{color:#c8d8ef;font-weight:650}.nvp-breadcrumb span{color:#42607c}.nvp-header{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:25px}.nvp-kicker,.nvp-eyebrow{font-size:10px;letter-spacing:.13em;font-weight:800;color:#7190b1}.nvp-kicker span{padding:0 5px}.nvp-header h1{font-size:clamp(29px,4vw,42px);line-height:1.18;letter-spacing:-.04em;margin:8px 0 7px}.nvp-header p{color:#8ca2be;font-size:13px;margin:0}.nvp-header-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.nvp-outline{display:inline-flex;justify-content:center;align-items:center;border:1px solid #29415c;color:#d9e7f8;padding:9px 13px;border-radius:9px;font-size:12px;font-weight:650;background:#0b1826;cursor:pointer;min-height:39px}.nvp-outline:hover{background:#15263b}.nvp-status{display:inline-flex;align-items:center;gap:8px;border-radius:8px;padding:8px 11px;font-size:10px;letter-spacing:.035em;font-weight:800;background:#3b301c;color:#e8c985}.nvp-status-dot{width:7px;height:7px;border-radius:50%;background:currentColor}.nvp-status.is-active{background:#102f26;color:#71dcaf}.nvp-status.is-error{background:#3a1e23;color:#f2a2a9}.nvp-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(275px,.85fr);gap:17px;align-items:start}.nvp-main,.nvp-sidebar{display:grid;gap:17px;min-width:0}.nvp-panel{border:1px solid #20344b;border-radius:14px;background:#091522;padding:23px;min-width:0}.nvp-panel h2{font-size:21px;letter-spacing:-.025em;margin:5px 0 0;font-weight:750}.nvp-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}.nvp-panel-heading form{margin:0}.nvp-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.nvp-stat{border:1px solid #1c3047;border-radius:10px;padding:17px;background:#0c1b2a;min-width:0}.nvp-stat>span{font-size:9px;font-weight:850;letter-spacing:.09em;color:#6f8dab;display:block}.nvp-stat>strong{display:block;color:#e8f1ff;font-size:17px;overflow-wrap:anywhere;line-height:1.35;margin:8px 0 4px}.nvp-stat>small{color:#7c96b2;font-size:11px}.nvp-stat .nvp-text-green{color:#77ddb2}.nvp-mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.nvp-panel-desc{font-size:12px;color:#8ca1bb;margin:-7px 0 19px}.nvp-power-actions{display:flex;flex-wrap:wrap;gap:10px}.nvp-power-actions form{margin:0}.nvp-action{display:inline-flex;justify-content:center;align-items:center;gap:6px;min-height:42px;border-radius:9px;padding:10px 16px;background:#14273a;color:#e8f1ff;border:1px solid #35516d;font-family:inherit;font-size:12px;font-weight:750;cursor:pointer}.nvp-action:hover{background:#1e364f}.nvp-action-primary{background:#1b518e;border-color:#326cad;color:#fff}.nvp-action-primary:hover{background:#2263aa}.nvp-action-danger{color:#f5abb4;border-color:#5f3541;background:#291923}.nvp-action-danger:hover{background:#38222e}.nvp-action:disabled{opacity:.45;cursor:not-allowed}.nvp-detail-list{margin:17px 0 0}.nvp-detail-list div{display:flex;align-items:baseline;justify-content:space-between;gap:15px;padding:12px 0;border-bottom:1px solid #1b3045}.nvp-detail-list div:last-child{border-bottom:0}.nvp-detail-list dt{color:#839ab6;font-size:12px}.nvp-detail-list dd{margin:0;text-align:right;color:#e4edfa;font-size:12px;font-weight:650;overflow-wrap:anywhere}.nvp-full-link{margin-top:17px;width:100%}.nvp-notice{border:1px solid #36526b;background:#102337;color:#c8def8;border-radius:10px;padding:12px 15px;margin-bottom:17px;font-size:12px}.nvp-notice strong{display:block;margin-bottom:3px}.nvp-notice-error{background:#2b1b25;color:#f2bbc7;border-color:#69404e}.nvp-notice-success{background:#102e26;color:#b4f4da;border-color:#2c604f}.nvp-empty{border:1px dashed #2d4460;border-radius:10px;background:#0c1b2a;padding:22px}.nvp-empty strong{display:block;color:#e0edfa;font-size:14px}.nvp-empty p{font-size:12px;color:#90a7c2;margin:8px 0 17px}.nvp-empty .nvp-action{margin-top:0}@media(max-width:890px){.nvp-layout{grid-template-columns:1fr}.nvp-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.nvp-header{align-items:flex-start;flex-direction:column}.nvp-header-actions{width:100%;justify-content:space-between}.nvp-sidebar{grid-template-columns:1fr}.nvp-stats{grid-template-columns:1fr}.nvp-panel{padding:17px}.nvp-panel-heading{align-items:flex-start;flex-wrap:wrap}.nvp-power-actions form{flex:1 1 42%}.nvp-power-actions button{width:100%}}
 </style>
 @endpush
 @endsection
