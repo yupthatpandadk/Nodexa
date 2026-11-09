@@ -171,17 +171,20 @@
                         <strong>{{ stripos((string) $service->os_label, 'windows') !== false ? 'Administrator' : 'root' }}</strong>
                     </div>
                     @if($service->upstream_server_id && in_array($service->status, ['active', 'suspended'], true))
-                        @if($hasPassword)
-                            <label class="nvp-password-label" for="nvpStoredPassword">Gemt adgangskode</label>
-                            <div class="nvp-password-display">
-                                <input type="password" id="nvpStoredPassword" class="nvp-password-input" placeholder="••••••••••••" autocomplete="off" readonly aria-label="Gemt VPS-adgangskode">
-                                <button type="button" class="nvp-outline" id="nvpPasswordReveal" data-url="{{ route('store.client.vps.password.reveal', $service->id) }}">Vis</button>
-                                <button type="button" class="nvp-outline" id="nvpPasswordCopy">Kopiér</button>
-                            </div>
-                            <p id="nvpPasswordMessage" class="nvp-password-feedback" role="status" aria-live="polite">Adgangskoden er skjult, indtil du trykker Vis.</p>
-                        @else
-                            <p class="nvp-panel-desc nvp-password-empty">Der er endnu ingen adgangskode gemt i Nodexa.</p>
-                        @endif
+                        <label class="nvp-password-label" for="nvpStoredPassword">Senest gemte VPS-password</label>
+                        <div class="nvp-password-display">
+                            <input type="password" id="nvpStoredPassword" class="nvp-password-input" placeholder="••••••••••••" autocomplete="off" readonly aria-label="VPS-password">
+                            <button type="button" class="nvp-outline" id="nvpPasswordReveal" data-url="{{ route('store.client.vps.password.reveal', $service->id) }}">Hent / Vis</button>
+                            <button type="button" class="nvp-outline" id="nvpPasswordCopy">Kopiér</button>
+                        </div>
+                        <p id="nvpPasswordMessage" class="nvp-password-feedback" role="status" aria-live="polite">
+                            @if($passwordResetPending)
+                                Afventer ny kode efter nulstilling. Tryk Hent / Vis for at kontrollere status.
+                            @else
+                                Hentes sikkert fra Nodexas VPS-system, når du trykker Hent / Vis.
+                            @endif
+                        </p>
+                        <p class="nvp-password-hint">Det senest gemte password vises, hvis det findes. Ændringer foretaget direkte inde i operativsystemet registreres ikke nødvendigvis automatisk.</p>
                         <form method="POST" action="{{ route('store.client.vps.password.save', $service->id) }}" class="nvp-password-form" autocomplete="off">
                             @csrf
                             <label class="nvp-password-label" for="nvpPasswordSave">{{ $hasPassword ? 'Erstat gemt adgangskode' : 'Gem adgangskode' }}</label>
@@ -198,7 +201,7 @@
                     @else
                         <p class="nvp-panel-desc nvp-password-empty">Password kan først gemmes, når VPS'en er provisioneret og tilgængelig.</p>
                     @endif
-                    <p class="nvp-password-hint">Adgangskoden opbevares krypteret. Når automatisk nulstilling er tilgængelig, opdateres det gemte password direkte fra Nodexas VPS-system. Manuelt gemte adgangskoder ændrer ikke VPS'ens login.</p>
+                    <p class="nvp-password-hint">Nulstil password ændrer koden på serveren og henter derefter den gemte adgangskode automatisk. Manuel indtastning ændrer ikke serverens login.</p>
                     @if($service->upstream_server_id && $service->status === 'active')
                         <div class="nvp-reset-panel">
                             <div class="nvp-reset-heading">
@@ -206,7 +209,7 @@
                                 <small>Via Nodexa</small>
                             </div>
                             @if($canResetPassword)
-                                <p class="nvp-reset-copy">Nodexa nulstiller VPS-adgangskoden og gemmer den nye kode krypteret, når nulstillingen er bekræftet. Det kan afbryde eksisterende login-sessioner.</p>
+                                <p class="nvp-reset-copy">Nodexa nulstiller serverens password og henter den senest gemte kode automatisk. Hvis nulstillingen stadig behandles, kan du prøve Hent / Vis igen. Det kan afbryde eksisterende login-sessioner.</p>
                                 <form method="POST" action="{{ route('store.client.vps.password.reset', $service->id) }}" class="nvp-reset-form" onsubmit="return confirm('Vil du virkelig nulstille adgangskoden på denne VPS? Den nuværende kode vil holde op med at virke, når ændringen gennemføres.');">
                                     @csrf
                                     <button class="nvp-action nvp-action-reset" type="submit">Nulstil VPS-password</button>
@@ -261,7 +264,7 @@
         clearHandle = null;
         input.value = '';
         input.type = 'password';
-        reveal.textContent = 'Vis';
+        reveal.textContent = 'Hent / Vis';
     }
 
     function showMessage(text, failed) {
@@ -286,7 +289,7 @@
         if (!response.ok || typeof body.password !== 'string') {
             throw new Error(body.message || 'Adgangskoden kunne ikke hentes. Prøv igen.');
         }
-        return body.password;
+        return body;
     }
 
     reveal.addEventListener('click', async () => {
@@ -299,10 +302,11 @@
         busy = true;
         reveal.disabled = true;
         try {
-            input.value = await loadSecret();
+            const result = await loadSecret();
+            input.value = result.password;
             input.type = 'text';
             reveal.textContent = 'Skjul';
-            showMessage('Adgangskoden vises kun midlertidigt.');
+            showMessage((result.message || 'Adgangskoden er hentet.') + ' Skjules efter 30 sekunder.');
             clearHandle = setTimeout(clearSecret, 30000);
         } catch (error) {
             clearSecret();
@@ -318,12 +322,14 @@
         busy = true;
         copy.disabled = true;
         try {
-            const secret = input.value || await loadSecret();
+            const result = input.value
+                ? { password: input.value, message: 'Koden er allerede vist på siden.' }
+                : await loadSecret();
             if (!navigator.clipboard?.writeText) {
                 throw new Error('Kopiering kræver en sikker HTTPS-forbindelse.');
             }
-            await navigator.clipboard.writeText(secret);
-            showMessage('Password kopieret. Undgå at dele det med andre.');
+            await navigator.clipboard.writeText(result.password);
+            showMessage('Password kopieret. ' + (result.message || 'Undgå at dele det med andre.'));
         } catch (error) {
             showMessage(error.message, true);
         } finally {
