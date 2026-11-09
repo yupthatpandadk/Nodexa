@@ -228,7 +228,7 @@ class NodexaAutomationService
                 }
 
             $number = 'NX-' . now()->format('Ym') . '-' . strtoupper(Str::random(8));
-            $description = trim((string) ($subscription->description ?? '')) ?: 'Nodexa hosting subscription';
+            $description = CustomerBranding::label($subscription->description ?? null, 'Nodexa hosting subscription');
 
             $subtotal = round((float) $subscription->amount, 2);
 
