@@ -53,7 +53,7 @@
                                         <span class="serviceType">
                                             {{ $item['type'] === 'flax_vps' ? 'VPS Hosting' : 'Game Server' }}
                                         </span>
-                                        <h3>{{ $item['name'] }}</h3>
+                                        <h3>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($item['name']) }}</h3>
                                     </div>
 
                                     <div class="servicePrice">
@@ -150,7 +150,7 @@
                     @foreach($summary['items'] as $item)
                         <div class="summaryItem">
                             <div>
-                                <strong>{{ $item['name'] }}</strong>
+                                <strong>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($item['name']) }}</strong>
                                 <span>{{ $item['type'] === 'flax_vps' ? ($item['configuration']['hostname'] ?? 'VPS') : ($item['configuration']['server_name'] ?? 'Server') }}</span>
                             </div>
                             <b>{{ number_format((float)($item['sale_price'] ?? $item['price']),2,',','.') }} kr</b>
