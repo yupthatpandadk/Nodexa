@@ -222,7 +222,7 @@ class OrderRemovalService
                     if (!$service || $service->upstream_server_id || $service->processing_invoice_id
                         || !in_array($service->status, ['awaiting_payment', 'provisioning_failed'], true)
                     ) {
-                        throw new RuntimeException("VPS\u0027en kan stadig være aktiv. Kontakt Nodexa Support før Wallet-kredit kan tilbageføres.");
+                        throw new RuntimeException("VPS'en kan stadig være aktiv. Kontakt Nodexa Support før Wallet-kredit kan tilbageføres.");
                     }
 
                     DB::table('nodexa_flax_services')->where('id', $service->id)->update([
