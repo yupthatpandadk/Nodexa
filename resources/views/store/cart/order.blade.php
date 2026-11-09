@@ -24,7 +24,7 @@
             <div class="combinedItem">
                 <div>
                     <div class="miniLabel">{{ $item->type==='flax_vps' ? 'VPS HOSTING' : 'GAME SERVER' }}</div>
-                    <strong>{{ $item->name }}</strong>
+                    <strong>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($item->name) }}</strong>
                     @if($item->type==='flax_vps')
                         <span>{{ $item->configuration_data['hostname'] ?? 'VPS' }} · {{ $item->configuration_data['os_label'] ?? 'OS' }}</span>
                     @else
