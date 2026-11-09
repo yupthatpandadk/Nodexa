@@ -11,9 +11,16 @@ the following API actions:
 | `get_password` | POST | `server_id` (numeric upstream VPS ID) | `data.available`, `data.password` (nullable), `data.server_id`, `data.source=last_stored` |
 | `resetPassword` | GET/POST | `server_id`, optional `user` (defaults to root) | Reset acknowledgment; credential may be stored asynchronously |
 
-Nodexa uses **POST** for both actions, and its existing encrypted reseller API
-key configured in Admin. No new `.env` variable is required. Do **not**
-copy API keys from documentation or screenshots into repository code.
+Nodexa uses **POST** for both actions. The updated documentation's cURL
+example posts directly to the **API root** (e.g. the API host URL ending in
+`/`) with `key`, `action` and the action-specific parameters **as form
+body fields**. Nodexa uses the existing encrypted reseller API key configured
+in Admin. No new `.env` variable is required.
+
+Existing unrelated actions (billing, provisioning, power and status) keep the
+current legacy `/api-endpoint.php` transport, avoiding a breaking change to
+working VPS integrations. Do **not** copy API keys from documentation or
+screenshots into repository code.
 
 ## Customer workflow
 
