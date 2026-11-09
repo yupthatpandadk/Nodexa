@@ -215,10 +215,17 @@ class ProxmoxVmTemplateService
                 'updated_at' => now(),
             ]);
         } catch (Throwable $exception) {
+            $message = $exception->getMessage();
+            // A definite 400/401/403/404 rejection cannot have started the
+            // clone. All transport failures, HTTP 5xx and malformed replies
+            // remain ambiguous and are never automatically retried.
+            $knownRejection = preg_match('/\((?:401|403)\)|HTTP (?:400|404)\b/', $message) === 1;
             DB::table('nodexa_proxmox_deployments')->where('id', $deployment)->update([
-                'status' => 'unknown',
-                'last_error' => 'Proxmox kunne ikke bekræfte kloningen. '
-                    . 'Kontrollér VM-ID ' . $row->vmid . ' i Proxmox, før du forsøger igen.',
+                'status' => $knownRejection ? 'failed' : 'unknown',
+                'last_error' => $knownRejection
+                    ? 'Proxmox afviste kloningen. Kontrollér VM-rettigheder, storage og VM-ID.'
+                    : 'Proxmox kunne ikke bekræfte kloningen. '
+                        . 'Kontrollér VM-ID ' . $row->vmid . ' i Proxmox, før du forsøger igen.',
                 'updated_at' => now(),
             ]);
         }
