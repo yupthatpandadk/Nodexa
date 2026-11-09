@@ -42,7 +42,7 @@
                         @else
                             <div class="cartMeta">
                                 <span>VPS-navn: <b>{{ $item['configuration']['hostname'] }}</b></span>
-                                <span>{{ $item['configuration']['os_label'] }}</span>
+                                <span>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($item['configuration']['os_label'] ?? null, 'OS') }}</span>
                                 <span>{{ $item['meta']['vcpu'] ?: '—' }} vCPU</span>
                                 <span>{{ $item['meta']['memory_mb'] ? number_format($item['meta']['memory_mb']/1024,1,',','.') . ' GB RAM' : '—' }}</span>
                                 <span>{{ $item['meta']['disk_gb'] ?: '—' }} GB disk</span>
