@@ -4,7 +4,7 @@
 <section style="padding:38px 0 80px">
 <div class="container">
     <div class="clientHead">
-        <div><div class="eyebrow">CLIENT AREA / VPS</div><h1>Mine VPS’er</h1><p class="muted">VPS-services bestilt gennem Nodexa og provisioneret hos Flax.</p></div>
+        <div><div class="eyebrow">CLIENT AREA / VPS</div><h1>Mine VPS’er</h1><p class="muted">Dine VPS-servere, samlet og administreret hos Nodexa.</p></div>
         <a class="btn primary" href="{{ route('store.vps') }}">＋ Bestil VPS</a>
     </div>
 
@@ -17,9 +17,9 @@
         <article class="vpsCard">
             <div class="vpsTop">
                 <div>
-                    <div class="miniLabel">{{ $service->product_name }}</div>
+                    <div class="miniLabel">{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($service->product_name) }}</div>
                     <h2><a class="vpsNameLink" href="{{ route('store.client.vps.show', $service->id) }}" aria-label="Åbn kontrolpanel for {{ $service->hostname }}">{{ $service->hostname }}</a></h2>
-                    <p>{{ $service->os_label ?: 'VirtFusion VPS' }}</p>
+                    <p>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($service->os_label, 'Nodexa VPS') }}</p>
                 </div>
                 <span class="serviceState {{ $service->status==='active'?'good':($service->status==='suspended'?'bad':'warn') }}">● {{ strtoupper(str_replace('_',' ',$service->status)) }}</span>
             </div>
@@ -32,7 +32,7 @@
             </div>
 
             @if($service->last_error)
-            <div class="notice" style="margin-top:12px;border-color:#69333d;color:#ffabb8">{{ $service->last_error }}</div>
+            <div class="notice" style="margin-top:12px;border-color:#69333d;color:#ffabb8">{{ \Pterodactyl\Services\Nodexa\CustomerBranding::serviceError() }}</div>
             @endif
 
             <div class="vpsActions">
@@ -55,12 +55,12 @@
 
             <div class="vpsFoot">
                 <span>{{ number_format((float)$service->monthly_price,2,',','.') }} {{ $service->currency }}/md</span>
-                @if($service->expires_at)<span>Flax expiry {{ \Carbon\Carbon::parse($service->expires_at)->format('d.m.Y H:i') }}</span>@endif
+                @if($service->expires_at)<span>Udløber {{ \Carbon\Carbon::parse($service->expires_at)->format('d.m.Y H:i') }}</span>@endif
                 @if($service->last_synced_at)<span>Synk {{ \Carbon\Carbon::parse($service->last_synced_at)->diffForHumans() }}</span>@endif
             </div>
         </article>
         @empty
-        <div class="card emptyState" style="grid-column:1/-1"><div class="icon">☁</div><h2>Ingen VPS-services endnu</h2><p class="muted">Bestil en VPS gennem Nodexa. Efter betaling oprettes den automatisk hos Flax.</p><a class="btn primary" href="{{ route('store.vps') }}">Se VPS-pakker →</a></div>
+        <div class="card emptyState" style="grid-column:1/-1"><div class="icon">☁</div><h2>Ingen VPS-services endnu</h2><p class="muted">Bestil en VPS gennem Nodexa. Efter betaling bliver den automatisk oprettet på Nodexas VPS-platform.</p><a class="btn primary" href="{{ route('store.vps') }}">Se VPS-pakker →</a></div>
         @endforelse
     </div>
 </div>
