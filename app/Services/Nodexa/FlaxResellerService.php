@@ -587,23 +587,31 @@ class FlaxResellerService
             throw VpsCredentialLookupException::fromProvider($exception);
         }
 
-        $returnedServerId = data_get($result, 'data.server_id');
+        $data = $result['data'] ?? $result;
+        if (!is_array($data)
+            || (!array_key_exists('available', $data)
+                && !array_key_exists('password', $data))) {
+            throw new VpsCredentialLookupException('invalid_response');
+        }
+
+        $returnedServerId = $data['server_id'] ?? null;
         if ($returnedServerId !== null
             && (string) $returnedServerId !== (string) $service->upstream_server_id) {
             throw new VpsCredentialLookupException('server_mismatch');
         }
 
-        if (in_array(data_get($result, 'data.available'), [false, 0, 'false', '0'], true)) {
+        $available = $data['available'] ?? null;
+        if (in_array($available, [false, 0, 'false', '0'], true)) {
             return null;
         }
 
-        $password = data_get($result, 'data.password');
-
-        if (!is_string($password) || $password === '') {
+        $password = $data['password'] ?? null;
+        if ($password === null && $available === null) {
+            // Some API versions omit available=false when password is unknown.
             return null;
         }
 
-        if (strlen($password) > 1024) {
+        if (!is_string($password) || $password === '' || strlen($password) > 1024) {
             throw new VpsCredentialLookupException('invalid_response');
         }
 
