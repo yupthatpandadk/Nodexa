@@ -26,7 +26,7 @@
                     <div class="miniLabel">{{ $item->type==='flax_vps' ? 'VPS HOSTING' : 'GAME SERVER' }}</div>
                     <strong>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($item->name) }}</strong>
                     @if($item->type==='flax_vps')
-                        <span>{{ $item->configuration_data['hostname'] ?? 'VPS' }} · {{ $item->configuration_data['os_label'] ?? 'OS' }}</span>
+                        <span>{{ $item->configuration_data['hostname'] ?? 'VPS' }} · {{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($item->configuration_data['os_label'] ?? null, 'OS') }}</span>
                     @else
                         <span>{{ $item->configuration_data['server_name'] ?? 'Server' }}</span>
                     @endif
