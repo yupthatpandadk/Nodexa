@@ -23,7 +23,7 @@
                         <div class="cartTop">
                             <div>
                                 <div class="miniLabel">{{ $item['type']==='flax_vps' ? 'VPS HOSTING' : 'GAME SERVER' }}</div>
-                                <h2>{{ $item['name'] }}</h2>
+                                <h2>{{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($item['name']) }}</h2>
                             </div>
                             <strong class="cartPrice">
     @if(($item['sale_discount'] ?? 0) > 0)<span style="display:block;font-size:9px;color:#607992;text-decoration:line-through">{{ number_format((float)$item['original_price'],2,',','.') }} {{ $item['currency'] }}</span>@endif
