@@ -1,4 +1,10 @@
 /* Global Nodexa themes. This stylesheet is included after the original layouts. */
+/* React server panel has its own stylesheet; the shared Blade theme is authoritative. */
+html[data-nodexa-site-managed='1'] body.bg-neutral-800 {
+    background:var(--nodexa-panel-bg) !important;
+}
+html[data-nodexa-site-managed='1'] body.bg-neutral-800 #app {background:transparent;}
+
 html[data-nodexa-theme] .logo,
 html[data-nodexa-theme] .nodexa-brand-mark {
     background: linear-gradient(135deg,var(--nodexa-theme-accent),var(--nodexa-theme-secondary)) !important;
