@@ -2,7 +2,7 @@
 
 ## Funktion
 
-Under **Admin → Storefront & Billing → Pterodactyl Egg-pakker** kan
+Under **Admin → Storefront & Billing → Åbn Egg-pakker** (eller direkte\n\`/admin/store/egg-packages\`) kan
 ejer/admin nu generere fire færdige hostingpakker til et installeret Egg:
 
 - **Starter**
