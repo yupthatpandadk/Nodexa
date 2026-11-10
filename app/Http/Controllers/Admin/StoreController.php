@@ -14,7 +14,6 @@ use Pterodactyl\Services\Store\ProvisionStoreOrderService;
 use Pterodactyl\Services\Nodexa\NodexaEventService;
 use Pterodactyl\Services\Nodexa\StripePaymentService;
 use Pterodactyl\Services\Nodexa\GlobalStoreSaleService;
-use Pterodactyl\Services\Nodexa\EggHostingPackageService;
 
 class StoreController extends Controller
 {
@@ -23,14 +22,7 @@ class StoreController extends Controller
             'products'=>StoreProduct::orderBy('name')->get(),
             'orders'=>StoreOrder::with(['product','user','server'])->latest()->limit(100)->get(),
             'coupons'=>StoreCoupon::latest()->get(),
-            'eggs'=>Egg::with('nest')->orderBy('name')->get(),
-            'eggPackageProfiles'=>(new EggHostingPackageService())->allProfiles(),
-            'eggPackageCategories'=>EggHostingPackageService::GAME_LABELS,
-            'eggPackageTiers'=>EggHostingPackageService::TIERS,
-            'eggPackageDetection'=>Egg::with('nest')->get()
-                ->mapWithKeys(fn (Egg $egg) => [
-                    $egg->id => (new EggHostingPackageService())->detectCategory($egg)
-                ])->all(),
+            'eggs'=>Egg::orderBy('name')->get(),
             'stripeSettings'=>$stripe->settingsForAdmin(),
             'globalSale'=>$sale->settings(),
         ]);
@@ -40,67 +32,6 @@ class StoreController extends Controller
         $d=$r->validate(['name'=>'required|max:100','game'=>'required|max:80','description'=>'nullable|max:2000','price_monthly'=>'required|numeric|min:0','egg_id'=>'required|exists:eggs,id','memory'=>'required|integer|min:128','disk'=>'required|integer|min:256','cpu'=>'required|integer|min:10','databases'=>'required|integer|min:0','backups'=>'required|integer|min:0','allocations'=>'required|integer|min:1']);
         $d['slug']=Str::slug($d['name']).'-'.Str::lower(Str::random(5)); $d['enabled']=$r->boolean('enabled'); $d['featured']=$r->boolean('featured'); StoreProduct::create($d);
         return back()->with('success','Produkt oprettet.');
-    }
-
-    /**
-     * Generate 1-4 draft Storefront hosting tiers for an installed Egg.
-     * This action never modifies an existing product, order or service.
-     */
-    public function generateEggPackages(Request $request, EggHostingPackageService $packages)
-    {
-        $data = $request->validate([
-            'egg_id' => 'required|integer|exists:eggs,id',
-            'category' => 'required|in:auto,minecraft,fivem,rust,ark,voice,generic',
-            'tiers' => 'required|array|min:1|max:4',
-            'tiers.*' => 'required|in:starter,plus,pro,ultimate|distinct',
-            'prices' => 'nullable|array',
-            'prices.starter' => 'nullable|numeric|min:0.01|max:99999',
-            'prices.plus' => 'nullable|numeric|min:0.01|max:99999',
-            'prices.pro' => 'nullable|numeric|min:0.01|max:99999',
-            'prices.ultimate' => 'nullable|numeric|min:0.01|max:99999',
-        ]);
-        $egg = Egg::with('nest')->findOrFail($data['egg_id']);
-
-        try {
-            $result = $packages->generate(
-                $egg,
-                $data['category'],
-                $data['tiers'],
-                $data['prices'] ?? []
-            );
-        } catch (\RuntimeException $exception) {
-            return back()->withInput()->withErrors(['packages' => $exception->getMessage()]);
-        }
-
-        return back()->with('success', $result['created']
-            . ' nye skjulte pakker oprettet til ' . $egg->name . '. '
-            . $result['skipped'] . ' eksisterende pakker blev sprunget over. '
-            . 'Kontrollér pris og ressourcer, før du aktiverer dem.');
-    }
-
-    /**
-     * Edit Storefront product pricing/resources for FUTURE orders only.
-     * Existing active Pterodactyl servers aren't resized by this action.
-     */
-    public function updateDetails(Request $r, StoreProduct $product)
-    {
-        $d = $r->validate([
-            'name' => 'required|string|max:100',
-            'game' => 'required|string|max:80',
-            'description' => 'nullable|string|max:2000',
-            'price_monthly' => 'required|numeric|min:0|max:99999',
-            'memory' => 'required|integer|min:128|max:1048576',
-            'disk' => 'required|integer|min:256|max:10485760',
-            'cpu' => 'required|integer|min:10|max:6400',
-            'databases' => 'required|integer|min:0|max:100',
-            'backups' => 'required|integer|min:0|max:100',
-            'allocations' => 'required|integer|min:1|max:100',
-        ]);
-        $product->update($d);
-
-        return back()->with('success',
-            'Pakken er opdateret til fremtidige bestillinger. '
-            . 'Eksisterende servere og abonnementer er ikke ændret.');
     }
 
     public function update(Request $r, StoreProduct $product){
