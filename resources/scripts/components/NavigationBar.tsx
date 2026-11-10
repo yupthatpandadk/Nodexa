@@ -15,16 +15,16 @@ import Avatar from '@/components/Avatar';
 
 const Bar = styled.div`
     ${tw`w-full sticky top-0 z-50`};
-    background: #0a0f19;
-    border-bottom: 1px solid #202b3a;
+    background: var(--nodexa-panel-surface, #0a0f19);
+    border-bottom: 1px solid var(--nodexa-panel-border, #202b3a);
     backdrop-filter: blur(20px); box-shadow: 0 6px 24px rgba(0,0,0,.14);
 `;
 const RightNavigation = styled.div`
     & > a, & > button, & > .navigation-link {
         ${tw`flex items-center justify-center no-underline text-neutral-300 cursor-pointer transition-all duration-150 rounded-lg`};
         width:38px; height:38px; min-width:38px; margin-left:4px;
-        background: #111927;
-        border: 1px solid #263244;
+        background: var(--nodexa-panel-card, #111927);
+        border: 1px solid var(--nodexa-panel-border, #263244);
         box-shadow: 0 3px 10px rgba(0,0,0,.16);
         &:hover, &.active { color: #fff; background: rgba(99,102,241,.18); border-color: rgba(99,102,241,.35); }
     }
@@ -37,7 +37,7 @@ const BrandMark = styled.span`
 
 const ThemeMenu = styled.div`
     position:absolute; right:0; top:46px; width:210px; padding:12px; border-radius:12px;
-    background:#0d1420; border:1px solid #263244; box-shadow:0 18px 45px rgba(0,0,0,.38);
+    background:var(--nodexa-panel-surface,#0d1420); border:1px solid var(--nodexa-panel-border,#263244); box-shadow:0 18px 45px rgba(0,0,0,.38);
 `;
 const Swatch = styled.button<{ $color: string }>`
     width:28px!important; height:28px!important; min-width:28px; margin:0!important; border-radius:8px!important;
@@ -47,16 +47,24 @@ const Swatch = styled.button<{ $color: string }>`
 
 export default () => {
     const rootAdmin = useStoreState((state: ApplicationStore) => state.user.data!.rootAdmin);
+    // The public and admin layouts expose the global theme in the HTML head.
+    // Do not let device-local preferences overwrite an administrator's theme.
+    const siteThemeManaged = document.documentElement.getAttribute('data-nodexa-site-managed') === '1';
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [themeOpen, setThemeOpen] = useState(false);
     const [themeMode, setThemeMode] = useState(() => localStorage.getItem('nodexa:theme') || 'midnight');
     const [accent, setAccent] = useState(() => localStorage.getItem('nodexa:accent') || '#4f8cff');
     const accents = ['#4f8cff', '#7c5cff', '#14b8a6', '#22c55e', '#f59e0b', '#ef476f'];
     useEffect(() => {
+        if (siteThemeManaged) {
+            document.documentElement.style.setProperty('--nodexa-user-accent', 'var(--nodexa-panel-accent)');
+            return;
+        }
         document.documentElement.style.setProperty('--nodexa-user-accent', accent);
         localStorage.setItem('nodexa:accent', accent);
-    }, [accent]);
+    }, [accent, siteThemeManaged]);
     useEffect(() => {
+        if (siteThemeManaged) return;
         const themes: Record<string, Record<string, string>> = {
             midnight: { bg:'#07101d', surface:'#0b1423', elevated:'#101b2d', border:'#1d2b40', tint:'#0a2238' },
             ocean: { bg:'#061923', surface:'#082431', elevated:'#0b3040', border:'#14506a', tint:'#07354a' },
@@ -70,7 +78,7 @@ export default () => {
         document.documentElement.setAttribute('data-nodexa-theme', themeMode);
         document.body.style.background = theme.bg;
         localStorage.setItem('nodexa:theme', themeMode);
-    }, [themeMode]);
+    }, [themeMode, siteThemeManaged]);
     const onTriggerLogout = () => {
         setIsLoggingOut(true);
         http.post('/auth/logout').finally(() => {
@@ -94,6 +102,14 @@ export default () => {
                     <div className={'relative flex items-center navigation-link'}>
                         <Tooltip placement={'bottom'} content={'Tema'}><button onClick={() => setThemeOpen((v) => !v)}><FontAwesomeIcon icon={faPalette} /></button></Tooltip>
                         {themeOpen && <ThemeMenu>
+                            {siteThemeManaged ? (
+                                <>
+                                    <div className={'text-xs font-semibold text-white mb-2'}>Centralt tema</div>
+                                    <p className={'text-xs text-neutral-400 leading-relaxed'}>Temaet på Nodexa styres fra Admin Area og gælder også serverpanelet.</p>
+                                    {rootAdmin && <a className={'text-xs underline mt-2 inline-block'} href={'/admin/settings/themes'}>Administrér temaer</a>}
+                                </>
+                            ) : (
+                                <>
                             <div className={'text-xs font-semibold text-white mb-2'}>Tema</div>
                             <div className={'grid grid-cols-2 gap-1 mb-3'}>
                                 {['midnight','ocean','obsidian','aurora','carbon','crimson'].map((mode) => <button key={mode} onClick={() => setThemeMode(mode)} className={'text-xs px-2 py-2 rounded'} style={{width:'auto',height:'auto',background:themeMode===mode?'var(--nodexa-user-accent)':'#182235'}}>{mode === 'midnight' ? 'Midnight' : mode === 'ocean' ? 'Ocean' : mode === 'obsidian' ? 'Obsidian' : mode === 'aurora' ? 'Aurora' : mode === 'carbon' ? 'Carbon' : 'Crimson'}</button>)}
@@ -101,6 +117,8 @@ export default () => {
                             <div className={'text-xs font-semibold text-white mb-2'}>Accentfarve</div>
                             <div className={'text-xs text-neutral-500 mb-3'}>Gemmes automatisk på denne enhed.</div>
                             <div className={'flex items-center justify-between'}>{accents.map((color) => <Swatch key={color} $color={color} onClick={() => setAccent(color)} aria-label={'Vælg accentfarve'} />)}</div>
+                                </>
+                            )}
                         </ThemeMenu>}
                     </div>
                     <Tooltip placement={'bottom'} content={'Account Settings'}><NavLink to={'/account'}><span className={'flex items-center w-5 h-5'}><Avatar.User /></span></NavLink></Tooltip>
