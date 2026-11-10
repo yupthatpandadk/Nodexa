@@ -29,9 +29,21 @@ const IconDescription = styled.p<{ $alarm: boolean }>`
 
 const StatusIndicatorBox = styled(GreyRowBox)<{ $status: ServerPowerState | undefined }>`
     ${tw`grid grid-cols-12 gap-4 relative`};
-    border-radius: 13px; border: 1px solid #263244; background: #111927;
+    border-radius: 13px; border: 1px solid var(--nodexa-panel-border, #263244); background: var(--nodexa-panel-card, #111927);
     transition: transform .15s ease, border-color .15s ease, background .15s ease;
-    &:hover { transform: translateY(-1px); border-color: var(--nodexa-user-accent,#4f8cff); background: #151f2f; }
+    &:hover { transform: translateY(-1px); border-color: var(--nodexa-user-accent,#4f8cff); background: var(--nodexa-panel-surface, #151f2f); }
+
+    & .icon { background:var(--nodexa-panel-surface, #6b7280); color:var(--nodexa-panel-accent, #e5e7eb); }
+
+    /* A light snowdrift lies along each server card when Christmas is active. */
+    html[data-nodexa-theme='christmas'] &::after {
+        content:''; position:absolute; left:0; right:0; bottom:-1px; height:8px;
+        pointer-events:none; opacity:.73; z-index:1;
+        background:radial-gradient(ellipse 70px 9px at 8% 113%,#eef8ff 85%,transparent 100%),
+            radial-gradient(ellipse 100px 11px at 34% 126%,#f6fcff 85%,transparent 100%),
+            radial-gradient(ellipse 76px 10px at 65% 112%,#eef8ff 85%,transparent 100%),
+            radial-gradient(ellipse 110px 13px at 94% 125%,#f6fcff 85%,transparent 100%);
+    }
 
     & .status-bar {
         ${tw`w-1 bg-red-500 absolute right-0 z-20 rounded-full m-1 opacity-50 transition-all duration-150`};
