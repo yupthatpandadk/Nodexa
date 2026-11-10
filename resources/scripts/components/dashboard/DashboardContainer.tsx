@@ -21,11 +21,19 @@ const DashboardShell = styled.div`
 `;
 const Hero = styled.section`
     position: relative; overflow: hidden; min-height: 138px; display:flex; align-items:center;
-    background: linear-gradient(115deg, #111827 0%, #0d1422 58%, #0b111d 100%);
-    border: 1px solid #263244;
+    background: linear-gradient(115deg, var(--nodexa-panel-card, #111827) 0%, var(--nodexa-panel-surface, #0d1422) 58%, var(--nodexa-panel-bg, #0b111d) 100%);
+    border: 1px solid var(--nodexa-panel-border, #263244);
     border-radius: 16px; padding: 24px;
     box-shadow: 0 14px 38px rgba(0,0,0,.22);
     &:after { content:''; position:absolute; right:-60px; top:-100px; width:260px; height:260px; border-radius:999px; border:1px solid rgba(255,255,255,.035); box-shadow:0 0 0 44px rgba(255,255,255,.012); }
+    html[data-nodexa-theme='christmas'] &::before {
+        content:''; position:absolute; left:0; right:0; bottom:-1px; height:13px;
+        pointer-events:none; z-index:1; opacity:.82;
+        background:radial-gradient(ellipse 70px 12px at 10% 110%,#f3faff 90%,transparent 100%),
+          radial-gradient(ellipse 110px 14px at 38% 120%,#f3faff 90%,transparent 100%),
+          radial-gradient(ellipse 90px 12px at 67% 112%,#f3faff 90%,transparent 100%),
+          radial-gradient(ellipse 100px 16px at 94% 120%,#f3faff 90%,transparent 100%);
+    }
     @media(max-width:640px){ min-height:0; padding:20px; }
 `;
 const Eyebrow = styled.div`
@@ -37,7 +45,7 @@ const Stats = styled.div`
     @media(max-width:640px){ width:100%; margin-top:18px; }
 `;
 const StatCard = styled.div`
-    padding:12px 14px; border-radius:10px; background:#121a28; border:1px solid #263244;
+    padding:12px 14px; border-radius:10px; background:var(--nodexa-panel-card,#121a28); border:1px solid var(--nodexa-panel-border,#263244);
 `;
 const Section = styled.section`
     background:transparent; border:0; border-radius:0; padding:0;
@@ -47,11 +55,11 @@ const SectionHeader = styled.div`
     display:flex; align-items:center; justify-content:space-between; gap:16px; padding:1px 0 10px; border-bottom:0; margin-bottom:4px;
 `;
 const CountBadge = styled.span`
-    white-space:nowrap; font-size:11px; font-weight:600; color:#a3a3a3; padding:6px 9px; border-radius:8px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.055);
+    white-space:nowrap; font-size:11px; font-weight:600; color:#a3a3a3; padding:6px 9px; border-radius:8px; background:var(--nodexa-panel-card,rgba(255,255,255,.035)); border:1px solid var(--nodexa-panel-border,rgba(255,255,255,.055));
 `;
 const EmptyState = styled.div`
     min-height:190px; display:flex; align-items:center; justify-content:center; text-align:center; padding:28px 20px; border-radius:14px;
-    background:#0d1420; border:1px solid #263244;
+    background:var(--nodexa-panel-card,#0d1420); border:1px solid var(--nodexa-panel-border,#263244);
 `;
 const EmptyIcon = styled.div`
     width:48px;height:48px;margin:0 auto 14px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;color:#fff;
@@ -106,7 +114,7 @@ export default () => {
                 <Hero>
                     <div css={tw`relative z-10 w-full flex items-center justify-between flex-wrap`}>
                         <div css={tw`max-w-xl`}>
-                            <Eyebrow>Nodexa Control</Eyebrow>
+                            <Eyebrow>{document.documentElement.getAttribute('data-nodexa-theme') === 'christmas' ? '❄ Nodexa Control · Jul' : 'Nodexa Control'}</Eyebrow>
                             <h1 css={tw`text-2xl sm:text-3xl font-bold tracking-tight text-white mt-3 mb-2`}>Godt at se dig.</h1>
                             <p css={tw`text-sm text-neutral-400 leading-relaxed m-0`}>Administrér dine game servers, ressourcer og drift fra ét samlet kontrolpanel.</p>
                         </div>
