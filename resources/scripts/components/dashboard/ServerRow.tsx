@@ -35,16 +35,6 @@ const StatusIndicatorBox = styled(GreyRowBox)<{ $status: ServerPowerState | unde
 
     & .icon { background:var(--nodexa-panel-surface, #6b7280); color:var(--nodexa-panel-accent, #e5e7eb); }
 
-    /* A light snowdrift lies along each server card when Christmas is active. */
-    html[data-nodexa-theme='christmas'] &::after {
-        content:''; position:absolute; left:0; right:0; bottom:-1px; height:8px;
-        pointer-events:none; opacity:.73; z-index:1;
-        background:radial-gradient(ellipse 70px 9px at 8% 113%,#eef8ff 85%,transparent 100%),
-            radial-gradient(ellipse 100px 11px at 34% 126%,#f6fcff 85%,transparent 100%),
-            radial-gradient(ellipse 76px 10px at 65% 112%,#eef8ff 85%,transparent 100%),
-            radial-gradient(ellipse 110px 13px at 94% 125%,#f6fcff 85%,transparent 100%);
-    }
-
     & .status-bar {
         ${tw`w-1 bg-red-500 absolute right-0 z-20 rounded-full m-1 opacity-50 transition-all duration-150`};
         height: calc(100% - 0.5rem);
