@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 60" preserveAspectRatio="none" role="img" aria-label="Snedrive">
+  <defs>
+    <linearGradient id="snow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbfeff"/>
+      <stop offset=".45" stop-color="#f1f7fb"/>
+      <stop offset="1" stop-color="#d8e8f1"/>
+    </linearGradient>
+  </defs>
+  <!-- One irregular, continuous snowbank instead of repeated half-circles. -->
+  <path d="M0 32
+    C64 30 99 38 161 34
+    S277 24 340 29
+    S437 40 515 35
+    S614 25 696 30
+    S817 36 885 31
+    S989 23 1058 29
+    S1189 37 1260 32
+    S1369 27 1440 33
+    L1440 60 H0 Z"
+    fill="url(#snow)"/>
+  <!-- A soft ridge adds dimension without producing a harsh white stripe. -->
+  <path d="M0 32
+    C64 30 99 38 161 34
+    S277 24 340 29
+    S437 40 515 35
+    S614 25 696 30
+    S817 36 885 31
+    S989 23 1058 29
+    S1189 37 1260 32
+    S1369 27 1440 33"
+    fill="none" stroke="#fff" stroke-opacity=".42" stroke-width="1.2"/>
+</svg>
