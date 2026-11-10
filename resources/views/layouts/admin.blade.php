@@ -36,6 +36,7 @@
             <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
             <![endif]-->
         @show
+        @include('partials.nodexa-theme')
     </head>
     <body class="hold-transition skin-blue fixed sidebar-mini nodexa-admin">
         <div class="wrapper">
