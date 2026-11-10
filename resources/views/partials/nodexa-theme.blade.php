@@ -22,9 +22,18 @@
     --nx-accent2: {{ $nodexaThemeColors['success'] }};
     --nodexa-theme-accent: {{ $nodexaThemeColors['accent'] }};
     --nodexa-theme-secondary: {{ $nodexaThemeColors['secondary'] }};
+    @if($nodexaThemeState['active'] !== 'classic')
+    --nodexa-panel-bg: {{ $nodexaThemeColors['bg'] }};
+    --nodexa-panel-surface: {{ $nodexaThemeColors['surface'] }};
+    --nodexa-panel-card: {{ $nodexaThemeColors['card'] }};
+    --nodexa-panel-border: {{ $nodexaThemeColors['border'] }};
+    --nodexa-panel-accent: {{ $nodexaThemeColors['accent'] }};
+    --nodexa-panel-secondary: {{ $nodexaThemeColors['secondary'] }};
+    @endif
 }
 </style>
 <script>
     document.documentElement.setAttribute('data-nodexa-theme', @json($nodexaThemeState['active']));
+    document.documentElement.setAttribute('data-nodexa-site-managed', @json($nodexaThemeState['active'] !== 'classic' ? '1' : '0'));
     document.documentElement.setAttribute('data-nodexa-snowfall', @json($nodexaThemeState['snowfall'] ? 'on' : 'off'));
 </script>
