@@ -48,49 +48,53 @@ html[data-nodexa-theme="halloween"] body::before {
     -webkit-mask-image:radial-gradient(circle at 100% 0%,transparent 0 14px,#000 18px 145px,transparent 175px);
     mask-image:radial-gradient(circle at 100% 0%,transparent 0 14px,#000 18px 145px,transparent 175px);
 }
-/* Christmas: a static blanket of snow lies at the bottom of the viewport.
-   Never blocks buttons, forms, links or navigation. */
+/* Christmas decoration:
+   One irregular, lightweight vector snowbank at the viewport edge.
+   The server cards and hero remain clean, without repeated white waves. */
 html[data-nodexa-theme="christmas"] body::after {
-    content:"";
-    position:fixed;
-    left:0;
-    right:0;
-    bottom:0;
-    height:48px;
-    pointer-events:none;
-    z-index:100;
-    opacity:.86;
-    background:
-        radial-gradient(ellipse 14% 20px at 3% 103%, #f6fbff 97%,transparent 100%),
-        radial-gradient(ellipse 16% 28px at 23% 108%, #f8fcff 97%,transparent 100%),
-        radial-gradient(ellipse 16% 22px at 48% 104%, #f6fbff 97%,transparent 100%),
-        radial-gradient(ellipse 15% 29px at 72% 110%, #f8fcff 97%,transparent 100%),
-        radial-gradient(ellipse 18% 20px at 96% 104%, #f6fbff 97%,transparent 100%),
-        linear-gradient(to top,#eff8ff 0 10px,transparent 10px);
-    filter:drop-shadow(0 -2px 3px rgba(191,220,234,.12));
+    content: "";
+    position: fixed;
+    inset: auto 0 0;
+    height: clamp(24px, 3.2vw, 34px);
+    z-index: 90;
+    pointer-events: none;
+    background: url("../images/nodexa-snowbank.svg") bottom center / 100% 100% no-repeat;
+    opacity: .74;
+    filter: drop-shadow(0 -2px 5px rgba(203, 225, 233, .11));
 }
-/* Snowfall is an independent, admin-controlled setting and only renders
-   in the Christmas theme. No snow animation is active in other themes. */
+
+/* Falling snow is independent from the snowbank and only appears when an
+   administrator enables it for the Christmas theme. Sparse layers with
+   different sizes and drifting trajectories feel natural on small screens. */
 html[data-nodexa-theme="christmas"][data-nodexa-snowfall="on"] body::before {
-    content:"";
-    position:fixed;
-    inset:0;
-    pointer-events:none;
-    z-index:99;
-    opacity:.28;
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 89;
+    opacity: .20;
     background-image:
-        radial-gradient(2px 2px at 12px 18px,#fff 95%,transparent),
-        radial-gradient(2px 2px at 80px 55px,#fff 95%,transparent),
-        radial-gradient(3px 3px at 125px 105px,#fff 95%,transparent);
-    background-size:190px 210px,240px 250px,310px 330px;
-    animation:nodexa-gentle-snow 35s linear infinite;
+        radial-gradient(circle at 18px 24px, rgba(255, 255, 255, .92) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 110px 66px, rgba(248, 252, 255, .76) 0 1.4px, transparent 2px),
+        radial-gradient(circle at 172px 142px, rgba(255, 255, 255, .90) 0 .8px, transparent 1.4px),
+        radial-gradient(circle at 51px 184px, rgba(243, 250, 255, .72) 0 1.1px, transparent 1.8px);
+    background-repeat: repeat;
+    background-size: 238px 270px, 317px 360px, 403px 455px, 521px 590px;
+    animation: nodexa-gentle-snow 46s linear infinite;
 }
-@keyframes nodexa-gentle-snow { to { background-position:0 500px,0 560px,0 650px; } }
-@media (max-width:600px) {
-    html[data-nodexa-theme="christmas"] body::after { height:35px;opacity:.78; }
+@keyframes nodexa-gentle-snow {
+    from { background-position: 0 0, 0 0, 0 0, 0 0; }
+    to { background-position: 28px 810px, -22px 720px, 35px 910px, -18px 1180px; }
 }
-@media (prefers-reduced-motion:reduce) {
-    html[data-nodexa-theme="christmas"][data-nodexa-snowfall="on"] body::before { animation:none; }
+
+@media (max-width: 600px) {
+    html[data-nodexa-theme="christmas"] body::after { height: 25px; opacity: .68; }
+    html[data-nodexa-theme="christmas"][data-nodexa-snowfall="on"] body::before { opacity: .17; }
+}
+@media (prefers-reduced-motion: reduce) {
+    html[data-nodexa-theme="christmas"][data-nodexa-snowfall="on"] body::before {
+        animation: none;
+    }
 }
 
 /* Carry the selected palette through the storefront's shared surfaces. */
