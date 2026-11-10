@@ -31,9 +31,10 @@ class ThemesController extends Controller
         $values = $request->validate([
             'theme' => ['required', 'string', Rule::in(array_keys(ThemeService::presets()))],
             'automatic' => ['nullable', 'boolean'],
+            'snowfall' => ['nullable', 'boolean'],
         ]);
 
-        $this->themes->save($values['theme'], $request->boolean('automatic'));
+        $this->themes->save($values['theme'], $request->boolean('automatic'), $request->boolean('snowfall'));
         $this->alert->success('Temaet er gemt og er nu aktivt på Nodexa.')->flash();
 
         return redirect()->route('admin.settings.themes');
