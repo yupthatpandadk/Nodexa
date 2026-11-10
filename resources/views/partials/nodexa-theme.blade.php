@@ -2,7 +2,7 @@
     $nodexaThemeState = app(\Pterodactyl\Services\Nodexa\ThemeService::class)->current();
     $nodexaThemeColors = $nodexaThemeState['colors'];
 @endphp
-<link rel="stylesheet" href="{{ asset('css/nodexa-themes.css') }}?v=2">
+<link rel="stylesheet" href="{{ asset('css/nodexa-themes.css') }}?v=3">
 <style>
 :root {
     --blue: {{ $nodexaThemeColors['accent'] }};
