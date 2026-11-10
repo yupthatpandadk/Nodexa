@@ -45,10 +45,12 @@ class ThemeService
         $presets = self::presets();
         $selected = 'classic';
         $automatic = false;
+        $snowfall = false;
 
         try {
             $selected = (string) $this->settings->get(self::PREFIX . 'selected', 'classic');
             $automatic = filter_var($this->settings->get(self::PREFIX . 'automatic', '0'), FILTER_VALIDATE_BOOLEAN);
+            $snowfall = filter_var($this->settings->get(self::PREFIX . 'snowfall', '0'), FILTER_VALIDATE_BOOLEAN);
         } catch (\Throwable $exception) {
             // Do not break the public website during installation or DB recovery.
             report($exception);
@@ -72,11 +74,12 @@ class ThemeService
             'selected' => $selected,
             'active' => $active,
             'automatic' => $automatic,
+            'snowfall' => $snowfall,
             'colors' => $presets[$active],
         ];
     }
 
-    public function save(string $selected, bool $automatic): void
+    public function save(string $selected, bool $automatic, bool $snowfall): void
     {
         if (!array_key_exists($selected, self::presets())) {
             throw new \InvalidArgumentException('Unknown theme preset.');
@@ -84,6 +87,7 @@ class ThemeService
 
         $this->settings->set(self::PREFIX . 'selected', $selected);
         $this->settings->set(self::PREFIX . 'automatic', $automatic ? '1' : '0');
+        $this->settings->set(self::PREFIX . 'snowfall', $snowfall ? '1' : '0');
         $this->resolved = null;
     }
 }
