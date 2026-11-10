@@ -22,6 +22,7 @@
             @endif
         @show
         @yield('assets')
+        @include('partials.nodexa-theme')
         @include('layouts.scripts')
     </head>
     <body class="{{ $css['body'] ?? 'bg-neutral-50' }}">
