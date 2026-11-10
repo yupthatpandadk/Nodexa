@@ -26,14 +26,6 @@ const Hero = styled.section`
     border-radius: 16px; padding: 24px;
     box-shadow: 0 14px 38px rgba(0,0,0,.22);
     &:after { content:''; position:absolute; right:-60px; top:-100px; width:260px; height:260px; border-radius:999px; border:1px solid rgba(255,255,255,.035); box-shadow:0 0 0 44px rgba(255,255,255,.012); }
-    html[data-nodexa-theme='christmas'] &::before {
-        content:''; position:absolute; left:0; right:0; bottom:-1px; height:13px;
-        pointer-events:none; z-index:1; opacity:.82;
-        background:radial-gradient(ellipse 70px 12px at 10% 110%,#f3faff 90%,transparent 100%),
-          radial-gradient(ellipse 110px 14px at 38% 120%,#f3faff 90%,transparent 100%),
-          radial-gradient(ellipse 90px 12px at 67% 112%,#f3faff 90%,transparent 100%),
-          radial-gradient(ellipse 100px 16px at 94% 120%,#f3faff 90%,transparent 100%);
-    }
     @media(max-width:640px){ min-height:0; padding:20px; }
 `;
 const Eyebrow = styled.div`
