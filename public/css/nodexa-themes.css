@@ -1,0 +1,56 @@
+/* Global Nodexa themes. This stylesheet is included after the original layouts. */
+html[data-nodexa-theme] .logo,
+html[data-nodexa-theme] .nodexa-brand-mark {
+    background: linear-gradient(135deg,var(--nodexa-theme-accent),var(--nodexa-theme-secondary)) !important;
+    box-shadow: none;
+}
+html[data-nodexa-theme] .gradient {
+    background-image: linear-gradient(90deg,#ffffff,var(--nodexa-theme-accent),var(--nodexa-theme-secondary));
+}
+html[data-nodexa-theme] .pill { color:var(--nodexa-theme-accent); border-color:var(--line2); }
+html[data-nodexa-theme] .heroKicker::before { background:var(--nodexa-theme-accent); }
+html[data-nodexa-theme] .sectionNo { color:var(--nodexa-theme-accent); }
+html[data-nodexa-theme] .statusBadge { color:var(--nodexa-theme-accent); border:1px solid var(--line2); }
+html[data-nodexa-theme] .nav,
+html[data-nodexa-theme] .subnav { border-bottom-color:var(--line); }
+html[data-nodexa-theme] .footer { border-top-color:var(--line);background:var(--bg); }
+html[data-nodexa-theme] .hero {
+    background: radial-gradient(800px 400px at 50% -5%,color-mix(in srgb,var(--nodexa-theme-accent) 22%,transparent),transparent 68%),
+                radial-gradient(600px 360px at 82% 35%,color-mix(in srgb,var(--nodexa-theme-secondary) 14%,transparent),transparent 70%);
+}
+html[data-nodexa-theme] .btn.primary,
+html[data-nodexa-theme] .cartCount {
+    background:linear-gradient(135deg,var(--nodexa-theme-accent),var(--nodexa-theme-secondary));
+}
+html[data-nodexa-theme] .nodexa-admin .sidebar-menu > li.active > a {
+    background:color-mix(in srgb,var(--nx-accent) 16%,transparent) !important;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--nx-accent) 34%,transparent);
+}
+html[data-nodexa-theme] .nodexa-admin .sidebar-menu > li.active > a i { color:var(--nx-accent); }
+html[data-nodexa-theme] .nodexa-admin .btn-primary { background:var(--nx-accent);color:#fff; }
+html[data-nodexa-theme] .nodexa-admin .box-footer { background:var(--nx-bg); }
+html[data-nodexa-theme] .nodexa-admin .content-header > h1,
+html[data-nodexa-theme] .nodexa-admin .box-title { color:var(--nx-text); }
+html[data-nodexa-theme] .nodexa-admin .main-header .logo,
+html[data-nodexa-theme] .nodexa-admin .main-header .navbar,
+html[data-nodexa-theme] .nodexa-admin .main-sidebar { background:var(--nx-bg) !important; }
+/* Holiday details are subtle, purely decorative, and never intercept clicks. */
+html[data-nodexa-theme="halloween"] body::before {
+    content:""; position:fixed; top:58px; right:0; width:180px; height:180px;
+    pointer-events:none; z-index:99; opacity:.16;
+    background:repeating-conic-gradient(from 0deg at 100% 0%,transparent 0deg 14deg,var(--nodexa-theme-accent) 14deg 14.5deg,transparent 14.5deg 30deg);
+    -webkit-mask-image:radial-gradient(circle at 100% 0%,transparent 0 14px,#000 18px 145px,transparent 175px);
+    mask-image:radial-gradient(circle at 100% 0%,transparent 0 14px,#000 18px 145px,transparent 175px);
+}
+html[data-nodexa-theme="christmas"] body::before {
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:99;opacity:.18;
+    background-image:radial-gradient(2px 2px at 12px 18px,#fff 95%,transparent),
+        radial-gradient(2px 2px at 80px 55px,#fff 95%,transparent),
+        radial-gradient(3px 3px at 125px 105px,#fff 95%,transparent);
+    background-size:190px 210px,240px 250px,310px 330px;
+    animation:nodexa-gentle-snow 35s linear infinite;
+}
+@keyframes nodexa-gentle-snow { to { background-position:0 500px,0 560px,0 650px; } }
+@media (prefers-reduced-motion:reduce) {
+    html[data-nodexa-theme="christmas"] body::before { animation:none; }
+}
