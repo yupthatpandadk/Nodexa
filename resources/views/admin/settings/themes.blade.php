@@ -128,6 +128,15 @@
                         <span>Aktivér Halloween i oktober og juletema i december. Resten af året bruges det valgte farvetema. Deaktiver for at bruge dit valg hele året.</span>
                     </span>
                 </label>
+
+                <label class="nx-theme-automatic" style="margin-top:12px">
+                    <input type="hidden" name="snowfall" value="0">
+                    <input type="checkbox" name="snowfall" value="1" {{ old('snowfall', $themeState['snowfall']) ? 'checked' : '' }}>
+                    <span>
+                        <strong><i class="fa fa-snowflake-o" aria-hidden="true"></i> Faldende sne</strong>
+                        <span>Slå animerede snefnug til eller fra på hjemmesiden, Client Area og Admin Area. Virker kun, når juletemaet er aktivt (også ved automatisk sæsontema). Liggende sne vises altid i juletemaet.</span>
+                    </span>
+                </label>
             </div>
             <div class="box-footer" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
                 <span class="text-muted">Aktuelt vist: {{ $presets[$themeState['active']]['name'] }}</span>
