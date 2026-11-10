@@ -54,3 +54,34 @@ html[data-nodexa-theme="christmas"] body::before {
 @media (prefers-reduced-motion:reduce) {
     html[data-nodexa-theme="christmas"] body::before { animation:none; }
 }
+
+/* Carry the selected palette through the storefront's shared surfaces. */
+html[data-nodexa-theme] .nav { background:color-mix(in srgb,var(--bg) 88%,transparent); }
+html[data-nodexa-theme] .topline,
+html[data-nodexa-theme] .subnav,
+html[data-nodexa-theme] .crumb,
+html[data-nodexa-theme] .trustline,
+html[data-nodexa-theme] .section.alt { background:var(--surface);border-color:var(--line); }
+html[data-nodexa-theme] .metricbar,
+html[data-nodexa-theme] .comparison,
+html[data-nodexa-theme] .comparison th,
+html[data-nodexa-theme] .faq details,
+html[data-nodexa-theme] .notice,
+html[data-nodexa-theme] .mockTop,
+html[data-nodexa-theme] .mockStat,
+html[data-nodexa-theme] .featureVisual {background:var(--card);border-color:var(--line);}
+html[data-nodexa-theme] .cartNav,
+html[data-nodexa-theme] .walletNav,
+html[data-nodexa-theme] .profileTrigger,
+html[data-nodexa-theme] .profileDropdown,
+html[data-nodexa-theme] .input {background:var(--card);border-color:var(--line2);}
+html[data-nodexa-theme] .profileDropdown::before {background:var(--card);border-color:var(--line2);}
+html[data-nodexa-theme] .tag,
+html[data-nodexa-theme] .navbadge {background:var(--surface);color:var(--nodexa-theme-accent);border-color:var(--line2);}
+html[data-nodexa-theme] .icon,
+html[data-nodexa-theme] .profileIcon,
+html[data-nodexa-theme] .step.active i {background:var(--surface);border-color:var(--line2);color:var(--nodexa-theme-accent);}
+html[data-nodexa-theme] .cta {background:var(--card);border-color:var(--line2);}
+html[data-nodexa-theme] .pill {background:var(--surface);}
+html[data-nodexa-theme] .navGroup a::after {background:linear-gradient(90deg,var(--nodexa-theme-accent),var(--nodexa-theme-secondary));}
+html[data-nodexa-theme] .input:focus {border-color:var(--nodexa-theme-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--nodexa-theme-accent) 15%,transparent);}
