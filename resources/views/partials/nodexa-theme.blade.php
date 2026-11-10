@@ -2,7 +2,7 @@
     $nodexaThemeState = app(\Pterodactyl\Services\Nodexa\ThemeService::class)->current();
     $nodexaThemeColors = $nodexaThemeState['colors'];
 @endphp
-<link rel="stylesheet" href="{{ asset('css/nodexa-themes.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('css/nodexa-themes.css') }}?v=2">
 <style>
 :root {
     --blue: {{ $nodexaThemeColors['accent'] }};
@@ -24,4 +24,7 @@
     --nodexa-theme-secondary: {{ $nodexaThemeColors['secondary'] }};
 }
 </style>
-<script>document.documentElement.setAttribute('data-nodexa-theme', @json($nodexaThemeState['active']));</script>
+<script>
+    document.documentElement.setAttribute('data-nodexa-theme', @json($nodexaThemeState['active']));
+    document.documentElement.setAttribute('data-nodexa-snowfall', @json($nodexaThemeState['snowfall'] ? 'on' : 'off'));
+</script>
