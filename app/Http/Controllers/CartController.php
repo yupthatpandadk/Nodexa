@@ -194,6 +194,14 @@ class CartController extends Controller
         // Wallet is always applied first. Use Stripe for the remaining balance.
         $paymentMethod = $totalCents > 0 && $walletCents >= $totalCents && $eligibleCents >= $totalCents ? 'wallet' : 'stripe';
 
+        // Avoid creating an order that cannot be paid: Stripe has a minimum
+        // charge of 2.50 DKK, and any restricted VPS amount must use Stripe.
+        if ($paymentMethod === 'stripe' && $totalCents > 0 && $totalCents < 250 && $this->stripe->isEnabled()) {
+            return redirect()->route('store.cart.checkout')->withErrors([
+                'payment' => 'Restbeløbet er under Stripes minimum på 2,50 DKK. Tilføj et produkt, justér rabatten, eller brug fuld Wallet-betaling på tilladte produkter.',
+            ]);
+        }
+
         try {
             $checkoutId = $this->cart->createCheckout(
                 $request->user()->id,
