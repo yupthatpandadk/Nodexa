@@ -18,7 +18,8 @@
 @section('content')
 @php
     $updateAvailable = $latest && $installed !== 'dev' && version_compare($latest, $installed, '>');
-    $canUpdate = !$running && $updateAvailable;
+    $canUpdate = !$running && $latest && ($updateAvailable || $updateFailed);
+    $retryIncomplete = $updateFailed && !$updateAvailable;
     $showProgress = $running || $updateFailed;
     $progressDetails = is_array($lastProgress ?? null) ? $lastProgress : [];
     $progressValue = max(0, min(100, (int) ($progressDetails['percent'] ?? ($running ? 1 : 0))));
@@ -115,7 +116,7 @@
                     <div class="nx-updates__notice nx-updates__notice--error" role="alert">
                         <i class="fa fa-exclamation-circle" aria-hidden="true"></i>
                         <div><strong>Opdateringen kunne ikke gennemføres</strong>
-                            <p>Kontrollér loggen til højre eller nedenfor. Ved <code>Permission denied</code> kan det være nødvendigt at opdatere én gang via SSH med sudo.</p>
+                            <p>Kontrollér loggen til højre eller nedenfor. Hvis Composer viser <code>vendor/composer/installed.php: Permission denied</code>, skal den beskyttede opdateringstjeneste og filrettighederne kontrolleres fra SSH.</p>
                         </div>
                     </div>
                 @endif
@@ -125,7 +126,7 @@
                         @csrf
                         <button type="submit" class="nx-updates__button nx-updates__button-primary" {{ $canUpdate ? '' : 'disabled' }}>
                             <i class="fa {{ $running ? 'fa-spinner fa-spin' : ($canUpdate ? 'fa-download' : 'fa-check') }}" aria-hidden="true"></i>
-                            {{ $running ? 'Opdatering i gang' : ($canUpdate ? 'Installer version '.$latest : 'Ingen opdatering') }}
+                            {{ $running ? 'Opdatering i gang' : ($retryIncomplete ? 'Genoptag installation' : ($canUpdate ? 'Installer version '.$latest : 'Ingen opdatering')) }}
                         </button>
                     </form>
                     <a class="nx-updates__button" href="#nx-release-title"><i class="fa fa-list-ul" aria-hidden="true"></i> Se ændringer</a>
