@@ -37,11 +37,11 @@ class MinecraftEggController extends ClientApiController
         $values = $request->validate([
             'egg_id' => ['required', 'integer', 'exists:eggs,id'],
             'confirm_reinstall' => ['required', 'accepted'],
-            'installation_mode' => ['required', 'in:keep,clean'],
+            'installation_mode' => ['sometimes', 'in:keep,clean'],
             'confirm_delete' => ['required_if:installation_mode,clean', 'nullable', 'in:SLET'],
         ]);
 
-        $mode = $values['installation_mode'];
+        $mode = $values['installation_mode'] ?? 'keep'; // Older clients always get the non-destructive default.
         $previous = $server->egg;
         $deleted = $this->switcher->switch(
             $server,
