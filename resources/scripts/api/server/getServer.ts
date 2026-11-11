@@ -53,6 +53,7 @@ export interface Server {
     };
     eggFeatures: string[];
     eggId: number;
+    isFiveMServer: boolean;
     minecraftEggSwitchingAvailable: boolean;
     pluginManagerEnabled: boolean;
     modManagerEnabled: boolean;
