@@ -1,6 +1,18 @@
 {
-  "latest": "1.7.13",
+  "latest": "1.7.14",
   "releases": [
+    {
+      "version": "1.7.14",
+      "date": "2026-11-11",
+      "type": "patch",
+      "title": "Update Center – retvisende log fra systemd",
+      "changes": [
+        "Systemd-opdatereren skriver nu sin aktuelle log direkte til den fil, der vises i Update Center, med tydelig startmarkør, tidsstempel og procesbruger.",
+        "Gamle Permission denied-beskeder fra tidligere opdateringer bliver markeret som muligvis forældede, hvis logfilen er ældre end seneste opdateringsforsøg.",
+        "Rettet visning af opdateringsprocessens PID for lettere fejlsøgning.",
+        "Rettelsen ændrer ikke kildemappens eller Composer-mappens adgangsrettigheder."
+      ]
+    },
     {
       "version": "1.7.13",
       "date": "2026-11-11",
