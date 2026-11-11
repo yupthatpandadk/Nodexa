@@ -100,7 +100,7 @@
                     </div>
                     <div class="nx-updates__version">
                         <dt>Opdateringskanal</dt>
-                        <dd>main <small>· stabil</small></dd>
+                        <dd>main <small>· GitHub</small></dd>
                     </div>
                 </dl>
 
@@ -128,7 +128,7 @@
                             {{ $running ? 'Opdatering i gang' : ($canUpdate ? 'Installer version '.$latest : 'Ingen opdatering') }}
                         </button>
                     </form>
-                    <a class="nx-updates__button" href="{{ route('admin.updates') }}"><i class="fa fa-refresh" aria-hidden="true"></i> Opdater status</a>
+                    <a class="nx-updates__button" href="#nx-release-title"><i class="fa fa-list-ul" aria-hidden="true"></i> Se ændringer</a>
                 </div>
                 <p class="nx-updates__help"><i class="fa fa-shield" aria-hidden="true"></i> Opdateringer startes via den beskyttede Nodexa-opdateringstjeneste. Kontrolpanelet kan kortvarigt være i vedligeholdelsestilstand.</p>
             </div>
