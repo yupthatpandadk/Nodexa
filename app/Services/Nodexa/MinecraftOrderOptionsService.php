@@ -103,7 +103,7 @@ class MinecraftOrderOptionsService
                     if (($item['type'] ?? '') === 'release' && self::validVersion($name) && $name !== 'latest') {
                         $values[] = $name;
                     }
-                    if (count($values) >= 200) {
+                    if (count($values) >= 500) {
                         break;
                     }
                 }
@@ -122,7 +122,7 @@ class MinecraftOrderOptionsService
     public static function validVersion(string $version): bool
     {
         return $version === 'latest'
-            || (bool) preg_match('/\A1\.\d{1,2}(?:\.\d{1,2})?\z/D', $version);
+            || (bool) preg_match('/\A(?:1|2[6-9]|[3-9]\d)\.\d{1,2}(?:\.\d{1,2})?\z/D', $version);
     }
 
     /**
@@ -168,11 +168,13 @@ class MinecraftOrderOptionsService
         }
 
         $java = null;
-        if ($version !== null && preg_match('/\A1\.(\d+)(?:\.(\d+))?\z/D', $version, $parts)) {
-            $minor = (int) $parts[1];
-            $patch = (int) ($parts[2] ?? 0);
-            $java = $minor > 20 || ($minor === 20 && $patch >= 5) ? 21
-                : ($minor >= 18 ? 17 : ($minor === 17 ? 16 : 8));
+        if ($version !== null && preg_match('/\A(1|2[6-9]|[3-9]\d)\.(\d+)(?:\.(\d+))?\z/D', $version, $parts)) {
+            $major = (int) $parts[1];
+            $minor = (int) $parts[2];
+            $patch = (int) ($parts[3] ?? 0);
+            $java = $major >= 26 ? 25
+                : ($minor > 20 || ($minor === 20 && $patch >= 5) ? 21
+                    : ($minor >= 18 ? 17 : ($minor === 17 ? 16 : 8)));
         }
 
         if ($java !== null) {
