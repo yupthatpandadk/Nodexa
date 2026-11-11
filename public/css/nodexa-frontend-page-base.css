@@ -71,3 +71,40 @@
 .nx-theme-page .nx-theme-section {padding:44px 0}
 .nx-theme-page .nx-theme-filters button {flex:1 1 90px}
 }
+/* Product configuration is not just recolored: each theme has an entirely
+   different introductory information architecture. Order forms stay shared. */
+.nx-product-intro {padding:75px 0;border-bottom:1px solid var(--line2);color:var(--text)}
+.nx-product-intro h1 {font-size:clamp(39px,5.5vw,76px);line-height:1.08;letter-spacing:-.05em;margin:13px 0}
+.nx-product-intro p {max-width:620px;color:var(--muted);font-size:15px;line-height:1.65}
+.nx-product-latch-grid,.nx-product-horizon-grid,.nx-product-dino-grid {display:grid;grid-template-columns:1.3fr .7fr;gap:50px;align-items:center}
+.nx-product-intro-latch {background:linear-gradient(115deg,#132519,#080e0b);padding:88px 0}
+.nx-product-latch-steps {display:flex;flex-wrap:wrap;gap:14px;margin-top:39px;font-size:10px;letter-spacing:.06em;color:#9acdaa;font-weight:800}
+.nx-product-intro-latch aside {border:1px solid #36583e;background:#101e15;padding:30px;display:flex;flex-direction:column;gap:11px}
+.nx-product-intro-latch aside>span {font-size:10px;color:#91cba2;letter-spacing:.12em}
+.nx-product-intro-latch aside>strong {font-size:40px;letter-spacing:-.05em;color:#f5fff6}
+.nx-product-intro-latch aside>small {color:#99b19e;font-size:11px}
+.nx-product-intro-latch aside>a {display:inline-flex;background:#8de4a9;color:#07160c;font-size:12px;font-weight:850;padding:13px 15px;margin-top:10px;justify-content:center}
+.nx-product-intro-xl {text-align:center;background:radial-gradient(ellipse 55% 90% at 50% 0%,#3d2d64,#0b0819 85%);padding:95px 0}
+.nx-product-intro-xl h1 {font-size:clamp(49px,7vw,89px);margin:23px 0}
+.nx-product-intro-xl p {margin:0 auto}
+.nx-product-xl-steps {display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;margin:33px 0}
+.nx-product-xl-steps span {font-size:11px;border:1px solid #4e3b78;border-radius:20px;padding:9px 15px;color:#aba0c3}
+.nx-product-xl-steps span.active {background:#a485ec;color:#180e2a;border-color:#a485ec}
+.nx-product-intro-xl .nx-theme-primary {background:linear-gradient(115deg,#b38cff,#68c3f3);color:#0b1127!important;border-radius:12px}
+.nx-product-intro-horizon {background:#182c40;padding:66px 0}
+.nx-product-intro-horizon h1 {font-size:clamp(42px,5.5vw,72px)}
+.nx-product-intro-horizon aside {border-left:2px solid #80b5f0;display:grid;gap:8px;padding-left:27px}
+.nx-product-intro-horizon aside>span {color:#a5c4e1;font-size:10px;letter-spacing:.13em;font-weight:850;margin-bottom:7px}
+.nx-product-intro-horizon aside>div {display:flex;gap:15px;align-items:center;border-bottom:1px solid #3d5470;padding:12px 0}
+.nx-product-intro-horizon aside b {font-size:21px;min-width:100px;color:#f4f8fd}
+.nx-product-intro-horizon aside small {font-size:11px;color:#a6bed2}
+.nx-product-intro-dino {background:radial-gradient(ellipse at 75% 10%,#315239,#0b190f 75%);padding:90px 0}
+.nx-product-intro-dino h1 {font-size:clamp(45px,5.2vw,76px);margin:25px 0 17px}
+.nx-product-intro-dino .nx-theme-primary {background:#94e59a;color:#092212!important;border-radius:7px;margin-top:21px}
+.nx-product-intro-dino aside {border:1px solid #5a9162;border-radius:12px;background:#193121;padding:25px 30px;display:grid;gap:13px}
+.nx-product-intro-dino aside>span {font-size:10px;letter-spacing:.13em;color:#9ad69c;font-weight:800}
+.nx-product-intro-dino aside>strong {font-size:37px;letter-spacing:-.05em;color:#edfff0}
+.nx-product-intro-dino aside>small {font-size:11px;color:#9bb59e}
+.nx-product-intro-dino aside>div {padding-top:10px;border-top:1px solid #416b48;color:#d9f3df;font-size:12px}
+.nx-product-intro-dino aside b {color:#9ed1a4;margin-right:15px}
+@media(max-width:800px) {.nx-product-latch-grid,.nx-product-horizon-grid,.nx-product-dino-grid {grid-template-columns:1fr;gap:28px}.nx-product-intro {padding:55px 0}.nx-product-intro-latch aside,.nx-product-intro-dino aside {padding:20px}}
