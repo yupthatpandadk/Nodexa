@@ -69,6 +69,27 @@ class MinecraftEggSwitchServiceTest extends TestCase
         ));
     }
 
+    public function test_target_must_be_in_same_minecraft_nest(): void
+    {
+        $server = $this->server(10, 'Minecraft');
+        $server->forceFill(['nest_id' => 3]);
+
+        $sameNest = new Egg(['name' => 'Fabric']);
+        $sameNest->forceFill(['nest_id' => 3]);
+        $sameNest->setRelation('nest', new Nest(['name' => 'Minecraft']));
+        $this->assertTrue($this->switcher->isAllowedTarget($server, $sameNest));
+
+        $otherNest = new Egg(['name' => 'FXServer']);
+        $otherNest->forceFill(['nest_id' => 4]);
+        $otherNest->setRelation('nest', new Nest(['name' => 'FiveM']));
+        $this->assertFalse($this->switcher->isAllowedTarget($server, $otherNest));
+
+        $anotherMinecraftNest = new Egg(['name' => 'Paper']);
+        $anotherMinecraftNest->forceFill(['nest_id' => 6]);
+        $anotherMinecraftNest->setRelation('nest', new Nest(['name' => 'Minecraft']));
+        $this->assertFalse($this->switcher->isAllowedTarget($server, $anotherMinecraftNest));
+    }
+
     public function test_subuser_cannot_change_minecraft_egg(): void
     {
         $server = $this->server(10, 'Minecraft');
