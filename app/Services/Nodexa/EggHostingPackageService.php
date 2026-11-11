@@ -76,7 +76,7 @@ class EggHostingPackageService
     public function detectCategory(Egg $egg): string
     {
         $name = mb_strtolower(trim($egg->name . ' ' . ($egg->nest?->name ?? '')));
-        if (preg_match('/minecraft|paper|purpur|fabric|forge|sponge|bungee|velocity/', $name)) {
+        if (preg_match('/minecraft|paper|purpur|spigot|folia|pufferfish|vanilla|fabric|forge|quilt|neoforge|sponge|bungee|velocity/', $name)) {
             return 'minecraft';
         }
         if (preg_match('/fivem|fxserver|cfx|redm/', $name)) {
