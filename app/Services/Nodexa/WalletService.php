@@ -7,7 +7,7 @@ use RuntimeException;
 
 class WalletService
 {
-    public function __construct(private NodexaCartService $cart)
+    public function __construct(private NodexaCartService $cart, private WalletUsagePolicy $policy)
     {
     }
 
@@ -102,6 +102,12 @@ class WalletService
                 throw new RuntimeException('Wallet kan kun betale positive beløb i DKK.');
             }
 
+            // Check the current admin policy at the moment of debit, even for
+            // older pending orders and direct requests to the Wallet endpoint.
+            if ($this->policy->eligibleCentsForCheckout($checkout) < $amount) {
+                throw new RuntimeException('Wallet-kredit kan ikke bruges til denne ordre. VPS-produkter skal betales med Stripe ifølge Wallet-indstillingerne.');
+            }
+
             $wallet = $this->walletForUpdate($userId);
             if ((int) $wallet->balance_cents < $amount) {
                 throw new RuntimeException('Der er ikke nok kredit på Wallet-saldoen.');
@@ -170,8 +176,16 @@ class WalletService
             }
 
             $attempt++;
-            $wallet = $this->walletForUpdate($userId);
-            $walletCents = min((int) $wallet->balance_cents, max(0, $total - 250));
+            $eligibleCents = $this->policy->eligibleCentsForCheckout($checkout);
+            $walletCents = 0;
+            if ($eligibleCents > 0) {
+                $wallet = $this->walletForUpdate($userId);
+                $walletCents = WalletUsagePolicy::walletFirstCents(
+                    $total,
+                    (int) $wallet->balance_cents,
+                    $eligibleCents
+                );
+            }
             if ($walletCents > 0) {
                 $this->post($wallet, -$walletCents, 'wallet_hold',
                     'stripe-wallet-hold-' . $checkoutId . '-' . $attempt,
