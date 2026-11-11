@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
  * Self-service Egg changes for Minecraft server owners ONLY.
  *
  * Changing installation software can overwrite or invalidate old server
- * files. Therefore this endpoint always requires a fresh completed backup,
+ * files. A backup is recommended but optional; this endpoint requires a
  * stopped Wings container, explicit confirmation, and triggers a reinstall.
  *
  * It cannot be used by FiveM or other Nests, or by server subusers.
@@ -112,10 +112,6 @@ class MinecraftEggSwitchService
             if ($server->status !== null || !$server->isInstalled() || !$server->canBeReinstalled()
                 || $server->isSuspended() || $server->transfer !== null || $server->node->isUnderMaintenance()) {
                 throw new ConflictHttpException('Serveren skal være færdiginstalleret og må ikke være suspenderet, under overførsel eller vedligeholdelse.');
-            }
-
-            if (!$this->hasRecentBackup($server)) {
-                throw new ConflictHttpException('Opret en fuldført backup inden for de seneste 24 timer, før du skifter Egg.');
             }
 
             // Verify the actual Wings state; the database's install status
