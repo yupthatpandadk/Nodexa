@@ -1,0 +1,78 @@
+/* HORIZON / structured corporate operations layout */
+.nx-home-horizon,.nx-catalog-horizon,.nx-vps-horizon {background:#0a111b}
+.nx-home-horizon .nx-theme-primary,.nx-catalog-horizon .nx-theme-order,.nx-vps-horizon .nx-theme-order,.nx-vps-horizon .nx-theme-primary {background:#6ca9ef;color:#091724!important;border-radius:4px}
+.nx-home-horizon .nx-theme-secondary,.nx-vps-horizon .nx-theme-secondary {border-radius:4px}
+.nx-horizon-hero {background:linear-gradient(115deg,#172b40,#0a111b 70%);border-bottom:1px solid #314963}
+.nx-horizon-hero-grid {display:grid;grid-template-columns:1.12fr .88fr;gap:70px;align-items:center;padding-top:100px;padding-bottom:96px}
+.nx-horizon-hero-copy h1 {font-size:clamp(50px,6vw,85px);line-height:1.04}
+.nx-horizon-hero-copy .nx-theme-lead {max-width:565px;margin:24px 0 0}
+.nx-horizon-hero-copy .nx-theme-ctas {margin-top:28px}
+.nx-horizon-hero-aside {border:1px solid #3b5a79;background:#13263a;box-shadow:14px 14px 0 #0c1b2a}
+.nx-horizon-aside-head {display:flex;align-items:center;gap:16px;padding:18px 22px;border-bottom:1px solid #38516b}
+.nx-horizon-aside-head>b {font-size:23px;color:#b0d4fc}
+.nx-horizon-aside-head span {font-size:10px;letter-spacing:.1em;color:#b0c4d8;font-weight:800}
+.nx-horizon-aside-row {display:grid;grid-template-columns:35px 1fr 22px;gap:12px;align-items:center;padding:25px 20px;border-bottom:1px solid #2c4560}
+.nx-horizon-aside-row:last-child {border-bottom:none}
+.nx-horizon-aside-row>strong {color:#82b8f1;font-size:11px}
+.nx-horizon-aside-row h3 {font-size:17px}
+.nx-horizon-aside-row p {font-size:11px;margin:6px 0 0}
+.nx-horizon-aside-row>span {color:#84b8e9}
+.nx-horizon-band {background:#172a3c;border-bottom:1px solid #3b5874}
+.nx-horizon-band>.container {min-height:82px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:center;gap:12px}
+.nx-horizon-band span {font-size:11px;letter-spacing:.09em;font-weight:800;color:#d4e2ef}
+.nx-horizon-band b {color:#7fa8d1;margin-right:10px}
+.nx-horizon-catalog {background:#0b1521}
+.nx-horizon-heading {display:flex;align-items:end;justify-content:space-between;gap:25px;margin-bottom:32px}
+.nx-horizon-heading p:not(.nx-theme-overline) {max-width:370px;font-size:13px}
+.nx-horizon-heading h2 {font-size:clamp(32px,4vw,48px)}
+.nx-horizon-catalog .nx-theme-plans--horizon-home {gap:1px;background:#31465e;border:1px solid #31465e}
+.nx-home-horizon .nx-theme-plan {background:#111f2f;border-radius:0;border:0}
+.nx-home-horizon .nx-theme-plan.is-featured {box-shadow:inset 0 3px #7fb6f5}
+.nx-horizon-cta {display:flex;align-items:center;gap:18px;background:#1a2d40;border:1px solid #36516b;margin-top:22px;padding:23px}
+.nx-horizon-cta strong {font-size:14px}
+.nx-horizon-cta span {flex:1;font-size:12px;color:#a9c0d6}
+.nx-horizon-cta a {font-size:12px;color:#9ccbff;font-weight:800}
+.nx-horizon-operations {background:#101f2d}
+.nx-horizon-operations>.container {display:grid;grid-template-columns:.85fr 1.15fr;gap:75px;align-items:center}
+.nx-horizon-op-text h2 {margin-bottom:20px}
+.nx-horizon-op-text p {margin-bottom:25px}
+.nx-horizon-op-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#3a536b;border:1px solid #3a536b}
+.nx-horizon-op-grid>div {min-height:140px;padding:27px;background:#15283b}
+.nx-horizon-op-grid b {display:block;color:#8cbee9;font-size:10px;letter-spacing:.13em}
+.nx-horizon-op-grid strong {display:block;font-size:18px;margin:22px 0 12px}
+.nx-horizon-op-grid span {color:#8c9fb4;font-size:10px}
+.nx-horizon-catalog-header {background:#17283b;border-bottom:1px solid #35516c}
+.nx-horizon-catalog-heading {display:flex;align-items:end;justify-content:space-between;gap:30px;padding-top:78px;padding-bottom:76px}
+.nx-horizon-catalog-heading h1 {font-size:clamp(42px,5.3vw,73px);margin-bottom:17px}
+.nx-horizon-catalog-heading p {margin:0;max-width:650px}
+.nx-horizon-catalog-index {display:grid;border-left:2px solid #699ed6;padding:12px 0 12px 22px;gap:8px;min-width:235px}
+.nx-horizon-catalog-index b {font-size:11px;letter-spacing:.13em;color:#b1d5f2}
+.nx-horizon-catalog-index span {font-size:12px;color:#91a9c1}
+.nx-horizon-catalog-main {background:#0a111b}
+.nx-horizon-toolbar {display:flex;align-items:center;gap:26px;padding:15px 0;border-block:1px solid #2c455d;margin-bottom:28px}
+.nx-horizon-toolbar>span {font-size:10px;letter-spacing:.11em;font-weight:800;color:#9fb9d1}
+.nx-horizon-toolbar .nx-theme-filters {flex:1}
+.nx-horizon-toolbar .nx-theme-filters button {border-radius:3px;background:#132236;border-color:#35516a}
+.nx-horizon-toolbar .nx-theme-filters button.is-active {background:#7eb7ff;color:#07131f}
+.nx-horizon-toolbar>a {font-size:12px;font-weight:800;color:#a6c9ee}
+.nx-horizon-table-head {display:grid;grid-template-columns:1.1fr 1fr 155px;gap:20px;padding:13px 17px;background:#172a40;color:#a2bdd6;font-size:10px;letter-spacing:.13em;font-weight:800}
+.nx-catalog-horizon #nxThemeCatalog .nx-theme-plans {display:grid;grid-template-columns:1fr;gap:1px;border:1px solid #2f4961;background:#2f4961}
+.nx-catalog-horizon #nxThemeCatalog .nx-theme-plan {display:grid;grid-template-columns:1.1fr 1fr 155px;gap:10px 20px;border:0;border-radius:0;background:#122136;padding:21px 18px;align-items:center}
+.nx-catalog-horizon #nxThemeCatalog .nx-theme-plan-head {grid-column:1;grid-row:1}
+.nx-catalog-horizon #nxThemeCatalog .nx-theme-plan h3 {grid-column:1;grid-row:2}
+.nx-catalog-horizon #nxThemeCatalog .nx-theme-plan-description {grid-column:1;grid-row:3;min-height:0;margin:0}
+.nx-catalog-horizon #nxThemeCatalog .nx-theme-price {grid-column:2;grid-row:1 / span 2;margin:0}
+.nx-catalog-horizon #nxThemeCatalog .nx-theme-plan-specs {grid-column:2;grid-row:3;margin:0}
+.nx-catalog-horizon #nxThemeCatalog .nx-theme-order {grid-column:3;grid-row:1 / span 3;align-self:stretch;margin:0;border-radius:3px}
+.nx-horizon-vps-head {background:linear-gradient(120deg,#192e44,#0b1522);border-bottom:1px solid #38536b}
+.nx-horizon-vps-grid {display:grid;grid-template-columns:1.25fr .75fr;align-items:center;gap:55px;padding-block:89px}
+.nx-horizon-vps-grid h1 {font-size:clamp(52px,5.3vw,79px);margin:14px 0}
+.nx-horizon-vps-grid p {max-width:570px}
+.nx-horizon-vps-grid .nx-theme-primary {margin-top:20px}
+.nx-horizon-vps-aside {padding:33px;border:1px solid #4a6481;background:#14283c}
+.nx-horizon-vps-aside small {display:block;color:#88abd0;font-size:10px;letter-spacing:.14em}
+.nx-horizon-vps-aside strong {display:block;font-size:28px;margin:28px 0}
+.nx-horizon-vps-aside span {font-size:12px;color:#acc5db}
+.nx-vps-horizon .nx-theme-plan {border-radius:3px;background:#132237}
+@media(max-width:1000px){.nx-horizon-hero-grid,.nx-horizon-operations>.container,.nx-horizon-vps-grid {grid-template-columns:1fr;gap:35px}.nx-horizon-hero-aside {box-shadow:7px 7px 0 #0c1b2a}.nx-horizon-band>.container {grid-template-columns:repeat(2,minmax(0,1fr));padding-block:15px}.nx-horizon-toolbar {flex-wrap:wrap}.nx-horizon-catalog-heading {display:block}.nx-horizon-catalog-index {margin-top:25px}}
+@media(max-width:700px){.nx-horizon-hero-grid {padding-block:63px}.nx-horizon-heading {display:block}.nx-horizon-cta {display:grid}.nx-horizon-op-grid>div {min-height:115px;padding:17px}.nx-horizon-table-head {display:none}.nx-catalog-horizon #nxThemeCatalog .nx-theme-plan {display:flex;gap:13px}.nx-catalog-horizon #nxThemeCatalog .nx-theme-plan-specs {margin-bottom:12px}.nx-catalog-horizon #nxThemeCatalog .nx-theme-order {align-self:stretch}.nx-horizon-catalog-heading {padding-block:55px}.nx-horizon-band>.container {gap:15px}}
