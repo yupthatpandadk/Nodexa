@@ -22,6 +22,7 @@ export default () => {
     const uuid = ServerContext.useStoreState((state) => state.server.data!.uuid);
     const node = ServerContext.useStoreState((state) => state.server.data!.node);
     const sftp = ServerContext.useStoreState((state) => state.server.data!.sftpDetails, isEqual);
+    const minecraftEggSwitchingAvailable = ServerContext.useStoreState((state) => state.server.data!.minecraftEggSwitchingAvailable);
 
     return (
         <ServerContentBlock title={'Settings'}>
