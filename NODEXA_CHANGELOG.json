@@ -1,6 +1,19 @@
 {
-  "latest": "1.7.17",
+  "latest": "1.7.18",
   "releases": [
+    {
+      "version": "1.7.18",
+      "date": "2026-11-11",
+      "type": "patch",
+      "title": "Minecraft Egg-skift – tydelig knapstatus og forbedret kontrol",
+      "changes": [
+        "Kontrolpanelet viser nu fire tydelige krav for at kunne skifte Minecraft Egg: vælg et andet Egg, stop serveren, opret en fuldført backup og bekræft risikoen.",
+        "Der er direkte links til Console og Backups, når serveren ikke er stoppet eller den nødvendige backup mangler.",
+        "Status opdateres også fra Pterodactyls resource-API, når WebSocket-status ikke er tilgængelig.",
+        "Opdater status nulstiller ikke længere kundens valgte Minecraft Egg.",
+        "FiveM og andre spil er fortsat afskåret fra funktionen både i brugerfladen og backend."
+      ]
+    },
     {
       "version": "1.7.17",
       "date": "2026-11-11",
