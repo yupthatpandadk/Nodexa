@@ -1,0 +1,73 @@
+/* Shared behavior for real, separate Blade theme page compositions. */
+.nx-theme-page { color:var(--text); min-height:40vh; }
+.nx-theme-page * {box-sizing:border-box}
+.nx-theme-page .container {width:min(1200px,calc(100% - 40px));margin-inline:auto;max-width:1200px}
+.nx-theme-page a {text-decoration:none}
+.nx-theme-section {padding:84px 0}
+.nx-theme-page h1,.nx-theme-page h2,.nx-theme-page h3 {margin:0;line-height:1.13;letter-spacing:-.045em;font-weight:825;color:var(--text)}
+.nx-theme-page h1 {font-size:clamp(43px,5.7vw,82px)}
+.nx-theme-page h2 {font-size:clamp(29px,3.6vw,51px)}
+.nx-theme-page h3 {font-size:21px}
+.nx-theme-page p {line-height:1.7;color:var(--muted)}
+.nx-theme-lead {font-size:clamp(15px,1.5vw,19px);max-width:630px}
+.nx-theme-overline {font-size:11px!important;letter-spacing:.16em;font-weight:800;text-transform:uppercase;color:var(--blue)!important;margin:0 0 15px}
+.nx-theme-ctas {display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.nx-theme-primary,.nx-theme-secondary,.nx-theme-order {
+    display:inline-flex;align-items:center;justify-content:center;gap:13px;
+    min-height:46px;padding:12px 19px;border-radius:8px;font-size:13px;
+    font-weight:800;border:1px solid transparent;text-align:center;
+    transition:background-color .17s,transform .17s,border-color .17s;
+}
+.nx-theme-primary,.nx-theme-order {background:var(--blue);color:#08141d!important}
+.nx-theme-secondary {background:transparent;border-color:var(--line2);color:var(--text)!important}
+.nx-theme-primary:hover,.nx-theme-order:hover {filter:brightness(1.12);transform:translateY(-1px)}
+.nx-theme-secondary:hover {background:var(--card2)}
+.nx-theme-textlink {display:inline-flex;gap:8px;align-items:center;font-weight:750;font-size:13px;color:var(--blue)!important}
+.nx-theme-page a:focus-visible,.nx-theme-page button:focus-visible {outline:2px solid var(--blue);outline-offset:3px}
+.nx-theme-plans {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}
+.nx-theme-plan {min-width:0;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line2);padding:24px;border-radius:13px;position:relative}
+.nx-theme-plan.is-featured {border-color:var(--blue)}
+.nx-theme-plan-head {display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.nx-theme-plan-type {font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);font-weight:850}
+.nx-theme-plan-featured {color:var(--blue);font-size:10px;font-weight:850;white-space:nowrap}
+.nx-theme-plan h3 {font-size:25px}
+.nx-theme-plan-description {font-size:12px;line-height:1.65;min-height:54px;margin:11px 0 18px}
+.nx-theme-price {display:flex;align-items:baseline;flex-wrap:wrap;gap:5px 8px;margin-bottom:16px}
+.nx-theme-price strong {font-size:31px;line-height:1.2;letter-spacing:-.05em;color:var(--text)}
+.nx-theme-price>span:last-child {font-size:11px;color:var(--muted)}
+.nx-theme-price .nx-theme-sale {flex-basis:100%;color:var(--green);font-size:11px;font-weight:780}
+.nx-theme-price .nx-theme-price-old {font-size:11px;text-decoration:line-through;color:var(--muted);flex-basis:100%}
+.nx-theme-plan-specs {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:24px;font-size:11px;color:var(--muted)}
+.nx-theme-plan-specs span {border-top:1px solid var(--line2);padding-top:10px}
+.nx-theme-plan-specs b {color:var(--text)}
+.nx-theme-plan .nx-theme-order {margin-top:auto;width:100%}
+.nx-theme-empty {grid-column:1/-1;text-align:center;background:var(--card);border:1px solid var(--line2);padding:35px;border-radius:12px;color:var(--muted)}
+.nx-theme-empty h3 {margin-bottom:10px}
+#nxThemeCatalog [hidden] {display:none!important}
+#nxThemeNoMatches[hidden] {display:none!important}
+.nx-theme-filters {display:flex;gap:7px;flex-wrap:wrap}
+.nx-theme-filters button {border:1px solid var(--line2);border-radius:7px;padding:10px 14px;background:var(--card);color:var(--text);font:inherit;font-size:12px;font-weight:780;cursor:pointer}
+.nx-theme-filters button.is-active {background:var(--blue);border-color:var(--blue);color:#07151d}
+.nx-theme-vps-warning {padding:14px 17px;margin:20px 0;color:#f8d9a6;background:#282114;border:1px solid #604f2e;border-radius:8px;font-size:12px}
+.nx-theme-page .nx-catalog-page,.nx-theme-page .nx-vps-page {min-height:60vh}
+
+/* Consistent real product checkout data, four different catalog structures. */
+.nx-catalog-page .nx-theme-plan-description {min-height:44px}
+.nx-catalog-page #nxThemeCatalog .nx-theme-plan {height:100%}
+.nx-vps-page .nx-theme-plan h3 {font-size:23px}
+.nx-theme-page .nx-theme-filters button:focus-visible {outline-offset:3px}
+
+@media(max-width:980px) {
+.nx-theme-page .nx-theme-plans {grid-template-columns:repeat(2,minmax(0,1fr))}
+.nx-theme-page .nx-theme-section {padding:60px 0}
+}
+@media(max-width:650px) {
+.nx-theme-page .container {width:calc(100% - 28px)}
+.nx-theme-page h1 {font-size:clamp(38px,9vw,55px)}
+.nx-theme-page h2 {font-size:clamp(28px,7vw,40px)}
+.nx-theme-page .nx-theme-plans {grid-template-columns:1fr}
+.nx-theme-page .nx-theme-plan {padding:20px}
+.nx-theme-page .nx-theme-ctas>a {flex:1 1 180px}
+.nx-theme-page .nx-theme-section {padding:44px 0}
+.nx-theme-page .nx-theme-filters button {flex:1 1 90px}
+}
