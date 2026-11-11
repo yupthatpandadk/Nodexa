@@ -20,6 +20,7 @@ import { useLocation } from 'react-router';
 import ConflictStateRenderer from '@/components/server/ConflictStateRenderer';
 import PermissionRoute from '@/components/elements/PermissionRoute';
 import routes from '@/routers/routes';
+import FiveMResourcesContainer from '@/components/server/fivem/FiveMResourcesContainer';
 
 export default () => {
     const match = useRouteMatch<{ id: string }>();
@@ -33,11 +34,27 @@ export default () => {
     const inConflictState = ServerContext.useStoreState((state) => state.server.inConflictState);
     const serverId = ServerContext.useStoreState((state) => state.server.data?.internalId);
     const pluginManagerEnabled = ServerContext.useStoreState((state) => state.server.data?.pluginManagerEnabled ?? false);
+    const isFiveMServer = ServerContext.useStoreState((state) => state.server.data?.isFiveMServer ?? false);
     const modManagerEnabled = ServerContext.useStoreState((state) => state.server.data?.modManagerEnabled ?? false);
     const serverChatEnabled = ServerContext.useStoreState((state) => state.server.data?.serverChatEnabled ?? false);
     const playerListEnabled = ServerContext.useStoreState((state) => state.server.data?.playerListEnabled ?? false);
     const getServer = ServerContext.useStoreActions((actions) => actions.server.getServer);
     const clearServerState = ServerContext.useStoreActions((actions) => actions.clearServerState);
+
+    const serverRoutes = isFiveMServer
+        ? [...routes.server, { path: '/resources', permission: 'file.read', name: 'Resources', component: FiveMResourcesContainer, exact: true }]
+        : routes.server;
+
+    const serverRouteName = (path: string, name: string | undefined) => {
+        if (!isFiveMServer) return name;
+        switch (path) {
+            case '/': return 'FiveM Overview';
+            case '/files': return 'Files';
+            case '/startup': return 'FXServer Startup';
+            case '/network': return 'Connections';
+            default: return name;
+        }
+    };
 
     const to = (value: string, url = false) => {
         if (value === '/') {
@@ -95,18 +112,18 @@ export default () => {
                     <CSSTransition timeout={150} classNames={'fade'} appear in>
                         <SubNavigation>
                             <div>
-                                {routes.server
+                                {serverRoutes
                                     .filter((route) => !!route.name && addonRouteEnabled(route.path))
                                     .map((route) =>
                                         route.permission ? (
                                             <Can key={route.path} action={route.permission} matchAny>
                                                 <NavLink to={to(route.path, true)} exact={route.exact}>
-                                                    {route.name}
+                                                    {serverRouteName(route.path, route.name)}
                                                 </NavLink>
                                             </Can>
                                         ) : (
                                             <NavLink key={route.path} to={to(route.path, true)} exact={route.exact}>
-                                                {route.name}
+                                                {serverRouteName(route.path, route.name)}
                                             </NavLink>
                                         )
                                     )}
@@ -128,7 +145,7 @@ export default () => {
                         <ErrorBoundary>
                             <TransitionRouter>
                                 <Switch location={location}>
-                                    {routes.server.filter((route) => addonRouteEnabled(route.path)).map(({ path, permission, component: Component }) => (
+                                    {serverRoutes.filter((route) => addonRouteEnabled(route.path)).map(({ path, permission, component: Component }) => (
                                         <PermissionRoute key={path} permission={permission} path={to(path)} exact>
                                             <Spinner.Suspense>
                                                 <Component />
