@@ -11,6 +11,7 @@ import PowerButtons from '@/components/server/console/PowerButtons';
 import ServerDetailsBlock from '@/components/server/console/ServerDetailsBlock';
 import { Alert } from '@/components/elements/alert';
 import PlayerListContainer from '@/components/server/minecraft/PlayerListContainer';
+import FiveMDashboard from '@/components/server/fivem/FiveMDashboard';
 
 export type PowerAction = 'start' | 'stop' | 'restart' | 'kill';
 
@@ -23,8 +24,13 @@ const ServerConsoleContainer = () => {
     const eggFeatures = ServerContext.useStoreState((state) => state.server.data!.eggFeatures, isEqual);
     const isNodeUnderMaintenance = ServerContext.useStoreState((state) => state.server.data!.isNodeUnderMaintenance);
     const playerListEnabled = ServerContext.useStoreState((state) => state.server.data!.playerListEnabled);
+    const isFiveM = ServerContext.useStoreState((state) => state.server.data!.isFiveMServer);
 
     const statusLabel = status === 'running' ? 'Online' : status === 'offline' ? 'Offline' : status || 'Connecting';
+
+    if (isFiveM) {
+        return <FiveMDashboard />;
+    }
 
     return (
         <ServerContentBlock title={'Console'}>
