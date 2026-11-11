@@ -82,6 +82,9 @@ const FiveMDashboard = () => {
             </div>
 
             <nav className={styles.shortcuts} aria-label={'FiveM hurtige handlinger'}>
+                <Can action={'startup.read'}>
+                    <Link to={base + '/txadmin'}><strong>txAdmin</strong><small>Spillere og ressourcestyring</small><span>↗</span></Link>
+                </Can>
                 <Can action={'file.read'}>
                     <Link to={base + '/resources'}><strong>Resources</strong><small>Se installerede scripts</small><span>↗</span></Link>
                 </Can>
@@ -123,7 +126,8 @@ const FiveMDashboard = () => {
                     </div>
                     <div className={styles.panel}>
                         <div className={styles.panelHead}><div><span>FIVEM / OPERATIONS</span><h2>Administration</h2></div></div>
-                        <p className={styles.help}>Administrér server.cfg, resources, databaser og opstartsvariabler direkte fra Nodexa. txAdmin kan fortsat bruges separat, hvis det er konfigureret på din server.</p>
+                        <p className={styles.help}>Administrér server.cfg, resources, databaser og opstartsvariabler direkte fra Nodexa. Brug txAdmin-fanen til den officielle spiller- og FXServer-administration.</p>
+                        <Can action={'startup.read'}><Link className={styles.smallLink} to={base + '/txadmin'}>txAdmin ↗</Link></Can>
                         <Can action={'database.read'}><Link className={styles.smallLink} to={base + '/databases'}>Databaser ↗</Link></Can>
                         <Can action={'schedule.read'}><Link className={styles.smallLink} to={base + '/schedules'}>Schedules ↗</Link></Can>
                     </div>
