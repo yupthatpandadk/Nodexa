@@ -1,6 +1,21 @@
 {
-  "latest": "1.7.25",
+  "latest": "1.7.26",
   "releases": [
+    {
+      "version": "1.7.26",
+      "date": "2026-11-11",
+      "type": "feature",
+      "title": "FiveM Control og komplet opdatering af frontend-designs",
+      "changes": [
+        "FiveM-servere får nu automatisk eget kompakt FiveM Control-dashboard baseret på serverens Pterodactyl Nest; Minecraft og andre spil beholder deres nuværende panel.",
+        "FiveM Overview får sin egen struktur med live console, serverstatus, Power-knapper, ressourcestatistik, grafer, genveje og resource-inventar.",
+        "Ny FiveM Resources-fane viser reelle mapper via eksisterende fil-API med de normale Pterodactyl adgangsrettigheder.",
+        "Frontend Theme Center beholder Nodexa Original, men Latch/Xlumia/Horizon/DinoNode har nu også individuelle footer-layouts og unikke produktkonfigurations-introer – ikke kun farver.",
+        "Latch-forsiden har en funktionel spilvælger med pris- og produktkort fra Nodexas egne aktive hostingprodukter; ingen opdigtede regioner eller abonnementspriser.",
+        "Produktsiden resolver frontend-tema før Blade child-sektioner for at undgå undefined-variable HTTP 500-fejl.",
+        "Tilføjet regressionskontroller for FiveM-Nest klassifikation og adskilte frontend-layoutdele; eksisterende fakturering og Minecraft Egg-valg bevares."
+      ]
+    },
     {
       "version": "1.7.25",
       "date": "2026-11-11",
