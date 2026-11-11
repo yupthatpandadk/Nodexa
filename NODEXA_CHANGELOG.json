@@ -1,6 +1,21 @@
 {
-  "latest": "1.7.16",
+  "latest": "1.7.17",
   "releases": [
+    {
+      "version": "1.7.17",
+      "date": "2026-11-11",
+      "type": "feature",
+      "title": "Minecraft – skift Egg direkte i kundens kontrolpanel",
+      "changes": [
+        "Minecraft-serverejere kan nu skifte mellem Paper, Fabric, Forge og andre Eggs i samme Minecraft Nest under Server → Settings.",
+        "Egg-listen hentes dynamisk fra Minecraft Nest, så nye Eggs automatisk bliver tilgængelige.",
+        "FiveM, Rust og andre spil kan ikke se funktionen og afvises af backend; medbrugere kan heller ikke skifte Egg.",
+        "Egg-skift kræver stoppet server, en fuldført backup fra seneste 24 timer og bekræftelse af risikoen.",
+        "Skiftet opdaterer Egg, startup, Docker-image og Egg-variabler, synkroniserer Wings og starter geninstallation.",
+        "Serverens eksisterende RAM, CPU, diskgrænser, ports, ejerskab og hostingpakke ændres ikke.",
+        "Tilføjet adgangstests for Minecraft-ejere, FiveM-kunder, medbrugere og Eggs i andre Nests."
+      ]
+    },
     {
       "version": "1.7.16",
       "date": "2026-11-11",
