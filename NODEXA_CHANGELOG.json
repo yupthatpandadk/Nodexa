@@ -1,6 +1,19 @@
 {
-  "latest": "1.7.10",
+  "latest": "1.7.11",
   "releases": [
+    {
+      "version": "1.7.11",
+      "date": "2026-11-11",
+      "type": "patch",
+      "title": "Update Center – nyt professionelt og mobilvenligt design",
+      "changes": [
+        "Opdateret Update Center med tydelige versionstal, status og installationsknap.",
+        "Ny fremdriftssektion med trin, procent og klart markerede fejl.",
+        "Redesignet aktivitetslog med kopieringsfunktion og foldbar SSH-hjælp.",
+        "Release notes vises som overskuelige, foldbare udgivelser.",
+        "Responsivt mørkt design, tilpasset mobil, tablet og computer."
+      ]
+    },
     {
       "version": "1.7.10",
       "date": "2026-11-11",
