@@ -13,6 +13,18 @@ REMOTE="https://github.com/yupthatpandadk/Nodexa.git"
 mkdir -p "$STATE_DIR" "$(dirname "$LOG")"
 touch "$LOG"
 
+# Systemd starts the updater without a shell redirection. Capture the actual
+# privileged process output in the file displayed by Admin → Update Center,
+# rather than leaving stale errors from an older www-data attempt.
+# www-data only needs group read access to display it.
+if [ "$(id -u)" -eq 0 ]; then
+    chown root:www-data "$LOG"
+    chmod 0640 "$LOG"
+fi
+exec >> "$LOG" 2>&1
+printf '\n========== Nodexa update %s | user=%s | uid=%s | pid=%s ==========\n' \
+    "$(date -Is)" "$(id -un)" "$(id -u)" "$"
+
 json_escape() {
     php -r 'echo json_encode($argv[1], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);' "$1"
 }
