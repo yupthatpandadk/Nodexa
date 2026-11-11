@@ -156,6 +156,9 @@ Route::group([
     });
 
     Route::group(['prefix' => '/settings'], function () {
+        Route::get('/minecraft-eggs', [Client\Servers\MinecraftEggController::class, 'index']);
+        Route::post('/minecraft-egg', [Client\Servers\MinecraftEggController::class, 'update'])
+            ->middleware('throttle:3,60');
         Route::post('/rename', [Client\Servers\SettingsController::class, 'rename']);
         Route::post('/reinstall', [Client\Servers\SettingsController::class, 'reinstall']);
         Route::put('/docker-image', [Client\Servers\SettingsController::class, 'dockerImage']);
