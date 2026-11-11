@@ -86,6 +86,17 @@ class UpdateController extends Controller
         $previousProgress = is_string($progressJson) ? json_decode($progressJson, true) : null;
         $updateFailed = !$running
             && in_array(($previousProgress['status'] ?? ''), ['failed', 'queued', 'running'], true);
+
+        // A legacy web updater wrote to the logfile, whereas the first
+        // systemd implementation wrote only to journald. Detect when the
+        // displayed logfile predates the most recent attempt.
+        $lastProgressAt = is_array($previousProgress)
+            ? strtotime((string) ($previousProgress['updated_at'] ?? ''))
+            : false;
+        $lastLogAt = is_file($log) ? @filemtime($log) : false;
+        $logMayBeStale = !$running && $lastProgressAt !== false
+            && ($lastLogAt === false || $lastLogAt < $lastProgressAt - 15);
+
         // An interrupted Git reset may have already advanced NODEXA_VERSION.
         // Never hide its failure just because the local version matches main.
 
@@ -96,6 +107,7 @@ class UpdateController extends Controller
             'running' => $running,
             'updateFailed' => $updateFailed,
             'lastProgress' => is_array($previousProgress) ? $previousProgress : [],
+            'logMayBeStale' => $logMayBeStale,
             'releases' => $releases,
             'log' => file_exists($log) ? implode("\n", array_slice(file($log, FILE_IGNORE_NEW_LINES) ?: [], -80)) : null,
         ]);
