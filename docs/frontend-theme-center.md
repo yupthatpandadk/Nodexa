@@ -37,3 +37,15 @@ Designene er **originale Nodexa-implementeringer**. Der bruges ingen licensbesky
 6. Vælg Nodexa Original og verificér, at det gamle design er intakt.
 
 Laravel-views kan kontrolleres med \`php artisan view:cache\` på serveren. PHP/backend-filer kan lintes med \`php -l\`. Sidernes funktion skal testes på den faktiske deployment; GitHub-kodegennemgang er ikke en live browser-/betalingstest.
+
+
+## Forbedringer i det komplette frontend-layout
+
+De alternative temaer har nu **forskellige footers** i stedet for den oprindelige Nodexa-footer, hver med sit eget hierarki og CTA. Produktsiden har også fire separate introduktionskompositioner, mens pris- og bestillingsformularen fortsat bruger den eksisterende, sikre checkoutkode.
+
+**Latch-stil** er udvidet med en funktionsdygtig spilvælger, der filtrerer det faktiske produktkatalog på forsiden. Spil og priser kommer fra Nodexa-databasen, ikke fra statiske demoeksempler. Region- og flerårsrabatter vises ikke uden eksisterende backend-priser og betalingsunderstøttelse.
+
+`store.product` resolver temavalget i child-viewet inden `@section('content')` oprettes. Dette er vigtigt, da child-Blade-sektioner kan køres før forælderens layout initialiserer lokale variabler – uden denne afgrænsning kan det give 500-fejl.
+
+De kommercielle reference-templates (Latch, Xlumia, Horizon, DinoNode) er licenserede tredjeparters produkter. Nodexas selvstændige varianter må ikke beskrives som binære/visuelt identiske gengivelser af de originale templates. For direkte installation kræves originalfiler og gyldige rettigheder.
+
