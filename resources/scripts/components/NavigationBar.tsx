@@ -91,9 +91,11 @@ export default () => {
             <SpinnerOverlay visible={isLoggingOut} />
             <div className={'mx-auto w-full flex items-center h-16 sm:h-16 max-w-[1280px] px-4 sm:px-6 gap-3'}>
                 <div id={'logo'} className={'flex-1'}>
-                    <Link to={'/'} className={'inline-flex items-center text-base sm:text-lg font-header font-semibold tracking-tight no-underline text-white'}>
+                    {/* Use a full page navigation to Laravel's storefront.
+                        React Router would otherwise intercept '/' and render the panel dashboard. */}
+                    <a href={'/'} aria-label={'Nodexa – gå til forsiden'} className={'inline-flex items-center text-base sm:text-lg font-header font-semibold tracking-tight no-underline text-white'}>
                         <BrandMark>N</BrandMark><span className={'leading-tight'}>Nodexa<small className={'hidden sm:block text-neutral-500 uppercase tracking-widest'} style={{fontSize:'8px'}}>Game Server Cloud</small></span>
-                    </Link>
+                    </a>
                 </div>
                 <RightNavigation className={'flex h-full items-center justify-end flex-nowrap gap-0.5 sm:gap-1'}>
                     <SearchContainer />
