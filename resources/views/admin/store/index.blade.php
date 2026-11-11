@@ -3,7 +3,7 @@
 @section('content-header')<h1>Storefront & Billing <small>Produkter, ordrer, rabatter og provisioning</small></h1>@endsection
 @section('content')
 <div class="alert" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#eaf4fc;color:#173b5e;border:1px solid #b8d4eb">
-    <span><strong>Pterodactyl Egg-pakker</strong> – opret og redigér Starter, Plus, Pro og Ultimate på en separat side.</span>
+    <span><strong>Serverpakker</strong> – opret Minecraft Dirt, Grass, Stone, Iron, Gold, Diamond, Emerald og Obsidian samt standardpakker til andre Eggs.</span>
     <a class="btn btn-primary btn-sm" href="{{ route('admin.store.egg-packages') }}"><i class="fa fa-cubes"></i> Åbn Egg-pakker</a>
 </div>
 @if(session('success'))<div class="alert alert-success">{{session('success')}}</div>@endif
