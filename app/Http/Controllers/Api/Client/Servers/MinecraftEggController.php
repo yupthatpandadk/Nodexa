@@ -37,21 +37,36 @@ class MinecraftEggController extends ClientApiController
         $values = $request->validate([
             'egg_id' => ['required', 'integer', 'exists:eggs,id'],
             'confirm_reinstall' => ['required', 'accepted'],
+            'installation_mode' => ['required', 'in:keep,clean'],
+            'confirm_delete' => ['required_if:installation_mode,clean', 'nullable', 'in:SLET'],
         ]);
 
+        $mode = $values['installation_mode'];
         $previous = $server->egg;
-        $this->switcher->switch($server, $request->user(), (int) $values['egg_id']);
+        $deleted = $this->switcher->switch(
+            $server,
+            $request->user(),
+            (int) $values['egg_id'],
+            $mode,
+            $mode === 'clean' && ($values['confirm_delete'] ?? null) === 'SLET'
+        );
 
         Activity::event('server:settings.minecraft-egg')
             ->property([
                 'old_egg_id' => $previous->id,
                 'old_egg_name' => $previous->name,
                 'new_egg_id' => (int) $values['egg_id'],
+                'installation_mode' => $mode,
+                'deleted_root_entries' => $deleted,
             ])->log();
 
         return new JsonResponse([
-            'message' => 'Minecraft Egg blev ændret. Geninstallationen er startet. Serverfiler kan blive ændret, især hvis du fortsatte uden backup.',
+            'message' => $mode === 'clean'
+                ? 'Minecraft Egg blev ændret. Serverens filer blev ryddet og geninstallationen er startet.'
+                : 'Minecraft Egg blev ændret. Geninstallationen er startet. Nogle eksisterende filer kan blive overskrevet af det nye Egg.',
             'egg_id' => (int) $values['egg_id'],
+            'installation_mode' => $mode,
+            'deleted_root_entries' => $deleted,
         ], JsonResponse::HTTP_ACCEPTED);
     }
 }
