@@ -38,6 +38,8 @@ export default () => {
     const [selected, setSelected] = useState<number>(currentEgg);
     const [backupReady, setBackupReady] = useState(false);
     const [acknowledged, setAcknowledged] = useState(false);
+    const [installationMode, setInstallationMode] = useState<'keep' | 'clean'>('keep');
+    const [deleteConfirmation, setDeleteConfirmation] = useState('');
     const [dialog, setDialog] = useState(false);
     const [pending, setPending] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -69,6 +71,8 @@ export default () => {
 
     useEffect(() => {
         setAcknowledged(false);
+        setInstallationMode('keep');
+        setDeleteConfirmation('');
         setSelected(currentEgg);
         setResourceChecked(false);
         refresh(true);
@@ -95,6 +99,12 @@ export default () => {
             ok: acknowledged,
             text: acknowledged ? 'Du har accepteret risikoen ved geninstallationen.' : 'Markér bekræftelsen om risiko for filændringer.',
         },
+        ...(installationMode === 'clean' ? [{
+            ok: deleteConfirmation === 'SLET',
+            text: deleteConfirmation === 'SLET'
+                ? 'Permanent sletning er særskilt bekræftet.'
+                : 'Skriv SLET for at bekræfte en ren installation.',
+        }] : []),
     ];
     const missing = requirements.filter((requirement) => !requirement.ok);
     const canChange = !loading && !pending && missing.length === 0;
@@ -108,13 +118,18 @@ export default () => {
         http.post('/api/client/servers/' + uuid + '/settings/minecraft-egg', {
             egg_id: selected,
             confirm_reinstall: true,
+            installation_mode: installationMode,
+            ...(installationMode === 'clean' ? { confirm_delete: deleteConfirmation } : {}),
         }).then(() => {
             addFlash({
                 key: 'settings',
                 type: 'success',
-                message: 'Minecraft er skiftet til ' + (target?.name || 'det valgte Egg') + '. Geninstallationen er startet.',
+                message: 'Minecraft er skiftet til ' + (target?.name || 'det valgte Egg') +
+                    (installationMode === 'clean' ? '. Filerne er ryddet, og en ren installation er startet.' : '. Geninstallationen er startet med eksisterende filer.'),
             });
             setAcknowledged(false);
+            setDeleteConfirmation('');
+            setInstallationMode('keep');
             getServer(uuid).catch(() => undefined);
         }).catch((err) => {
             addFlash({ key: 'settings', type: 'error', message: httpErrorToHuman(err) });
@@ -132,11 +147,24 @@ export default () => {
                 onConfirmed={applyChange}
             >
                 Du skifter fra <strong>{current?.name || 'nuværende Egg'}</strong> til{' '}
-                <strong>{target?.name || 'valgt Egg'}</strong>. Installationsscriptet kan ændre eller
-                overskrive filer. Plugins, mods og verdener kan kræve tilpasning.
-                {backupReady
-                    ? ' Der er en nylig backup registreret, men kontrollér at den kan gendannes.'
-                    : ' Du fortsætter UDEN en registreret nyere backup. Overskrevne filer og verdensdata kan gå tabt permanent.'}
+                <strong>{target?.name || 'valgt Egg'}</strong>.
+                {installationMode === 'clean' ? (
+                    <p className={'mt-3 font-semibold text-red-300'}>
+                        REN INSTALLATION: ALLE filer og mapper i denne Minecraft-servers rodmappe slettes permanent,
+                        herunder worlds, plugins, mods og konfigurationer. Pterodactyl-backups slettes ikke.
+                        Geninstallationen starter bagefter.
+                    </p>
+                ) : (
+                    <p className={'mt-3'}>
+                        Eksisterende serverfiler beholdes som udgangspunkt, men det nye Eggs installationsscript
+                        kan stadig ændre eller overskrive dem. Plugins, mods og verdener kan kræve tilpasning.
+                    </p>
+                )}
+                <p className={'mt-3'}>
+                    {backupReady
+                        ? 'Der er en nylig backup registreret. Kontrollér, at den kan gendannes.'
+                        : 'Du fortsætter UDEN en registreret nyere backup. Tabte data kan ikke nødvendigvis genskabes.'}
+                </p>
             </Dialog.Confirm>
 
             <p className={'text-sm text-neutral-300 mb-4'}>
@@ -152,7 +180,7 @@ export default () => {
                 id={'minecraft-egg-choice'}
                 value={selected}
                 disabled={loading || pending}
-                onChange={(e) => { setSelected(Number(e.target.value)); setAcknowledged(false); }}
+                onChange={(e) => { setSelected(Number(e.target.value)); setAcknowledged(false); setDeleteConfirmation(''); }}
                 className={'w-full p-3 rounded-md border border-neutral-600 bg-neutral-900 text-sm text-neutral-100'}
             >
                 {eggs.map((egg) => (
@@ -161,6 +189,54 @@ export default () => {
                     </option>
                 ))}
             </select>
+
+            <fieldset className={'mt-4 rounded-md p-3 border border-neutral-700 bg-neutral-900'}>
+                <legend className={'text-xs font-semibold text-neutral-200 px-1'}>Installationsmetode</legend>
+                <label className={'flex items-start gap-3 p-3 rounded-md cursor-pointer border border-neutral-700 mb-2'}>
+                    <input
+                        type={'radio'} name={'minecraft-installation-mode'} value={'keep'}
+                        checked={installationMode === 'keep'}
+                        onChange={() => { setInstallationMode('keep'); setDeleteConfirmation(''); setAcknowledged(false); }}
+                        className={'mt-1'}
+                    />
+                    <span>
+                        <strong className={'block text-sm text-neutral-100'}>Behold eksisterende filer (anbefalet)</strong>
+                        <span className={'block text-xs text-neutral-400 mt-1'}>
+                            Nodexa sletter ikke serverens filer. Det nye Egg kan dog stadig overskrive
+                            eksisterende filer under installationen.
+                        </span>
+                    </span>
+                </label>
+                <label className={'flex items-start gap-3 p-3 rounded-md cursor-pointer border border-red-900'}>
+                    <input
+                        type={'radio'} name={'minecraft-installation-mode'} value={'clean'}
+                        checked={installationMode === 'clean'}
+                        onChange={() => { setInstallationMode('clean'); setDeleteConfirmation(''); setAcknowledged(false); }}
+                        className={'mt-1'}
+                    />
+                    <span>
+                        <strong className={'block text-sm text-red-200'}>Ren installation – slet alle serverfiler</strong>
+                        <span className={'block text-xs text-neutral-400 mt-1'}>
+                            Rydder hele denne Minecraft-servers filmappe før installation af det nye Egg.
+                            Verdener, mods, plugins og konfigurationer går tabt. Eksisterende
+                            Pterodactyl-backups gemmes separat.
+                        </span>
+                    </span>
+                </label>
+                {installationMode === 'clean' && (
+                    <div className={'mt-3 rounded-md border border-red-800 bg-neutral-950 p-3'}>
+                        <label htmlFor={'minecraft-clean-confirm'} className={'block text-xs font-semibold text-red-200 mb-2'}>
+                            Denne handling kan ikke fortrydes. Skriv SLET for at bekræfte permanent sletning.
+                        </label>
+                        <input
+                            id={'minecraft-clean-confirm'} value={deleteConfirmation}
+                            onChange={(e) => setDeleteConfirmation(e.target.value)}
+                            autoComplete={'off'} placeholder={'SLET'}
+                            className={'w-full rounded-md border border-red-700 bg-neutral-900 p-2 text-sm text-neutral-100'}
+                        />
+                    </div>
+                )}
+            </fieldset>
 
             <div className={'mt-4 rounded-md p-3 border border-neutral-700 bg-neutral-900'}>
                 <p className={'text-xs font-semibold text-neutral-200 mb-3'}>Krav før Egg-skift</p>
@@ -202,14 +278,14 @@ export default () => {
                         onChange={(e) => setAcknowledged(e.target.checked)}
                         className={'mr-2 mt-0.5'}
                     />
-                    Jeg forstår, at geninstallation kan ændre eller overskrive serverfiler,
-                    og at jeg selv vælger, om jeg vil tage backup først. Uden backup kan data gå tabt.
+                    Jeg forstår, at jeg selv vælger, om jeg vil tage backup, og at data kan gå tabt.
+                    {installationMode === 'clean' ? ' Jeg accepterer permanent sletning af ALLE serverfiler.' : ''}
                 </label>
             </div>
 
             {!loading && !canChange && !pending && (
                 <p className={'text-xs text-yellow-300 mt-3'} role={'status'}>
-                    Knappen bliver aktiv, når alle tre krav er opfyldt. Backup er valgfri.
+                    Knappen bliver aktiv, når alle krav er opfyldt. Backup er valgfri.
                 </p>
             )}
 
@@ -220,7 +296,7 @@ export default () => {
                 </button>
                 <Button.Danger variant={Button.Variants.Secondary} disabled={!canChange}
                     onClick={() => setDialog(true)}>
-                    {pending ? 'Skifter Egg…' : 'Skift Egg og geninstaller'}
+                    {pending ? 'Skifter Egg…' : (installationMode === 'clean' ? 'Slet filer og geninstaller' : 'Skift Egg og geninstaller')}
                 </Button.Danger>
             </div>
         </TitledGreyBox>
