@@ -44,6 +44,12 @@ class MinecraftEggSwitchService
         }
     }
 
+    public function isAllowedTarget(Server $server, Egg $egg): bool
+    {
+        return (int) $egg->nest_id === (int) $server->nest_id
+            && $this->minecraft->belongsToMinecraftNest($egg);
+    }
+
     /**
      * Only Eggs in the server's CURRENT Minecraft Nest are valid. Other
      * Nests, including FiveM, are never presented or accepted by the API.
@@ -99,7 +105,7 @@ class MinecraftEggSwitchService
                 ->where('nest_id', $server->nest_id)
                 ->first();
 
-            if (!$egg || !$this->minecraft->belongsToMinecraftNest($egg)) {
+            if (!$egg || !$this->isAllowedTarget($server, $egg)) {
                 throw new BadRequestHttpException('Du kan kun vælge et Egg fra serverens eget Minecraft Nest.');
             }
 
