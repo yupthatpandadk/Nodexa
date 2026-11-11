@@ -1,0 +1,46 @@
+/* FiveM Control: compact operations dashboard, intentionally different from Minecraft. */
+.hero {display:flex;justify-content:space-between;gap:24px;align-items:center;padding:23px 25px;border:1px solid #334257;border-radius:10px;margin-bottom:15px;background:linear-gradient(110deg,#151d2a,#101923 72%);box-shadow:0 15px 38px #00000024}
+.heroHeading {min-width:0;flex:1}
+.eyebrow {font-weight:800;font-size:10px;letter-spacing:.15em;color:#b6c5d3}
+.headingRow {display:flex;gap:14px;align-items:center;margin:12px 0 8px;min-width:0}
+.monogram {display:flex;width:48px;height:48px;flex:0 0 48px;align-items:center;justify-content:center;background:#e4a16b;color:#131b28;border-radius:8px;font-size:24px;font-weight:900}
+.title {flex:1;min-width:0}
+.title h1 {font-weight:800;font-size:clamp(19px,2vw,27px);color:#f4f6fa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.title p {font-size:11px;color:#9fabbd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:5px}
+.online,.offline {display:inline-flex;gap:6px;align-items:center;border:1px solid #3e6f59;background:#183a2d;color:#a4ebbc;border-radius:5px;padding:6px 9px;font-size:10px;font-weight:800;white-space:nowrap}
+.offline {background:#342129;border-color:#6c414b;color:#edb8bc}
+.online i,.offline i {width:6px;height:6px;border-radius:100%;background:currentColor}
+.serverMeta {display:flex;gap:13px;flex-wrap:wrap;margin-left:62px}
+.serverMeta span {font-size:10px;color:#8999af;letter-spacing:.04em}
+.power {flex:0 1 310px;min-width:245px}
+.shortcuts {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:17px}
+.shortcuts a {display:flex;align-items:center;position:relative;gap:5px;flex-direction:column;padding:17px 16px 18px;border:1px solid #304254;background:#131e2c;border-radius:8px;text-decoration:none;min-width:0;transition:background .16s,border-color .16s}
+.shortcuts a:hover {background:#1d2e40;border-color:#d7a16a}
+.shortcuts strong {font-size:12px;color:#f2f4f7;font-weight:800;text-align:center}
+.shortcuts small {font-size:10px;color:#9cadbf;text-align:center}
+.shortcuts a>span {position:absolute;right:10px;top:8px;font-size:12px;color:#d0a275}
+.grid {display:grid;grid-template-columns:minmax(0,1.75fr) minmax(250px,.7fr);gap:15px;align-items:start}
+.main,.sidebar {display:flex;flex-direction:column;gap:15px;min-width:0}
+.panel {border:1px solid #2d3c50;background:#141c29;border-radius:9px;overflow:hidden}
+.panelHead {display:flex;justify-content:space-between;align-items:center;gap:14px;padding:15px 17px;border-bottom:1px solid #2f4056;background:#192333}
+.panelHead span {font-size:9px;letter-spacing:.13em;color:#a9bcd1;font-weight:800}
+.panelHead h2 {font-size:14px;color:#edf2f8;font-weight:850;margin-top:5px}
+.panelHead>small {font-size:10px;color:#91a6b9}
+.panel :global(.xterm) {max-width:100%}
+.capacity {display:flex;flex-direction:column;padding:8px 16px}
+.capacity div {display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 0;border-bottom:1px solid #304054}
+.capacity div:last-child {border-bottom:0}
+.capacity span {font-size:11px;color:#98adc0}
+.capacity strong {font-size:13px;font-weight:850;color:#eaf0f6}
+.inventory {padding:17px}
+.inventory>strong {font-size:34px;line-height:1;color:#edb082;font-weight:850;display:block}
+.inventory>span {font-size:11px;color:#adbdd0}
+.inventory p,.help {font-size:11px;line-height:1.65;color:#95a7bd;margin-top:13px}
+.inventory a,.smallLink {display:inline-flex;margin-top:10px;color:#f1c59f!important;font-size:11px;font-weight:800;text-decoration:none}
+.help {padding:15px 17px 0;margin:0}
+.smallLink {margin:12px 17px}
+.graphs {padding:12px}
+.graphs>div {display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:10px}
+.details {margin-top:18px}
+@media(max-width:1100px) {.grid {grid-template-columns:minmax(0,1fr)}.sidebar {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.sidebar .panel:last-child {grid-column:1/-1}}
+@media(max-width:760px) {.hero {flex-direction:column;align-items:stretch;padding:17px}.power {min-width:0;flex:auto}.serverMeta {margin-left:0}.shortcuts {grid-template-columns:repeat(2,minmax(0,1fr))}.sidebar {display:flex}.headingRow {flex-wrap:wrap}.title {flex:1 1 60%}.shortcuts a {padding:17px 12px}}
