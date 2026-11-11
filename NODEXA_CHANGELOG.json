@@ -1,6 +1,22 @@
 {
-  "latest": "1.7.27",
+  "latest": "1.7.28",
   "releases": [
+    {
+      "version": "1.7.28",
+      "date": "2026-11-11",
+      "type": "feature",
+      "title": "FiveM txAdmin – integreret navigation, automatisk portregistrering og sikker opsætning",
+      "changes": [
+        "FiveM-servere får en ny txAdmin-fane og genvej direkte fra FiveM Overview.",
+        "Nodexa finder txAdmin-webporten via FiveM Egg-variabler og verificerer, at den præcise TCP-allocation er tildelt den konkrete server.",
+        "Nyt txAdmin-overblik viser aktiveringsstatus, tildelt webport, adresse, manglende opsætningskrav og genveje til Startup, Network og Console.",
+        "Åbn txAdmin starter den officielle FXServer-txAdmin-webapp i en ny fane med txAdmins eksisterende Cfx.re-/passwordlogin og rettigheder.",
+        "Ugyldige porte, game-port-konflikter, ikke-allokerede porte og uverificerede eksterne login-hosts afvises; status påstås ikke at være online uden kontrol.",
+        "Kun FiveM-servere og brugere med startup.read får adgang til txAdmin-oplysninger. Minecraft og øvrige spiltyper påvirkes ikke.",
+        "Tilføjet 11 regressionstests for FiveM-only, URL-sikkerhed, allocation, aktivering og portkonflikter samt opsætningsguide.",
+        "txAdmin bliver ikke kopieret, installeret igen eller startet automatisk: det er allerede en del af FXServer og kræver et kompatibelt Egg og TCP-port."
+      ]
+    },
     {
       "version": "1.7.27",
       "date": "2026-11-11",
