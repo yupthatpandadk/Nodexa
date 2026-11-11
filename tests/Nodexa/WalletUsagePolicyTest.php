@@ -55,6 +55,24 @@ class WalletUsagePolicyTest extends TestCase
         ], 0, 8000, false));
     }
 
+    public function test_stripe_minimum_blocks_small_non_wallet_checkout(): void
+    {
+        // VPS-only with Wallet restricted: 1.84 DKK cannot be charged by Stripe.
+        $eligible = WalletUsagePolicy::eligibleAfterDiscount(
+            [['type' => 'flax_vps', 'base' => 184]], 0, 184, false
+        );
+        $this->assertSame(0, $eligible);
+        $this->assertSame(0, WalletUsagePolicy::walletFirstCents(184, 10000, $eligible));
+    }
+
+    public function test_small_game_server_checkout_can_use_full_wallet(): void
+    {
+        $eligible = WalletUsagePolicy::eligibleAfterDiscount(
+            [['type' => 'game_server', 'base' => 184]], 0, 184, false
+        );
+        $this->assertSame(184, WalletUsagePolicy::walletFirstCents(184, 184, $eligible));
+    }
+
     public function test_wallet_first_preserves_stripe_minimum_and_eligibility(): void
     {
         $this->assertSame(9000, WalletUsagePolicy::walletFirstCents(30000, 20000, 9000));
