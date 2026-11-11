@@ -94,6 +94,7 @@ class UpdateController extends Controller
             'error' => $error,
             'running' => $running,
             'updateFailed' => $updateFailed,
+            'lastProgress' => is_array($previousProgress) ? $previousProgress : [],
             'releases' => $releases,
             'log' => file_exists($log) ? implode("\n", array_slice(file($log, FILE_IGNORE_NEW_LINES) ?: [], -80)) : null,
         ]);
