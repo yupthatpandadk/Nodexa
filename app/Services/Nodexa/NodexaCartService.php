@@ -17,6 +17,7 @@ class NodexaCartService
         private NodexaEventService $events,
         private ProvisionStoreOrderService $provision,
         private GlobalStoreSaleService $sale,
+        private MinecraftOrderOptionsService $minecraft,
     ) {
     }
 
@@ -51,6 +52,9 @@ class NodexaCartService
                     'currency' => 'DKK',
                     'configuration' => [
                         'server_name' => trim((string) ($configuration['server_name'] ?? '')),
+                        'minecraft_egg_id' => (int) ($configuration['minecraft_egg_id'] ?? 0),
+                        'minecraft_version' => (string) ($configuration['minecraft_version'] ?? ''),
+                        'minecraft_type' => (string) ($configuration['minecraft_type'] ?? ''),
                     ],
                     'meta' => [
                         'game' => $product->game,
@@ -168,15 +172,28 @@ class NodexaCartService
             throw new RuntimeException('Kurven er tom eller indeholder ikke længere tilgængelige produkter.');
         }
 
-        foreach ($resolved['items'] as $item) {
+        foreach ($resolved['items'] as &$item) {
             if ($item['type'] === 'game_server' && $item['configuration']['server_name'] === '') {
                 throw new RuntimeException('En game-server i kurven mangler servernavn.');
+            }
+
+            if ($item['type'] === 'game_server') {
+                $product = StoreProduct::find((int) $item['product_id']);
+                if ($product && $this->minecraft->isMinecraftProduct($product)) {
+                    $choice = $this->minecraft->selection(
+                        $product,
+                        (int) ($item['configuration']['minecraft_egg_id'] ?? 0),
+                        $item['configuration']['minecraft_version'] ?? null
+                    );
+                    $item['configuration'] = array_merge($item['configuration'], $choice);
+                }
             }
 
             if ($item['type'] === 'flax_vps' && $item['configuration']['hostname'] === '') {
                 throw new RuntimeException('En VPS i kurven mangler VPS-navn.');
             }
         }
+        unset($item);
 
         return DB::transaction(function () use ($userId, $resolved) {
             $number = now()->format('Ym') . '-' . strtoupper(Str::random(7));
@@ -343,6 +360,8 @@ class NodexaCartService
                         $order = StoreOrder::create([
                             'user_id' => $checkout->user_id,
                             'product_id' => $product->id,
+                            'minecraft_egg_id' => $configuration['minecraft_egg_id'] ?? null,
+                            'minecraft_version' => !empty($configuration['minecraft_version']) ? $configuration['minecraft_version'] : null,
                             'status' => 'paid',
                             'amount' => $item->unit_price,
                             'subtotal' => $item->unit_price,
