@@ -217,12 +217,19 @@
                         $totalWalletCents, $walletBalanceCents, $walletEligibleCents
                     );
                     $remainingStripeCents = max(0, $totalWalletCents - $autoWalletCents);
+                    $stripeMinimumBlocked = $stripeEnabled && !$canPayFullyWallet
+                        && $totalWalletCents > 0 && $totalWalletCents < 250;
                 @endphp
                 <div class="paymentNotice">
                     <span class="paymentNoticeIcon">₭</span>
                     <p><strong>Din Wallet bruges automatisk først til de tilladte produkter.</strong> Den resterende betaling gennemføres via Stripe, hvor du kan vælge en betalingsmetode. Din saldo reserveres, mens Stripe-betalingen afventer.</p>
                 </div>
 
+                @if($stripeMinimumBlocked)
+                    <div class="checkoutAlert error" role="alert">
+                        Restbeløbet er under Stripes minimum på 2,50 DKK. Tilføj et produkt, justér rabatten, eller betal hele ordren med Wallet, hvis produkterne er tilladt.
+                    </div>
+                @endif
                 <div class="walletAutoBreakdown">
                     <div><span>Samlet ordre</span><strong>{{ number_format($totalWalletCents/100,2,',','.') }} DKK</strong></div>
                     @if(!$walletAllowsVps)
@@ -250,7 +257,7 @@
                             <p class="micro">Stripe er ikke aktiveret. Du kan oprette en ubetalt ordre, men Wallet-kredit bruges først, når en gyldig betaling kan gennemføres.</p>
                         @endif
                     </div>
-                    <button class="placeOrderButton" type="submit">
+                    <button class="placeOrderButton" type="submit" {{ $stripeMinimumBlocked ? 'disabled' : '' }}>
                         <span>
                             <small>{{ $canPayFullyWallet ? 'Kreditbetaling' : ($stripeEnabled ? 'Restbetaling via Stripe' : 'Ubetalt ordre') }} · {{ number_format($remainingStripeCents/100,2,',','.') }} DKK</small>
                             {{ $canPayFullyWallet ? 'Betal med Wallet' : ($stripeEnabled ? 'Fortsæt til betaling' : 'Opret ordre') }}
