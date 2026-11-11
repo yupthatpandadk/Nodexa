@@ -8,6 +8,9 @@ use Pterodactyl\Models\Nest;
 use Pterodactyl\Models\Server;
 use Pterodactyl\Models\User;
 use Pterodactyl\Repositories\Wings\DaemonServerRepository;
+use Pterodactyl\Repositories\Wings\DaemonFileRepository;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Pterodactyl\Services\Nodexa\MinecraftEggSwitchService;
 use Pterodactyl\Services\Nodexa\MinecraftOrderOptionsService;
 use Pterodactyl\Services\Servers\ReinstallServerService;
@@ -24,7 +27,8 @@ class MinecraftEggSwitchServiceTest extends TestCase
         $this->switcher = new MinecraftEggSwitchService(
             new MinecraftOrderOptionsService(),
             $this->createMock(DaemonServerRepository::class),
-            $this->createMock(ReinstallServerService::class)
+            $this->createMock(ReinstallServerService::class),
+            $this->createMock(DaemonFileRepository::class)
         );
     }
 
@@ -96,6 +100,77 @@ class MinecraftEggSwitchServiceTest extends TestCase
         $this->assertFalse($this->switcher->canManage($server, $this->user(22)));
         $this->expectException(AccessDeniedHttpException::class);
         $this->switcher->switch($server, $this->user(22), 5);
+    }
+
+
+    public function test_keep_mode_is_default_and_does_not_require_delete_confirmation(): void
+    {
+        // Unauthorized request hits the owner guard, not the clean-mode guard.
+        $this->expectException(AccessDeniedHttpException::class);
+        $this->switcher->switch($this->server(10, 'FiveM'), $this->user(10), 5);
+    }
+
+    public function test_clean_mode_requires_extra_explicit_confirmation(): void
+    {
+        $this->expectException(BadRequestHttpException::class);
+        $this->switcher->switch($this->server(10, 'Minecraft'), $this->user(10), 5, 'clean', false);
+    }
+
+    public function test_unknown_installation_mode_is_rejected(): void
+    {
+        $this->expectException(BadRequestHttpException::class);
+        $this->switcher->switch($this->server(10, 'Minecraft'), $this->user(10), 5, 'delete-everything');
+    }
+
+    public function test_clean_delete_list_only_accepts_server_root_entries(): void
+    {
+        $this->assertSame(
+            ['world', 'server.properties', '.pteroignore', 'mods'],
+            MinecraftEggSwitchService::rootEntriesForDeletion([
+                ['name' => 'world', 'file' => false],
+                ['name' => 'server.properties', 'file' => true],
+                ['name' => '.pteroignore', 'file' => true],
+                ['name' => 'mods', 'file' => false],
+            ])
+        );
+    }
+
+    /**
+     * @dataProvider unsafeCleanNames
+     */
+    public function test_clean_delete_list_rejects_unsafe_paths(string $name): void
+    {
+        $this->expectException(ConflictHttpException::class);
+        MinecraftEggSwitchService::rootEntriesForDeletion([['name' => $name]]);
+    }
+
+    public static function unsafeCleanNames(): array
+    {
+        return [
+            'empty' => [''],
+            'dot' => ['.'],
+            'parent' => ['..'],
+            'absolute' => ['/etc/passwd'],
+            'subdirectory' => ['world/playerdata'],
+            'windows_traversal' => ['..\\other'],
+            'line_break' => ["world\nadmin"],
+        ];
+    }
+
+    public function test_clean_delete_list_rejects_symlinks(): void
+    {
+        $this->expectException(ConflictHttpException::class);
+        MinecraftEggSwitchService::rootEntriesForDeletion([
+            ['name' => 'world', 'symlink' => true],
+        ]);
+    }
+
+    public function test_clean_delete_list_rejects_duplicates(): void
+    {
+        $this->expectException(ConflictHttpException::class);
+        MinecraftEggSwitchService::rootEntriesForDeletion([
+            ['name' => 'world'], ['name' => 'world'],
+        ]);
     }
 
     public function test_unauthorized_minecraft_switch_fails_before_querying_any_egg(): void
