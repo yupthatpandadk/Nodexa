@@ -70,6 +70,27 @@ class FrontendThemeServiceTest extends TestCase
         $this->assertSame('xlumia', $service->current());
     }
 
+    public function test_all_non_classic_themes_have_real_home_hosting_and_vps_templates(): void
+    {
+        $root = dirname(__DIR__, 2);
+        foreach (['latch', 'xlumia', 'horizon', 'dinonode'] as $theme) {
+            foreach (['home', 'hosting', 'vps'] as $page) {
+                $this->assertFileExists(
+                    $root . '/resources/views/store/frontend/' . $theme . '/' . $page . '.blade.php',
+                    sprintf('Missing %s page layout for %s', $page, $theme)
+                );
+            }
+        }
+    }
+
+    public function test_original_pages_are_not_overwritten_by_new_layouts(): void
+    {
+        $root = dirname(__DIR__, 2);
+        foreach (['index.blade.php', 'hosting.blade.php', 'vps/index.blade.php'] as $page) {
+            $this->assertFileExists($root . '/resources/views/store/' . $page);
+        }
+    }
+
     public function test_invalid_theme_is_rejected_before_database_write(): void
     {
         $settings = $this->createMock(SettingsRepositoryInterface::class);
