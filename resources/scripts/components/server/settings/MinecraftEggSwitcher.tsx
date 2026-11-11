@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import http, { httpErrorToHuman } from '@/api/http';
+import getServerResourceUsage, { ServerPowerState } from '@/api/server/getServerResourceUsage';
 import { ServerContext } from '@/state/server';
 import TitledGreyBox from '@/components/elements/TitledGreyBox';
 import { Button } from '@/components/elements/button/index';
 import { Dialog } from '@/components/elements/dialog';
 import { Actions, useStoreActions } from 'easy-peasy';
 import { ApplicationStore } from '@/state';
+import { Link } from 'react-router-dom';
 
 interface EggOption {
     id: number;
@@ -20,13 +22,18 @@ interface EggOptionsResponse {
     backup_required_hours: number;
 }
 
-/** Only mounted for the owner of a Minecraft Nest server. */
+/**
+ * This section is shown only to Minecraft server owners. The backend enforces
+ * the actual Minecraft Nest, ownership, stopped-server and backup checks.
+ */
 export default () => {
     const uuid = ServerContext.useStoreState((state) => state.server.data!.uuid);
+    const identifier = ServerContext.useStoreState((state) => state.server.data!.id);
     const currentEgg = ServerContext.useStoreState((state) => state.server.data!.eggId);
-    const powerState = ServerContext.useStoreState((state) => state.status.value);
+    const socketPowerState = ServerContext.useStoreState((state) => state.status.value);
     const getServer = ServerContext.useStoreActions((actions) => actions.server.getServer);
     const { addFlash, clearFlashes } = useStoreActions((actions: Actions<ApplicationStore>) => actions.flashes);
+
     const [eggs, setEggs] = useState<EggOption[]>([]);
     const [selected, setSelected] = useState<number>(currentEgg);
     const [backupReady, setBackupReady] = useState(false);
@@ -35,36 +42,75 @@ export default () => {
     const [pending, setPending] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [resourcePowerState, setResourcePowerState] = useState<ServerPowerState | null>(null);
+    const [resourceChecked, setResourceChecked] = useState(false);
 
-    const refresh = () => {
+    const refresh = (resetChoice = false) => {
         setLoading(true);
-        http.get<EggOptionsResponse>('/api/client/servers/' + uuid + '/settings/minecraft-eggs')
-            .then(({ data }) => {
-                setEggs(data.eggs);
-                setBackupReady(data.has_recent_backup);
-                setSelected(data.current_egg_id);
-                setError('');
-            })
-            .catch((err) => setError(httpErrorToHuman(err)))
-            .finally(() => setLoading(false));
+        setError('');
+        Promise.all([
+            http.get<EggOptionsResponse>('/api/client/servers/' + uuid + '/settings/minecraft-eggs'),
+            getServerResourceUsage(uuid).then((stats) => stats.status).catch(() => null),
+        ]).then(([{ data }, power]) => {
+            setEggs(data.eggs);
+            setBackupReady(data.has_recent_backup);
+            setResourcePowerState(power);
+            setResourceChecked(true);
+            setSelected((previous) => {
+                if (resetChoice || !data.eggs.some((egg) => egg.id === previous)) {
+                    return data.current_egg_id;
+                }
+                return previous;
+            });
+        }).catch((err) => {
+            setError(httpErrorToHuman(err));
+        }).finally(() => setLoading(false));
     };
 
     useEffect(() => {
         setAcknowledged(false);
-        refresh();
+        setSelected(currentEgg);
+        setResourceChecked(false);
+        refresh(true);
     }, [uuid]);
 
     const current = eggs.find((egg) => egg.id === currentEgg);
     const target = eggs.find((egg) => egg.id === selected);
-    const offline = powerState === 'offline';
-    const canChange = !loading && !pending && offline && backupReady && acknowledged
-        && selected !== currentEgg && !!target;
+    const chosenNewEgg = !!target && target.id !== currentEgg;
+
+    // Prefer the socket's live status, otherwise use the latest resource API.
+    // A null/unknown state must not silently count as "offline".
+    const effectivePowerState = socketPowerState || (resourceChecked ? resourcePowerState : null);
+    const offline = effectivePowerState === 'offline';
+    const requirements = [
+        {
+            ok: chosenNewEgg,
+            text: chosenNewEgg ? 'Nyt Egg valgt: ' + target?.name : 'Vælg et andet Egg end det nuværende (' + (current?.name || 'Minecraft') + ').',
+        },
+        {
+            ok: offline,
+            text: offline ? 'Serveren er stoppet.' : 'Serveren skal være stoppet helt.',
+        },
+        {
+            ok: backupReady,
+            text: backupReady
+                ? 'Fuldført backup fra de seneste 24 timer er fundet.'
+                : 'Opret en backup under Backups og vent, til den er fuldført.',
+        },
+        {
+            ok: acknowledged,
+            text: acknowledged ? 'Du har accepteret risikoen ved geninstallationen.' : 'Markér bekræftelsen om risiko for filændringer.',
+        },
+    ];
+    const missing = requirements.filter((requirement) => !requirement.ok);
+    const canChange = !loading && !pending && missing.length === 0;
 
     const applyChange = () => {
         if (!canChange) return;
         setPending(true);
         setDialog(false);
         clearFlashes('settings');
+
         http.post('/api/client/servers/' + uuid + '/settings/minecraft-egg', {
             egg_id: selected,
             confirm_reinstall: true,
@@ -92,16 +138,15 @@ export default () => {
                 onConfirmed={applyChange}
             >
                 Du skifter fra <strong>{current?.name || 'nuværende Egg'}</strong> til{' '}
-                <strong>{target?.name || 'valgt Egg'}</strong>. Serveren geninstalleres. Installationsscriptet
-                kan overskrive eller ændre filer. Opret altid en backup før skiftet. Mods og plugins
-                kan kræve tilpasning bagefter.
+                <strong>{target?.name || 'valgt Egg'}</strong>. Installationsscriptet kan ændre eller
+                overskrive filer. Backuppen bevares, men plugins, mods og verdener kan kræve tilpasning.
             </Dialog.Confirm>
 
             <p className={'text-sm text-neutral-300 mb-4'}>
-                Vælg Paper, Fabric, Forge eller et andet Egg fra denne servers Minecraft Nest.
-                Andre spil som FiveM har ikke adgang til denne funktion.
+                Vælg Paper, Fabric, Forge eller et andet Egg fra serverens Minecraft Nest.
+                Kun serverejere med Minecraft-servere kan skifte Egg.
             </p>
-            {error ? <p className={'text-sm text-red-300 mb-3'}>{error}</p> : null}
+            {error ? <p role={'alert'} className={'text-sm text-red-300 mb-3'}>{error}</p> : null}
 
             <label htmlFor={'minecraft-egg-choice'} className={'block text-xs font-semibold text-neutral-300 mb-2'}>
                 Minecraft Egg
@@ -121,15 +166,28 @@ export default () => {
             </select>
 
             <div className={'mt-4 rounded-md p-3 border border-neutral-700 bg-neutral-900'}>
-                <p className={'text-xs font-semibold text-neutral-200 mb-2'}>Før du skifter</p>
-                <p className={'text-xs text-neutral-400 mb-2'}>
-                    {offline ? 'Serveren er stoppet.' : 'Stop serveren helt under Console, før du fortsætter.'}
-                </p>
-                <p className={backupReady ? 'text-xs text-green-300 mb-2' : 'text-xs text-yellow-300 mb-2'}>
-                    {backupReady
-                        ? 'Der findes en fuldført backup fra de seneste 24 timer.'
-                        : 'Opret en backup under Backups, og afvent at den bliver fuldført (maks. 24 timer gammel).'}
-                </p>
+                <p className={'text-xs font-semibold text-neutral-200 mb-3'}>Krav før Egg-skift</p>
+
+                <ul className={'space-y-2'} aria-live={'polite'}>
+                    {requirements.map((requirement, index) => (
+                        <li key={index} className={'flex items-start gap-2 text-xs'}>
+                            <span aria-hidden={'true'} className={requirement.ok ? 'text-green-300' : 'text-yellow-300'}>
+                                {requirement.ok ? '✓' : '○'}
+                            </span>
+                            <span className={requirement.ok ? 'text-green-200' : 'text-neutral-300'}>
+                                {requirement.text}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+
+                <div className={'flex flex-wrap gap-3 mt-3 mb-4'}>
+                    {!offline && <Link to={'/server/' + identifier}
+                        className={'text-xs text-cyan-300 hover:underline'}>Gå til Console og stop serveren</Link>}
+                    {!backupReady && <Link to={'/server/' + identifier + '/backups'}
+                        className={'text-xs text-cyan-300 hover:underline'}>Gå til Backups</Link>}
+                </div>
+
                 <label className={'flex items-start text-xs text-neutral-300 cursor-pointer'}>
                     <input
                         type={'checkbox'}
@@ -137,15 +195,22 @@ export default () => {
                         onChange={(e) => setAcknowledged(e.target.checked)}
                         className={'mr-2 mt-0.5'}
                     />
-                    Jeg forstår, at en geninstallation kan ændre eller overskrive serverfiler,
+                    Jeg forstår, at geninstallation kan ændre eller overskrive serverfiler,
                     og at mods, plugins eller serverkonfiguration kan kræve tilpasning.
                 </label>
             </div>
 
+            {!loading && !canChange && !pending && (
+                <p className={'text-xs text-yellow-300 mt-3'} role={'status'}>
+                    Knappen bliver aktiv, når alle fire krav ovenfor er opfyldt.
+                    {offline && !backupReady ? ' Opdatér backupstatus, efter du har lavet en backup.' : ''}
+                </p>
+            )}
+
             <div className={'mt-4 flex items-center justify-between gap-3 flex-wrap'}>
-                <button type={'button'} onClick={refresh} disabled={loading || pending}
+                <button type={'button'} onClick={() => refresh()} disabled={loading || pending}
                     className={'text-xs text-neutral-300 hover:text-white underline'}>
-                    Opdatér Eggs og backupstatus
+                    {loading ? 'Kontrollerer status…' : 'Opdatér server-, Egg- og backupstatus'}
                 </button>
                 <Button.Danger variant={Button.Variants.Secondary} disabled={!canChange}
                     onClick={() => setDialog(true)}>
