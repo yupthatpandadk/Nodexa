@@ -106,14 +106,21 @@ class FrontendThemeService
     public function activeForRequest(): string
     {
         $preview = request()->query('frontend_theme_preview');
-        $user = auth()->user();
 
-        if (is_string($preview)
-            && $user !== null
-            && (bool) $user->root_admin
-            && array_key_exists($preview, self::presets())
-        ) {
-            return $preview;
+        // The regular storefront never needs to resolve the current auth
+        // user just to determine its visual layout. Only a valid preview
+        // request should touch the auth guard.
+        if (!is_string($preview) || !array_key_exists($preview, self::presets())) {
+            return $this->current();
+        }
+
+        try {
+            $user = auth()->user();
+            if ($user !== null && (bool) $user->root_admin) {
+                return $preview;
+            }
+        } catch (\Throwable $exception) {
+            report($exception);
         }
 
         return $this->current();
