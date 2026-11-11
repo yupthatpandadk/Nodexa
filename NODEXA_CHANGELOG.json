@@ -1,6 +1,23 @@
 {
-  "latest": "1.7.24",
+  "latest": "1.7.25",
   "releases": [
+    {
+      "version": "1.7.25",
+      "date": "2026-11-11",
+      "type": "feature",
+      "title": "Frontend Themes – fire ægte fulde designs, ikke kun farveskift",
+      "changes": [
+        "Frontend Theme Center vælger nu selvstændige Blade-sidekompositioner for Latch, Xlumia, Horizon og DinoNode, mens Nodexa Original bevarer sine eksisterende sider.",
+        "Alle fire nye temaer har forskellige HTML-opbygninger af forsiden, hostingkataloget og VPS-kataloget – i alt 12 selvstændige sidetemplates.",
+        "Latch har todelt operationsheader, asymmetrisk terminal-hero og serverkatalog med venstre filtreringsmenu og vandrette kort.",
+        "Xlumia har flydende navigation, centreret premium-hero med dashboardvisning og kortbaserede serverkataloger.",
+        "Horizon har enterprise-header med statuslinje, operationspanel og hostingkatalog i tabelopbygning.",
+        "DinoNode har gamingnavigation med kategorier, spilvalg til Minecraft/FiveM/VPS og et spilfokuseret produktlayout.",
+        "Kundesider, produktsider og checkout får samtidig temabaseret navigation og responsiv layoutstruktur, men beholder eksisterende funktioner, produkter, priser, Wallet og betaling.",
+        "Gamle Nodexa Original-views og header er bevaret som fallback; tilføjet sikre fælles produktkort, responsivt mobilmenu og rettelse til kategori-filtrering.",
+        "Temareferencerne er alene designinspiration; der indgår ingen kopierede, kommercielle skabelonfiler eller assets."
+      ]
+    },
     {
       "version": "1.7.24",
       "date": "2026-11-11",
