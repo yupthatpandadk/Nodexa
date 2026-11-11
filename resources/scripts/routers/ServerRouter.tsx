@@ -21,6 +21,7 @@ import ConflictStateRenderer from '@/components/server/ConflictStateRenderer';
 import PermissionRoute from '@/components/elements/PermissionRoute';
 import routes from '@/routers/routes';
 import FiveMResourcesContainer from '@/components/server/fivem/FiveMResourcesContainer';
+import FiveMTxAdminContainer from '@/components/server/fivem/FiveMTxAdminContainer';
 
 export default () => {
     const match = useRouteMatch<{ id: string }>();
@@ -42,7 +43,11 @@ export default () => {
     const clearServerState = ServerContext.useStoreActions((actions) => actions.clearServerState);
 
     const serverRoutes = isFiveMServer
-        ? [...routes.server, { path: '/resources', permission: 'file.read', name: 'Resources', component: FiveMResourcesContainer, exact: true }]
+        ? [
+            ...routes.server,
+            { path: '/resources', permission: 'file.read', name: 'Resources', component: FiveMResourcesContainer, exact: true },
+            { path: '/txadmin', permission: 'startup.read', name: 'txAdmin', component: FiveMTxAdminContainer, exact: true },
+        ]
         : routes.server;
 
     const serverRouteName = (path: string, name: string | undefined) => {
