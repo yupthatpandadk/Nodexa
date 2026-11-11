@@ -1,6 +1,19 @@
 {
-  "latest": "1.7.12",
+  "latest": "1.7.13",
   "releases": [
+    {
+      "version": "1.7.13",
+      "date": "2026-11-11",
+      "type": "feature",
+      "title": "Minecraft Dirt, Grass, Stone, Iron, Gold, Diamond, Emerald og Obsidian",
+      "changes": [
+        "Tilføjet otte navngivne Minecraft-pakker med redigerbare DKK-priser og ressourceprofiler fra 2 til 16 GB RAM.",
+        "Pakkerne oprettes fra Admin → Storefront & Billing → Egg-pakker med et installeret Minecraft Egg.",
+        "Alle pakker oprettes som skjulte produkter, så priser og nodekapacitet kan godkendes før aktivering.",
+        "Genkørsel springer eksisterende pakker over og ændrer ikke kundernes eksisterende abonnementer.",
+        "Generatorens layout er responsivt og viser RAM, CPU, SSD, databaser, backups og porte for hvert niveau."
+      ]
+    },
     {
       "version": "1.7.12",
       "date": "2026-11-11",
