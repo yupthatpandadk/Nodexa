@@ -216,8 +216,11 @@ class UpdateController extends Controller
 
         // Query the actual systemd unit instead of trusting an old PID which
         // Linux may have recycled for an unrelated process.
-        $unitState = trim((string) @shell_exec('/usr/bin/systemctl is-active nodexa-update.service 2>/dev/null'));
-        if (in_array($unitState, ['active', 'activating'], true)) {
+        $unitOutput = [];
+        $unitExit = 1;
+        exec('/usr/bin/systemctl is-active nodexa-update.service 2>/dev/null', $unitOutput, $unitExit);
+        $unitState = trim((string) ($unitOutput[0] ?? ''));
+        if ($unitExit === 0 && in_array($unitState, ['active', 'activating'], true)) {
             return true;
         }
 
