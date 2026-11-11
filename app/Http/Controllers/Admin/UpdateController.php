@@ -85,8 +85,9 @@ class UpdateController extends Controller
         $progressJson = @file_get_contents(storage_path('app/nodexa-update-progress.json'));
         $previousProgress = is_string($progressJson) ? json_decode($progressJson, true) : null;
         $updateFailed = !$running
-            && in_array(($previousProgress['status'] ?? ''), ['failed', 'queued', 'running'], true)
-            && ($latest === null || version_compare($installed, $latest, '<'));
+            && in_array(($previousProgress['status'] ?? ''), ['failed', 'queued', 'running'], true);
+        // An interrupted Git reset may have already advanced NODEXA_VERSION.
+        // Never hide its failure just because the local version matches main.
 
         return view('admin.updates.index', [
             'installed' => $installed,
@@ -138,8 +139,18 @@ class UpdateController extends Controller
 
             $latest = trim((string) $versionResponse->body());
 
-            if ($latest === '' || $installed === $latest || ($installed !== 'dev' && version_compare($installed, $latest, '>='))) {
-                return redirect()->route('admin.updates')->with('success', 'Nodexa is already up to date. A new update must be available before updating again.');
+            $progressFile = storage_path('app/nodexa-update-progress.json');
+            $previousProgress = json_decode((string) @file_get_contents($progressFile), true);
+            $needsRepair = is_array($previousProgress)
+                && ($previousProgress['status'] ?? '') === 'failed';
+
+            // A failed Composer/build step may occur after git reset changed
+            // NODEXA_VERSION. Allow repairing that exact installed version.
+            if ($latest === '' || ($installed !== 'dev' && version_compare($installed, $latest, '>'))
+                || ($installed === $latest && !$needsRepair)) {
+                return redirect()->route('admin.updates')->with('success',
+                    'Nodexa er allerede opdateret. Kun en fejlet installation kan genoptages uden en nyere version.'
+                );
             }
         } catch (\Throwable $exception) {
             return redirect()->route('admin.updates')->with('error', 'Could not verify the latest Nodexa version: ' . $exception->getMessage());
@@ -203,13 +214,24 @@ class UpdateController extends Controller
             return false;
         }
 
-        $pid = is_file($pidFile) ? trim((string) @file_get_contents($pidFile)) : '';
-        if ($pid !== '' && ctype_digit($pid) && is_dir('/proc/' . $pid)) {
+        // Query the actual systemd unit instead of trusting an old PID which
+        // Linux may have recycled for an unrelated process.
+        $unitState = trim((string) @shell_exec('/usr/bin/systemctl is-active nodexa-update.service 2>/dev/null'));
+        if (in_array($unitState, ['active', 'activating'], true)) {
             return true;
         }
 
-        // A stale lock/PID must never leave Update Center stuck forever.
-        if (is_file($lock) && (time() - (int) @filemtime($lock)) < 30) {
+        // Compatibility for an update already running from the older script.
+        $pid = is_file($pidFile) ? trim((string) @file_get_contents($pidFile)) : '';
+        if ($pid !== '' && ctype_digit($pid) && is_dir('/proc/' . $pid)) {
+            $cmdline = @file_get_contents('/proc/' . $pid . '/cmdline');
+            if (is_string($cmdline) && str_contains($cmdline, 'bin/nodexa-update')) {
+                return true;
+            }
+        }
+
+        // Leave a small startup window while systemd creates the process.
+        if (is_file($lock) && (time() - (int) @filemtime($lock)) < 20) {
             return true;
         }
 
