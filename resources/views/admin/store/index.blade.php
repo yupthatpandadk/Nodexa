@@ -6,6 +6,10 @@
     <span><strong>Serverpakker</strong> – opret Minecraft Dirt, Grass, Stone, Iron, Gold, Diamond, Emerald og Obsidian samt standardpakker til andre Eggs.</span>
     <a class="btn btn-primary btn-sm" href="{{ route('admin.store.egg-packages') }}"><i class="fa fa-cubes"></i> Åbn Egg-pakker</a>
 </div>
+<div class="alert" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#14283a;color:#d4e5f7;border:1px solid #34546e;border-radius:8px">
+    <span><strong><i class="fa fa-desktop" aria-hidden="true"></i> Frontend Theme Center</strong> – vælg Nodexa Original, Latch-, Xlumia-, Horizon- eller DinoNode-stil til den offentlige hjemmeside.</span>
+    <a class="btn btn-primary btn-sm" href="{{ route('admin.settings.themes') }}"><i class="fa fa-paint-brush" aria-hidden="true"></i> Administrér frontend-temaer</a>
+</div>
 @if(session('success'))<div class="alert alert-success">{{session('success')}}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{$errors->first()}}</div>@endif
 <div class="row">
