@@ -131,6 +131,14 @@ update_panel() {
   panel_was_put_down=0
   trap - EXIT
 
+  # Refresh PHP OPcache as well as Nginx. Otherwise an old controller may
+  # continue to launch updates using www-data after the new files are installed.
+  for fpm in php8.2-fpm php8.3-fpm php8.4-fpm php8.5-fpm; do
+    if systemctl is-active --quiet "${fpm}.service"; then
+      info "Genindlæser ${fpm} for at aktivere ny PHP-kode..."
+      systemctl reload-or-restart "${fpm}.service"
+    fi
+  done
   systemctl restart pteroq 2>/dev/null || true
   systemctl restart nginx 2>/dev/null || true
   info "Nodexa Panel er opdateret."
