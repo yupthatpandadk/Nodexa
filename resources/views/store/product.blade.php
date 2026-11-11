@@ -103,7 +103,7 @@
                                     <select class="input" id="minecraft_version" name="minecraft_version" disabled>
                                         @foreach($minecraftVersions as $version)
                                             <option value="{{ $version }}" {{ old('minecraft_version', 'latest') === $version ? 'selected' : '' }}>
-                                                {{ $version === 'latest' ? 'Seneste understøttede version (latest)' : $version }}
+                                                {{ $version === 'latest' ? 'Automatisk version efter Egg (latest)' : $version }}
                                             </option>
                                         @endforeach
                                     </select>
