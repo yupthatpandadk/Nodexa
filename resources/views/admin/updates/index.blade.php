@@ -1,43 +1,6 @@
 @extends('layouts.admin')
 
-@section('title')
-    Update Center
-<script>
-(function () {
-    var wrap = document.getElementById('nodexa-update-progress');
-    var bar = document.getElementById('nodexa-progress-bar');
-    var percent = document.getElementById('nodexa-progress-percent');
-    var step = document.getElementById('nodexa-progress-step');
-    var running = {{ $running ? 'true' : 'false' }};
-
-    function pollProgress() {
-        fetch('{{ route('admin.updates.progress') }}', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
-            .then(function (response) { return response.json(); })
-            .then(function (data) {
-                var value = Math.max(0, Math.min(100, parseInt(data.percent || 0, 10)));
-                if (data.running || data.status === 'completed' || data.status === 'failed') wrap.style.display = 'block';
-                bar.style.width = value + '%';
-                percent.textContent = value + '%';
-                step.textContent = data.step || 'Updating Nodexa…';
-
-                if (data.status === 'failed') {
-                    bar.style.background = '#ef4444';
-                    percent.style.color = '#ef4444';
-                    return;
-                }
-                if (data.status === 'completed' && !data.running) {
-                    setTimeout(function () { window.location.reload(); }, 1200);
-                    return;
-                }
-                if (data.running) setTimeout(pollProgress, 1000);
-            })
-            .catch(function () { if (running) setTimeout(pollProgress, 2000); });
-    }
-
-    if (running) pollProgress();
-})();
-</script>
-@endsection
+@section('title', 'Update Center')
 
 @section('content-header')
     <h1>Update Center <small>Keep Nodexa up to date from GitHub.</small></h1>
@@ -59,17 +22,24 @@
                     <tr><td><strong>Channel</strong></td><td><code>main</code></td></tr>
                     <tr><td><strong>Status</strong></td><td>
                         @if($running)
-                            <span class="label label-warning">Updating</span>
+                            <span class="label label-warning" id="nodexa-update-status">Updating</span>
+                        @elseif($updateFailed)
+                            <span class="label label-danger" id="nodexa-update-status">Failed</span>
                         @elseif($latest && $latest !== $installed)
-                            <span class="label label-info">Update available</span>
+                            <span class="label label-info" id="nodexa-update-status">Update available</span>
                         @elseif($latest)
-                            <span class="label label-success">Up to date</span>
+                            <span class="label label-success" id="nodexa-update-status">Up to date</span>
                         @else
-                            <span class="label label-danger">Could not check</span>
+                            <span class="label label-danger" id="nodexa-update-status">Could not check</span>
                         @endif
                     </td></tr>
                 </table>
                 @if($error)<div class="alert alert-warning" style="margin-top:15px;">{{ $error }}</div>@endif
+                @if($updateFailed)
+                    <div class="alert alert-danger" style="margin-top:15px;">
+                        <strong>Update failed.</strong> Kontrollér loggen. Hvis den viser <code>Permission denied</code>, skal opdateringen køres fra SSH med administratorrettigheder.
+                    </div>
+                @endif
             </div>
             <div class="box-footer">
                 <div id="nodexa-update-progress" style="display:{{ $running ? 'block' : 'none' }};margin-bottom:16px;">
@@ -93,6 +63,10 @@
                     </button>
                     <a class="btn btn-default" href="{{ route('admin.updates') }}"><i class="fa fa-refresh"></i> Check again</a>
                 </form>
+                <p class="help-block" style="margin-top:13px;">
+                    <strong>Fejl med filrettigheder?</strong> Kør denne kommando via SSH i stedet for at give webserveren skriveadgang til al kildekode:
+                    <code style="display:block;white-space:normal;overflow-wrap:anywhere;padding:8px;margin-top:5px;">curl -fsSL https://raw.githubusercontent.com/yupthatpandadk/Nodexa/main/install.sh | sudo bash -s -- update</code>
+                </p>
             </div>
         </div>
     </div>
@@ -138,4 +112,42 @@
     </div>
 </div>
 @endif
+
+<script>
+(function () {
+    var wrap = document.getElementById('nodexa-update-progress');
+    var bar = document.getElementById('nodexa-progress-bar');
+    var percent = document.getElementById('nodexa-progress-percent');
+    var step = document.getElementById('nodexa-progress-step');
+    var running = {{ $running ? 'true' : 'false' }};
+    var status = document.getElementById('nodexa-update-status');
+
+    function pollProgress() {
+        fetch('{{ route('admin.updates.progress') }}', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                var value = Math.max(0, Math.min(100, parseInt(data.percent || 0, 10)));
+                if (data.running || data.status === 'completed' || data.status === 'failed') wrap.style.display = 'block';
+                bar.style.width = value + '%';
+                percent.textContent = value + '%';
+                step.textContent = data.step || 'Updating Nodexa…';
+
+                if (data.status === 'failed') {
+                    bar.style.background = '#ef4444';
+                    percent.style.color = '#ef4444';
+                    if (status) { status.className = 'label label-danger'; status.textContent = 'Failed'; }
+                    return;
+                }
+                if (data.status === 'completed' && !data.running) {
+                    setTimeout(function () { window.location.reload(); }, 1200);
+                    return;
+                }
+                if (data.running) setTimeout(pollProgress, 1000);
+            })
+            .catch(function () { if (running) setTimeout(pollProgress, 2000); });
+    }
+
+    if (running) pollProgress();
+})();
+</script>
 @endsection
