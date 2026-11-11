@@ -1,6 +1,19 @@
 {
-  "latest": "1.7.18",
+  "latest": "1.7.19",
   "releases": [
+    {
+      "version": "1.7.19",
+      "date": "2026-11-11",
+      "type": "patch",
+      "title": "Minecraft Egg-skift – backup er nu valgfri",
+      "changes": [
+        "En fuldført backup er ikke længere et krav for at skifte Minecraft Egg i kundens kontrolpanel.",
+        "Kunden får fortsat en tydelig anbefaling om backup og en særlig advarsel, hvis ingen nyere backup er registreret.",
+        "Knappen kræver nu kun, at kunden vælger et andet Egg, stopper serveren og accepterer risikoen ved geninstallation.",
+        "API'et tillader skift uden backup, men kontrollerer stadig serverejerskab, Minecraft Nest, serverstatus og bekræftelse.",
+        "FiveM og øvrige spil kan fortsat ikke skifte Egg."
+      ]
+    },
     {
       "version": "1.7.18",
       "date": "2026-11-11",
