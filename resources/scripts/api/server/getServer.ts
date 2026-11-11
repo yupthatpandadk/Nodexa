@@ -90,6 +90,7 @@ export const rawDataToServerObject = ({ attributes: data }: FractalResponseData)
     limits: { ...data.limits },
     eggFeatures: data.egg_features || [],
     eggId: data.egg_id,
+    isFiveMServer: Boolean(data.is_fivem_server),
     minecraftEggSwitchingAvailable: Boolean(data.minecraft_egg_switching_available),
     pluginManagerEnabled: Boolean(data.plugin_manager_enabled),
     modManagerEnabled: Boolean(data.mod_manager_enabled),
