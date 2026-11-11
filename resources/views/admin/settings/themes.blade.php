@@ -48,6 +48,133 @@
         @media(max-width:690px){.nx-theme-grid{grid-template-columns:1fr}.nx-theme-preview{grid-template-columns:1fr;padding:18px}}
     </style>
 
+
+    <style>
+        /* Separate frontend layouts: never changes the Admin/Pterodactyl theme. */
+        .nx-front-box {background:#0e1928;border:1px solid #293d55;border-radius:14px;overflow:hidden;margin:0 0 24px;color:#edf3fb}
+        .nx-front-top {display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:19px 21px;border-bottom:1px solid #293d55;background:#132137}
+        .nx-front-top h2 {font-size:18px;font-weight:800;margin:0 0 4px;color:#eef5ff}
+        .nx-front-top p {font-size:12px;color:#9eb0c7;margin:0;line-height:1.6}
+        .nx-front-active {display:inline-flex;align-items:center;gap:7px;color:#8ad7be;font-size:11px;font-weight:750;padding:6px 10px;border:1px solid #3d6a64;border-radius:7px;background:#102b2c}
+        .nx-front-body {padding:20px}
+        .nx-front-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+        .nx-front-option {border:1px solid #32455d;border-radius:11px;padding:10px;background:#101c2c;min-width:0}
+        .nx-front-choice {display:block;margin:0;cursor:pointer;position:relative}
+        .nx-front-choice input {position:absolute;left:10px;top:10px;z-index:1;accent-color:#79b0fa;width:17px;height:17px}
+        .nx-front-choice input:focus-visible + .nx-front-card {outline:2px solid #88bdf8;outline-offset:3px}
+        .nx-front-choice input:checked + .nx-front-card {border-color:#82b5f6;box-shadow:0 0 0 1px #82b5f6}
+        .nx-front-card {border:1px solid transparent;border-radius:8px;padding:5px;min-height:211px}
+        .nx-front-demo {position:relative;background:var(--front-bg);height:125px;border:1px solid var(--front-border,var(--front-accent));border-radius:6px;overflow:hidden;padding:10px}
+        .nx-front-demo-nav {height:14px;border-bottom:1px solid color-mix(in srgb,var(--front-accent) 30%,transparent);display:flex;align-items:center;gap:5px}
+        .nx-front-demo-brand {height:10px;width:10px;border-radius:3px;background:var(--front-accent)}
+        .nx-front-demo-navline {width:17%;height:3px;border-radius:2px;background:color-mix(in srgb,var(--front-accent) 37%,transparent)}
+        .nx-front-demo-right {height:6px;width:26px;background:var(--front-accent);border-radius:3px;margin-left:auto}
+        .nx-front-demo-main {display:flex;align-items:center;gap:12px;height:87px}
+        .nx-front-demo-copy {flex:1}
+        .nx-front-demo-label {width:26%;height:3px;background:var(--front-accent);margin:0 0 11px;border-radius:2px}
+        .nx-front-demo-heading {width:87%;height:8px;background:#e9f1ff;border-radius:2px;opacity:.8;margin-bottom:5px}
+        .nx-front-demo-heading.two {width:67%;opacity:.56}
+        .nx-front-demo-description {height:3px;width:89%;background:#788aa2;opacity:.55;margin:8px 0 9px;border-radius:2px}
+        .nx-front-demo-button {height:10px;width:46%;border-radius:3px;background:var(--front-accent)}
+        .nx-front-demo-product {width:35%;height:62px;border:1px solid color-mix(in srgb,var(--front-accent) 42%,transparent);border-radius:5px;background:var(--front-surface);padding:9px}
+        .nx-front-demo-product:before {content:'';display:block;height:6px;width:57%;background:var(--front-accent);border-radius:3px;margin-bottom:7px}
+        .nx-front-demo-product:after {content:'';display:block;width:87%;height:25px;border-radius:3px;background:linear-gradient(140deg,var(--front-surface),var(--front-secondary));opacity:.4}
+        .nx-front-option[data-variant="latch"] .nx-front-demo {border-radius:3px}
+        .nx-front-option[data-variant="latch"] .nx-front-demo-product {border-radius:2px}
+        .nx-front-option[data-variant="xlumia"] .nx-front-demo {background:radial-gradient(ellipse at top right,color-mix(in srgb,var(--front-accent) 25%,transparent),transparent 80%),var(--front-bg);border-radius:12px}
+        .nx-front-option[data-variant="xlumia"] .nx-front-demo-product {border-radius:10px}
+        .nx-front-option[data-variant="horizon"] .nx-front-demo {border-radius:3px}
+        .nx-front-option[data-variant="dinonode"] .nx-front-demo-product {border-color:var(--front-accent)}
+        .nx-front-title {display:flex;align-items:center;justify-content:space-between;gap:7px;margin:10px 0 5px}
+        .nx-front-title strong {font-size:13px;color:#f0f5ff}
+        .nx-front-title small {font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#84a1c1}
+        .nx-front-desc {font-size:11px;color:#9eb0c5;line-height:1.6;margin:0 0 5px;min-height:52px}
+        .nx-front-previewlink {display:inline-flex;align-items:center;gap:5px;padding:6px 4px 4px;color:#a8cef9;font-size:11px;font-weight:700;text-decoration:none}
+        .nx-front-previewlink:hover {text-decoration:underline;color:#e6f2ff}
+        .nx-front-bottom {border-top:1px solid #283b53;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:13px;flex-wrap:wrap}
+        .nx-front-bottom p {margin:0;max-width:640px;font-size:11px;color:#9fb1c7;line-height:1.65}
+        .nx-front-bottom .btn {min-height:38px;border-radius:7px;font-weight:800}
+        .nx-front-legal {color:#9badc7;font-size:11px;line-height:1.6;margin:13px 1px 0}
+        @media(max-width:1100px){.nx-front-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        @media(max-width:650px){.nx-front-grid{grid-template-columns:1fr}.nx-front-body{padding:12px}.nx-front-top{padding:15px}.nx-front-bottom{padding:14px}.nx-front-bottom .btn{width:100%}.nx-front-card{min-height:auto}.nx-front-desc{min-height:auto}}
+    </style>
+
+    <form method="POST" action="{{ route('admin.settings.themes.frontend.update') }}">
+        @csrf
+        @method('PATCH')
+        <section class="nx-front-box" aria-labelledby="nx-front-heading">
+            <div class="nx-front-top">
+                <div>
+                    <h2 id="nx-front-heading"><i class="fa fa-desktop" aria-hidden="true"></i> Frontend Theme Center</h2>
+                    <p>Vælg layout for den offentlige hjemmeside, hostingkatalog og kundesider. Uafhængigt af panelets farvetema.</p>
+                </div>
+                <div class="nx-front-active"><i class="fa fa-circle" aria-hidden="true"></i> Aktivt: {{ $frontendPresets[$frontendSelected]['name'] }}</div>
+            </div>
+
+            <div class="nx-front-body">
+                <div class="nx-front-grid">
+                    @foreach($frontendPresets as $key => $preset)
+                        <div class="nx-front-option" data-variant="{{ $key }}"
+                             style="--front-bg:{{ $preset['background'] }};--front-surface:{{ $preset['surface'] }};--front-accent:{{ $preset['accent'] }};--front-secondary:{{ $preset['secondary'] }}">
+                            <label class="nx-front-choice">
+                                <input type="radio" name="frontend_theme" value="{{ $key }}"
+                                       {{ old('frontend_theme', $frontendSelected) === $key ? 'checked' : '' }}
+                                       aria-label="{{ $preset['name'] }}">
+                                <div class="nx-front-card">
+                                    <div class="nx-front-demo" aria-hidden="true">
+                                        <div class="nx-front-demo-nav">
+                                            <span class="nx-front-demo-brand"></span>
+                                            <span class="nx-front-demo-navline"></span><span class="nx-front-demo-navline"></span>
+                                            <span class="nx-front-demo-right"></span>
+                                        </div>
+                                        <div class="nx-front-demo-main">
+                                            <div class="nx-front-demo-copy">
+                                                <div class="nx-front-demo-label"></div>
+                                                <div class="nx-front-demo-heading"></div>
+                                                <div class="nx-front-demo-heading two"></div>
+                                                <div class="nx-front-demo-description"></div>
+                                                <div class="nx-front-demo-button"></div>
+                                            </div>
+                                            <div class="nx-front-demo-product"></div>
+                                        </div>
+                                    </div>
+                                    <div class="nx-front-title">
+                                        <strong>{{ $preset['name'] }}</strong>
+                                        @if($key === $frontendSelected)
+                                            <small style="color:#85dcaf"><i class="fa fa-check-circle"></i> Aktivt</small>
+                                        @elseif($key === 'classic')
+                                            <small>Original</small>
+                                        @endif
+                                    </div>
+                                    <p class="nx-front-desc">{{ $preset['description'] }}</p>
+                                </div>
+                            </label>
+                            <a class="nx-front-previewlink" target="_blank" rel="noopener noreferrer"
+                               href="{{ route('store.home', ['frontend_theme_preview' => $key]) }}">
+                                <i class="fa fa-eye" aria-hidden="true"></i> Forhåndsvis frontend
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+                <p class="nx-front-legal">
+                    <i class="fa fa-info-circle"></i>
+                    Latch-, Xlumia-, Horizon- og DinoNode-stil er selvstændige Nodexa-design inspireret af hostingbranchen.
+                    Det er ikke de originale betalte templates eller deres billeder, kode eller licens.
+                </p>
+            </div>
+
+            <div class="nx-front-bottom">
+                <p><strong style="color:#e8effa">Det nuværende design bevares.</strong>
+                    Skift tilbage til Nodexa Original når som helst. Temavalget påvirker ikke kontrolpanelet,
+                    Admin Area, ordreflow, betalinger, produkter eller data.
+                </p>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-check" aria-hidden="true"></i> Gem frontend-tema
+                </button>
+            </div>
+        </section>
+    </form>
+
     <form method="POST" action="{{ route('admin.settings.themes.update') }}">
         @csrf
         @method('PATCH')
