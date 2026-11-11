@@ -1,6 +1,21 @@
 {
-  "latest": "1.7.20",
+  "latest": "1.7.21",
   "releases": [
+    {
+      "version": "1.7.21",
+      "date": "2026-11-11",
+      "type": "feature",
+      "title": "Minecraft Egg-skift – behold filer eller ren installation",
+      "changes": [
+        "Minecraft-kunder kan nu vælge mellem Behold eksisterende filer (standard) og Ren installation ved Egg-skift under Server → Settings.",
+        "Behold filer sletter ikke serverfiler; det nye Eggs installationsscript kan dog stadig overskrive filer.",
+        "Ren installation fjerner filerne i den valgte Minecraft-servers rodmappe via Wings og geninstallerer med det nye Egg.",
+        "Ren installation kræver både særskilt indtastning af SLET, risikoaccept og en ekstra bekræftelsesdialog.",
+        "API'et afviser usikre filstier, symlinks og monterede mapper og markerer delvis oprydningsfejl til manuel gendannelse.",
+        "Backup er fortsat valgfri, men anbefales kraftigt. Pterodactyl-backups, serverens RAM, CPU, diskgrænser og hostingpakke påvirkes ikke.",
+        "Kun serverejere i Minecraft Nest kan ændre Egg. FiveM og andre spil er fortsat udelukket."
+      ]
+    },
     {
       "version": "1.7.20",
       "date": "2026-11-11",
