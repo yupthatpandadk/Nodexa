@@ -1,6 +1,20 @@
 {
-  "latest": "1.7.22",
+  "latest": "1.7.23",
   "releases": [
+    {
+      "version": "1.7.23",
+      "date": "2026-11-11",
+      "type": "feature",
+      "title": "Frontend Theme Center – fem selvstændige hjemmesidedesigns",
+      "changes": [
+        "Tilføjet separat Frontend Theme Center i Admin → Settings → Temaer og genvej fra Storefront & Billing.",
+        "Tilføjet fem valg: Nodexa Original (det nuværende, uændrede design), Latch-stil, Xlumia-stil, Horizon-stil og DinoNode-stil.",
+        "Fire nye responsive originale Nodexa-stilvarianter med forskellige farver, kort, knapper, navigation og hero-layouts – uden kopierede premium-template-filer.",
+        "Temakortene har mini-preview, og administrator kan åbne en privat forhåndsvisning af den offentlige forside før aktivering.",
+        "Frontend-layoutet gemmes uafhængigt af eksisterende farve- og sæsontemaer og ændrer ikke Admin Area eller Pterodactyl-kontrolpanelet.",
+        "Temavalget bruger en allowlist og falder automatisk tilbage til Nodexa Original ved ukendte værdier."
+      ]
+    },
     {
       "version": "1.7.22",
       "date": "2026-11-11",
