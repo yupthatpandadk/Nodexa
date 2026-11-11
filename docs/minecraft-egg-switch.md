@@ -11,6 +11,12 @@ Kunden kan eksempelvis skifte **Paper → Fabric** eller **Fabric → Forge**, n
 - Serveren må ikke være i gang med installation, backup-gendannelse, overførsel eller vedligeholdelse.
 - Serveren skal være stoppet på Wings. Status kontrolleres af backend, ikke blot frontend.
 - **Backup er valgfri, men anbefales stærkt.** Hvis der ikke er en nyere fuldført backup, viser panelet en tydelig advarsel om permanent datatab. Kunden kan fortsætte uden backup efter at have bekræftet risikoen.
+- Installationsmetoden vælges på serverens Settings-side:
+  - **Behold eksisterende filer (standard)** sender `installation_mode=keep`. Nodexa rydder ikke mapperne, men det nye Eggs installationsscript kan stadig ændre/overskrive filer.
+  - **Ren installation** sender `installation_mode=clean`. Kunden skal skrive **SLET**, acceptere risikoen og godkende den ekstra bekræftelsesdialog. API’et kræver `confirm_delete=SLET`.
+- Ren installation sletter kun rodmappens indhold på **denne server** gennem Wings’ server-specifikke fil-API, derefter geninstalleres det nye Egg. Pterodactyls separate backups, databaser, porte og serverressourcer berøres ikke.
+- Sletning afvises, hvis serveren har monterede mapper, eller hvis Wings returnerer usikre stier, symlinks eller ugyldige filnavne. Delvist udført sletning kan ikke rulles tilbage.
+- Hvis den rene installation afbrydes, markeres serveren som geninstallationsfejlet, og kunden skal kontakte support.
 - Forespørgsler begrænses af API-rate limit og en per-server-lås mod samtidige Egg-skift.
 - Skiftet opdaterer `egg_id`, Nest, startup, Docker-image og Egg-variabler til den valgte software, synkroniserer Wings og starter geninstallation.
 - Kunden beholder sin serveridentitet, RAM, CPU, diskplads, allocations, betaling og produktpakke. **Ældre verdensfiler, plugins eller mods kan kræve manuel tilpasning efter geninstallation.**
@@ -23,8 +29,9 @@ Kunden kan eksempelvis skifte **Paper → Fabric** eller **Fabric → Forge**, n
 2. Stop Minecraft-serveren helt.
 3. Åbn **Server → Settings**.
 4. Vælg et nyt Minecraft Egg (f.eks. Fabric) i den nye sektion.
-5. Bekræft, at du accepterer risikoen – særligt hvis du ikke har taget en backup.
-6. Bekræft Egg-skiftet og vent på geninstallationen. Gennemgå serverfiler og mods/plugins, før serveren startes.
+5. Vælg **Behold eksisterende filer** eller **Ren installation**. Ved ren installation skal kunden skrive **SLET**.
+6. Bekræft, at du accepterer risikoen – særligt hvis du ikke har taget en backup.
+7. Bekræft Egg-skiftet i dialogen og vent på geninstallationen. Gennemgå serverfiler og mods/plugins, før serveren startes.
 
 ### Vigtigt
 
