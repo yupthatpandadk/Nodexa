@@ -31,7 +31,11 @@
     <section class="nx-theme-section nx-latch-products">
         <div class="container">
             <div class="nx-latch-sectiontop"><p class="nx-theme-overline">SERVER CATALOG / 001</p><h2>Vælg kapaciteten.<br><em>Vi klarer resten.</em></h2><a href="{{route('store.hosting')}}" class="nx-theme-textlink">Se alle pakker ↗</a></div>
-            @include('store.frontend.parts.game-cards',['limit'=>3,'variant'=>'latch-home'])
+            @include('store.frontend.parts.latch-game-selector')
+            <div id="nxLatchCatalog">
+                @include('store.frontend.parts.game-cards',['variant'=>'latch-home'])
+            </div>
+            <p class="nx-theme-empty" id="nxLatchNoMatch" hidden>Ingen aktive pakker for dette spil endnu.</p>
         </div>
     </section>
     <section class="nx-latch-workflow nx-theme-section"><div class="container nx-latch-workflow-grid"><div><p class="nx-theme-overline">SÅDAN FUNGERER DET</p><h2>Fra valg til<br>kontrolpanel.</h2><p>Et overskueligt flow fra serverpakke til drift og vedligeholdelse.</p><a class="nx-theme-secondary" href="{{route('store.docs')}}">Se dokumentation ↗</a></div><ol><li><b>01</b><span><strong>Vælg en pakke</strong><small>RAM, CPU og disk efter behov</small></span></li><li><b>02</b><span><strong>Konfigurér serveren</strong><small>Vælg software og indstillinger</small></span></li><li><b>03</b><span><strong>Administrér i Nodexa</strong><small>Konsol, filer og backups</small></span></li></ol></div></section>
