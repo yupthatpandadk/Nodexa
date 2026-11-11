@@ -103,6 +103,13 @@ class ServerTransformer extends BaseClientTransformer
             // Server type comes from its Nest, not a customer's choice, Egg ID,
             // or any URL parameter. All FiveM clients get the dedicated UI.
             'is_fivem_server' => \Pterodactyl\Services\Nodexa\FiveMServerType::matches($server->egg->nest?->name),
+            // txAdmin is a separate authenticated FXServer web service.
+            // Only show its verified assigned endpoint to users allowed to
+            // inspect startup settings. Never expose API tokens or passwords.
+            'txadmin' => $user->can(Permission::ACTION_STARTUP_READ, $server)
+                && \Pterodactyl\Services\Nodexa\FiveMServerType::matches($server->egg->nest?->name)
+                    ? app(\Pterodactyl\Services\Nodexa\TxAdminIntegrationService::class)->forServer($server)
+                    : null,
             // Only the actual owner of a Minecraft Nest server gets an Egg
             // switcher; subusers, FiveM and other games never see it.
             'minecraft_egg_switching_available' => $user->id === $server->owner_id
