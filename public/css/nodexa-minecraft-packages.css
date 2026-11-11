@@ -53,6 +53,24 @@
 .nx-minecraft-options > .form-group { flex: 1 1 260px; }
 .nx-minecraft-options label { color: #dee8f6; font-size: 12px; }
 .nx-minecraft-options p { flex: 1 1 270px; font-size: 11px; color: #90a3bb; margin: 0 0 4px; line-height: 1.55; }
+.nx-minecraft-automatic {
+    flex: 1 1 350px;
+    border: 1px solid var(--nx-border, #2b3b50);
+    background: #112237;
+    padding: 13px 15px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.nx-minecraft-automatic strong {
+    color: #ecf3fb;
+    font-size: 12px;
+    font-weight: 800;
+}
+.nx-minecraft-automatic strong .fa { color: var(--nx-accent, #72abf1); margin-right: 5px; }
+.nx-minecraft-automatic span { color: #b5c5d6; font-size: 11px; line-height: 1.6; }
+.nx-minecraft-automatic small { color: #85cdaa; font-size: 10px; margin-top: 5px; }
 .nx-minecraft-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 19px 0; }
 .nx-minecraft-card {
     min-width: 0;
