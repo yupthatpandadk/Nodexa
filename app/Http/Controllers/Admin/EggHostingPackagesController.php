@@ -17,12 +17,10 @@ class EggHostingPackagesController extends Controller
     public function index(EggHostingPackageService $packages, MinecraftHostingPackageService $minecraftPackages): View
     {
         $eggs = Egg::with('nest')->orderBy('name')->get();
-        $minecraftEggs = $eggs->filter(
-            fn (Egg $egg) => $minecraftPackages->supportsEgg($egg)
-        );
+        $minecraftDefaultEgg = $minecraftPackages->defaultEgg();
 
         return view('admin.store.egg-packages', [
-            'minecraftEggs' => $minecraftEggs,
+            'minecraftDefaultEgg' => $minecraftDefaultEgg,
             'minecraftProfiles' => $minecraftPackages->profiles(),
             'eggs' => $eggs,
             'categories' => EggHostingPackageService::GAME_LABELS,
@@ -68,22 +66,19 @@ class EggHostingPackagesController extends Controller
 
     /**
      * Generate named Minecraft plans as unpublished products.
-     * Safe to retry: the service inserts stable, Egg-specific slugs only once.
+     * Safe to retry: the service inserts stable resource-tier slugs only once.
      */
     public function generateMinecraft(Request $request, MinecraftHostingPackageService $packages): RedirectResponse
     {
         $data = $request->validate([
-            'egg_id' => ['required', 'integer', 'exists:eggs,id'],
             'tiers' => ['required', 'array', 'min:1', 'max:8'],
             'tiers.*' => ['required', 'string', 'in:dirt,grass,stone,iron,gold,diamond,emerald,obsidian', 'distinct'],
             'prices' => ['nullable', 'array'],
             'prices.*' => ['nullable', 'numeric', 'min:0.01', 'max:99999'],
         ]);
 
-        $egg = Egg::with('nest')->findOrFail($data['egg_id']);
-
         try {
-            $result = $packages->generate($egg, $data['tiers'], $data['prices'] ?? []);
+            $result = $packages->generate($data['tiers'], $data['prices'] ?? []);
         } catch (RuntimeException $exception) {
             return redirect()->route('admin.store.egg-packages')
                 ->withInput()->withErrors(['minecraft' => $exception->getMessage()]);
@@ -92,6 +87,7 @@ class EggHostingPackagesController extends Controller
         return redirect()->route('admin.store.egg-packages')
             ->with('success', $result['created'] . ' Minecraft-pakker oprettet som skjulte produkter. '
                 . $result['skipped'] . ' eksisterende pakker blev sprunget over. '
+                . 'Kunden vælger selv Minecraft-type og version ved bestilling. '
                 . 'Gennemgå priser, CPU, RAM og nodekapacitet, før du aktiverer dem.');
     }
 
