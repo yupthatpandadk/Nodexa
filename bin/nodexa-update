@@ -200,5 +200,14 @@ chmod -R ug+rwX storage bootstrap/cache 2>/dev/null || true
 progress 97 "Bringing Nodexa online…"
 php artisan up || true
 
+# PHP-FPM can retain the previous controller in OPcache. Reload only known
+# active service versions, never arbitrary shell commands from the web.
+for fpm in php8.2-fpm php8.3-fpm php8.4-fpm php8.5-fpm; do
+    if systemctl is-active --quiet "${fpm}.service" 2>/dev/null; then
+        log "Reloading PHP runtime: ${fpm}.service"
+        systemctl reload-or-restart "${fpm}.service" || log "WARNING: Could not reload ${fpm}; reload it manually over SSH."
+    fi
+done
+
 progress 100 "Nodexa update completed." completed
 log "Nodexa update completed successfully."
