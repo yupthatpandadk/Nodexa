@@ -83,6 +83,15 @@ class TxAdminIntegrationServiceTest extends TestCase
         }
     }
 
+    public function test_txadmin_port_must_not_match_the_game_endpoint(): void
+    {
+        $result = TxAdminIntegrationService::resolve(
+            ['TXHOST_TXA_PORT' => '30120'], $this->allocations, 'node.example.test', true, 30120
+        );
+        $this->assertSame('port_conflict', $result['state']);
+        $this->assertNull($result['url']);
+    }
+
     public function test_safe_https_proxy_url_on_verified_host(): void
     {
         $result = TxAdminIntegrationService::resolve(
