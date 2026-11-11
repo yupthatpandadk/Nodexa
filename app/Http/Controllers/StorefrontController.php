@@ -26,7 +26,7 @@ class StorefrontController extends Controller
 
     public function hosting()
     {
-        return view('store.hosting', [
+        return view(app(\Pterodactyl\Services\Nodexa\FrontendThemeService::class)->template('hosting'), [
             'products'=>StoreProduct::where('enabled',true)->orderByDesc('featured')->orderBy('price_monthly')->get(),
             'globalSale'=>$this->sale->active(),
         ]);
