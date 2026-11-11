@@ -31,7 +31,7 @@ class FlaxVpsController extends Controller
             ->orderBy('monthly_price')
             ->get();
 
-        return view('store.vps.index', [
+        return view(app(\Pterodactyl\Services\Nodexa\FrontendThemeService::class)->template('vps'), [
             'products' => $products,
             'configured' => $this->flax->isConfigured(),
             'globalSale' => $this->sale->active(),
