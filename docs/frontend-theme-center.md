@@ -1,53 +1,39 @@
-# Nodexa Frontend Theme Center
+# Nodexa Frontend Theme Center – ægte layouts
 
-## Uafhængige frontend-layouts
+Under **Admin → Settings → Temaer → Frontend Theme Center** vælger administrator ét af fem design til den offentlige hostinghjemmeside. Temavalget gemmes i \`nodexa::frontend.theme\`.
 
-Gå til **Admin → Settings → Temaer → Frontend Theme Center**, eller åbn temaerne via **Storefront & Billing → Administrér frontend-temaer**.
+## Hvordan det fungerer
 
-Vælg mellem fem layouts til den offentlige hjemmeside:
+Temasystemet vælger nu **forskellige Blade-sideopbygninger**, ikke bare nye farver. Den valgte skabelon bruges til både forsiden, game-hostingkataloget og VPS-kataloget. Fælles kundesider, checkout og produktsider anvender samtidig themespecifik navigation, typografi og layouts, mens deres fungerende backend og formularer bevares.
 
-| ID | Navn | Karakter |
-|---|---|---|
-| `classic` | Nodexa Original | Det eksisterende design, helt uændret, valgt ved første installation |
-| `latch` | Latch-stil | Mørkt operationelt layout, mintaccent og tydelige serverkort |
-| `xlumia` | Xlumia-stil | Premium violet/cyan, afrundede kort og diskrete auroraeffekter |
-| `horizon` | Horizon-stil | Struktureret grafitblåt layout med tydeligere navigation |
-| `dinonode` | DinoNode-stil | Mørkegrønt gaminglayout og stærkere produktfokus |
+| Tema | Header | Forside | Hosting | VPS |
+| --- | --- | --- | --- | --- |
+| Nodexa Original | Præcis den gamle navigationslinje | Oprindelig forside | Oprindeligt produktgrid | Oprindeligt VPS-katalog |
+| Latch-stil | Todelt operationsheader | Asymmetrisk editorial/terminal-visning | Venstreside med filtre og vandrette pakkelinjer | Opsætning med teknisk sidepanel |
+| Xlumia-stil | Flydende navigation | Centreret premium-hero og dashboard-preview | Kuraterede kort med fremhævede planer | Centreret cloud-intro |
+| Horizon-stil | Statuslinje, masthead og separat navigation | Enterprise split-hero med operationspanel | Tabelform med ressourcer og handlingskolonne | Ressourceorienteret virksomhedsvisning |
+| DinoNode-stil | Gamingnavigation med kategori-stribe | Spilvælger for Minecraft, FiveM og VPS | Kategoriorienteret kortkatalog | Gaming-præget VPS-katalog |
 
-Dette er **selvstændigt udviklede Nodexa-stilvarianter**, ikke originalkode eller aktiver fra de eksterne betalte skabeloner. Ønskes præcis originalintegration, kræver det de lovligt erhvervede skabelonfiler og passende brugsrettigheder.
+Designene er **originale Nodexa-implementeringer**. Der bruges ingen licensbeskyttet HTML, billeder, scripts eller andre assets fra Latch, Xlumia, Horizon eller DinoNode.
 
-## Aktivering og forhåndsvisning
+## Skabelonarkitektur
 
-1. Vælg et layout i Frontend Theme Center.
-2. Brug **Forhåndsvis frontend** på et kort. Kun root-administrator kan se uoffentliggjorte previews via `?frontend_theme_preview=<id>`.
-3. Tryk **Gem frontend-tema**. Ny frontend vises ved næste sideindlæsning uden serverrestart.
-4. Vend tilbage til **Nodexa Original** når som helst.
+- \`FrontendThemeService::template('home'|'hosting'|'vps')\` vælger den relevante Blade-skabelon efter det gemte eller previewede tema.
+- \`store.frontend.{theme}.{page}\` indeholder 12 ægte layouts for fire alternative temaer.
+- \`store.frontend.parts.header\` giver hvert design forskellig navigation. Auth, Wallet, kurv, ordreoversigt, tickets og logout fungerer fortsat.
+- \`store.frontend.parts.game-cards\`, \`vps-cards\` og \`catalog-filters\` anvender **live-produkter**. Priser, rabatter og produkter ændres ikke ved temaskift.
+- \`store.layout\` bruger fortsat den fuldstændigt oprindelige header ved \`classic\`. Alternative temaer indlæser CSS for shell, page-base og det valgte design.
+- \`public/css/nodexa-frontend-{shells,page-base,latch,xl,horizon,dino}.css\` styrer layout. Fælles produktsider, checkout og Client Area får også forskellige navigationer og struktur via responsivt CSS.
+- Ved en ukendt eller manglende temaskabelon anvendes Nodexa Original.
+- Forhåndsvisning med \`?frontend_theme_preview=...\` er begrænset til root-administrator. Andre ser det publicerede tema.
 
-Den valgte frontend gemmes som `nodexa::frontend.theme` i eksisterende settings repository. Ukendte værdier falder tilbage til `classic`. Theme IDs og farver er hardcodet; besøgende kan ikke indsprøjte CSS eller HTML.
+## Installation og test
 
-## Hvad ændres?
+1. Opdatér Nodexa og vælg et frontend-tema i Admin Area.
+2. Forhåndsvis forsiden, hostingkataloget og VPS-kataloget på mobil og desktop.
+3. Kontrollér produkternes **faktiske priser** og kategorifiltrering.
+4. Gennemfør en test af valg af Minecraft-type/version, kurv, checkout, Wallet og Client Area.
+5. Bekræft, at adminpanel og serverkontrolpanel ser ud som før.
+6. Vælg Nodexa Original og verificér, at det gamle design er intakt.
 
-- Layout, kort, knapper, typografi og dekorative flader på offentlige Blade-baserede storefront- og kundesider.
-- Alle sider der bruger `store.layout` påvirkes: forside, hosting, produktsider, kurv, checkout og Client Area.
-- Ingen ændringer af priser, ordrer, betalingsflow, Wallet, Pterodactyl, Proxmox, Admin Area, React-serverpanelet eller data.
-- De eksisterende farvetemaer, Halloween-/juletemaer og sneindstillinger er en særskilt funktion, som stadig kan bruges.
-
-## Teknisk implementering
-
-- `app/Services/Nodexa/FrontendThemeService.php`: presets, settings, validering og root-admin-forhåndsvisning.
-- `app/Http/Controllers/Admin/Settings/ThemesController.php`: separat save-handling.
-- `routes/admin.php`: `admin.settings.themes.frontend.update`.
-- `resources/views/admin/settings/themes.blade.php`: responsive temakort, status og Gem-knap.
-- `resources/views/store/layout.blade.php`: sikker data-attribut til det valgte layout.
-- `public/css/nodexa-frontend-layouts.css`: frontend-only CSS, originaldesign uden ændringer.
-
-CSS-filen indeholder ingen kopierede skrifttyper, billeder, JavaScript eller HTML fra de kommercielle templates.
-
-## Testplan
-
-1. Verificér at frontend-layout er `classic`, indtil administrator vælger andet.
-2. Forhåndsvis hver af de fire nye stilarter på mobil og desktop.
-3. Kontrollér forside, hosting, produktkonfiguration, kurv, checkout, Wallet og Client Area.
-4. Skift frontend-layout, og kontrollér at Admin Area og `/server` fortsat har eksisterende tema.
-5. Gå tilbage til Nodexa Original og sammenlign udseendet med før opdateringen.
-6. Afvis ukendt preset og preview fra ikke-admin bruger.
+Laravel-views kan kontrolleres med \`php artisan view:cache\` på serveren. PHP/backend-filer kan lintes med \`php -l\`. Sidernes funktion skal testes på den faktiske deployment; GitHub-kodegennemgang er ikke en live browser-/betalingstest.
