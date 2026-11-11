@@ -9,15 +9,21 @@ use Pterodactyl\Http\Controllers\Controller;
 use Pterodactyl\Models\Egg;
 use Pterodactyl\Models\StoreProduct;
 use Pterodactyl\Services\Nodexa\EggHostingPackageService;
+use Pterodactyl\Services\Nodexa\MinecraftHostingPackageService;
 use RuntimeException;
 
 class EggHostingPackagesController extends Controller
 {
-    public function index(EggHostingPackageService $packages): View
+    public function index(EggHostingPackageService $packages, MinecraftHostingPackageService $minecraftPackages): View
     {
         $eggs = Egg::with('nest')->orderBy('name')->get();
+        $minecraftEggs = $eggs->filter(
+            fn (Egg $egg) => $minecraftPackages->supportsEgg($egg)
+        );
 
         return view('admin.store.egg-packages', [
+            'minecraftEggs' => $minecraftEggs,
+            'minecraftProfiles' => $minecraftPackages->profiles(),
             'eggs' => $eggs,
             'categories' => EggHostingPackageService::GAME_LABELS,
             'tiers' => EggHostingPackageService::TIERS,
@@ -58,6 +64,35 @@ class EggHostingPackagesController extends Controller
             ->with('success', $result['created'] . ' skjulte pakker oprettet. '
                 . $result['skipped'] . ' eksisterende pakker blev sprunget over. '
                 . 'Gennemgå priser og ressourcer, før pakkerne aktiveres.');
+    }
+
+    /**
+     * Generate named Minecraft plans as unpublished products.
+     * Safe to retry: the service inserts stable, Egg-specific slugs only once.
+     */
+    public function generateMinecraft(Request $request, MinecraftHostingPackageService $packages): RedirectResponse
+    {
+        $data = $request->validate([
+            'egg_id' => ['required', 'integer', 'exists:eggs,id'],
+            'tiers' => ['required', 'array', 'min:1', 'max:8'],
+            'tiers.*' => ['required', 'string', 'in:dirt,grass,stone,iron,gold,diamond,emerald,obsidian', 'distinct'],
+            'prices' => ['nullable', 'array'],
+            'prices.*' => ['nullable', 'numeric', 'min:0.01', 'max:99999'],
+        ]);
+
+        $egg = Egg::with('nest')->findOrFail($data['egg_id']);
+
+        try {
+            $result = $packages->generate($egg, $data['tiers'], $data['prices'] ?? []);
+        } catch (RuntimeException $exception) {
+            return redirect()->route('admin.store.egg-packages')
+                ->withInput()->withErrors(['minecraft' => $exception->getMessage()]);
+        }
+
+        return redirect()->route('admin.store.egg-packages')
+            ->with('success', $result['created'] . ' Minecraft-pakker oprettet som skjulte produkter. '
+                . $result['skipped'] . ' eksisterende pakker blev sprunget over. '
+                . 'Gennemgå priser, CPU, RAM og nodekapacitet, før du aktiverer dem.');
     }
 
     public function updateDetails(Request $request, StoreProduct $product): RedirectResponse
