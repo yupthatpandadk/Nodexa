@@ -38,6 +38,17 @@ class FrontendThemeServiceTest extends TestCase
         $this->assertSame('classic', $service->current());
     }
 
+    public function test_storefront_falls_back_to_original_when_settings_read_fails(): void
+    {
+        $settings = $this->createMock(SettingsRepositoryInterface::class);
+        $settings->method('get')->willThrowException(new \RuntimeException('Database temporarily unavailable'));
+
+        // The frontend design cannot be allowed to take billing and checkout
+        // pages offline; classic must always remain the fallback.
+        $service = new FrontendThemeService($settings);
+        $this->assertSame('classic', $service->current());
+    }
+
     public function test_first_installation_defaults_to_original(): void
     {
         $settings = $this->createMock(SettingsRepositoryInterface::class);
