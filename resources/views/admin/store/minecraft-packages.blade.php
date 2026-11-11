@@ -3,7 +3,7 @@
         <div>
             <span class="nx-minecraft-kicker">Minecraft Hosting</span>
             <h3 id="nx-minecraft-title"><i class="fa fa-cubes" aria-hidden="true"></i> Minecraft-pakker med bloknavne</h3>
-            <p>Opret Dirt, Grass, Stone, Iron, Gold, Diamond, Emerald og Obsidian til dit Minecraft Egg. Du kan justere priserne, før pakkerne oprettes.</p>
+            <p>Opret Dirt, Grass, Stone, Iron, Gold, Diamond, Emerald og Obsidian uden at vælge et bestemt Egg. Kunden vælger selv Paper, Fabric, Forge osv. ved bestillingen.</p>
         </div>
         <span class="nx-minecraft-info"><i class="fa fa-eye-slash" aria-hidden="true"></i> Oprettes som skjulte</span>
     </div>
@@ -12,23 +12,19 @@
         @csrf
 
         <div class="nx-minecraft-options">
-            <div class="form-group" style="margin:0;min-width:0">
-                <label for="minecraft-egg">Pterodactyl Minecraft Egg</label>
-                <select id="minecraft-egg" name="egg_id" class="form-control" required {{ $minecraftEggs->isEmpty() ? 'disabled' : '' }}>
-                    <option value="">Vælg dit Minecraft Egg</option>
-                    @foreach($minecraftEggs as $egg)
-                        <option value="{{ $egg->id }}" {{ (string) old('egg_id') === (string) $egg->id ? 'selected' : '' }}>
-                            {{ $egg->name }} · {{ $egg->nest?->name ?? 'Ukendt Nest' }} (#{{ $egg->id }})
-                        </option>
-                    @endforeach
-                </select>
+            <div class="nx-minecraft-automatic">
+                <strong><i class="fa fa-magic" aria-hidden="true"></i> Ingen Egg-valg nødvendigt</strong>
+                <span>Kunden vælger Minecraft-software og version, når serveren bestilles. Nodexa bruger automatisk et installeret Minecraft-server-Egg som teknisk reference ved oprettelsen af pakkerne.</span>
+                @if($minecraftDefaultEgg)
+                    <small>Teknisk standard: {{ $minecraftDefaultEgg->name }} · {{ $minecraftDefaultEgg->nest?->name }} (#{{ $minecraftDefaultEgg->id }})</small>
+                @endif
             </div>
-            <p>CPU er vist i Pterodactyl-procent (100 % ≈ én CPU-kerne). Ressourcer og priser er forslag, som skal passe til din faktiske nodekapacitet.</p>
+            <p>CPU vises i Pterodactyl-procent (100 % ≈ én CPU-kerne). Ressourcer og priser skal passe til din faktiske nodekapacitet.</p>
         </div>
 
-        @if($minecraftEggs->isEmpty())
+        @if(!$minecraftDefaultEgg)
             <div class="alert alert-warning" style="margin:15px 0 0">
-                Ingen Minecraft Eggs fundet. Installér først et Egg til eksempelvis Paper, Spigot, Fabric eller Forge under Admin → Nests → Eggs.
+                Ingen almindelige Minecraft-server-Eggs fundet i Minecraft Nest. Installér eksempelvis Paper eller Vanilla. BungeeCord og andre proxy-Eggs kan ikke bruges som standard.
             </div>
         @endif
 
@@ -66,7 +62,7 @@
                 <strong><i class="fa fa-lock" aria-hidden="true"></i> Ingen automatisk offentliggørelse</strong>
                 <p>Alle nye pakker er deaktiverede. Godkend dem under Storefront & Billing, før kunderne kan bestille. Eksisterende pakker og abonnementspriser ændres ikke.</p>
             </div>
-            <button type="submit" class="btn btn-primary" {{ $minecraftEggs->isEmpty() ? 'disabled' : '' }}>
+            <button type="submit" class="btn btn-primary" {{ !$minecraftDefaultEgg ? 'disabled' : '' }}>
                 <i class="fa fa-plus-circle" aria-hidden="true"></i> Opret valgte Minecraft-pakker
             </button>
         </div>
