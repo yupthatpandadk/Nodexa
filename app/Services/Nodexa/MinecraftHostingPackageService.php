@@ -3,6 +3,7 @@
 namespace Pterodactyl\Services\Nodexa;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Pterodactyl\Models\Egg;
 use RuntimeException;
 
@@ -14,6 +15,38 @@ use RuntimeException;
  */
 class MinecraftHostingPackageService
 {
+    public function __construct(private MinecraftOrderOptionsService $minecraft)
+    {
+    }
+
+    /** The Egg is a required technical reference, NOT a hosting-plan choice. */
+    public function defaultEgg(): ?Egg
+    {
+        return self::preferredEgg($this->minecraft->eggs());
+    }
+
+    /** Prefer a playable server, not a BungeeCord/Velocity proxy Egg. */
+    public static function preferredEgg(Collection $eggs): ?Egg
+    {
+        $servers = $eggs->filter(static function (Egg $egg): bool {
+            return !preg_match('/bungee|velocity|waterfall|proxy/i', (string) $egg->name);
+        });
+
+        foreach (['paper', 'vanilla', 'spigot', 'purpur', 'fabric', 'forge'] as $preferred) {
+            $match = $servers->first(static fn (Egg $egg): bool => str_contains(mb_strtolower((string) $egg->name), $preferred));
+            if ($match) {
+                return $match;
+            }
+        }
+
+        return $servers->first();
+    }
+
+    public static function slugFor(string $tier): string
+    {
+        return 'minecraft-' . $tier;
+    }
+
     /**
      * Memory/disk in MiB, CPU as Pterodactyl percentages.
      * Prices are example DKK/month (not a claim about market rates).
@@ -74,22 +107,13 @@ class MinecraftHostingPackageService
         return self::TIERS;
     }
 
-    public function supportsEgg(Egg $egg): bool
-    {
-        return (new EggHostingPackageService())->detectCategory($egg) === 'minecraft';
-    }
-
     /**
      * @param array<int, string> $tiers
      * @param array<string, int|float|string|null> $prices
      * @return array{created: int, skipped: int}
      */
-    public function generate(Egg $egg, array $tiers, array $prices = []): array
+    public function generate(array $tiers, array $prices = []): array
     {
-        if (!$this->supportsEgg($egg)) {
-            throw new RuntimeException('Vælg et Minecraft Egg (f.eks. Paper, Spigot eller Fabric).');
-        }
-
         if ($tiers === [] || count($tiers) > count(self::TIERS)
             || count(array_unique($tiers)) !== count($tiers)
             || array_diff($tiers, array_keys(self::TIERS))
@@ -113,13 +137,32 @@ class MinecraftHostingPackageService
             $selected[$tier] = number_format($price, 2, '.', '');
         }
 
+        $egg = $this->defaultEgg();
+        if (!$egg) {
+            throw new RuntimeException('Der mangler et almindeligt Minecraft-server-Egg i Minecraft Nest. Installer eksempelvis Paper eller Vanilla; proxy Eggs som BungeeCord er ikke nok.');
+        }
+
         $created = 0;
         $skipped = 0;
 
         DB::transaction(function () use ($egg, $selected, &$created, &$skipped): void {
             foreach ($selected as $tier => $price) {
                 $profile = self::TIERS[$tier];
-                $slug = 'minecraft-egg-' . $egg->id . '-' . $tier;
+                $slug = self::slugFor($tier);
+
+                // The older generator used minecraft-egg-{id}-{tier}. Do not
+                // duplicate an existing plan when admins run the new generator.
+                $exists = DB::table('nodexa_store_products')
+                    ->whereRaw('LOWER(game) = ?', ['minecraft'])
+                    ->where(function ($query) use ($tier, $profile, $slug): void {
+                        $query->where('name', 'Minecraft ' . $profile['name'])
+                            ->orWhere('slug', $slug)
+                            ->orWhere('slug', 'like', 'minecraft-egg-%-' . $tier);
+                    })->exists();
+                if ($exists) {
+                    $skipped++;
+                    continue;
+                }
 
                 $added = DB::table('nodexa_store_products')->insertOrIgnore([
                     'name' => 'Minecraft ' . $profile['name'],
