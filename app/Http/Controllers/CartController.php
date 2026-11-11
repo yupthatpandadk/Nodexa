@@ -11,6 +11,7 @@ use Pterodactyl\Services\Nodexa\NodexaCartService;
 use Pterodactyl\Services\Nodexa\OrderRemovalService;
 use Pterodactyl\Services\Nodexa\WalletService;
 use Pterodactyl\Services\Nodexa\WalletUsagePolicy;
+use Pterodactyl\Services\Nodexa\MinecraftOrderOptionsService;
 use Pterodactyl\Services\Nodexa\StripePaymentService;
 use Illuminate\Support\Facades\DB;
 
@@ -25,6 +26,7 @@ class CartController extends Controller
         private OrderRemovalService $removal,
         private WalletService $wallet,
         private WalletUsagePolicy $walletPolicy,
+        private MinecraftOrderOptionsService $minecraft,
     ) {
     }
 
@@ -46,9 +48,23 @@ class CartController extends Controller
     {
         abort_unless($product->enabled, 404);
 
-        $data = $request->validate([
-            'server_name' => 'required|string|min:3|max:100',
-        ]);
+        $rules = ['server_name' => 'required|string|min:3|max:100'];
+        if ($this->minecraft->isMinecraftProduct($product)) {
+            $rules['minecraft_egg_id'] = 'required|integer';
+            $rules['minecraft_version'] = 'nullable|string|max:32';
+        }
+        $data = $request->validate($rules);
+
+        $minecraftConfiguration = [];
+        if ($this->minecraft->isMinecraftProduct($product)) {
+            try {
+                $minecraftConfiguration = $this->minecraft->selection(
+                    $product, (int) $data['minecraft_egg_id'], $data['minecraft_version'] ?? null
+                );
+            } catch (\RuntimeException $exception) {
+                return back()->withInput()->withErrors(['minecraft_egg_id' => $exception->getMessage()]);
+            }
+        }
 
         $items = (array) $request->session()->get(self::SESSION_KEY, []);
         $key = (string) Str::uuid();
@@ -56,9 +72,9 @@ class CartController extends Controller
         $items[$key] = [
             'type' => 'game_server',
             'product_id' => $product->id,
-            'configuration' => [
+            'configuration' => array_merge([
                 'server_name' => trim($data['server_name']),
-            ],
+            ], $minecraftConfiguration),
         ];
 
         $request->session()->put(self::SESSION_KEY, $items);
