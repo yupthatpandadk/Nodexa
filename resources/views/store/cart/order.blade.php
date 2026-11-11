@@ -58,6 +58,14 @@
                 ? $orderCents
                 : (int) ($checkout->wallet_applied_cents ?? 0);
             $orderStripeCents = max(0, $orderCents - $orderWalletCents);
+            $walletPreviewCents = $checkout->status === 'awaiting_payment'
+                ? \Pterodactyl\Services\Nodexa\WalletUsagePolicy::walletFirstCents(
+                    $orderCents, $walletBalanceCents, $walletEligibleCents
+                  )
+                : 0;
+            $walletPaymentAvailable = $orderCents > 0
+                && $walletEligibleCents >= $orderCents
+                && $walletBalanceCents >= $orderCents;
         @endphp
         @if($orderWalletCents > 0)
             <div class="orderLine"><span class="muted">Nodexa Wallet {{ $checkout->wallet_hold_state === 'held' ? '(reserveret)' : '' }}</span><strong style="color:#78ddaf">−{{ number_format($orderWalletCents / 100,2,',','.') }} DKK</strong></div>
@@ -66,16 +74,26 @@
         <div class="orderLine"><span class="muted">Status</span><span class="statusBadge {{ in_array($checkout->status,['paid','completed'])?'good':($checkout->status==='partial'?'bad':'warn') }}">{{ strtoupper(str_replace('_',' ',$checkout->status)) }}</span></div>
 
         @if($checkout->status==='awaiting_payment')
-            @if(!$checkout->stripe_session_id && $walletBalanceCents >= (int) round(((float) $checkout->total) * 100) && $walletBalanceCents > 0)
+            @if(!$checkout->stripe_session_id && $walletPaymentAvailable)
                 <form method="POST" action="{{ route('store.cart.wallet.pay',$checkout->id) }}">
                     @csrf
                     <button class="btn primary" type="submit" style="width:100%;margin-top:12px;background:#164f54;border:1px solid #3c8a83">Betal med Wallet · {{ number_format($checkout->total,2,',','.') }} DKK</button>
                 </form>
             @else
                 <div class="micro" style="margin:12px 0 4px">Wallet-saldo: {{ number_format($walletBalanceCents/100,2,',','.') }} DKK. <a href="{{route('store.client.wallet')}}" style="color:#a1cfff">Se Wallet</a></div>
+                @if(!$walletAllowsVps && $walletEligibleCents < $orderCents)
+                    <div class="notice" style="margin:10px 0 0">Wallet-kredit kan kun anvendes på Pterodactyl-produkter. VPS-delen af ordren skal betales med Stripe.</div>
+                @endif
             @endif
             @if($stripeEnabled)
-                <div class="notice" style="margin-top:14px">Wallet-kredit bruges først. Stripe betaler det resterende beløb på <strong>{{ number_format($orderStripeCents / 100,2,',','.') }} DKK</strong>. Betalingen bliver først færdigregistreret, når Stripe bekræfter restbeløbet.</div>
+                <div class="notice" style="margin-top:14px">Wallet-kredit bruges først til tilladte produkter.
+                    @if(!$checkout->stripe_session_id && $checkout->wallet_hold_state !== 'held')
+                        Mulig Wallet-betaling: <strong>{{ number_format($walletPreviewCents / 100,2,',','.') }} DKK</strong>.
+                        Forventet rest via Stripe: <strong>{{ number_format(($orderCents - $walletPreviewCents) / 100,2,',','.') }} DKK</strong>.
+                    @else
+                        Aktuel rest via Stripe: <strong>{{ number_format($orderStripeCents / 100,2,',','.') }} DKK</strong>.
+                    @endif
+                    Betalingen registreres, når Stripe bekræfter restbeløbet.</div>
                 <form method="POST" action="{{ route('store.cart.stripe.pay',$checkout->id) }}">
                     @csrf
                     <button class="btn primary stripePayButton" style="width:100%;margin-top:12px" type="submit">Betal resten med Stripe →</button>
