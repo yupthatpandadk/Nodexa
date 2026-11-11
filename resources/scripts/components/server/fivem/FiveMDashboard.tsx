@@ -19,6 +19,7 @@ const FiveMDashboard = () => {
     const isInstalling = ServerContext.useStoreState((state) => state.server.isInstalling);
     const [resourceCount, setResourceCount] = useState<number | null>(null);
     const [resourcesError, setResourcesError] = useState(false);
+    const [activeMetric, setActiveMetric] = useState<'cpu' | 'memory' | 'network'>('cpu');
     const base = '/server/' + server.id;
     const label = status === 'running' ? 'Online' : status === 'offline' ? 'Offline' : 'Forbinder…';
 
@@ -76,6 +77,10 @@ const FiveMDashboard = () => {
                 </Can>
             </section>
 
+            <div className={styles.metrics} aria-label={'Live serverstatistik'}>
+                <ServerDetailsBlock />
+            </div>
+
             <nav className={styles.shortcuts} aria-label={'FiveM hurtige handlinger'}>
                 <Can action={'file.read'}>
                     <Link to={base + '/resources'}><strong>Resources</strong><small>Se installerede scripts</small><span>↗</span></Link>
@@ -96,10 +101,6 @@ const FiveMDashboard = () => {
                     <div className={styles.panel}>
                         <div className={styles.panelHead}><div><span>01 / LIVE CONSOLE</span><h2>FXServer Console</h2></div><small>Realtime output</small></div>
                         <Spinner.Suspense><Console /></Spinner.Suspense>
-                    </div>
-                    <div className={styles.panel}>
-                        <div className={styles.panelHead}><div><span>02 / LIVE TELEMETRY</span><h2>Ressourceforbrug</h2></div></div>
-                        <div className={styles.graphs}><Spinner.Suspense><StatGraphs /></Spinner.Suspense></div>
                     </div>
                 </section>
                 <aside className={styles.sidebar}>
@@ -129,7 +130,27 @@ const FiveMDashboard = () => {
                 </aside>
             </div>
 
-            <div className={styles.details}><ServerDetailsBlock /></div>
+            <section className={styles.panel + ' ' + styles.graphPanel}>
+                <div className={styles.panelHead}>
+                    <div><span>02 / LIVE TELEMETRY</span><h2>Ressourceforbrug</h2></div>
+                    <div className={styles.metricTabs} role={'group'} aria-label={'Vælg ressourcegraf'}>
+                        {(['cpu', 'memory', 'network'] as const).map((metric) => (
+                            <button
+                                key={metric}
+                                type={'button'}
+                                aria-pressed={activeMetric === metric}
+                                className={activeMetric === metric ? styles.metricActive : ''}
+                                onClick={() => setActiveMetric(metric)}
+                            >
+                                {metric === 'cpu' ? 'CPU' : metric === 'memory' ? 'RAM' : 'Netværk'}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <div className={styles.graphs}>
+                    <Spinner.Suspense><StatGraphs activeMetric={activeMetric} compact /></Spinner.Suspense>
+                </div>
+            </section>
             <Features enabled={server.eggFeatures} />
         </ServerContentBlock>
     );
