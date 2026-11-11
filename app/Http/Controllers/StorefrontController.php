@@ -18,7 +18,7 @@ class StorefrontController extends Controller
 
     public function index()
     {
-        return view('store.index', [
+        return view(app(\Pterodactyl\Services\Nodexa\FrontendThemeService::class)->template('home'), [
             'products'=>StoreProduct::where('enabled',true)->orderByDesc('featured')->orderBy('price_monthly')->get(),
             'globalSale'=>$this->sale->active(),
         ]);
