@@ -102,11 +102,7 @@ class ServerTransformer extends BaseClientTransformer
             'egg_id' => $server->egg_id,
             // Server type comes from its Nest, not a customer's choice, Egg ID,
             // or any URL parameter. All FiveM clients get the dedicated UI.
-            'is_fivem_server' => in_array(
-                mb_strtolower(trim((string) ($server->egg->nest?->name ?? ''))),
-                ['fivem', 'five m', 'fxserver', 'gta v', 'gta5', 'gta 5'],
-                true
-            ),
+            'is_fivem_server' => \Pterodactyl\Services\Nodexa\FiveMServerType::matches($server->egg->nest?->name),
             // Only the actual owner of a Minecraft Nest server gets an Egg
             // switcher; subusers, FiveM and other games never see it.
             'minecraft_egg_switching_available' => $user->id === $server->owner_id
