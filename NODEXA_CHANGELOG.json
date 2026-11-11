@@ -1,6 +1,19 @@
 {
-  "latest": "1.7.15",
+  "latest": "1.7.16",
   "releases": [
+    {
+      "version": "1.7.16",
+      "date": "2026-11-11",
+      "type": "patch",
+      "title": "Minecraft-pakker uden valg af Egg i Admin",
+      "changes": [
+        "Fjernet obligatorisk Minecraft Egg-dropdown fra generatoren af Dirt, Grass, Stone, Iron, Gold, Diamond, Emerald og Obsidian.",
+        "Nodexa vælger automatisk et installeret Minecraft-server-Egg som teknisk standard og foretrækker Paper eller Vanilla frem for proxy-Eggs.",
+        "Kunderne vælger fortsat den faktiske servertype og version under bestilling.",
+        "Pakker får fremover Egg-uafhængige slugs. Generatoren springer eksisterende pakker fra den gamle metode over og opretter ikke dubletter.",
+        "Alle nye pakker er skjulte, indtil administrator aktiverer dem."
+      ]
+    },
     {
       "version": "1.7.15",
       "date": "2026-11-11",
