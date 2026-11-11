@@ -8,12 +8,14 @@ use Pterodactyl\Models\Node;
 use Pterodactyl\Models\StoreOrder;
 use Pterodactyl\Services\Servers\ServerCreationService;
 use Pterodactyl\Services\Nodexa\NodexaEventService;
+use Pterodactyl\Services\Nodexa\MinecraftOrderOptionsService;
 
 class ProvisionStoreOrderService
 {
     public function __construct(
         private ServerCreationService $servers,
         private NodexaEventService $events,
+        private MinecraftOrderOptionsService $minecraft,
     ) {}
 
     public function handle(StoreOrder $order)
@@ -25,6 +27,23 @@ class ProvisionStoreOrderService
         $order->loadMissing(['product.egg.variables', 'user']);
         $product = $order->product;
         $egg = $product->egg;
+
+        // Minecraft products can use ANY Egg in the live Minecraft Nest,
+        // independent of the Egg associated with the resource/price tier.
+        // This is the snapshot selected by the customer at checkout.
+        if ($this->minecraft->isMinecraftProduct($product) && $order->minecraft_egg_id) {
+            $selected = Egg::with(['nest', 'variables'])->find((int) $order->minecraft_egg_id);
+            if (!$selected || !$this->minecraft->belongsToMinecraftNest($selected)) {
+                throw new \RuntimeException('Det valgte Minecraft Egg findes ikke længere. Kontakt administrator.');
+            }
+            if ($order->minecraft_version !== null && (
+                !$this->minecraft->versionVariable($selected)
+                || !MinecraftOrderOptionsService::validVersion((string) $order->minecraft_version)
+            )) {
+                throw new \RuntimeException('Minecraft-versionen kan ikke anvendes med det valgte Egg.');
+            }
+            $egg = $selected;
+        }
 
         // Pick the healthiest available node with enough remaining RAM/disk and
         // the lowest combined utilization instead of blindly taking the first allocation.
@@ -70,6 +89,13 @@ class ProvisionStoreOrderService
         foreach ($egg->variables as $variable) {
             $environment[$variable->env_variable] = $variable->default_value;
         }
+        if ($this->minecraft->isMinecraftProduct($product) && $order->minecraft_version !== null) {
+            $key = $this->minecraft->versionVariable($egg);
+            if ($key === null) {
+                throw new \RuntimeException('Det valgte Egg understøtter ikke valg af Minecraft-version.');
+            }
+            $environment[$key] = (string) $order->minecraft_version;
+        }
 
         $server = $this->servers->handle([
             'name' => $order->server_name ?: ($product->name . ' #' . $order->id),
@@ -87,7 +113,9 @@ class ProvisionStoreOrderService
             'allocation_limit' => $product->allocations,
             'backup_limit' => $product->backups,
             'startup' => $egg->startup,
-            'image' => array_values($egg->docker_images ?: [])[0] ?? null,
+            'image' => $this->minecraft->isMinecraftProduct($product)
+                ? $this->minecraft->dockerImage($egg, $order->minecraft_version)
+                : (array_values($egg->docker_images ?: [])[0] ?? null),
             'environment' => $environment,
             'start_on_completion' => true,
         ]);
