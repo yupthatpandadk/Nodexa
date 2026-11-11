@@ -8,10 +8,11 @@ use Pterodactyl\Models\StoreProduct;
 use Pterodactyl\Models\StoreOrder;
 use Pterodactyl\Services\Nodexa\GlobalStoreSaleService;
 use Pterodactyl\Services\Nodexa\OrderRemovalService;
+use Pterodactyl\Services\Nodexa\MinecraftOrderOptionsService;
 
 class StorefrontController extends Controller
 {
-    public function __construct(private GlobalStoreSaleService $sale, private OrderRemovalService $removal)
+    public function __construct(private GlobalStoreSaleService $sale, private OrderRemovalService $removal, private MinecraftOrderOptionsService $minecraft)
     {
     }
 
@@ -213,19 +214,49 @@ class StorefrontController extends Controller
     public function show(StoreProduct $product)
     {
         abort_unless($product->enabled,404);
+        $isMinecraft = $this->minecraft->isMinecraftProduct($product);
+        $minecraftEggs = $isMinecraft ? $this->minecraft->eggs() : collect();
+
         return view('store.product', [
             'product' => $product,
             'globalSale' => $this->sale->active(),
+            'isMinecraft' => $isMinecraft,
+            'minecraftEggs' => $minecraftEggs,
+            'minecraftVersions' => $isMinecraft ? $this->minecraft->versions() : [],
+            'minecraftVersionSupport' => $minecraftEggs->mapWithKeys(
+                fn ($egg) => [$egg->id => $this->minecraft->versionVariable($egg) !== null]
+            )->all(),
         ]);
     }
 
     public function order(Request $request, StoreProduct $product)
     {
         abort_unless($product->enabled,404);
-        $data=$request->validate(['server_name'=>'required|string|min:3|max:100']);
+        $rules = ['server_name' => 'required|string|min:3|max:100'];
+        if ($this->minecraft->isMinecraftProduct($product)) {
+            $rules['minecraft_egg_id'] = 'required|integer';
+            $rules['minecraft_version'] = 'nullable|string|max:32';
+        }
+        $data = $request->validate($rules);
+        $configuration = [];
+
+        if ($this->minecraft->isMinecraftProduct($product)) {
+            try {
+                $configuration = $this->minecraft->selection(
+                    $product,
+                    (int) $data['minecraft_egg_id'],
+                    $data['minecraft_version'] ?? null
+                );
+            } catch (\RuntimeException $exception) {
+                return back()->withInput()->withErrors(['minecraft_egg_id' => $exception->getMessage()]);
+            }
+        }
+
         $order=StoreOrder::create([
             'user_id'=>$request->user()->id,
             'product_id'=>$product->id,
+            'minecraft_egg_id'=>$configuration['minecraft_egg_id'] ?? null,
+            'minecraft_version'=>$configuration['minecraft_version'] ?? null,
             'status'=>'awaiting_payment',
             'amount'=>$product->price_monthly,
             'currency'=>'DKK',
