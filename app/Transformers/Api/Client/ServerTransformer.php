@@ -100,6 +100,10 @@ class ServerTransformer extends BaseClientTransformer
             'docker_image' => $server->image,
             'egg_features' => $server->egg->inherit_features,
             'egg_id' => $server->egg_id,
+            // Only the actual owner of a Minecraft Nest server gets an Egg
+            // switcher; subusers, FiveM and other games never see it.
+            'minecraft_egg_switching_available' => $user->id === $server->owner_id
+                && str_contains(mb_strtolower((string) ($server->egg->nest?->name ?? '')), 'minecraft'),
             'plugin_manager_enabled' => $pluginManagerEnabled,
             'mod_manager_enabled' => $modManagerEnabled,
             'player_list_enabled' => $playerListEnabled,
