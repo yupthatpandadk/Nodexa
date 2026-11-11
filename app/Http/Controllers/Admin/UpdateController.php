@@ -85,7 +85,7 @@ class UpdateController extends Controller
         $progressJson = @file_get_contents(storage_path('app/nodexa-update-progress.json'));
         $previousProgress = is_string($progressJson) ? json_decode($progressJson, true) : null;
         $updateFailed = !$running
-            && ($previousProgress['status'] ?? '') === 'failed'
+            && in_array(($previousProgress['status'] ?? ''), ['failed', 'queued', 'running'], true)
             && ($latest === null || version_compare($installed, $latest, '<'));
 
         return view('admin.updates.index', [
@@ -159,43 +159,41 @@ class UpdateController extends Controller
         }
 
         $progressFile = storage_path('app/nodexa-update-progress.json');
+
+        // Reserve the short startup window so a second administrator cannot
+        // queue a duplicate job before systemd has started the unit.
+        if (@file_put_contents($lock, now()->toIso8601String()) === false) {
+            return redirect()->route('admin.updates')->with('error', 'Update Center cannot write its lock file. Check storage/app permissions.');
+        }
         @file_put_contents($progressFile, json_encode([
             'percent' => 1,
-            'step' => 'Starting Nodexa updater…',
-            'status' => 'running',
+            'step' => 'Waiting for privileged Nodexa update service…',
+            'status' => 'queued',
             'updated_at' => now()->toIso8601String(),
         ]));
 
-        $log = storage_path('logs/nodexa-update.log');
-        // The panel normally runs as www-data. Run the updater with explicit HOME and
-        // Git safe.directory so Git does not stall/fail because the checkout belongs
-        // to another user. Append stderr/stdout to the live update log.
-        $command = sprintf(
-            'HOME=/tmp COMPOSER_HOME=/tmp/composer GIT_TERMINAL_PROMPT=0 nohup bash %s >> %s 2>&1 < /dev/null & echo $!',
-            escapeshellarg($script),
-            escapeshellarg($log)
-        );
-
+        // Do not execute root-owned source updates as the PHP web worker and
+        // do not grant www-data write access to the application source tree.
+        // setup_update_service.sh grants exactly this fixed systemctl command.
         $output = [];
         $exitCode = 0;
-        exec($command, $output, $exitCode);
+        exec('sudo -n /usr/bin/systemctl start --no-block nodexa-update.service 2>&1', $output, $exitCode);
 
-        if ($exitCode !== 0 || empty($output) || !ctype_digit(trim((string) $output[0]))) {
+        if ($exitCode !== 0) {
             @unlink($lock);
             @file_put_contents($progressFile, json_encode([
                 'percent' => 100,
-                'step' => 'Could not start updater process.',
+                'step' => 'Privileged updater not configured or could not start.',
                 'status' => 'failed',
                 'updated_at' => now()->toIso8601String(),
             ]));
 
-            return redirect()->route('admin.updates')->with('error', 'Could not start the Nodexa updater process.');
+            return redirect()->route('admin.updates')->with('error',
+                'Updater service could not start. Run the Nodexa installer with sudo over SSH once to configure secure web updates.'
+            );
         }
 
-        $pid = trim((string) $output[0]);
-        @file_put_contents($pidFile, $pid);
-
-        return redirect()->route('admin.updates')->with('success', 'Nodexa update started. Progress updates automatically.');
+        return redirect()->route('admin.updates')->with('success', 'Nodexa update queued safely through systemd. Progress updates automatically.');
     }
 
     private function isUpdaterRunning(string $lock, string $pidFile): bool
