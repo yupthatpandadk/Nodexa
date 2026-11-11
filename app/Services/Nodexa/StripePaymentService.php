@@ -13,7 +13,7 @@ class StripePaymentService
     private const API_BASE = 'https://api.stripe.com/v1';
     private const WEBHOOK_TOLERANCE = 300;
 
-    public function __construct(private NodexaCartService $cart, private WalletService $wallet)
+    public function __construct(private NodexaCartService $cart, private WalletService $wallet, private WalletUsagePolicy $walletPolicy)
     {
     }
 
@@ -139,6 +139,7 @@ class StripePaymentService
         $expectedCents = $this->moneyToCents($checkout->total);
 
         if ($expectedCents > 0 && !$checkout->stripe_session_id
+            && $this->walletPolicy->eligibleCentsForCheckout($checkout) >= $expectedCents
             && $this->wallet->balanceCents($userId) >= $expectedCents
         ) {
             $result = $this->wallet->payCheckout($checkoutId, $userId);
