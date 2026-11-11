@@ -142,7 +142,7 @@ class UpdateController extends Controller
             $progressFile = storage_path('app/nodexa-update-progress.json');
             $previousProgress = json_decode((string) @file_get_contents($progressFile), true);
             $needsRepair = is_array($previousProgress)
-                && ($previousProgress['status'] ?? '') === 'failed';
+                && in_array(($previousProgress['status'] ?? ''), ['failed', 'queued', 'running'], true);
 
             // A failed Composer/build step may occur after git reset changed
             // NODEXA_VERSION. Allow repairing that exact installed version.
