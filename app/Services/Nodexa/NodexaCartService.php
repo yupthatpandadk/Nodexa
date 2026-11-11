@@ -50,12 +50,13 @@ class NodexaCartService
                     'description' => $product->game . ' game server',
                     'price' => (float) $product->price_monthly,
                     'currency' => 'DKK',
-                    'configuration' => [
+                    'configuration' => array_merge([
                         'server_name' => trim((string) ($configuration['server_name'] ?? '')),
+                    ], $this->minecraft->isMinecraftProduct($product) ? [
                         'minecraft_egg_id' => (int) ($configuration['minecraft_egg_id'] ?? 0),
                         'minecraft_version' => (string) ($configuration['minecraft_version'] ?? ''),
                         'minecraft_type' => (string) ($configuration['minecraft_type'] ?? ''),
-                    ],
+                    ] : []),
                     'meta' => [
                         'game' => $product->game,
                         'memory' => $product->memory,
