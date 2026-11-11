@@ -111,11 +111,15 @@ class MinecraftOrderOptionsService
                 return array_values(array_unique($values));
             });
 
-            return array_values(array_unique(array_merge(['latest'], is_array($available) ? $available : [])));
+            $fallback = ['26.3', '26.2', '26.1.2', '26.1.1', '26.1', '1.21.11', '1.21.1', '1.20.4', '1.20.1', '1.19.4', '1.18.2', '1.16.5', '1.12.2'];
+            return array_values(array_unique(array_merge(
+                ['latest'],
+                is_array($available) && $available !== [] ? $available : $fallback
+            )));
         } catch (\Throwable $exception) {
             report($exception);
 
-            return ['latest'];
+            return ['latest', '26.3', '26.2', '26.1.2', '26.1.1', '26.1', '1.21.11', '1.21.1', '1.20.1', '1.19.4', '1.18.2', '1.16.5', '1.12.2'];
         }
     }
 
