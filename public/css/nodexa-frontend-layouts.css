@@ -1,0 +1,266 @@
+/*
+ * Nodexa Frontend Layouts
+ * Original CSS variants influenced by hosting design trends; not copies of
+ * Latch, Xlumia, Horizon or DinoNode premium template source code or assets.
+ *
+ * Loaded ONLY by resources/views/store/layout.blade.php.
+ * The 'classic' theme intentionally has zero rules: preserve the existing UI.
+ */
+
+/* Shared accessibility and predictable behavior for non-classic themes. */
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) {
+    --nodexa-front-accent: var(--blue);
+    --nodexa-front-secondary: var(--purple);
+}
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) body {
+    background: var(--bg);
+    color: var(--text);
+}
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .nav {
+    background: color-mix(in srgb, var(--bg) 95%, transparent);
+    border-color: var(--line);
+    box-shadow: none;
+}
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .nav a:focus-visible,
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .btn:focus-visible,
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .input:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+}
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .hero,
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .pagehero {
+    isolation: isolate;
+}
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .hero .container {
+    width: min(1200px, calc(100% - 40px));
+}
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .card,
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .metricbar,
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .consoleMock,
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .faq details,
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .cta {
+    border-color: var(--line2);
+    background: var(--card);
+}
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .btn.primary {
+    border: 1px solid transparent;
+    box-shadow: none;
+}
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .pagehero h1,
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .hero h1 {
+    font-weight: 830;
+}
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .hero h1,
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .section h2,
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .pagehero h1 {
+    letter-spacing: -.047em;
+}
+html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .footer {
+    background: var(--surface);
+    border-color: var(--line);
+}
+
+/* Latch-style: sharp, dark editorial workspace with restrained mint. */
+html[data-nodexa-frontend-style="latch"] {
+    --bg: #080D0C; --surface: #0C1412; --card: #111C18;
+    --card2: #15241E; --line: #20352C; --line2: #345346;
+    --text: #F3FAF5; --muted: #A0BAAB;
+    --blue: #8DE4A9; --purple: #5AB4A4; --green: #7EDBAA;
+}
+html[data-nodexa-frontend-style="latch"] .container { width: min(1240px, calc(100% - 40px)); }
+html[data-nodexa-frontend-style="latch"] .navin { height: 84px; }
+html[data-nodexa-frontend-style="latch"] .brand { letter-spacing: -.04em; font-size: 19px; }
+html[data-nodexa-frontend-style="latch"] .logo { border-radius: 6px; background: #7EDBAA !important; color: #07120D; box-shadow: none; }
+html[data-nodexa-frontend-style="latch"] .navGroup a { font-weight: 650; }
+html[data-nodexa-frontend-style="latch"] .subnav { background: #101A16; border-color: #264234; }
+html[data-nodexa-frontend-style="latch"] .hero {
+    padding: 110px 0 100px;
+    background: linear-gradient(111deg, #0C1811, #080D0C 72%);
+    text-align: left;
+}
+html[data-nodexa-frontend-style="latch"] .hero:after { opacity: .2; }
+html[data-nodexa-frontend-style="latch"] .heroSplit { grid-template-columns: 1fr .95fr; gap: 64px; }
+html[data-nodexa-frontend-style="latch"] .hero h1 {
+    font-size: clamp(48px, 5.6vw, 76px);
+    line-height: 1.045;
+    max-width: 790px;
+}
+html[data-nodexa-frontend-style="latch"] .hero .gradient {
+    background: none; -webkit-text-fill-color: var(--blue); color: var(--blue);
+}
+html[data-nodexa-frontend-style="latch"] .hero .lead { max-width: 580px; color: #B4C6BB; }
+html[data-nodexa-frontend-style="latch"] .pill { border-radius: 5px; background: #14271C; border-color: #355641; color: #A7EFB6; }
+html[data-nodexa-frontend-style="latch"] .btn { border-radius: 6px; font-weight: 750; }
+html[data-nodexa-frontend-style="latch"] .btn.primary { background: #8DE4A9 !important; color: #0A1710 !important; border-color: #8DE4A9; }
+html[data-nodexa-frontend-style="latch"] .btn.primary:hover { background: #B1F5C7 !important; }
+html[data-nodexa-frontend-style="latch"] .card,
+html[data-nodexa-frontend-style="latch"] .consoleMock,
+html[data-nodexa-frontend-style="latch"] .metricbar,
+html[data-nodexa-frontend-style="latch"] .cta,
+html[data-nodexa-frontend-style="latch"] .faq details {
+    border-radius: 8px;
+    box-shadow: none;
+}
+html[data-nodexa-frontend-style="latch"] .card.featured { outline: 1px solid #4D8667; }
+html[data-nodexa-frontend-style="latch"] .section.alt { background: #0B1410; }
+html[data-nodexa-frontend-style="latch"] .sectionNo,
+html[data-nodexa-frontend-style="latch"] .eyebrow { color: #8DE4A9; }
+html[data-nodexa-frontend-style="latch"] .consoleMock { border-color: #3A5648; background: #08110E; }
+html[data-nodexa-frontend-style="latch"] .cta { background: linear-gradient(120deg,#152B1F,#10201A); }
+
+/* Xlumia-style: violet / cyan accents on layered premium surfaces. */
+html[data-nodexa-frontend-style="xlumia"] {
+    --bg: #090817; --surface: #111026; --card: #17132B;
+    --card2: #211B3C; --line: #2C254A; --line2: #4B3B75;
+    --text: #F8F6FF; --muted: #B1A9CB;
+    --blue: #A990FF; --purple: #5BD9EA; --green: #62D6B4;
+}
+html[data-nodexa-frontend-style="xlumia"] .nav { box-shadow: 0 7px 25px rgba(4,0,23,.24); }
+html[data-nodexa-frontend-style="xlumia"] .logo { border-radius: 13px; background: linear-gradient(130deg,#AD82FF,#54CFEB) !important; }
+html[data-nodexa-frontend-style="xlumia"] .hero {
+    background: radial-gradient(ellipse 44% 60% at 12% 12%, rgba(138,78,251,.30), transparent 83%),
+                radial-gradient(ellipse 44% 64% at 89% 24%, rgba(47,155,200,.21), transparent 80%),
+                #090817;
+    padding: 114px 0 102px;
+}
+html[data-nodexa-frontend-style="xlumia"] .hero h1 { font-size: clamp(50px, 6vw, 87px); letter-spacing: -.065em; }
+html[data-nodexa-frontend-style="xlumia"] .hero .gradient {
+    background: linear-gradient(110deg,#DED4FF,#B692FF 44%,#63D9E9);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+}
+html[data-nodexa-frontend-style="xlumia"] .pill { background: rgba(100,60,175,.20); border: 1px solid #6A528C; color: #D7C2FF; border-radius: 999px; }
+html[data-nodexa-frontend-style="xlumia"] .btn { border-radius: 11px; font-weight: 780; }
+html[data-nodexa-frontend-style="xlumia"] .btn.primary {
+    background: linear-gradient(112deg,#9C75F8,#5C9FEE) !important;
+    color: #fff !important;
+    box-shadow: 0 10px 28px rgba(96,81,218,.24);
+}
+html[data-nodexa-frontend-style="xlumia"] .card,
+html[data-nodexa-frontend-style="xlumia"] .metricbar,
+html[data-nodexa-frontend-style="xlumia"] .consoleMock,
+html[data-nodexa-frontend-style="xlumia"] .cta {
+    border-radius: 18px;
+    box-shadow: 0 18px 60px rgba(0,0,0,.13), inset 0 1px 0 rgba(255,255,255,.035);
+}
+html[data-nodexa-frontend-style="xlumia"] .card { background: linear-gradient(155deg,#1C1834,#121027); }
+html[data-nodexa-frontend-style="xlumia"] .card.featured { border-color: #9570E8; }
+html[data-nodexa-frontend-style="xlumia"] .section.alt { background: #0D0C20; }
+html[data-nodexa-frontend-style="xlumia"] .sectionNo { color: #B7A0FF; }
+html[data-nodexa-frontend-style="xlumia"] .consoleMock { transform: perspective(1200px) rotateY(-3deg); }
+html[data-nodexa-frontend-style="xlumia"] .cta { background: linear-gradient(110deg,#282043,#152539); }
+
+/* Horizon-style: uncluttered, strong typographic hierarchy and blue. */
+html[data-nodexa-frontend-style="horizon"] {
+    --bg: #0A111B; --surface: #101C2A; --card: #152334;
+    --card2: #1A2B40; --line: #273B53; --line2: #395575;
+    --text: #F2F6FB; --muted: #ABBDD0;
+    --blue: #7EB7FF; --purple: #5D8CF6; --green: #62D6BD;
+}
+html[data-nodexa-frontend-style="horizon"] .nav {
+    background: #0F1926;
+    border-bottom: 1px solid #324861;
+    backdrop-filter: none;
+}
+html[data-nodexa-frontend-style="horizon"] .logo { border-radius: 5px; background: #317BCF !important; box-shadow:none; }
+html[data-nodexa-frontend-style="horizon"] .hero {
+    background: linear-gradient(125deg,#122438,#0A111B 74%);
+    padding: 93px 0 86px;
+}
+html[data-nodexa-frontend-style="horizon"] .hero:after { opacity: .12; }
+html[data-nodexa-frontend-style="horizon"] .hero h1 { font-size: clamp(46px,5.4vw,74px); letter-spacing: -.048em; font-weight:800; }
+html[data-nodexa-frontend-style="horizon"] .hero .gradient {
+    background: none;
+    -webkit-text-fill-color:#9BC8FF;
+    color: #9BC8FF;
+}
+html[data-nodexa-frontend-style="horizon"] .pill { background: #1C3046; border-color: #365979; border-radius: 7px; color: #BCD9F7; }
+html[data-nodexa-frontend-style="horizon"] .btn { border-radius: 7px; }
+html[data-nodexa-frontend-style="horizon"] .btn.primary {
+    background: #5799ED !important;
+    color: #071323 !important;
+    border-color: #5799ED;
+}
+html[data-nodexa-frontend-style="horizon"] .card,
+html[data-nodexa-frontend-style="horizon"] .metricbar,
+html[data-nodexa-frontend-style="horizon"] .consoleMock,
+html[data-nodexa-frontend-style="horizon"] .cta,
+html[data-nodexa-frontend-style="horizon"] .faq details { border-radius: 9px; box-shadow:none; }
+html[data-nodexa-frontend-style="horizon"] .section.alt { background: #101D2B; }
+html[data-nodexa-frontend-style="horizon"] .sectionNo { color: #8EC1FD; }
+html[data-nodexa-frontend-style="horizon"] .metricbar { background: #152538; }
+html[data-nodexa-frontend-style="horizon"] .card.featured { border-color: #648FBC; }
+html[data-nodexa-frontend-style="horizon"] .cta { background: #1B3043; }
+
+/* DinoNode-style: dark forest gaming with prominent resource cards. */
+html[data-nodexa-frontend-style="dinonode"] {
+    --bg: #08130E; --surface: #101F16; --card: #16281C;
+    --card2: #1C3223; --line: #25442D; --line2: #42694A;
+    --text: #F2FAEF; --muted: #AAC4A8;
+    --blue: #7CDB7E; --purple: #C0E782; --green: #81DD8B;
+}
+html[data-nodexa-frontend-style="dinonode"] .nav { background: #0C1C13; border-color: #244C2E; }
+html[data-nodexa-frontend-style="dinonode"] .logo {
+    background: linear-gradient(145deg,#54A865,#B6D961) !important;
+    color:#082213;
+    border-radius: 9px;
+    box-shadow:none;
+}
+html[data-nodexa-frontend-style="dinonode"] .hero {
+    background: radial-gradient(ellipse 40% 75% at 85% 15%,rgba(79,150,66,.25),transparent 88%),
+                linear-gradient(122deg,#132C1C,#08130E 76%);
+}
+html[data-nodexa-frontend-style="dinonode"] .hero h1 { font-size: clamp(46px,5.4vw,74px); line-height:1.06; }
+html[data-nodexa-frontend-style="dinonode"] .hero .gradient {
+    background: linear-gradient(110deg,#E4F7BC,#79D88A);
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent; color:transparent;
+}
+html[data-nodexa-frontend-style="dinonode"] .pill {
+    background: #1D3823;
+    border: 1px solid #3F7249;
+    border-radius: 6px;
+    color: #A5E9AE;
+}
+html[data-nodexa-frontend-style="dinonode"] .btn { border-radius:7px; font-weight: 780; }
+html[data-nodexa-frontend-style="dinonode"] .btn.primary {
+    background: #83D78C !important;
+    color: #102715 !important;
+}
+html[data-nodexa-frontend-style="dinonode"] .btn.primary:hover { background: #A3ECA7 !important; }
+html[data-nodexa-frontend-style="dinonode"] .card,
+html[data-nodexa-frontend-style="dinonode"] .metricbar,
+html[data-nodexa-frontend-style="dinonode"] .consoleMock,
+html[data-nodexa-frontend-style="dinonode"] .cta,
+html[data-nodexa-frontend-style="dinonode"] .faq details { border-radius: 9px; box-shadow:none; }
+html[data-nodexa-frontend-style="dinonode"] .card {
+    border: 1px solid #365640;
+    background: linear-gradient(175deg,#193422,#14271B);
+}
+html[data-nodexa-frontend-style="dinonode"] .card.featured { border:1px solid #A0D87A; }
+html[data-nodexa-frontend-style="dinonode"] .section.alt { background:#0B1B10; }
+html[data-nodexa-frontend-style="dinonode"] .sectionNo,
+html[data-nodexa-frontend-style="dinonode"] .eyebrow { color:#9FE6A1; }
+html[data-nodexa-frontend-style="dinonode"] .consoleMock { border-color:#456E4B; }
+html[data-nodexa-frontend-style="dinonode"] .cta { background:linear-gradient(105deg,#20432A,#16291C); }
+
+/* Preserve contrast and layout on small displays; no theme should introduce
+ * a horizontal scrollbar or hide important checkout buttons. */
+@media (max-width: 940px) {
+    html[data-nodexa-frontend-style="latch"] .heroSplit { grid-template-columns: 1fr; text-align: center; gap: 32px; }
+    html[data-nodexa-frontend-style="latch"] .hero h1,
+    html[data-nodexa-frontend-style="latch"] .hero .lead { margin-left: auto; margin-right: auto; }
+    html[data-nodexa-frontend-style="latch"] .heroactions,
+    html[data-nodexa-frontend-style="latch"] .proof { justify-content:center; }
+    html[data-nodexa-frontend-style="xlumia"] .consoleMock { transform:none; }
+}
+@media (max-width: 600px) {
+    html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .hero .container { width:calc(100% - 26px); }
+    html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .hero { padding:72px 0 64px; }
+    html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .hero h1 { font-size:clamp(39px,10vw,54px); }
+    html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .card { border-radius:10px; }
+    html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .btn { max-width:100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) * { scroll-behavior:auto; }
+}
