@@ -95,6 +95,28 @@
         .nx-front-bottom p {margin:0;max-width:640px;font-size:11px;color:#9fb1c7;line-height:1.65}
         .nx-front-bottom .btn {min-height:38px;border-radius:7px;font-weight:800}
         .nx-front-legal {color:#9badc7;font-size:11px;line-height:1.6;margin:13px 1px 0}
+        /* The small previews indicate each layout's different information architecture. */
+        .nx-front-option[data-variant="latch"] .nx-front-demo-nav {border-bottom:2px solid var(--front-accent)}
+        .nx-front-option[data-variant="latch"] .nx-front-demo-main {gap:4px}
+        .nx-front-option[data-variant="latch"] .nx-front-demo-copy {flex:1.3}
+        .nx-front-option[data-variant="latch"] .nx-front-demo-product {flex:0 0 42%;height:74px;border-radius:2px}
+        .nx-front-option[data-variant="xlumia"] .nx-front-demo-nav {width:80%;margin:0 auto;padding:0 8px;border-radius:8px;background:var(--front-surface)}
+        .nx-front-option[data-variant="xlumia"] .nx-front-demo-main {flex-direction:column;justify-content:center;gap:6px}
+        .nx-front-option[data-variant="xlumia"] .nx-front-demo-copy {flex:0 0 auto;width:75%;text-align:center}
+        .nx-front-option[data-variant="xlumia"] .nx-front-demo-label {margin:0 auto 7px}
+        .nx-front-option[data-variant="xlumia"] .nx-front-demo-heading {margin:0 auto 4px}
+        .nx-front-option[data-variant="xlumia"] .nx-front-demo-description {display:none}
+        .nx-front-option[data-variant="xlumia"] .nx-front-demo-button {margin:5px auto 0;height:6px}
+        .nx-front-option[data-variant="xlumia"] .nx-front-demo-product {width:65%;height:23px}
+        .nx-front-option[data-variant="horizon"] .nx-front-demo:before {content:'';display:block;position:absolute;top:0;left:0;right:0;height:5px;background:var(--front-surface)}
+        .nx-front-option[data-variant="horizon"] .nx-front-demo-nav {margin-top:5px;border-bottom:2px solid var(--front-accent)}
+        .nx-front-option[data-variant="horizon"] .nx-front-demo-main {align-items:stretch;gap:0}
+        .nx-front-option[data-variant="horizon"] .nx-front-demo-copy {padding:17px 8px 0 0}
+        .nx-front-option[data-variant="horizon"] .nx-front-demo-product {height:auto;border-radius:1px}
+        .nx-front-option[data-variant="dinonode"] .nx-front-demo-main {flex-direction:row-reverse}
+        .nx-front-option[data-variant="dinonode"] .nx-front-demo-copy {padding-left:8px}
+        .nx-front-option[data-variant="dinonode"] .nx-front-demo-product {width:43%;height:77px;border-radius:9px;border:2px solid var(--front-accent)}
+        .nx-front-option[data-variant="dinonode"] .nx-front-demo-product:after {height:35px}
         @media(max-width:1100px){.nx-front-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
         @media(max-width:650px){.nx-front-grid{grid-template-columns:1fr}.nx-front-body{padding:12px}.nx-front-top{padding:15px}.nx-front-bottom{padding:14px}.nx-front-bottom .btn{width:100%}.nx-front-card{min-height:auto}.nx-front-desc{min-height:auto}}
     </style>
@@ -106,7 +128,7 @@
             <div class="nx-front-top">
                 <div>
                     <h2 id="nx-front-heading"><i class="fa fa-desktop" aria-hidden="true"></i> Frontend Theme Center</h2>
-                    <p>Vælg layout for den offentlige hjemmeside, hostingkatalog og kundesider. Uafhængigt af panelets farvetema.</p>
+                    <p>Vælg et helt hjemmesidedesign. Forside, navigation, hostingkatalog og VPS-katalog skifter opbygning – ikke kun farver.</p>
                 </div>
                 <div class="nx-front-active"><i class="fa fa-circle" aria-hidden="true"></i> Aktivt: {{ $frontendPresets[$frontendSelected]['name'] }}</div>
             </div>
@@ -165,8 +187,8 @@
 
             <div class="nx-front-bottom">
                 <p><strong style="color:#e8effa">Det nuværende design bevares.</strong>
-                    Skift tilbage til Nodexa Original når som helst. Temavalget påvirker ikke kontrolpanelet,
-                    Admin Area, ordreflow, betalinger, produkter eller data.
+                    Skift tilbage til Nodexa Original når som helst. De nye design ændrer sidestruktur,
+                    men bevarer kontrolpanelet, Admin Area, ordreflow, betalinger, produkter og data.
                 </p>
                 <button type="submit" class="btn btn-primary">
                     <i class="fa fa-check" aria-hidden="true"></i> Gem frontend-tema
