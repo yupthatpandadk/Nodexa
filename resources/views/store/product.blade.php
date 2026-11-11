@@ -2,8 +2,18 @@
 @section('title', $product->name)
 @section('description', $product->description ?: 'Konfigurér og bestil din Nodexa server.')
 
+@php
+    // Child Blade sections run before the parent layout initializes its
+    // variables. Resolve this independently to prevent undefined-variable 500s.
+    $nodexaProductLayout = 'classic';
+    try {
+        $nodexaProductLayout = app(\Pterodactyl\Services\Nodexa\FrontendThemeService::class)->activeForRequest();
+    } catch (\Throwable $ignored) {
+    }
+@endphp
+
 @section('content')
-@if($nodexaFrontendLayout === 'classic')
+@if($nodexaProductLayout === 'classic')
 <section class="pagehero">
     <div class="container">
         <span class="tag">{{ $product->game }}</span>
