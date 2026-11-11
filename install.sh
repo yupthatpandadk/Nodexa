@@ -56,15 +56,17 @@ update_panel() {
   panel_was_put_down=1
   trap restore_panel_on_exit EXIT
 
-  if git remote get-url origin >/dev/null 2>&1; then
-    git remote set-url origin "https://github.com/$REPO.git"
+  # The panel may be owned by www-data but this recovery script runs as root.
+  # Trust this exact checkout only, without changing global Git config.
+  if git -c "safe.directory=$PANEL_DIR" remote get-url origin >/dev/null 2>&1; then
+    git -c "safe.directory=$PANEL_DIR" remote set-url origin "https://github.com/$REPO.git"
   else
-    git remote add origin "https://github.com/$REPO.git"
+    git -c "safe.directory=$PANEL_DIR" remote add origin "https://github.com/$REPO.git"
   fi
 
   info "Henter Nodexa main..."
-  git fetch origin "$BRANCH"
-  git reset --hard "origin/$BRANCH"
+  git -c "safe.directory=$PANEL_DIR" fetch origin "$BRANCH"
+  git -c "safe.directory=$PANEL_DIR" reset --hard "origin/$BRANCH"
 
   if command -v composer >/dev/null && [[ -f composer.json ]]; then
     composer install --no-dev --optimize-autoloader --no-interaction
