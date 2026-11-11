@@ -3,6 +3,7 @@
 @section('description', $product->description ?: 'Konfigurér og bestil din Nodexa server.')
 
 @section('content')
+@if($nodexaFrontendLayout === 'classic')
 <section class="pagehero">
     <div class="container">
         <span class="tag">{{ $product->game }}</span>
@@ -15,8 +16,11 @@
         </div>
     </div>
 </section>
+@else
+@include('store.frontend.parts.product-hero')
+@endif
 
-<section class="section">
+<section class="section" id="nxProductConfigure">
     <div class="container" style="max-width:1050px">
         <div class="product-layout">
             <div>
