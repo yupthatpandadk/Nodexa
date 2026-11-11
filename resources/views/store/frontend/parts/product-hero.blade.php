@@ -1,13 +1,13 @@
 {{-- One shared product/checkout model, four truly different public page introductions. --}}
-@if($nodexaFrontendLayout === 'latch')
+@if($nodexaProductLayout === 'latch')
 <section class="nx-product-intro nx-product-intro-latch"><div class="container nx-product-latch-grid">
     <div><p class="nx-theme-overline">NODEXA / GAME SERVERS / CONFIGURE</p><h1>{{ $product->name }}</h1><p>{{ $product->description ?: 'Konfigurér din server på Nodexa.' }}</p><div class="nx-product-latch-steps"><span>01 Konfiguration</span><span>02 Checkout</span><span>03 Aktivering</span></div></div>
     <aside><span>AKTIV SERVERPAKKE</span><strong>{{ number_format((float)$product->price_monthly,2,',','.') }} kr.</strong><small>pr. måned før eventuelle rabatter</small><a href="#nxProductConfigure">Konfigurér server ↓</a></aside>
 </div></section>
-@elseif($nodexaFrontendLayout === 'xlumia')
+@elseif($nodexaProductLayout === 'xlumia')
 <section class="nx-product-intro nx-product-intro-xl"><div class="container"><span class="nx-xl-kicker">✦ BUILD YOUR SERVER</span><h1>{{ $product->name }}</h1><p>{{ $product->description ?: 'Serverhosting med plads til dine idéer.' }}</p><div class="nx-product-xl-steps"><span class="active">01 / Konfiguration</span><span>02 / Betaling</span><span>03 / Aktivering</span></div><a href="#nxProductConfigure" class="nx-theme-primary">Tilpas din server ↗</a></div></section>
-@elseif($nodexaFrontendLayout === 'horizon')
+@elseif($nodexaProductLayout === 'horizon')
 <section class="nx-product-intro nx-product-intro-horizon"><div class="container nx-product-horizon-grid"><div><span class="nx-theme-overline">GAME HOSTING / 01 / SERVER CONFIGURATION</span><h1>{{ $product->name }}</h1><p>{{ $product->description ?: 'Valg og konfigurering af game-serverressourcer.' }}</p></div><aside><span>RESOURCE OVERVIEW</span><div><b>{{ number_format($product->memory / 1024,1,',','.') }} GB</b><small>RAM</small></div><div><b>{{ $product->cpu }} %</b><small>CPU</small></div><div><b>{{ number_format($product->disk / 1024,1,',','.') }} GB</b><small>SSD</small></div></aside></div></section>
-@elseif($nodexaFrontendLayout === 'dinonode')
+@elseif($nodexaProductLayout === 'dinonode')
 <section class="nx-product-intro nx-product-intro-dino"><div class="container nx-product-dino-grid"><div><span class="nx-dino-banner">GAME HOSTING • {{ $product->game }}</span><h1>{{ $product->name }}</h1><p>{{ $product->description ?: 'Start din næste game-server i Nodexa.' }}</p><a href="#nxProductConfigure" class="nx-theme-primary">Konfigurér min server ↗</a></div><aside><span>SERVERPAKKE</span><strong>{{ number_format((float)$product->price_monthly,2,',','.') }} kr.</strong><small>pr. måned før rabat</small><div><b>RAM</b> {{ number_format($product->memory / 1024,1,',','.') }} GB</div><div><b>SSD</b> {{ number_format($product->disk / 1024,1,',','.') }} GB</div></aside></div></section>
 @endif
