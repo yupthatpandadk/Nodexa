@@ -1,6 +1,17 @@
 {
-  "latest": "1.7.21",
+  "latest": "1.7.22",
   "releases": [
+    {
+      "version": "1.7.22",
+      "date": "2026-11-11",
+      "type": "patch",
+      "title": "Nodexa-logo linker til offentlig forside",
+      "changes": [
+        "Klik på Nodexa-logoet øverst til venstre i kontrolpanelet åbner nu den offentlige frontend i stedet for panelets dashboard.",
+        "Logoet bruger almindelig navigation til /, så React Router ikke opsnapper linket og viser kontrolpanelet.",
+        "Dashboard-knappen i topbaren fungerer fortsat som direkte adgang til kontrolpanelets dashboard."
+      ]
+    },
     {
       "version": "1.7.21",
       "date": "2026-11-11",
