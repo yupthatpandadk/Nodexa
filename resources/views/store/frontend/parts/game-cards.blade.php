@@ -1,6 +1,7 @@
 {{-- Shared live catalog data; each layout gives these cards a different composition. --}}
+@php($visibleProducts = isset($limit) ? $products->take($limit) : $products)
 <div class="nx-theme-plans nx-theme-plans--{{ $variant ?? 'grid' }}" id="{{ $catalogId ?? 'nxThemePlans' }}">
-    @forelse(($limit ?? null) ? $products->take($limit) : $products as $p)
+    @forelse($visibleProducts as $p)
         <article class="nx-theme-plan {{ $p->featured ? 'is-featured' : '' }}" data-hosting-game="{{ mb_strtolower((string) $p->game) }}">
             <div class="nx-theme-plan-head">
                 <span class="nx-theme-plan-type">{{ $p->game }}</span>
