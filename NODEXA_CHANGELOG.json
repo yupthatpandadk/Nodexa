@@ -10,7 +10,8 @@
         "Opdateringsprocessen kræver root-rettigheder fra den beskyttede systemd-tjeneste eller SSH-installeren, så www-data ikke forsøger at ændre vendor.",
         "Composer og kildefilernes skriverettigheder kontrolleres før vedligeholdelsestilstand; fejlrapportering viser bruger og berørt sti.",
         "Ufuldstændige installationer kan genoptages, også når Git allerede har opdateret versionsfilen.",
-        "Update Center viser afbrudte opdateringer korrekt, rydder låse fra genbrugte PID'er og giver mulighed for at prøve igen."
+        "Update Center viser afbrudte opdateringer korrekt, rydder låse fra genbrugte PID'er og giver mulighed for at prøve igen.",
+        "PHP-FPM genindlæses efter vellykket opdatering, så gammel PHP OPcache ikke fastholder den tidligere webopdateringskode."
       ]
     },
     {
