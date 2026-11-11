@@ -36,7 +36,7 @@ class FrontendThemeService
             ],
             'latch' => [
                 'name' => 'Latch-stil',
-                'description' => 'Teknisk og nedtonet hostingdesign med grønne detaljer, stærk typografi og tydelig navigation.',
+                'description' => 'Selvstændigt operationslayout med todelt header, terminal-hero og serverkatalog med venstremenu og vandrette pakkekort.',
                 'subtitle' => 'Minimal · operationel',
                 'accent' => '#8DE4A9',
                 'secondary' => '#5AB4A4',
@@ -45,7 +45,7 @@ class FrontendThemeService
             ],
             'xlumia' => [
                 'name' => 'Xlumia-stil',
-                'description' => 'Et moderne hostinglayout med dyb violet, kølige highlights og diskret glaseffekt.',
+                'description' => 'Selvstændigt premium-layout med flydende navigation, centreret hero, dashboard-preview og kortbaseret hostingkatalog.',
                 'subtitle' => 'Premium · aurora',
                 'accent' => '#A990FF',
                 'secondary' => '#5BD9EA',
@@ -54,7 +54,7 @@ class FrontendThemeService
             ],
             'horizon' => [
                 'name' => 'Horizon-stil',
-                'description' => 'Rent, struktureret design med grafitblå flader, præcise kanter og klare handlingsknapper.',
+                'description' => 'Selvstændigt virksomhedsdesign med statuslinje, struktureret navigation, todelt hero og katalog i tabelform.',
                 'subtitle' => 'Klassisk hosting · moderne',
                 'accent' => '#7EB7FF',
                 'secondary' => '#5D8CF6',
@@ -63,7 +63,7 @@ class FrontendThemeService
             ],
             'dinonode' => [
                 'name' => 'DinoNode-stil',
-                'description' => 'Spilorienteret, mørkegrønt hostingdesign med kraftigere kort og tydelige produktområder.',
+                'description' => 'Selvstændigt gaming-layout med kategorinavigation, Minecraft/FiveM/VPS-vælger og store spilpakke-kort.',
                 'subtitle' => 'Gaming · grøn',
                 'accent' => '#7CDB7E',
                 'secondary' => '#C0E782',
