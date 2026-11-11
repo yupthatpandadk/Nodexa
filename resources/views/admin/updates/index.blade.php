@@ -130,7 +130,7 @@
                     </form>
                     <a class="nx-updates__button" href="{{ route('admin.updates') }}"><i class="fa fa-refresh" aria-hidden="true"></i> Opdater status</a>
                 </div>
-                <p class="nx-updates__help"><i class="fa fa-shield" aria-hidden="true"></i> Opdateringer startes via den beskyttede Nodexa-opdateringstjeneste. Eksisterende services bevares.</p>
+                <p class="nx-updates__help"><i class="fa fa-shield" aria-hidden="true"></i> Opdateringer startes via den beskyttede Nodexa-opdateringstjeneste. Kontrolpanelet kan kortvarigt være i vedligeholdelsestilstand.</p>
             </div>
 
             <div class="nx-updates__progress {{ $updateFailed ? 'is-error' : '' }}" id="nodexa-update-progress" style="{{ $showProgress ? '' : 'display:none' }}" aria-live="polite">
