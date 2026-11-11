@@ -134,7 +134,7 @@ class MinecraftEggSwitchService
 
         $this->assertCanManage($server, $user);
 
-        $lock = Cache::lock('nodexa:minecraft:egg-switch:' . $server->id, 180);
+        $lock = Cache::lock('nodexa:minecraft:egg-switch:' . $server->id, $mode === 'clean' ? 1800 : 180);
         if (!$lock->get()) {
             throw new ConflictHttpException('Der er allerede et Egg-skift i gang. Prøv igen senere.');
         }
