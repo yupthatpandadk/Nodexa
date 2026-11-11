@@ -1,6 +1,38 @@
 {
-  "latest": "1.7.2",
+  "latest": "1.7.9",
   "releases": [
+    {
+      "version": "1.7.9",
+      "date": "2026-11-11",
+      "type": "patch",
+      "title": "Update Center – rettigheder og fejlhåndtering",
+      "changes": [
+        "Opdateringssystemet kontrollerer nu skriveadgang til ændrede filer, inden hjemmesiden sættes i maintenance mode.",
+        "Update Center viser fejlede opdateringer tydeligt og har en terminalkommando til sikker administratoropdatering.",
+        "Rettet fremdriftsvisning, der tidligere var placeret forkert og kunne blive stående på Updating.",
+        "Installationsscriptet understøtter opdatering af et Git-checkout, som ejes af en anden systembruger."
+      ]
+    },
+    {
+      "version": "1.7.8",
+      "date": "2026-11-11",
+      "type": "patch",
+      "title": "Wallet – betalingstest og Stripe-minimum",
+      "changes": [
+        "Tilføjet regressionstests for Wallet-kredit på VPS, Pterodactyl og blandede kurve.",
+        "Checkout viser fejl før ordreoprettelse, når Stripe-beløbet er under minimum på 2,50 DKK."
+      ]
+    },
+    {
+      "version": "1.7.7",
+      "date": "2026-11-11",
+      "type": "feature",
+      "title": "Wallet – betalingstyper pr. produkt",
+      "changes": [
+        "Admin kan begrænse Wallet-kredit til Pterodactyl-produkter eller tillade både Pterodactyl og VPS.",
+        "Wallet-kontrol håndhæves ved direkte betaling, Stripe-kombinationsbetaling og ubetalte ordrer."
+      ]
+    },
     {
       "version": "1.7.2",
       "date": "2026-11-07",
