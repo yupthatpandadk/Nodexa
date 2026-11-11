@@ -91,3 +91,53 @@
   .graphPanel .graphs canvas {max-height:140px!important}
   .graphPanel .graphs {padding:8px}
 }
+
+
+/* txAdmin workspace: separate authenticated upstream UI, not an iframe proxy. */
+.txHero {display:flex;align-items:center;justify-content:space-between;gap:25px;padding:28px;border:1px solid #39516a;border-radius:11px;background:linear-gradient(115deg,#1d2936,#121c28 70%);margin-bottom:16px}
+.txHero>div {flex:1;min-width:0}
+.txHero h1 {color:#f4f7fc;font-size:clamp(26px,3vw,37px);line-height:1.12;font-weight:850;margin:11px 0}
+.txHero p {font-size:12px;line-height:1.7;color:#aabacb;max-width:650px}
+.txStatus {display:inline-flex;align-items:center;gap:8px;color:#c7d1dd;font-size:11px;margin-top:12px}
+.txConfigured,.txAttention {width:8px;height:8px;display:inline-block;background:#8cd4ac;border-radius:100%}
+.txAttention {background:#e5af72}
+.txLaunch,.txSecondary {display:inline-flex;align-items:center;justify-content:center;padding:13px 18px;border-radius:7px;color:#0c1925!important;background:#efbb88;text-decoration:none;font-size:12px;font-weight:850;white-space:nowrap;min-height:44px}
+.txSecondary {background:transparent;color:#e5eef7!important;border:1px solid #536578}
+.txGrid {display:grid;grid-template-columns:minmax(250px,.85fr) minmax(0,1.15fr);gap:15px;align-items:stretch}
+.txPanel {background:#141e2b;border:1px solid #32455b;border-radius:9px;overflow:hidden}
+.txPanel>header {padding:18px 20px;border-bottom:1px solid #35465a;background:#1a2736}
+.txPanel>header>span {font-size:10px;font-weight:850;letter-spacing:.13em;color:#a5b7ca}
+.txPanel h2 {color:#f0f4f8;font-size:17px;font-weight:830;margin-top:7px}
+.txFields {padding:5px 20px}
+.txFields>div {display:flex;align-items:center;justify-content:space-between;gap:14px;padding:17px 0;border-bottom:1px solid #304255}
+.txFields span {font-size:11px;color:#a5b5c8}
+.txFields strong {font-size:12px;font-weight:800;color:#ecf3f9;text-align:right}
+.txAddress {padding:12px 20px;display:grid;gap:8px}
+.txAddress span {font-size:10px;font-weight:800;color:#97aabf;letter-spacing:.08em;text-transform:uppercase}
+.txAddress a {font-size:12px;overflow-wrap:anywhere;color:#e8b685!important;text-decoration:underline}
+.txHelp {padding:10px 20px 20px;font-size:11px;line-height:1.7;color:#93a9bd}
+.txSteps {padding:7px 20px 14px;margin:0;list-style:none}
+.txSteps li {display:flex;gap:15px;padding:18px 0;border-bottom:1px solid #34465a}
+.txSteps li:last-child {border-bottom:0}
+.txSteps li>b {display:flex;align-items:center;justify-content:center;flex:0 0 29px;width:29px;height:29px;border:1px solid #67523e;background:#302820;color:#e9bc90;border-radius:6px;font-size:12px}
+.txSteps li strong {font-size:12px;color:#edf2f9}
+.txSteps li p {margin:7px 0 0;font-size:11px;color:#a4b4c8;line-height:1.65}
+.txSteps code {padding:2px 5px;border-radius:4px;background:#253345;color:#e9edf3;font-size:10px}
+.txLinks {padding:15px 20px;display:flex;align-items:center;flex-wrap:wrap;gap:10px;border-top:1px solid #334459;background:#182333}
+.txLinks a {display:inline-flex;font-size:11px;font-weight:800;text-decoration:none;color:#e8bd92!important;padding:8px 10px;border:1px solid #5a4c3c;border-radius:5px}
+.txInfo {margin-top:16px;border:1px solid #34485b;background:#131e2a;border-radius:8px;padding:20px}
+.txInfo strong {display:block;font-size:12px;color:#eaf0f6}
+.txInfo p {font-size:11px;line-height:1.7;margin-top:8px;color:#9cabbc}
+@media(max-width:950px) {
+  .txGrid {grid-template-columns:1fr}
+  .txHero {padding:20px}
+}
+@media(max-width:640px) {
+  .txHero {flex-direction:column;align-items:stretch;gap:20px}
+  .txLaunch,.txSecondary {width:100%}
+  .txPanel>header {padding:14px 15px}
+  .txFields {padding:5px 15px}
+  .txSteps {padding:5px 15px}
+  .txLinks {padding:12px 15px}
+  .txInfo {padding:15px}
+}
