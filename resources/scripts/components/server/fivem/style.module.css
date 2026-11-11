@@ -44,3 +44,26 @@
 .details {margin-top:18px}
 @media(max-width:1100px) {.grid {grid-template-columns:minmax(0,1fr)}.sidebar {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.sidebar .panel:last-child {grid-column:1/-1}}
 @media(max-width:760px) {.hero {flex-direction:column;align-items:stretch;padding:17px}.power {min-width:0;flex:auto}.serverMeta {margin-left:0}.shortcuts {grid-template-columns:repeat(2,minmax(0,1fr))}.sidebar {display:flex}.headingRow {flex-wrap:wrap}.title {flex:1 1 60%}.shortcuts a {padding:17px 12px}}
+
+.resourcesHeader {padding:30px;background:linear-gradient(110deg,#1c2836,#131c28);border:1px solid #344457;border-radius:10px;display:flex;justify-content:space-between;gap:24px;align-items:center;margin-bottom:16px}
+.resourcesHeader h1 {font-size:27px;font-weight:850;color:#f5f7fa;margin:8px 0}
+.resourcesHeader p {font-size:12px;color:#a5b5c8;max-width:570px}
+.fileAction {padding:12px 15px;border-radius:7px;background:#dca474;color:#14202b!important;font-size:12px;font-weight:850;white-space:nowrap}
+.resourceSection {border:1px solid #304253;background:#141e2b;border-radius:10px;overflow:hidden}
+.resourceTitle {display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 20px;background:#1a2838;border-bottom:1px solid #304253}
+.resourceTitle strong {display:block;color:#f0f4f8;font-size:14px}
+.resourceTitle span {display:block;color:#9eb0c4;font-size:11px;margin-top:5px}
+.resourceTitle button {padding:8px 14px;background:#304252;border:1px solid #43576b;border-radius:6px;color:#edf3fc;font-size:12px}
+.resourceTitle button:disabled {opacity:.5}
+.resourceList {padding:10px}
+.resourceList a {display:flex;align-items:center;gap:14px;padding:15px 16px;border-radius:7px;text-decoration:none;border:1px solid transparent;color:#f2f4f8}
+.resourceList a:hover {background:#202e3e;border-color:#394e63}
+.resourceList a>span:nth-child(2) {flex:1;min-width:0}
+.resourceList strong {display:block;font-weight:750;font-size:13px;overflow-wrap:anywhere}
+.resourceList small {display:block;font-size:10px;color:#99acc0;margin-top:4px}
+.resourceList b {font-size:11px;color:#e9b58b}
+.resourceIcon {display:flex;width:38px;height:38px;align-items:center;justify-content:center;border:1px solid #4c5c6a;border-radius:6px;color:#e9ad7d;background:#253342}
+.empty,.failure {font-size:12px;padding:20px;color:#9eb3c9}
+.failure {color:#efb6b8}
+.resourceNote {font-size:11px;line-height:1.6;color:#96a7b9;margin-top:15px}
+@media(max-width:720px) {.resourcesHeader {display:block;padding:20px}.fileAction {display:inline-flex;margin-top:18px}.resourceList a {gap:10px;padding:12px}.resourceList a b {font-size:10px}}
