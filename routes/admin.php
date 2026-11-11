@@ -195,6 +195,7 @@ Route::group(['prefix' => 'settings'], function () {
     Route::get('/advanced', [Admin\Settings\AdvancedController::class, 'index'])->name('admin.settings.advanced');
     Route::get('/themes', [Admin\Settings\ThemesController::class, 'index'])->name('admin.settings.themes');
     Route::patch('/themes', [Admin\Settings\ThemesController::class, 'update'])->name('admin.settings.themes.update');
+    Route::patch('/themes/frontend', [Admin\Settings\ThemesController::class, 'updateFrontend'])->name('admin.settings.themes.frontend.update');
 
     Route::post('/mail/test', [Admin\Settings\MailController::class, 'test'])->name('admin.settings.mail.test');
 
