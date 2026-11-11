@@ -25,10 +25,19 @@ progress() {
 
 log() { echo "[$(date -Is)] $*"; }
 
+# A web-triggered update runs as www-data. It must not change the ownership
+# of the entire PHP codebase or use passwordless sudo. A terminal (root)
+# update is required when source files belong to a different OS user.
+PERMISSION_ERROR=0
+
 fail() {
     local line="${1:-?}" code="${2:-1}"
     log "ERROR: update failed at line $line (exit $code)."
-    progress 100 "Update failed. See update log." failed
+    if [ "$PERMISSION_ERROR" -eq 1 ]; then
+        progress 100 "Source files are not writable by www-data. Run the Nodexa update with sudo over SSH." failed
+    else
+        progress 100 "Update failed. See update log." failed
+    fi
     php artisan up >/dev/null 2>&1 || true
 }
 
@@ -81,7 +90,33 @@ if [ "$CURRENT" = "$TARGET" ]; then
     exit 0
 fi
 
-progress 25 "Enabling maintenance mode…"
+# Git replaces changed files by unlinking/renaming them. File readability
+# alone is not enough: its containing directory must be writable by the
+# updater account. Detect that BEFORE putting Laravel into maintenance.
+progress 21 "Checking write permissions for update files…"
+BLOCKED_PATH=""
+while IFS= read -r -d '' path; do
+    parent="$(dirname "$path")"
+    # For new files, check the nearest existing parent directory instead.
+    while [ ! -d "$parent" ] && [ "$parent" != "." ]; do
+        parent="$(dirname "$parent")"
+    done
+    if [ ! -w "$parent" ] || [ ! -x "$parent" ]; then
+        BLOCKED_PATH="$parent"
+        break
+    fi
+done < <(git diff --name-only -z "$CURRENT" "$TARGET" --)
+
+if [ -n "$BLOCKED_PATH" ]; then
+    PERMISSION_ERROR=1
+    log "ERROR: $(id -un) cannot replace files in '$BLOCKED_PATH' (directory is not writable)."
+    log "Do NOT make the entire web application writable by www-data."
+    log "Run the one-time privileged update over SSH:"
+    log "  curl -fsSL https://raw.githubusercontent.com/yupthatpandadk/Nodexa/main/install.sh | sudo bash -s -- update"
+    exit 1
+fi
+
+progress 25 "Enabling maintenance mode…
 php artisan down --retry=15 || true
 
 progress 32 "Installing update files…"
