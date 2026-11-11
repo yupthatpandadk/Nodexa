@@ -96,6 +96,7 @@ Route::get('/store', [Admin\StoreController::class, 'index'])->name('admin.store
 Route::post('/store/products', [Admin\StoreController::class, 'store'])->name('admin.store.products.store');
 Route::get('/store/egg-packages', [Admin\EggHostingPackagesController::class, 'index'])->name('admin.store.egg-packages');
 Route::post('/store/egg-packages/generate', [Admin\EggHostingPackagesController::class, 'generate'])->middleware('throttle:10,1')->name('admin.store.egg-packages.generate');
+Route::post('/store/egg-packages/minecraft/generate', [Admin\EggHostingPackagesController::class, 'generateMinecraft'])->middleware('throttle:10,1')->name('admin.store.egg-packages.minecraft.generate');
 Route::patch('/store/products/{product}/details', [Admin\EggHostingPackagesController::class, 'updateDetails'])->name('admin.store.products.details');
 Route::patch('/store/products/{product}', [Admin\StoreController::class, 'update'])->name('admin.store.products.update');
 Route::delete('/store/products/{product}', [Admin\StoreController::class, 'destroy'])->name('admin.store.products.destroy');
