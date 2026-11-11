@@ -1,5 +1,9 @@
 @extends('layouts.admin')
 @section('title', 'Pterodactyl Egg-pakker')
+@section('scripts')
+    @parent
+    <link rel="stylesheet" href="{{ asset('css/nodexa-minecraft-packages.css') }}?v=1">
+@endsection
 @section('content-header')
 <h1>Egg-pakker <small>Serverpakker til Nodexa Hosting</small></h1>
 @endsection
@@ -10,6 +14,8 @@
 @if($errors->any())
     <div class="alert alert-danger">{{ $errors->first() }}</div>
 @endif
+
+@include('admin.store.minecraft-packages')
 
 <div class="row">
     <div class="col-md-5">
