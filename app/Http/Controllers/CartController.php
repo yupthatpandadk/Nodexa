@@ -10,6 +10,7 @@ use Pterodactyl\Models\StoreProduct;
 use Pterodactyl\Services\Nodexa\NodexaCartService;
 use Pterodactyl\Services\Nodexa\OrderRemovalService;
 use Pterodactyl\Services\Nodexa\WalletService;
+use Pterodactyl\Services\Nodexa\WalletUsagePolicy;
 use Pterodactyl\Services\Nodexa\StripePaymentService;
 use Illuminate\Support\Facades\DB;
 
@@ -23,6 +24,7 @@ class CartController extends Controller
         private StripePaymentService $stripe,
         private OrderRemovalService $removal,
         private WalletService $wallet,
+        private WalletUsagePolicy $walletPolicy,
     ) {
     }
 
@@ -171,6 +173,8 @@ class CartController extends Controller
             'summary' => $summary,
             'stripeEnabled' => $this->stripe->isEnabled(),
             'walletBalanceCents' => $this->wallet->balanceCents((int) $request->user()->id),
+            'walletEligibleCents' => $this->walletPolicy->eligibleCentsForSummary($summary),
+            'walletAllowsVps' => $this->walletPolicy->allowsVps(),
         ]);
     }
 
@@ -182,12 +186,13 @@ class CartController extends Controller
             $preview = $this->cart->resolve($items, $request->session()->get(self::COUPON_KEY));
             $totalCents = (int) round(((float) ($preview['total'] ?? 0)) * 100);
             $walletCents = $this->wallet->balanceCents((int) $request->user()->id);
+            $eligibleCents = $this->walletPolicy->eligibleCentsForSummary($preview);
         } catch (\Throwable $exception) {
             return redirect()->route('store.cart.checkout')->withErrors(['wallet' => \Pterodactyl\Services\Nodexa\CustomerBranding::errorMessage($exception)]);
         }
 
         // Wallet is always applied first. Use Stripe for the remaining balance.
-        $paymentMethod = $totalCents > 0 && $walletCents >= $totalCents ? 'wallet' : 'stripe';
+        $paymentMethod = $totalCents > 0 && $walletCents >= $totalCents && $eligibleCents >= $totalCents ? 'wallet' : 'stripe';
 
         try {
             $checkoutId = $this->cart->createCheckout(
@@ -279,6 +284,8 @@ class CartController extends Controller
             'items' => $items,
             'stripeEnabled' => $this->stripe->isEnabled(),
             'walletBalanceCents' => $this->wallet->balanceCents((int) $request->user()->id),
+            'walletEligibleCents' => $this->walletPolicy->eligibleCentsForCheckout($row),
+            'walletAllowsVps' => $this->walletPolicy->allowsVps(),
         ]);
     }
 }
