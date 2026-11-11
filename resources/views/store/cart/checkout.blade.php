@@ -86,6 +86,10 @@
 
                                     <div class="serviceSpecs">
                                         <span><small>Spil</small><b>{{ $item['meta']['game'] }}</b></span>
+                                        @if(!empty($item['configuration']['minecraft_type']))
+                                            <span><small>Minecraft-type</small><b>{{ $item['configuration']['minecraft_type'] }}</b></span>
+                                            <span><small>MC-version</small><b>{{ $item['configuration']['minecraft_version'] ?: 'Styres af Egg' }}</b></span>
+                                        @endif
                                         <span><small>RAM</small><b>{{ $item['meta']['memory'] }} MB</b></span>
                                         <span><small>CPU</small><b>{{ $item['meta']['cpu'] }}%</b></span>
                                         <span><small>Disk</small><b>{{ $item['meta']['disk'] }} MB</b></span>
