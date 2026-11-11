@@ -12,6 +12,15 @@ export interface Allocation {
     isDefault: boolean;
 }
 
+export interface TxAdminConnection {
+    supported: boolean;
+    enabled: boolean | null;
+    port: number | null;
+    allocated: boolean;
+    url: string | null;
+    state: 'not_fivem' | 'disabled' | 'missing_allocation' | 'invalid_port' | 'invalid_host' | 'ready_to_open';
+}
+
 export interface Server {
     /**
      * This value is determined by the presence of the `PTERODACTYL_USE_SERVER_IDENTIFIERS` environment
@@ -54,6 +63,7 @@ export interface Server {
     eggFeatures: string[];
     eggId: number;
     isFiveMServer: boolean;
+    txAdmin: TxAdminConnection | null;
     minecraftEggSwitchingAvailable: boolean;
     pluginManagerEnabled: boolean;
     modManagerEnabled: boolean;
@@ -91,6 +101,7 @@ export const rawDataToServerObject = ({ attributes: data }: FractalResponseData)
     eggFeatures: data.egg_features || [],
     eggId: data.egg_id,
     isFiveMServer: Boolean(data.is_fivem_server),
+    txAdmin: data.txadmin || null,
     minecraftEggSwitchingAvailable: Boolean(data.minecraft_egg_switching_available),
     pluginManagerEnabled: Boolean(data.plugin_manager_enabled),
     modManagerEnabled: Boolean(data.mod_manager_enabled),
