@@ -103,6 +103,38 @@ class FrontendThemeService
      * Only the root admin can preview a different layout by query string.
      * Visitors never see a draft preview; they always see the published theme.
      */
+    /**
+     * Each non-classic frontend has its own Blade page composition.
+     * Switching themes changes DOM structure, not just CSS variables.
+     * Unknown and missing templates fall back safely to the original page.
+     */
+    public function template(string $page): string
+    {
+        $defaults = [
+            'home' => 'store.index',
+            'hosting' => 'store.hosting',
+            'vps' => 'store.vps.index',
+        ];
+
+        if (!isset($defaults[$page])) {
+            throw new \InvalidArgumentException('Unknown storefront page.');
+        }
+
+        try {
+            $theme = $this->activeForRequest();
+            if ($theme !== 'classic') {
+                $candidate = 'store.frontend.' . $theme . '.' . $page;
+                if (\Illuminate\Support\Facades\View::exists($candidate)) {
+                    return $candidate;
+                }
+            }
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+
+        return $defaults[$page];
+    }
+
     public function activeForRequest(): string
     {
         $preview = request()->query('frontend_theme_preview');
