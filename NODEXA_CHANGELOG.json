@@ -1,6 +1,19 @@
 {
-  "latest": "1.7.23",
+  "latest": "1.7.24",
   "releases": [
+    {
+      "version": "1.7.24",
+      "date": "2026-11-11",
+      "type": "patch",
+      "title": "500-fejl på frontend – sikker fallback til Nodexa Original",
+      "changes": [
+        "Frontend-layoutet falder nu automatisk tilbage til det oprindelige Nodexa-design, hvis frontend-tematjenesten mangler eller fejler.",
+        "Fjernede det direkte uindkapslede PHP-kald fra storefront-layoutet, så temaproblemer ikke tager hele forsiden og checkout offline.",
+        "Almindelige frontendbesøg forsøger ikke længere at slå den aktuelle loginbruger op blot for at bestemme layout.",
+        "Ukendte og ugyldige frontend-temaer afvises fortsat, og eksisterende tema-, produkt- og betalingsfunktioner beholdes.",
+        "Tilføjet test af originaltema som fallback ved fejl i indlæsning af temaindstillinger."
+      ]
+    },
     {
       "version": "1.7.23",
       "date": "2026-11-11",
