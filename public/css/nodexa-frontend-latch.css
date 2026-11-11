@@ -98,3 +98,19 @@
 .nx-catalog-latch #nxThemeCatalog .nx-theme-plan-specs {margin-bottom:15px}
 .nx-catalog-latch #nxThemeCatalog .nx-theme-order {align-self:stretch;width:100%}
 }
+
+/* Latch-inspired pricing selector: actual Nodexa games and real product prices. */
+.nx-latch-game-select {border:1px solid #33513b;background:#0e1b13;margin-bottom:27px}
+.nx-latch-game-header {display:flex;justify-content:space-between;gap:12px;align-items:center;padding:15px 18px;border-bottom:1px solid #31503b}
+.nx-latch-game-header strong {font-size:10px;letter-spacing:.12em;color:#bbd7c4}
+.nx-latch-game-header span {font-size:11px;color:#7da58b}
+.nx-latch-game-choices {display:flex;flex-wrap:wrap;gap:7px;padding:16px}
+.nx-latch-game-choices button {display:flex;align-items:center;gap:9px;background:#14251a;border:1px solid #32503b;color:#d1e7d6;padding:11px 17px;font:750 12px inherit;border-radius:4px;cursor:pointer}
+.nx-latch-game-choices button>span {display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;background:#24432e;color:#a5ebb2;border-radius:3px}
+.nx-latch-game-choices button.is-active {background:#8de4a9;border-color:#8de4a9;color:#05160b}
+.nx-latch-game-choices button.is-active>span {background:#2d7b49;color:#fff}
+#nxLatchCatalog [hidden] {display:none!important}
+#nxLatchNoMatch[hidden] {display:none!important}
+.nx-home-latch .nx-theme-plans--latch-home {grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:850px){.nx-home-latch .nx-theme-plans--latch-home {grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.nx-home-latch .nx-theme-plans--latch-home {grid-template-columns:1fr}.nx-latch-game-choices button {flex:1 1 125px;justify-content:center}.nx-latch-game-header {display:block}.nx-latch-game-header span {display:block;margin-top:5px}}
