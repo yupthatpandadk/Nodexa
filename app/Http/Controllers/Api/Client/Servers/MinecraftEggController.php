@@ -28,7 +28,7 @@ class MinecraftEggController extends ClientApiController
             'current_egg_id' => (int) $server->egg_id,
             'eggs' => $this->switcher->options($server, $request->user()),
             'has_recent_backup' => $this->switcher->hasRecentBackup($server),
-            'backup_required_hours' => 24,
+            'backup_optional' => true,
         ]);
     }
 
@@ -50,7 +50,7 @@ class MinecraftEggController extends ClientApiController
             ])->log();
 
         return new JsonResponse([
-            'message' => 'Minecraft Egg blev ændret. Geninstallationen er startet. Din backup er bevaret.',
+            'message' => 'Minecraft Egg blev ændret. Geninstallationen er startet. Serverfiler kan blive ændret, især hvis du fortsatte uden backup.',
             'egg_id' => (int) $values['egg_id'],
         ], JsonResponse::HTTP_ACCEPTED);
     }
