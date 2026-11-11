@@ -8,12 +8,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('nodexa_store_orders', function (Blueprint $table): void {
-            if (!Schema::hasColumn('nodexa_store_orders', 'minecraft_egg_id')) {
+        if (!Schema::hasTable('nodexa_store_orders')) {
+            return;
+        }
+
+        $needsEggId = !Schema::hasColumn('nodexa_store_orders', 'minecraft_egg_id');
+        $needsVersion = !Schema::hasColumn('nodexa_store_orders', 'minecraft_version');
+
+        if (!$needsEggId && !$needsVersion) {
+            return;
+        }
+
+        Schema::table('nodexa_store_orders', function (Blueprint $table) use ($needsEggId, $needsVersion): void {
+            if ($needsEggId) {
                 $table->unsignedInteger('minecraft_egg_id')->nullable()->after('product_id');
             }
-
-            if (!Schema::hasColumn('nodexa_store_orders', 'minecraft_version')) {
+            if ($needsVersion) {
                 $table->string('minecraft_version', 32)->nullable()->after('minecraft_egg_id');
             }
         });
@@ -21,12 +31,22 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('nodexa_store_orders', function (Blueprint $table): void {
-            if (Schema::hasColumn('nodexa_store_orders', 'minecraft_version')) {
+        if (!Schema::hasTable('nodexa_store_orders')) {
+            return;
+        }
+
+        $hasVersion = Schema::hasColumn('nodexa_store_orders', 'minecraft_version');
+        $hasEggId = Schema::hasColumn('nodexa_store_orders', 'minecraft_egg_id');
+
+        if (!$hasVersion && !$hasEggId) {
+            return;
+        }
+
+        Schema::table('nodexa_store_orders', function (Blueprint $table) use ($hasVersion, $hasEggId): void {
+            if ($hasVersion) {
                 $table->dropColumn('minecraft_version');
             }
-
-            if (Schema::hasColumn('nodexa_store_orders', 'minecraft_egg_id')) {
+            if ($hasEggId) {
                 $table->dropColumn('minecraft_egg_id');
             }
         });
