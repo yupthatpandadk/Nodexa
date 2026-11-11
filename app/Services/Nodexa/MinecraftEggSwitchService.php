@@ -8,6 +8,7 @@ use Pterodactyl\Models\Egg;
 use Pterodactyl\Models\Server;
 use Pterodactyl\Models\User;
 use Pterodactyl\Repositories\Wings\DaemonServerRepository;
+use Pterodactyl\Repositories\Wings\DaemonFileRepository;
 use Pterodactyl\Services\Servers\ReinstallServerService;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -28,6 +29,7 @@ class MinecraftEggSwitchService
         private MinecraftOrderOptionsService $minecraft,
         private DaemonServerRepository $daemon,
         private ReinstallServerService $reinstaller,
+        private DaemonFileRepository $files,
     ) {
     }
 
@@ -82,8 +84,53 @@ class MinecraftEggSwitchService
             ->exists();
     }
 
-    public function switch(Server $server, User $user, int $eggId): void
+    /**
+     * Accept only direct children from Wings' listing of this one server's
+     * root directory. Do not allow crafted paths, parent traversal, or
+     * symlinks in a destructive clean-install request.
+     *
+     * @param array<int, array<string, mixed>> $entries
+     * @return string[]
+     */
+    public static function rootEntriesForDeletion(array $entries): array
     {
+        $names = [];
+
+        foreach ($entries as $entry) {
+            if (!is_array($entry) || !isset($entry['name']) || !is_string($entry['name'])) {
+                throw new ConflictHttpException('Kunne ikke kontrollere serverens filer sikkert. Ingen filer er slettet.');
+            }
+
+            $name = $entry['name'];
+            if ($name === '' || $name === '.' || $name === '..'
+                || preg_match('~[\\\\/\x00-\x1F\x7F]~', $name)
+                || !empty($entry['symlink'])) {
+                throw new ConflictHttpException('Der er en ugyldig sti eller et symbolsk link i serverens rodmappe. Ingen filer er slettet.');
+            }
+
+            $names[] = $name;
+        }
+
+        if (count($names) !== count(array_unique($names))) {
+            throw new ConflictHttpException('Uventede dubletter i serverens filliste. Ingen filer er slettet.');
+        }
+
+        return $names;
+    }
+
+    /**
+     * @return int number of top-level entries deleted for a clean install.
+     */
+    public function switch(Server $server, User $user, int $eggId, string $mode = 'keep', bool $confirmedClean = false): int
+    {
+        if (!in_array($mode, ['keep', 'clean'], true)) {
+            throw new BadRequestHttpException('Ugyldig installationsmetode.');
+        }
+
+        if ($mode === 'clean' && !$confirmedClean) {
+            throw new BadRequestHttpException('Du skal bekræfte den permanente sletning af serverfiler særskilt.');
+        }
+
         $this->assertCanManage($server, $user);
 
         $lock = Cache::lock('nodexa:minecraft:egg-switch:' . $server->id, 180);
@@ -132,6 +179,17 @@ class MinecraftEggSwitchService
                     && $variable->default_value === null) {
                     throw new BadRequestHttpException('Dette Egg kræver manuel konfiguration af ' . $variable->name . '. Kontakt administrator.');
                 }
+            }
+
+            // Validate the complete root listing before modifying Egg settings.
+            // No files are removed in "keep" mode.
+            $filesToDelete = [];
+            if ($mode === 'clean') {
+                $entries = $this->files->setServer($server)->getDirectory('/');
+                if (!is_array($entries) || !array_is_list($entries)) {
+                    throw new ConflictHttpException('Wings returnerede en uventet filliste. Ingen filer er slettet.');
+                }
+                $filesToDelete = self::rootEntriesForDeletion($entries);
             }
 
             $original = [
@@ -183,9 +241,24 @@ class MinecraftEggSwitchService
                 throw $exception;
             }
 
-            // If Wings fails during installation, Pterodactyl retains the
-            // install-failed state; the user can contact support for recovery.
+            // Delete only this server's direct root entries through Wings,
+            // NEVER host paths, allocations, Pterodactyl backups or other
+            // servers. Every filename comes from a validated Wings listing.
+            // Wings removes directories recursively. A failed delete halts
+            // BEFORE the reinstall. Any partial deletion is irreversible.
+            if ($mode === 'clean' && $filesToDelete !== []) {
+                foreach (array_chunk($filesToDelete, 50) as $batch) {
+                    $this->files->setServer($server->fresh())->deleteFiles('/', $batch);
+                }
+            }
+
+            // Reinstall uses the new Egg. Keep mode leaves existing files
+            // untouched by this service, but the Egg install script may still
+            // overwrite files. If Wings installation fails, support may be
+            // needed to recover the server.
             $this->reinstaller->handle($server->fresh());
+
+            return $mode === 'clean' ? count($filesToDelete) : 0;
         } finally {
             $lock->release();
         }
