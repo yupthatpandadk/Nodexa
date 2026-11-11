@@ -18,6 +18,8 @@ const FiveMTxAdminContainer = () => {
             ? 'TxAdmin-port mangler en allocation'
             : txAdmin?.state === 'invalid_port'
                 ? 'Ugyldig txAdmin-port'
+                : txAdmin?.state === 'port_conflict'
+                    ? 'txAdmin-port må ikke være serverens spilport'
                 : txAdmin?.state === 'invalid_host'
                     ? 'Ingen gyldig offentlig adresse'
                     : isReady
