@@ -12,14 +12,25 @@ const FiveMResourcesContainer = () => {
     const [files, setFiles] = useState<FileObject[]>([]);
     const [loading, setLoading] = useState(true);
     const [failure, setFailure] = useState<string | null>(null);
+    const [resourceDirectory, setResourceDirectory] = useState('/resources');
 
-    const refresh = () => {
+    const refresh = async () => {
         setLoading(true);
         setFailure(null);
-        loadDirectory(server.uuid, '/resources')
-            .then((data) => setFiles(data.filter((file) => !file.isFile && !file.isSymlink)))
-            .catch(() => setFailure('Mappen /resources kan ikke læses. Den findes muligvis endnu ikke, eller du har ikke filadgang.'))
-            .finally(() => setLoading(false));
+        for (const path of ['/resources', '/server-data/resources']) {
+            try {
+                const data = await loadDirectory(server.uuid, path);
+                setResourceDirectory(path);
+                setFiles(data.filter((file) => !file.isFile && !file.isSymlink));
+                setLoading(false);
+                return;
+            } catch {
+                // Continue to the next common FXServer layout.
+            }
+        }
+        setFiles([]);
+        setFailure('Ingen resource-mappe kunne læses. Kontrollér /resources eller /server-data/resources i File Manager.');
+        setLoading(false);
     };
 
     useEffect(() => { refresh(); }, [server.uuid]);
@@ -30,7 +41,7 @@ const FiveMResourcesContainer = () => {
                 <div>
                     <span className={styles.eyebrow}>FIVEM / RESOURCES</span>
                     <h1>Resource Explorer</h1>
-                    <p>Mapper fra din FXServer-installations /resources. Listen er baseret på faktiske filer, ikke en måling af scripts, der kører.</p>
+                    <p>Resource-mapper i {resourceDirectory}. Listen er baseret på faktiske filer, ikke en måling af scripts, der kører.</p>
                 </div>
                 <Link to={'/server/' + server.id + '/files'} className={styles.fileAction}>Åbn File Manager ↗</Link>
             </div>
@@ -45,7 +56,7 @@ const FiveMResourcesContainer = () => {
                 )}
                 <div className={styles.resourceList}>
                     {files.map((item) => (
-                        <Link key={item.key || item.name} to={'/server/' + server.id + '/files#' + encodePathSegments('/resources/' + item.name)}>
+                        <Link key={item.key || item.name} to={'/server/' + server.id + '/files#' + encodePathSegments(resourceDirectory + '/' + item.name)}>
                             <span className={styles.resourceIcon}>▣</span>
                             <span><strong>{item.name}</strong><small>{item.name.startsWith('[') ? 'Resourcekategori' : 'Resource-mappe'}</small></span>
                             <b>Åbn filer ↗</b>
