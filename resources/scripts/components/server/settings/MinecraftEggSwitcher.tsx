@@ -19,12 +19,12 @@ interface EggOptionsResponse {
     current_egg_id: number;
     eggs: EggOption[];
     has_recent_backup: boolean;
-    backup_required_hours: number;
+    backup_optional: boolean;
 }
 
 /**
  * This section is shown only to Minecraft server owners. The backend enforces
- * the actual Minecraft Nest, ownership, stopped-server and backup checks.
+ * the actual Minecraft Nest, ownership and stopped-server checks.
  */
 export default () => {
     const uuid = ServerContext.useStoreState((state) => state.server.data!.uuid);
@@ -92,12 +92,6 @@ export default () => {
             text: offline ? 'Serveren er stoppet.' : 'Serveren skal være stoppet helt.',
         },
         {
-            ok: backupReady,
-            text: backupReady
-                ? 'Fuldført backup fra de seneste 24 timer er fundet.'
-                : 'Opret en backup under Backups og vent, til den er fuldført.',
-        },
-        {
             ok: acknowledged,
             text: acknowledged ? 'Du har accepteret risikoen ved geninstallationen.' : 'Markér bekræftelsen om risiko for filændringer.',
         },
@@ -139,7 +133,10 @@ export default () => {
             >
                 Du skifter fra <strong>{current?.name || 'nuværende Egg'}</strong> til{' '}
                 <strong>{target?.name || 'valgt Egg'}</strong>. Installationsscriptet kan ændre eller
-                overskrive filer. Backuppen bevares, men plugins, mods og verdener kan kræve tilpasning.
+                overskrive filer. Plugins, mods og verdener kan kræve tilpasning.
+                {backupReady
+                    ? ' Der er en nylig backup registreret, men kontrollér at den kan gendannes.'
+                    : ' Du fortsætter UDEN en registreret nyere backup. Overskrevne filer og verdensdata kan gå tabt permanent.'}
             </Dialog.Confirm>
 
             <p className={'text-sm text-neutral-300 mb-4'}>
@@ -181,12 +178,22 @@ export default () => {
                     ))}
                 </ul>
 
-                <div className={'flex flex-wrap gap-3 mt-3 mb-4'}>
-                    {!offline && <Link to={'/server/' + identifier}
-                        className={'text-xs text-cyan-300 hover:underline'}>Gå til Console og stop serveren</Link>}
-                    {!backupReady && <Link to={'/server/' + identifier + '/backups'}
-                        className={'text-xs text-cyan-300 hover:underline'}>Gå til Backups</Link>}
+                <div className={'mt-3 mb-4 rounded-md border border-yellow-800 bg-yellow-950 p-3'}>
+                    <p className={'text-xs font-semibold text-yellow-200 mb-1'}>Backup er valgfri, men anbefales</p>
+                    <p className={'text-xs text-yellow-100'}>
+                        {backupReady
+                            ? 'Der er registreret en fuldført backup fra de seneste 24 timer.'
+                            : 'Ingen nyere fuldført backup registreret. Du kan stadig skifte Egg, men risikerer at miste filer og verdensdata permanent.'}
+                    </p>
+                    <Link to={'/server/' + identifier + '/backups'}
+                        className={'inline-block mt-2 text-xs text-cyan-300 hover:underline'}>
+                        {backupReady ? 'Se backups' : 'Tag backup først (valgfrit)'}
+                    </Link>
                 </div>
+                {!offline && <Link to={'/server/' + identifier}
+                    className={'inline-block mb-4 text-xs text-cyan-300 hover:underline'}>
+                    Gå til Console og stop serveren
+                </Link>
 
                 <label className={'flex items-start text-xs text-neutral-300 cursor-pointer'}>
                     <input
@@ -196,14 +203,13 @@ export default () => {
                         className={'mr-2 mt-0.5'}
                     />
                     Jeg forstår, at geninstallation kan ændre eller overskrive serverfiler,
-                    og at mods, plugins eller serverkonfiguration kan kræve tilpasning.
+                    og at jeg selv vælger, om jeg vil tage backup først. Uden backup kan data gå tabt.
                 </label>
             </div>
 
             {!loading && !canChange && !pending && (
                 <p className={'text-xs text-yellow-300 mt-3'} role={'status'}>
-                    Knappen bliver aktiv, når alle fire krav ovenfor er opfyldt.
-                    {offline && !backupReady ? ' Opdatér backupstatus, efter du har lavet en backup.' : ''}
+                    Knappen bliver aktiv, når alle tre krav er opfyldt. Backup er valgfri.
                 </p>
             )}
 
