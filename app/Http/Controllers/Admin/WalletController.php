@@ -11,11 +11,13 @@ use Pterodactyl\Http\Controllers\Controller;
 use Pterodactyl\Services\Nodexa\NodexaEventService;
 use Pterodactyl\Services\Nodexa\OrderRemovalService;
 use Pterodactyl\Services\Nodexa\WalletService;
+use Pterodactyl\Services\Nodexa\WalletUsagePolicy;
 
 class WalletController extends Controller
 {
     public function __construct(
         private WalletService $wallet,
+        private WalletUsagePolicy $walletPolicy,
         private NodexaEventService $events,
         private OrderRemovalService $removal,
     ) {
@@ -24,6 +26,7 @@ class WalletController extends Controller
     public function index(): View
     {
         return view('admin.wallet.index', [
+            'walletAllowsVps' => $this->walletPolicy->allowsVps(),
             'wallets' => DB::table('nodexa_wallets as w')
                 ->leftJoin('users as u', 'u.id', '=', 'w.user_id')
                 ->select(['w.*', 'u.email', 'u.username'])
@@ -33,6 +36,30 @@ class WalletController extends Controller
                 ->select(['t.*', 'u.email'])
                 ->orderByDesc('t.id')->limit(100)->get(),
         ]);
+    }
+
+    /** Update global Wallet product eligibility. Requires operations.manage. */
+    public function saveSettings(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'allow_vps' => ['required', 'boolean'],
+        ]);
+        $allowsVps = (bool) $data['allow_vps'];
+        $previous = $this->walletPolicy->allowsVps();
+        $this->walletPolicy->setAllowsVps($allowsVps);
+
+        $this->events->audit(
+            (int) $request->user()->id,
+            'wallet',
+            'settings.updated',
+            $allowsVps ? 'Wallet enabled for VPS products' : 'Wallet restricted to Pterodactyl products',
+            null,
+            null,
+            ['allow_vps' => $allowsVps, 'previous_allow_vps' => $previous],
+            $request
+        );
+
+        return redirect()->route('admin.wallet')->with('success', 'Wallet-indstillinger er gemt.');
     }
 
     public function credit(Request $request): RedirectResponse
