@@ -142,7 +142,7 @@ export default () => {
             <Dialog.Confirm
                 open={dialog}
                 title={'Bekræft Egg-skift og geninstallation'}
-                confirm={'Ja, skift og geninstaller'}
+                confirm={installationMode === 'clean' ? 'Ja, slet alle filer og geninstaller' : 'Ja, skift og geninstaller'}
                 onClose={() => setDialog(false)}
                 onConfirmed={applyChange}
             >
