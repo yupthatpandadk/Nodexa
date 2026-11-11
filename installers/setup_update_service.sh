@@ -5,7 +5,7 @@ set -Eeuo pipefail
 
 [[ "$(id -u)" -eq 0 ]] || { echo "[Nodexa] Setup must run as root." >&2; exit 1; }
 
-PANEL_DIR="$(realpath -e "\${NODEXA_PANEL_DIR:-/var/www/pterodactyl}")"
+PANEL_DIR="$(realpath -e "${NODEXA_PANEL_DIR:-/var/www/pterodactyl}")"
 UNIT_NAME="nodexa-update.service"
 UNIT_FILE="/etc/systemd/system/$UNIT_NAME"
 SUDOERS_FILE="/etc/sudoers.d/nodexa-update"
