@@ -117,6 +117,16 @@ update_panel() {
 
   php artisan optimize:clear || true
   chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+
+  # Install the fixed, least-privilege systemd launch path during the required
+  # first root CLI update. Later web updates only trigger this one unit.
+  if [[ -d /run/systemd/system && -f installers/setup_update_service.sh ]]; then
+    info "Konfigurerer sikker opdatering via Update Center..."
+    NODEXA_PANEL_DIR="$PANEL_DIR" bash installers/setup_update_service.sh
+  else
+    warn "Systemd ikke tilgængelig: fremtidige opdateringer skal køres via SSH."
+  fi
+
   php artisan up 2>/dev/null || true
   panel_was_put_down=0
   trap - EXIT
