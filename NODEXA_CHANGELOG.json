@@ -1,6 +1,21 @@
 {
-  "latest": "1.7.14",
+  "latest": "1.7.15",
   "releases": [
+    {
+      "version": "1.7.15",
+      "date": "2026-11-11",
+      "type": "feature",
+      "title": "Minecraft: vælg Paper, Forge, Fabric og MC-version ved bestilling",
+      "changes": [
+        "Minecraft-kunder vælger nu server-software fra alle Eggs i det aktuelle Minecraft Nest, og nye Eggs dukker automatisk op.",
+        "Bestillingssiden viser Minecraft Java-versioner fra Mojangs release-manifest, inklusive nye årbaserede 26.x-versioner fra 2026.",
+        "Software og version vises i kurv, checkout og ordrebekræftelse.",
+        "Valgte Egg og version gemmes på ordren og bruges ved Pterodactyl-serveroprettelse i stedet for pakkens standard-Egg.",
+        "Versionen sættes på Egg'ets korrekte installationsvariabel; Eggs uden versionsstyring bruger deres standardindstillinger.",
+        "Java Docker-image vælges efter Minecraft-versionen, når den passende runtime findes i Egg.",
+        "Eksisterende ordrer og øvrige spilprodukter bevarer deres nuværende bestillingsflow."
+      ]
+    },
     {
       "version": "1.7.14",
       "date": "2026-11-11",
