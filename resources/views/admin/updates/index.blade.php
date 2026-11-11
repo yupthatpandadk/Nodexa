@@ -132,10 +132,11 @@
                 percent.textContent = value + '%';
                 step.textContent = data.step || 'Updating Nodexa…';
 
-                if (data.status === 'failed') {
+                if (data.status === 'failed' || (!data.running && (data.status === 'queued' || data.status === 'running'))) {
                     bar.style.background = '#ef4444';
                     percent.style.color = '#ef4444';
                     if (status) { status.className = 'label label-danger'; status.textContent = 'Failed'; }
+                    if (data.status !== 'failed') step.textContent = 'Updater did not start or stopped unexpectedly. Check server logs.';
                     return;
                 }
                 if (data.status === 'completed' && !data.running) {
