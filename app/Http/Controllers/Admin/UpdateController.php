@@ -79,13 +79,21 @@ class UpdateController extends Controller
         }
 
         $log = storage_path('logs/nodexa-update.log');
-        $running = file_exists(storage_path('app/nodexa-update.lock'));
+        $lock = storage_path('app/nodexa-update.lock');
+        $pidFile = storage_path('app/nodexa-update.pid');
+        $running = $this->isUpdaterRunning($lock, $pidFile);
+        $progressJson = @file_get_contents(storage_path('app/nodexa-update-progress.json'));
+        $previousProgress = is_string($progressJson) ? json_decode($progressJson, true) : null;
+        $updateFailed = !$running
+            && ($previousProgress['status'] ?? '') === 'failed'
+            && ($latest === null || version_compare($installed, $latest, '<'));
 
         return view('admin.updates.index', [
             'installed' => $installed,
             'latest' => $latest,
             'error' => $error,
             'running' => $running,
+            'updateFailed' => $updateFailed,
             'releases' => $releases,
             'log' => file_exists($log) ? implode("\n", array_slice(file($log, FILE_IGNORE_NEW_LINES) ?: [], -80)) : null,
         ]);
