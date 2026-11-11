@@ -26,8 +26,8 @@
 .nx-updates__heading h2 { color:var(--nu-text); font-size:23px; font-weight:750; letter-spacing:-.035em; margin:0 0 6px; line-height:1.24; }
 .nx-updates__heading p { margin:0; max-width:660px; color:var(--nu-muted); font-size:12px; }
 .nx-updates__heading-actions { display:flex; gap:9px; flex-wrap:wrap; }
-.nx-updates__button { appearance:none; display:inline-flex; align-items:center; justify-content:center; gap:9px; padding:10px 15px; border:1px solid var(--nu-border); border-radius:9px; background:var(--nu-surface); color:var(--nu-text) !important; font:600 12px/1.4 inherit; font-family:inherit; font-size:12px; font-weight:650; text-decoration:none !important; cursor:pointer; min-height:39px; transition:background .15s ease, border-color .15s ease; }
-.nx-updates__button:hover { background:color-mix(in srgb,var(--nu-surface) 78%,white 6%); border-color:#52667f; }
+.nx-updates__button { appearance:none; display:inline-flex; align-items:center; justify-content:center; gap:9px; padding:10px 15px; border:1px solid var(--nu-border); border-radius:9px; background:var(--nu-surface); color:var(--nu-text) !important; font-family:inherit; font-size:12px; font-weight:650; line-height:1.4; text-decoration:none !important; cursor:pointer; min-height:39px; transition:background .15s ease, border-color .15s ease; }
+.nx-updates__button:hover { background:color-mix(in srgb,var(--nu-surface) 90%,white); border-color:#52667f; }
 .nx-updates__button-primary { background:var(--nu-accent); border-color:var(--nu-accent); color:#07111d !important; font-weight:750; }
 .nx-updates__button-primary:hover { background:color-mix(in srgb,var(--nu-accent) 84%,white); border-color:var(--nu-accent); color:#07111d !important; }
 .nx-updates__button:disabled { opacity:.5; cursor:not-allowed; box-shadow:none; }
