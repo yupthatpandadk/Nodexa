@@ -13,7 +13,7 @@
         <div class="walletBalance">
             <div><div class="miniLabel">TILGÆNGELIG KREDIT</div>
                 <div class="walletAmount">{{ number_format($balanceCents / 100,2,',','.') }} <span>DKK</span></div>
-                <p>Din Wallet-kredit bruges automatisk først ved køb af game-servere og VPS'er. Resten betales med din valgte betalingsmetode.</p>
+                <p>@if($walletAllowsVps)Din Wallet-kredit bruges automatisk først ved køb af game-servere og VPS'er.@else Din Wallet-kredit kan kun bruges på Pterodactyl-gameservere, ikke på VPS'er.@endif Resten betales med din valgte betalingsmetode.</p>
             </div>
             <a class="btn primary" href="{{ route('store.hosting') }}">Brug kredit →</a>
         </div>
