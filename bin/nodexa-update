@@ -116,7 +116,7 @@ if [ -n "$BLOCKED_PATH" ]; then
     exit 1
 fi
 
-progress 25 "Enabling maintenance mode…
+progress 25 "Enabling maintenance mode…"
 php artisan down --retry=15 || true
 
 progress 32 "Installing update files…"
