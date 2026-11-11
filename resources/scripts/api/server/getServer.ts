@@ -18,7 +18,7 @@ export interface TxAdminConnection {
     port: number | null;
     allocated: boolean;
     url: string | null;
-    state: 'not_fivem' | 'disabled' | 'missing_allocation' | 'invalid_port' | 'invalid_host' | 'ready_to_open';
+    state: 'not_fivem' | 'disabled' | 'missing_allocation' | 'invalid_port' | 'invalid_host' | 'port_conflict' | 'ready_to_open';
 }
 
 export interface Server {
