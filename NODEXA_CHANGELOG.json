@@ -1,6 +1,18 @@
 {
-  "latest": "1.7.9",
+  "latest": "1.7.10",
   "releases": [
+    {
+      "version": "1.7.10",
+      "date": "2026-11-11",
+      "type": "patch",
+      "title": "Update Center – sikker opdatering fra webpanelet",
+      "changes": [
+        "Webopdateringer udføres nu via en dedikeret systemd-service i stedet for at forsøge at overskrive beskyttet kildekode som www-data.",
+        "Én terminalopdatering med sudo konfigurerer en præcist afgrænset systemd-starttilladelse til Update Center.",
+        "Update Center viser fejl, hvis systemd-tjenesten ikke kan starte, og genkender afbrudte opdateringer.",
+        "Den betroede updater, dens parent-mapper og Git-metadata beskyttes mod ændring af webserverbrugeren."
+      ]
+    },
     {
       "version": "1.7.9",
       "date": "2026-11-11",
