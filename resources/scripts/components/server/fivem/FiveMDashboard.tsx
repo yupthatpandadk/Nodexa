@@ -24,13 +24,19 @@ const FiveMDashboard = () => {
 
     useEffect(() => {
         let active = true;
-        loadDirectory(server.uuid, '/resources')
-            .then((data) => {
-                if (active) setResourceCount(data.filter((item) => !item.isFile && !item.isSymlink).length);
-            })
-            .catch(() => {
-                if (active) setResourcesError(true);
-            });
+        const fetchResources = async () => {
+            for (const path of ['/resources', '/server-data/resources']) {
+                try {
+                    const data = await loadDirectory(server.uuid, path);
+                    if (active) setResourceCount(data.filter((item) => !item.isFile && !item.isSymlink).length);
+                    return;
+                } catch {
+                    // FiveM installations can place resources in different roots.
+                }
+            }
+            if (active) setResourcesError(true);
+        };
+        fetchResources();
         return () => { active = false; };
     }, [server.uuid]);
 
