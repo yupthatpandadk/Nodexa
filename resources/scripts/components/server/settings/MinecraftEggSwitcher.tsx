@@ -193,7 +193,7 @@ export default () => {
                 {!offline && <Link to={'/server/' + identifier}
                     className={'inline-block mb-4 text-xs text-cyan-300 hover:underline'}>
                     Gå til Console og stop serveren
-                </Link>
+                </Link>}
 
                 <label className={'flex items-start text-xs text-neutral-300 cursor-pointer'}>
                     <input
