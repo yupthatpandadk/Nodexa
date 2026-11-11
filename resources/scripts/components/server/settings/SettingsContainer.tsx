@@ -78,6 +78,7 @@ export default () => {
                             <RenameServerBox />
                         </div>
                     </Can>
+                    {minecraftEggSwitchingAvailable && <MinecraftEggSwitcher />}
                     <Can action={'settings.reinstall'}>
                         <ReinstallServerBox />
                     </Can>
