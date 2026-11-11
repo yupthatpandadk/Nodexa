@@ -6,6 +6,7 @@
 </div>
 <script>
 (function(){
+    function initCatalogFilters() {
     var root=document.getElementById('nxThemeFilters');
     if(!root)return;
     var cards=document.querySelectorAll('#nxThemeCatalog [data-hosting-game]');
@@ -28,5 +29,11 @@
             if(empty)empty.hidden=shown>0;
         });
     });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCatalogFilters, { once: true });
+    } else {
+        initCatalogFilters();
+    }
 })();
 </script>
