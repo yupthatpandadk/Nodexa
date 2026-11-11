@@ -35,6 +35,10 @@
                             <div class="cartMeta">
                                 <span>Servernavn: <b>{{ $item['configuration']['server_name'] }}</b></span>
                                 <span>{{ $item['meta']['game'] }}</span>
+                                @if(!empty($item['configuration']['minecraft_type']))
+                                    <span>Software: <b>{{ $item['configuration']['minecraft_type'] }}</b></span>
+                                    <span>MC-version: <b>{{ $item['configuration']['minecraft_version'] ?: 'Styres af Egg' }}</b></span>
+                                @endif
                                 <span>{{ $item['meta']['memory'] }} MB RAM</span>
                                 <span>{{ $item['meta']['cpu'] }}% CPU</span>
                                 <span>{{ $item['meta']['disk'] }} MB disk</span>
