@@ -34,6 +34,7 @@ Route::post('/flax-reseller/services/{service}/action', [Admin\FlaxResellerContr
 // Nodexa Operations Suite
 Route::get('/wallet', [Admin\WalletController::class, 'index'])->name('admin.wallet');
 Route::post('/wallet/credit', [Admin\WalletController::class, 'credit'])->name('admin.wallet.credit');
+Route::post('/wallet/settings', [Admin\WalletController::class, 'saveSettings'])->name('admin.wallet.settings');
 Route::post('/wallet/refund-checkout/{checkout}', [Admin\WalletController::class, 'refundCheckout'])->name('admin.wallet.refund-checkout');
 Route::get('/operations', [Admin\OperationsController::class, 'index'])->name('admin.operations');
 Route::post('/operations/components', [Admin\OperationsController::class, 'storeComponent'])->name('admin.operations.components.store');
