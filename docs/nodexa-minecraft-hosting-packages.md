@@ -1,7 +1,7 @@
 # Minecraft-pakker: Dirt til Obsidian
 
 De navngivne pakker kan oprettes under Admin → Storefront & Billing → Egg-pakker.
-Vælg et installeret Minecraft Egg (f.eks. Paper, Spigot, Fabric eller Forge), vælg niveauer og tilpas priser.
+Du behøver ikke vælge et Egg. Nodexa vælger automatisk et almindeligt Minecraft-server-Egg som teknisk reference (helst Paper eller Vanilla). Kunden vælger selv Paper, Fabric, Forge osv. og Minecraft-version ved bestilling.
 
 | Pakke | RAM | CPU | SSD | DB | Backups | Porte | Vejledende kr./md. |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -21,7 +21,7 @@ Priserne er redigerbare eksempler i DKK/md., ikke markedsverificerede tilbud.
 
 1. Installer et kompatibelt Minecraft Egg under Admin → Nests → Eggs.
 2. Gå til Admin → Storefront & Billing → Åbn Egg-pakker.
-3. Vælg Minecraft Egg, pakker og eventuelle prisændringer.
+3. Markér pakker og justér eventuelt priserne – der kræves intet Egg-valg i adminpanelet.
 4. Vælg Opret valgte Minecraft-pakker.
 5. Gennemgå ressourcer, faktiske nodegrænser og priser.
 6. Aktivér de ønskede skjulte produkter under Storefront & Billing.
@@ -31,7 +31,9 @@ Stone er markeret som fremhævet, men offentliggøres ikke automatisk.
 
 ## Sikkerhed og gentagen oprettelse
 
-- Oprettede produkter har unikke, Egg-specifikke slugs og oprettes ikke igen ved gentaget generering.
+- Nye produkter får en Egg-uafhængig slug som `minecraft-dirt` eller `minecraft-stone`. Allerede oprettede produkter fra den gamle Egg-specifikke generator springes over for at undgå dubletter.
+- Det automatisk valgte Egg gemmes kun som teknisk standard på produktet, da `egg_id` er påkrævet i eksisterende database. Ved bestilling vælger kunden det faktiske Egg, som bruges ved Pterodactyl-installationen.
+- Hvis kun proxy-Eggs som BungeeCord eller Velocity findes, skal du installere et server-Egg først.
 - Generering hverken ændrer eksisterende abonnementspriser eller kunders serverressourcer.
 - Kunder kan ikke købe de nye produkter, før administrator aktiverer dem.
 - Eksisterende Wallet/Stripe checkout og Pterodactyl-provisionering anvendes.
