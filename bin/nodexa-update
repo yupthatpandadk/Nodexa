@@ -25,16 +25,15 @@ progress() {
 
 log() { echo "[$(date -Is)] $*"; }
 
-# A web-triggered update runs as www-data. It must not change the ownership
-# of the entire PHP codebase or use passwordless sudo. A terminal (root)
-# update is required when source files belong to a different OS user.
+# Source files and Composer dependencies must only be updated by the
+# privileged systemd unit or a root SSH session, never by the PHP web worker.
 PERMISSION_ERROR=0
 
 fail() {
     local line="${1:-?}" code="${2:-1}"
     log "ERROR: update failed at line $line (exit $code)."
     if [ "$PERMISSION_ERROR" -eq 1 ]; then
-        progress 100 "Source files are not writable by www-data. Run the Nodexa update with sudo over SSH." failed
+        progress 100 "Opdateringen mangler skriverettigheder. Kontrollér systemd-tjenesten eller opdatér med sudo via SSH." failed
     else
         progress 100 "Update failed. See update log." failed
     fi
@@ -61,7 +60,14 @@ export GIT_CONFIG_KEY_0=safe.directory
 export GIT_CONFIG_VALUE_0="$ROOT"
 
 progress 3 "Running pre-flight checks…"
-log "Starting Nodexa update as $(id -un) (pid $$)."
+log "Starting Nodexa update as $(id -un) (uid $(id -u), pid $)."
+
+# Fail before touching source files when an old web worker starts this script.
+if [ "$(id -u)" -ne 0 ]; then
+    PERMISSION_ERROR=1
+    log "ERROR: updater must run as root via nodexa-update.service or the privileged SSH installer."
+    exit 1
+fi
 
 [ -d .git ] || { log "ERROR: $ROOT is not a Git checkout."; exit 1; }
 command -v git >/dev/null || { log "ERROR: git is missing."; exit 1; }
@@ -86,8 +92,9 @@ log "Current commit: $CURRENT"
 log "Target commit:  $TARGET"
 
 if [ "$CURRENT" = "$TARGET" ]; then
-    progress 100 "Nodexa is already up to date." completed
-    exit 0
+    # A failed run may have replaced NODEXA_VERSION before Composer/builds
+    # completed. Never silently report completion from Git HEAD alone.
+    log "Git HEAD already matches target; checking dependencies, migrations and frontend before declaring success."
 fi
 
 # Git replaces changed files by unlinking/renaming them. File readability
@@ -116,6 +123,24 @@ if [ -n "$BLOCKED_PATH" ]; then
     exit 1
 fi
 
+# Catch permissions failures before putting the panel into maintenance.
+# Composer writes vendor/composer/installed.php even without new packages.
+progress 23 "Checking Composer permissions…"
+for dir in vendor vendor/composer; do
+    if [ -d "$dir" ] && [ ! -w "$dir" ]; then
+        PERMISSION_ERROR=1
+        log "ERROR: updater ($(id -un)) cannot write to $ROOT/$dir."
+        ls -ld "$ROOT/$dir" || true
+        exit 1
+    fi
+done
+if [ -e vendor/composer/installed.php ] && [ ! -w vendor/composer/installed.php ]; then
+    PERMISSION_ERROR=1
+    log "ERROR: updater ($(id -un)) cannot write to vendor/composer/installed.php."
+    ls -l vendor/composer/installed.php || true
+    exit 1
+fi
+
 progress 25 "Enabling maintenance mode…"
 php artisan down --retry=15 || true
 
@@ -123,7 +148,13 @@ progress 32 "Installing update files…"
 git reset --hard "$TARGET"
 
 progress 43 "Installing PHP dependencies…"
-composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+if ! composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist; then
+    log "ERROR: Composer failed while running as $(id -un)."
+    log "Inspect vendor/composer ownership, filesystem mounts, ACLs and immutable flags."
+    ls -ld vendor vendor/composer 2>/dev/null || true
+    ls -l vendor/composer/installed.php 2>/dev/null || true
+    exit 1
+fi
 
 # Do this before migrations/builds so a failed later step cannot leave new
 # Blade/routes running against the previous release's route/view cache.
