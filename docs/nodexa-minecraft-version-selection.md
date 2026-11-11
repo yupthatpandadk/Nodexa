@@ -7,6 +7,7 @@ På en aktiv Minecraft-hostingpakke (`game = Minecraft`) viser Nodexa nu et best
 - Minecraft-software hentes dynamisk fra alle Eggs, der aktuelt tilhører et Nest med navnet Minecraft (f.eks. Paper, Forge, Fabric, Vanilla og Sponge). Nye Eggs bliver automatisk tilgængelige ved næste sidevisning.
 - Ingen Egg-ID'er er hardcodet. Valget kontrolleres mod Minecraft Nest på serveren, også ved checkout.
 - Versionslisten hentes fra Mojangs officielle Java-release-manifest og caches i 6 timer. `latest` findes altid som fallback.
+- Både de klassiske 1.x-versioner og Minecrafts årbaserede 26.x-versioner fra 2026 understøttes; ved 26.x foretrækkes et Java 25 Docker-image fra det valgte Egg.
 - Versionsdropdown vises kun, når det valgte Egg har en Minecraft-versionsvariabel (MINECRAFT_VERSION, MC_VERSION, VANILLA_VERSION m.fl.). Eggs, der mangler den, kan vælges, men viser tydeligt, at versionen styres af Eggs standardindstillinger.
 - Mojangs Java-release-liste beviser ikke kompatibilitet med alle Forge/Fabric/Paper-udgivelser. Installationen kan afvise en version, som ikke er understøttet af det valgte Eggs installationsscript.
 
