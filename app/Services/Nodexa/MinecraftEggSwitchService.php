@@ -4,6 +4,7 @@ namespace Pterodactyl\Services\Nodexa;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Pterodactyl\Models\Egg;
 use Pterodactyl\Models\Server;
 use Pterodactyl\Models\User;
@@ -185,6 +186,14 @@ class MinecraftEggSwitchService
             // No files are removed in "keep" mode.
             $filesToDelete = [];
             if ($mode === 'clean') {
+                // A server may have shared storage mounted into its filesystem.
+                // Fail closed rather than risking deletion of shared mount data.
+                if ($server->mounts()->exists()) {
+                    throw new ConflictHttpException(
+                        'Ren installation er ikke tilgængelig på en server med monterede mapper. Vælg Behold filer eller kontakt administrator.'
+                    );
+                }
+
                 $entries = $this->files->setServer($server)->getDirectory('/');
                 if (!is_array($entries) || !array_is_list($entries)) {
                     throw new ConflictHttpException('Wings returnerede en uventet filliste. Ingen filer er slettet.');
@@ -246,19 +255,46 @@ class MinecraftEggSwitchService
             // servers. Every filename comes from a validated Wings listing.
             // Wings removes directories recursively. A failed delete halts
             // BEFORE the reinstall. Any partial deletion is irreversible.
-            if ($mode === 'clean' && $filesToDelete !== []) {
-                foreach (array_chunk($filesToDelete, 50) as $batch) {
-                    $this->files->setServer($server->fresh())->deleteFiles('/', $batch);
+            if ($mode === 'clean') {
+                Log::warning('Minecraft clean Egg reinstall requested', [
+                    'server_id' => $server->id,
+                    'old_egg_id' => $original['egg_id'],
+                    'new_egg_id' => $egg->id,
+                    'root_entry_count' => count($filesToDelete),
+                    'actor_id' => $user->id,
+                ]);
+
+                try {
+                    foreach (array_chunk($filesToDelete, 50) as $batch) {
+                        $this->files->setServer($server->fresh())->deleteFiles('/', $batch);
+                    }
+
+                    // All root entries were removed; install the new Egg.
+                    $this->reinstaller->handle($server->fresh());
+                } catch (\Throwable $exception) {
+                    // Deletion is irreversible and may have been partial.
+                    // Flag the server as failed and require manual recovery,
+                    // rather than leaving it in an apparently healthy state.
+                    $server->forceFill(['status' => Server::STATUS_REINSTALL_FAILED])->save();
+                    Log::error('Minecraft clean Egg reinstall failed; manual recovery may be required', [
+                        'server_id' => $server->id,
+                        'new_egg_id' => $egg->id,
+                        'exception' => $exception,
+                    ]);
+                    throw new ConflictHttpException(
+                        'Ren installation blev afbrudt. Nogle filer kan allerede være slettet. Start ikke serveren; kontakt support.',
+                        $exception
+                    );
                 }
+
+                return count($filesToDelete);
             }
 
-            // Reinstall uses the new Egg. Keep mode leaves existing files
-            // untouched by this service, but the Egg install script may still
-            // overwrite files. If Wings installation fails, support may be
-            // needed to recover the server.
+            // Keep mode NEVER deletes files deliberately. The Egg installer
+            // may nevertheless overwrite or modify individual files.
             $this->reinstaller->handle($server->fresh());
 
-            return $mode === 'clean' ? count($filesToDelete) : 0;
+            return 0;
         } finally {
             $lock->release();
         }
