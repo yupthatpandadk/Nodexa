@@ -53,6 +53,7 @@ export interface Server {
     };
     eggFeatures: string[];
     eggId: number;
+    minecraftEggSwitchingAvailable: boolean;
     pluginManagerEnabled: boolean;
     modManagerEnabled: boolean;
     playerListEnabled: boolean;
