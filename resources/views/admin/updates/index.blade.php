@@ -158,6 +158,15 @@
             </div>
             <div class="nx-updates__log-body">
                 <p class="nx-updates__log-meta"><i class="fa fa-info-circle" aria-hidden="true"></i> Viser de sidste loglinjer. Brug Opdater status for at hente nyere linjer.</p>
+                @if($logMayBeStale ?? false)
+                    <div class="nx-updates__notice nx-updates__notice--warning" role="status">
+                        <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                        <div>
+                            <strong>Denne log kan være fra et tidligere opdateringsforsøg</strong>
+                            <p>Den tidligere systemd-opdaterer skrev til journalen i stedet for denne fil. Se den seneste kørsel via SSH med <code>sudo journalctl -u nodexa-update.service -n 60 --no-pager</code>.</p>
+                        </div>
+                    </div>
+                @endif
                 <pre class="nx-updates__log-pre" id="nx-update-log">{{ $log ?: 'Der er endnu ikke registreret nogen opdateringslog.' }}</pre>
                 <div class="nx-updates__log-actions">
                     <p>Log: <code>storage/logs/nodexa-update.log</code></p>
