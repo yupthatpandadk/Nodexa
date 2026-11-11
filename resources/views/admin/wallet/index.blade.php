@@ -7,6 +7,32 @@
 @section('content')
 @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+<div class="box box-primary">
+  <div class="box-header with-border">
+    <h3 class="box-title"><i class="fa fa-sliders"></i> Wallet – hvilke produkter må betales med kredit?</h3>
+    <span class="pull-right label {{ $walletAllowsVps ? 'label-success' : 'label-primary' }}">{{ $walletAllowsVps ? 'VPS + Pterodactyl' : 'Kun Pterodactyl' }}</span>
+  </div>
+  <form method="POST" action="{{ route('admin.wallet.settings') }}">
+    @csrf
+    <div class="box-body">
+      <p class="text-muted" style="margin-bottom:16px">Vælg hvad kundernes Wallet-saldo må bruges til. Begrænsningen gælder også blandede kurve og ubetalte ordrer, og den kontrolleres på serveren før pengene reserveres eller trækkes.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
+        <label style="cursor:pointer;display:block;border:1px solid #304057;border-radius:10px;padding:16px;background:#111b2b">
+          <input type="radio" name="allow_vps" value="1" {{ old('allow_vps', $walletAllowsVps ? '1' : '0') === '1' ? 'checked' : '' }}>
+          <strong style="margin-left:6px">Pterodactyl + VPS</strong>
+          <span class="text-muted" style="display:block;margin:8px 0 0 20px;font-weight:normal">Wallet-kredit kan bruges til både gameservere og VPS-hosting.</span>
+        </label>
+        <label style="cursor:pointer;display:block;border:1px solid #304057;border-radius:10px;padding:16px;background:#111b2b">
+          <input type="radio" name="allow_vps" value="0" {{ old('allow_vps', $walletAllowsVps ? '1' : '0') === '0' ? 'checked' : '' }}>
+          <strong style="margin-left:6px">Kun Pterodactyl</strong>
+          <span class="text-muted" style="display:block;margin:8px 0 0 20px;font-weight:normal">Wallet-kredit kan kun betale gameservere. VPS-delen betales med Stripe.</span>
+        </label>
+      </div>
+      <p class="help-block" style="margin-top:13px">Eksisterende saldi ændres ikke. Stripe-betalinger og allerede reserverede beløb påvirkes ikke bagudrettet.</p>
+    </div>
+    <div class="box-footer text-right"><button class="btn btn-primary" type="submit"><i class="fa fa-save"></i> Gem Wallet-indstillinger</button></div>
+  </form>
+</div>
 <div class="row">
   <div class="col-md-4">
     <div class="box box-primary">
