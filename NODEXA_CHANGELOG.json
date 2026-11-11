@@ -1,6 +1,19 @@
 {
-  "latest": "1.7.26",
+  "latest": "1.7.27",
   "releases": [
+    {
+      "version": "1.7.27",
+      "date": "2026-11-11",
+      "type": "patch",
+      "title": "FiveM Control – kompakt dashboard og mobilvenlige grafer",
+      "changes": [
+        "Flyttet de syv live serverstatistikker til toppen under serverstatus, før Console og hurtigknapper.",
+        "CPU, RAM og Netværk vises nu i ét kompakt diagramområde, hvor man vælger graf med faner i stedet for tre store grafer oven på hinanden.",
+        "Resource-inventar og administrationskort kommer nu før graferne i mobilvisning.",
+        "Bevaret realtidsgrafer, konsol, start/stop, permissions og serverfunktioner; almindelige Minecraft- og andre serverpaneler ændres ikke.",
+        "Tilføjet mobil-CSS, kompakt chart-højde og tastaturtilgængelige faneknapper."
+      ]
+    },
     {
       "version": "1.7.26",
       "date": "2026-11-11",
