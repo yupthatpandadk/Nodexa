@@ -103,6 +103,7 @@ class ServerTransformer extends BaseClientTransformer
             // Only the actual owner of a Minecraft Nest server gets an Egg
             // switcher; subusers, FiveM and other games never see it.
             'minecraft_egg_switching_available' => $user->id === $server->owner_id
+                && $server->canBeReinstalled()
                 && str_contains(mb_strtolower((string) ($server->egg->nest?->name ?? '')), 'minecraft'),
             'plugin_manager_enabled' => $pluginManagerEnabled,
             'mod_manager_enabled' => $modManagerEnabled,
