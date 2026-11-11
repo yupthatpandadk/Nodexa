@@ -11,7 +11,7 @@ import { theme } from 'twin.macro';
 import ChartBlock from '@/components/server/console/ChartBlock';
 import Tooltip from '@/components/elements/tooltip/Tooltip';
 
-export default () => {
+export default ({ activeMetric = 'all', compact = false }: { activeMetric?: 'cpu' | 'memory' | 'network' | 'all'; compact?: boolean }) => {
     const status = ServerContext.useStoreState((state) => state.status.value);
     const limits = ServerContext.useStoreState((state) => state.server.data!.limits);
     const previous = useRef<Record<'tx' | 'rx', number>>({ tx: -1, rx: -1 });
@@ -68,13 +68,17 @@ export default () => {
 
     return (
         <>
-            <ChartBlock title={'CPU Load'}>
-                <Line {...cpu.props} />
-            </ChartBlock>
-            <ChartBlock title={'Memory'}>
-                <Line {...memory.props} />
-            </ChartBlock>
-            <ChartBlock
+            {(activeMetric === 'all' || activeMetric === 'cpu') && <ChartBlock title={'CPU Load'}>
+                <div className={compact ? 'relative h-[155px]' : undefined}>
+                    <Line {...cpu.props} options={compact ? { ...cpu.props.options, maintainAspectRatio: false } : cpu.props.options} />
+                </div>
+            </ChartBlock>}
+            {(activeMetric === 'all' || activeMetric === 'memory') && <ChartBlock title={'Memory'}>
+                <div className={compact ? 'relative h-[155px]' : undefined}>
+                    <Line {...memory.props} options={compact ? { ...memory.props.options, maintainAspectRatio: false } : memory.props.options} />
+                </div>
+            </ChartBlock>}
+            {(activeMetric === 'all' || activeMetric === 'network') && <ChartBlock
                 title={'Network'}
                 legend={
                     <>
@@ -87,8 +91,10 @@ export default () => {
                     </>
                 }
             >
-                <Line {...network.props} />
-            </ChartBlock>
+                <div className={compact ? 'relative h-[155px]' : undefined}>
+                    <Line {...network.props} options={compact ? { ...network.props.options, maintainAspectRatio: false } : network.props.options} />
+                </div>
+            </ChartBlock>}
         </>
     );
 };
