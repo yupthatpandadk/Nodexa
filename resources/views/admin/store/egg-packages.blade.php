@@ -2,7 +2,7 @@
 @section('title', 'Pterodactyl Egg-pakker')
 @section('scripts')
     @parent
-    <link rel="stylesheet" href="{{ asset('css/nodexa-minecraft-packages.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('css/nodexa-minecraft-packages.css') }}?v=2">
 @endsection
 @section('content-header')
 <h1>Egg-pakker <small>Serverpakker til Nodexa Hosting</small></h1>
