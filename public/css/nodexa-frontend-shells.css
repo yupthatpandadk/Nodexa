@@ -155,3 +155,43 @@ html[data-nodexa-frontend-style]:not([data-nodexa-frontend-style="classic"]) .fo
 .nx-mobile-actions .nx-head-profile>summary {text-align:center}
 .nx-mobile-actions .nx-head-profile-menu {position:static;width:100%;margin-top:6px;box-shadow:none}
 }
+
+/* Full theme-specific footers replace original markup in Blade. */
+.nx-layout-footer {padding:0;background:var(--surface);border-top:1px solid var(--line2)}
+.nx-layout-footer .nx-footer-main {display:grid;grid-template-columns:1.75fr repeat(3,minmax(0,1fr));gap:48px;padding-top:62px;padding-bottom:65px}
+.nx-layout-footer .nx-footer-main>div {display:flex;flex-direction:column;gap:10px;align-items:start}
+.nx-layout-footer .nx-footer-main h3 {font-size:11px;letter-spacing:.1em;color:var(--muted);margin:0 0 9px;font-weight:850}
+.nx-layout-footer .nx-footer-main a {font-size:12px;color:var(--text);text-decoration:none}
+.nx-layout-footer .nx-footer-main a:hover {color:var(--blue)}
+.nx-layout-footer .nx-footer-brand>a {font-size:21px!important;font-weight:900;letter-spacing:-.05em;color:#fff!important}
+.nx-layout-footer .nx-footer-brand p {margin:12px 0 0;max-width:280px;font-size:12px;color:var(--muted);line-height:1.7}
+.nx-layout-footer .nx-footer-bottom {display:flex;justify-content:space-between;gap:20px;padding-block:20px;border-top:1px solid var(--line2);font-size:10px;letter-spacing:.05em;color:var(--muted)}
+.nx-layout-footer .nx-footer-bottom a {color:var(--muted)}
+.nx-footer-latch {background:#080f0b;border-color:#36533b}
+.nx-latch-footer-top {padding-top:83px;padding-bottom:80px;display:flex;justify-content:space-between;align-items:end;gap:35px;border-bottom:1px solid #304737}
+.nx-latch-footer-top h2 {font-size:clamp(34px,4vw,56px);line-height:1.07;color:#f2fbf4;margin:10px 0}
+.nx-latch-footer-top p {font-size:13px;color:#a4b8a9}
+.nx-footer-kicker {font-size:10px;letter-spacing:.15em;font-weight:850;color:#90d8a6}
+.nx-footer-latch .nx-footer-brand>a span {color:#9eeeb2}
+.nx-footer-xl {background:radial-gradient(ellipse 70% 55% at 50% 2%,#2f2251,#0b081b 75%);border-color:#443461}
+.nx-xl-footer-cta {text-align:center;max-width:710px!important;padding-top:98px;padding-bottom:85px}
+.nx-xl-footer-cta span {font-size:11px;letter-spacing:.14em;font-weight:850;color:#bfa9ef}
+.nx-xl-footer-cta h2 {font-size:clamp(32px,4vw,55px);margin:18px auto}
+.nx-xl-footer-cta p {font-size:13px;color:#b7afd0;margin-bottom:28px}
+.nx-xl-footer-cta .nx-theme-primary {background:linear-gradient(120deg,#a27bf6,#63a5ef);color:#fff!important;border-radius:12px}
+.nx-footer-xl .nx-footer-main {border-top:1px solid #443360}
+.nx-footer-horizon {background:#0d1724}
+.nx-horizon-footer-banner {padding-block:46px;border-bottom:1px solid #32465c;display:flex;align-items:center;justify-content:space-between;gap:30px}
+.nx-horizon-footer-banner>div {display:grid;gap:12px}
+.nx-horizon-footer-banner small {font-size:10px;letter-spacing:.12em;color:#9fbcd8;font-weight:800}
+.nx-horizon-footer-banner strong {font-size:clamp(22px,3vw,34px);color:#eff5fb}
+.nx-horizon-footer-banner>a {font-size:12px;padding:15px 19px;background:#7eb7ff;color:#081a2c;font-weight:850;white-space:nowrap}
+.nx-footer-horizon .nx-footer-main {padding-top:49px}
+.nx-footer-dino {background:#0c180f;border-color:#3e6245}
+.nx-dino-footer-cta {background:linear-gradient(120deg,#20412a,#14261b);border:1px solid #4e7855;border-radius:13px;display:flex;align-items:center;justify-content:space-between;gap:25px;padding:45px;margin-top:75px}
+.nx-dino-footer-cta small {font-size:10px;font-weight:850;letter-spacing:.12em;color:#9dd9a4}
+.nx-dino-footer-cta h2 {font-size:clamp(29px,3.4vw,44px);color:#f0f8ef;margin:12px 0}
+.nx-dino-footer-cta p {font-size:13px;color:#a8c4ad}
+.nx-dino-footer-cta .nx-theme-primary {background:#8bd893;color:#081e0e!important}
+@media(max-width:900px){.nx-layout-footer .nx-footer-main {grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}.nx-latch-footer-top {padding-block:55px}.nx-dino-footer-cta {margin-top:34px}}
+@media(max-width:600px){.nx-layout-footer .nx-footer-main {grid-template-columns:repeat(2,minmax(0,1fr));gap:23px;padding-top:38px;padding-bottom:39px}.nx-layout-footer .nx-footer-brand {grid-column:1/-1}.nx-layout-footer .nx-footer-bottom {flex-wrap:wrap}.nx-latch-footer-top,.nx-horizon-footer-banner,.nx-dino-footer-cta {display:block}.nx-latch-footer-top a,.nx-horizon-footer-banner>a,.nx-dino-footer-cta>a {margin-top:23px;display:inline-flex}.nx-dino-footer-cta {padding:25px}}
