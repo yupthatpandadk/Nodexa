@@ -29,6 +29,9 @@
                         <span>{{ $item->configuration_data['hostname'] ?? 'VPS' }} · {{ \Pterodactyl\Services\Nodexa\CustomerBranding::label($item->configuration_data['os_label'] ?? null, 'OS') }}</span>
                     @else
                         <span>{{ $item->configuration_data['server_name'] ?? 'Server' }}</span>
+                        @if(!empty($item->configuration_data['minecraft_type']))
+                            <span>{{ $item->configuration_data['minecraft_type'] }} · Minecraft {{ $item->configuration_data['minecraft_version'] ?: 'Egg standard' }}</span>
+                        @endif
                     @endif
                 </div>
                 <div class="combinedRight">
