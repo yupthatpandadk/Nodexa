@@ -91,6 +91,32 @@ class FrontendThemeServiceTest extends TestCase
         }
     }
 
+    public function test_each_frontend_has_separate_navigation_footer_and_product_presentation(): void
+    {
+        $root = dirname(__DIR__, 2);
+
+        foreach ([
+            'resources/views/store/frontend/parts/header.blade.php',
+            'resources/views/store/frontend/parts/footer.blade.php',
+            'resources/views/store/frontend/parts/product-hero.blade.php',
+            'public/css/nodexa-frontend-shells.css',
+            'public/css/nodexa-frontend-page-base.css',
+            'resources/views/store/frontend/parts/latch-game-selector.blade.php',
+        ] as $file) {
+            $this->assertFileExists($root . '/' . $file);
+        }
+
+        $footer = file_get_contents($root . '/resources/views/store/frontend/parts/footer.blade.php');
+        $headers = file_get_contents($root . '/resources/views/store/frontend/parts/header.blade.php');
+        $product = file_get_contents($root . '/resources/views/store/frontend/parts/product-hero.blade.php');
+
+        foreach (['latch', 'xlumia', 'horizon', 'dinonode'] as $theme) {
+            $this->assertStringContainsString("nodexaFrontendLayout === '" . $theme . "'", $headers);
+            $this->assertStringContainsString("nodexaFrontendLayout === '" . $theme . "'", $footer);
+            $this->assertStringContainsString("nodexaProductLayout === '" . $theme . "'", $product);
+        }
+    }
+
     public function test_invalid_theme_is_rejected_before_database_write(): void
     {
         $settings = $this->createMock(SettingsRepositoryInterface::class);
