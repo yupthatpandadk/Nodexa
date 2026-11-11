@@ -1,6 +1,17 @@
 {
-  "latest": "1.7.19",
+  "latest": "1.7.20",
   "releases": [
+    {
+      "version": "1.7.20",
+      "date": "2026-11-11",
+      "type": "patch",
+      "title": "Rettet frontend-build ved Minecraft Egg-skift",
+      "changes": [
+        "Rettet en manglende JSX-afslutning i Minecraft Egg-skiftets Console-link, som fik Webpack/Babel til at afbryde frontend-bygningen.",
+        "Backup er fortsat valgfri ved Minecraft Egg-skift med tydelig risiko-advarsel.",
+        "Betingelserne for at skifte Egg er uændrede: Minecraft-ejer, samme Minecraft Nest, stoppet server og bekræftelse."
+      ]
+    },
     {
       "version": "1.7.19",
       "date": "2026-11-11",
