@@ -66,10 +66,10 @@ class MinecraftOrderOptionsServiceTest extends TestCase
 
     public function test_only_valid_java_release_labels_are_allowed(): void
     {
-        foreach (['latest', '1.8', '1.12.2', '1.19.4', '1.20.1', '1.21.1'] as $version) {
+        foreach (['latest', '1.8', '1.12.2', '1.19.4', '1.20.1', '1.21.11', '26.1', '26.1.2', '26.3'] as $version) {
             $this->assertTrue(MinecraftOrderOptionsService::validVersion($version), $version);
         }
-        foreach (['snapshot', '1.20.1;rm -rf /', '../../etc', '', 'abc', '2.0'] as $version) {
+        foreach (['snapshot', '1.20.1;rm -rf /', '../../etc', '', 'abc', '2.0', '26w14a', '26.3;echo'] as $version) {
             $this->assertFalse(MinecraftOrderOptionsService::validVersion($version), $version);
         }
     }
@@ -85,6 +85,8 @@ class MinecraftOrderOptionsServiceTest extends TestCase
         ];
 
         $this->assertSame('ghcr.io/pterodactyl/yolks:java_21', $this->service->dockerImage($egg, '1.21.1'));
+        $this->assertSame('ghcr.io/pterodactyl/yolks:java_25', $this->service->dockerImage($egg, '26.3'));
+        $this->assertSame('ghcr.io/pterodactyl/yolks:java_25', $this->service->dockerImage($egg, '26.1.2'));
         $this->assertSame('ghcr.io/pterodactyl/yolks:java_21', $this->service->dockerImage($egg, '1.20.5'));
         $this->assertSame('ghcr.io/pterodactyl/yolks:java_17', $this->service->dockerImage($egg, '1.20.4'));
         $this->assertSame('ghcr.io/pterodactyl/yolks:java_8', $this->service->dockerImage($egg, '1.12.2'));
