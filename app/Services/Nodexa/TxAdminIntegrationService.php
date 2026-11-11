@@ -31,7 +31,8 @@ final class TxAdminIntegrationService
             $values,
             $allocations,
             (string) ($server->node->fqdn ?? ''),
-            FiveMServerType::matches($server->egg->nest?->name)
+            FiveMServerType::matches($server->egg->nest?->name),
+            (int) $server->allocation->port
         );
     }
 
@@ -42,7 +43,7 @@ final class TxAdminIntegrationService
      * @param array<string, string> $variables
      * @param array<int, array{port:int,ip:string,alias?:string}> $allocations
      */
-    public static function resolve(array $variables, array $allocations, string $nodeFqdn, bool $isFiveM): array
+    public static function resolve(array $variables, array $allocations, string $nodeFqdn, bool $isFiveM, ?int $gamePort = null): array
     {
         if (!$isFiveM) {
             return [
@@ -69,6 +70,14 @@ final class TxAdminIntegrationService
                 'supported' => true, 'enabled' => $enabled,
                 'port' => null, 'allocated' => false,
                 'url' => null, 'state' => 'invalid_port',
+            ];
+        }
+
+        if ($gamePort !== null && $port === $gamePort) {
+            return [
+                'supported' => true, 'enabled' => $enabled,
+                'port' => $port, 'allocated' => false,
+                'url' => null, 'state' => 'port_conflict',
             ];
         }
 
