@@ -212,26 +212,29 @@
 
                 @php
                     $totalWalletCents = (int) round((float) $summary['total'] * 100);
-                    $canPayFullyWallet = $totalWalletCents > 0 && $walletBalanceCents >= $totalWalletCents;
-                    $autoWalletCents = $canPayFullyWallet
-                        ? $totalWalletCents
-                        : min($walletBalanceCents, max(0, $totalWalletCents - 250));
+                    $canPayFullyWallet = $totalWalletCents > 0 && $walletBalanceCents >= $totalWalletCents && $walletEligibleCents >= $totalWalletCents;
+                    $autoWalletCents = \Pterodactyl\Services\Nodexa\WalletUsagePolicy::walletFirstCents(
+                        $totalWalletCents, $walletBalanceCents, $walletEligibleCents
+                    );
                     $remainingStripeCents = max(0, $totalWalletCents - $autoWalletCents);
                 @endphp
                 <div class="paymentNotice">
                     <span class="paymentNoticeIcon">₭</span>
-                    <p><strong>Din Wallet bruges automatisk først.</strong> Den resterende betaling gennemføres via Stripe, hvor du kan vælge tilgængelig betalingsmetode. Din saldo reserveres, mens Stripe-betalingen afventer.</p>
+                    <p><strong>Din Wallet bruges automatisk først til de tilladte produkter.</strong> Den resterende betaling gennemføres via Stripe, hvor du kan vælge en betalingsmetode. Din saldo reserveres, mens Stripe-betalingen afventer.</p>
                 </div>
 
                 <div class="walletAutoBreakdown">
                     <div><span>Samlet ordre</span><strong>{{ number_format($totalWalletCents/100,2,',','.') }} DKK</strong></div>
+                    @if(!$walletAllowsVps)
+                    <p style="margin:0 0 7px;color:#a9c8e3;font-size:12px">Wallet-kredit kan kun bruges til Pterodactyl-gameservere. VPS-produkter betales med Stripe.</p>
+                    @endif
                     <div><span>Betales automatisk med Wallet</span><strong class="walletAppliedAmount">−{{ number_format($autoWalletCents/100,2,',','.') }} DKK</strong></div>
                     <div><span>Resterende {{ $canPayFullyWallet ? 'betaling' : 'via Stripe' }}</span>
                          <strong>{{ number_format($remainingStripeCents/100,2,',','.') }} DKK</strong></div>
                     <p>Wallet-saldo: {{ number_format($walletBalanceCents/100,2,',','.') }} DKK
                         · <a href="{{ route('store.client.wallet') }}">Se Wallet</a></p>
-                    @if(!$canPayFullyWallet && $walletBalanceCents > $autoWalletCents)
-                        <p>Stripe kræver mindst 2,50 DKK, så en lille del af Wallet-saldoen bevares.</p>
+                    @if(!$canPayFullyWallet && $walletEligibleCents > $autoWalletCents && $walletBalanceCents > $autoWalletCents)
+                        <p>Stripe kræver mindst 2,50 DKK, så en lille del af Wallet-saldoen kan blive bevaret.</p>
                     @endif
                 </div>
 
@@ -240,7 +243,7 @@
                     <input type="hidden" name="payment_method" value="{{ $canPayFullyWallet ? 'wallet' : 'stripe' }}">
                     <div class="walletCheckoutChoices">
                         <div class="walletCheckoutOption">
-                            <span><strong>{{ $canPayFullyWallet ? 'Betal med Nodexa Wallet' : 'Wallet + Stripe' }}</strong>
+                            <span><strong>{{ $canPayFullyWallet ? 'Betal med Nodexa Wallet' : ($autoWalletCents > 0 ? 'Wallet + Stripe' : 'Stripe') }}</strong>
                                 <small>{{ $canPayFullyWallet ? 'Ingen yderligere betaling nødvendig' : 'Du vælger kort eller en anden tilgængelig betalingsmetode hos Stripe' }}</small></span>
                         </div>
                         @if(!$canPayFullyWallet && !$stripeEnabled)
