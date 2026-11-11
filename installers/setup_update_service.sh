@@ -73,6 +73,7 @@ cat > "$tmp_sudoers" <<EOF
 www-data ALL=(root) NOPASSWD: /usr/bin/systemctl start --no-block $UNIT_NAME
 EOF
 
+chmod 0440 "$tmp_sudoers"
 "$VISUDO" -cf "$tmp_sudoers" >/dev/null
 install -o root -g root -m 0644 "$tmp_unit" "$UNIT_FILE"
 install -o root -g root -m 0440 "$tmp_sudoers" "$SUDOERS_FILE"
