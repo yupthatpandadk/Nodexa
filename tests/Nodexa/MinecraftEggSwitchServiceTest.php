@@ -165,6 +165,27 @@ class MinecraftEggSwitchServiceTest extends TestCase
         ]);
     }
 
+    public function test_clean_delete_list_rejects_wings_is_symlink_entries(): void
+    {
+        // Wings uses "is_symlink", not just "symlink". Failing to check
+        // this could follow a mounted or external directory during cleanup.
+        $this->expectException(ConflictHttpException::class);
+        MinecraftEggSwitchService::rootEntriesForDeletion([
+            ['name' => 'external-folder', 'is_symlink' => true],
+        ]);
+    }
+
+    public function test_clean_delete_list_accepts_regular_wings_entries(): void
+    {
+        $this->assertSame(
+            ['world', 'server.properties'],
+            MinecraftEggSwitchService::rootEntriesForDeletion([
+                ['name' => 'world', 'is_file' => false, 'is_symlink' => false],
+                ['name' => 'server.properties', 'is_file' => true, 'is_symlink' => false],
+            ])
+        );
+    }
+
     public function test_clean_delete_list_rejects_duplicates(): void
     {
         $this->expectException(ConflictHttpException::class);
