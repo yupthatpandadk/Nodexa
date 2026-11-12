@@ -117,6 +117,10 @@
         .nx-front-option[data-variant="dinonode"] .nx-front-demo-copy {padding-left:8px}
         .nx-front-option[data-variant="dinonode"] .nx-front-demo-product {width:43%;height:77px;border-radius:9px;border:2px solid var(--front-accent)}
         .nx-front-option[data-variant="dinonode"] .nx-front-demo-product:after {height:35px}
+        /* True page previews replace misleading identical wireframes. */
+        .nx-front-real-preview {position:relative;height:156px;background:#0a0d14;border:1px solid #34435a;border-radius:7px;overflow:hidden;isolation:isolate}
+        .nx-front-real-preview iframe {position:absolute;top:0;left:0;width:1200px;height:665px;transform:scale(.246);transform-origin:top left;border:0;pointer-events:none;user-select:none}
+        .nx-front-real-tag {position:absolute;right:7px;bottom:7px;z-index:2;padding:4px 6px;border:1px solid #394860;border-radius:4px;background:rgba(8,15,25,.92);color:#e3edf9;font-size:9px;font-weight:850;letter-spacing:.03em}
         @media(max-width:1100px){.nx-front-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
         @media(max-width:650px){.nx-front-grid{grid-template-columns:1fr}.nx-front-body{padding:12px}.nx-front-top{padding:15px}.nx-front-bottom{padding:14px}.nx-front-bottom .btn{width:100%}.nx-front-card{min-height:auto}.nx-front-desc{min-height:auto}}
     </style>
@@ -128,7 +132,7 @@
             <div class="nx-front-top">
                 <div>
                     <h2 id="nx-front-heading"><i class="fa fa-desktop" aria-hidden="true"></i> Frontend Theme Center</h2>
-                    <p>Vælg et helt hjemmesidedesign. Forside, navigation, hostingkatalog og VPS-katalog skifter opbygning – ikke kun farver.</p>
+                    <p>Se den faktiske forside for hvert valg – ikke en farvelagt demonstration. Latch, Xlumia, Horizon og DinoNode er foreløbigt selvstændige Nodexa-varianter, ikke de købte originaltemplates.</p>
                 </div>
                 <div class="nx-front-active"><i class="fa fa-circle" aria-hidden="true"></i> Aktivt: {{ $frontendPresets[$frontendSelected]['name'] }}</div>
             </div>
@@ -143,22 +147,16 @@
                                        {{ old('frontend_theme', $frontendSelected) === $key ? 'checked' : '' }}
                                        aria-label="{{ $preset['name'] }}">
                                 <div class="nx-front-card">
-                                    <div class="nx-front-demo" aria-hidden="true">
-                                        <div class="nx-front-demo-nav">
-                                            <span class="nx-front-demo-brand"></span>
-                                            <span class="nx-front-demo-navline"></span><span class="nx-front-demo-navline"></span>
-                                            <span class="nx-front-demo-right"></span>
-                                        </div>
-                                        <div class="nx-front-demo-main">
-                                            <div class="nx-front-demo-copy">
-                                                <div class="nx-front-demo-label"></div>
-                                                <div class="nx-front-demo-heading"></div>
-                                                <div class="nx-front-demo-heading two"></div>
-                                                <div class="nx-front-demo-description"></div>
-                                                <div class="nx-front-demo-button"></div>
-                                            </div>
-                                            <div class="nx-front-demo-product"></div>
-                                        </div>
+                                    <div class="nx-front-real-preview">
+                                        <iframe
+                                            title="Live forhåndsvisning af {{ $preset['name'] }}"
+                                            src="{{ route('store.home', ['frontend_theme_preview' => $key]) }}"
+                                            loading="lazy"
+                                            tabindex="-1"
+                                            aria-hidden="true"
+                                            referrerpolicy="same-origin"
+                                        ></iframe>
+                                        <span class="nx-front-real-tag"><i class="fa fa-desktop"></i> FAKTISK FORSIDE</span>
                                     </div>
                                     <div class="nx-front-title">
                                         <strong>{{ $preset['name'] }}</strong>
