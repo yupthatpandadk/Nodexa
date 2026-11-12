@@ -114,3 +114,128 @@
 .nx-home-latch .nx-theme-plans--latch-home {grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:850px){.nx-home-latch .nx-theme-plans--latch-home {grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.nx-home-latch .nx-theme-plans--latch-home {grid-template-columns:1fr}.nx-latch-game-choices button {flex:1 1 125px;justify-content:center}.nx-latch-game-header {display:block}.nx-latch-game-header span {display:block;margin-top:5px}}
+
+
+
+/*
+ * LATCH DESIGN CORRECTION (2026-11-12)
+ * Dark gaming hero with purple actions and selective pricing. Completely
+ * different DOM from the previous green terminal/operations layout.
+ * Original Nodexa implementation; not the commercial Latch source code.
+ */
+html[data-nodexa-frontend-style="latch"] {
+    --bg:#08080b;--surface:#0e0e13;--card:#141419;--card2:#1b1a23;
+    --line:#26232d;--line2:#3b3648;--text:#f9f8fc;--muted:#aaa6b5;
+    --blue:#a855f7;--purple:#7c3aed;--green:#7dd3aa;
+}
+html[data-nodexa-frontend-style="latch"] body {background:#08080b}
+html[data-nodexa-frontend-style="latch"] .nx-head-latch {background:#09090d;border-color:#2e2838}
+html[data-nodexa-frontend-style="latch"] .nx-head-latch .nx-head-logo {background:#a855f7;color:#fff;border-radius:8px}
+html[data-nodexa-frontend-style="latch"] .nx-latch-top {min-height:71px}
+html[data-nodexa-frontend-style="latch"] .nx-latch-navrow {background:#0e0d13;border-color:#201c2a}
+html[data-nodexa-frontend-style="latch"] .nx-latch-navrow .nx-head-links {min-height:43px}
+html[data-nodexa-frontend-style="latch"] .nx-head-latch .nx-head-actions .nx-head-panel {background:#a855f7;color:#fff;border-color:#a855f7;border-radius:7px}
+html[data-nodexa-frontend-style="latch"] .nx-head-latch .nx-head-links a {color:#b6b1c4}
+html[data-nodexa-frontend-style="latch"] .nx-head-latch .nx-head-links a:hover {color:#fff}
+html[data-nodexa-frontend-style="latch"] .nx-mobile-menu {background:#0e0d14;border-color:#30263b}
+html[data-nodexa-frontend-style="latch"] .nx-mobile-menu .nx-head-panel {background:#a855f7;color:white}
+html[data-nodexa-frontend-style="latch"] .nx-theme-primary,
+html[data-nodexa-frontend-style="latch"] .nx-theme-order {
+    background:#a855f7!important;color:#fff!important;border-color:#a855f7!important;border-radius:7px!important;
+}
+html[data-nodexa-frontend-style="latch"] .nx-theme-secondary {border-color:#4a4057;background:#18151e;border-radius:7px;color:#e7e0ee!important}
+html[data-nodexa-frontend-style="latch"] .nx-theme-overline {color:#b47cfa!important}
+.nx-home-latch .nx-latch-landing-hero {position:relative;min-height:520px;overflow:hidden;isolation:isolate;padding:112px 0 85px;background:
+    radial-gradient(ellipse 60% 90% at 85% 55%,rgba(109,52,167,.28),transparent 70%),
+    linear-gradient(115deg,#0b0b10 24%,#13101c 69%,#09090d);
+    border-bottom:1px solid #302838}
+.nx-home-latch .nx-latch-landing-content {position:relative;z-index:2}
+.nx-home-latch .nx-latch-landing-content h1 {font-size:clamp(45px,6.1vw,85px);font-weight:850;line-height:1.06;letter-spacing:-.065em;max-width:820px;margin:24px 0}
+.nx-home-latch .nx-latch-landing-content h1 span {color:#ba8eff}
+.nx-home-latch .nx-latch-landing-content>p {max-width:560px;font-size:16px;line-height:1.75;color:#b5b1be}
+.nx-home-latch .nx-latch-hero-label {display:inline-flex;align-items:center;gap:9px;font-weight:850;letter-spacing:.13em;font-size:10px;border:1px solid #4e3a65;border-radius:999px;background:#1e162a;padding:9px 13px;color:#c8a4f7}
+.nx-home-latch .nx-latch-pulse {height:6px;width:6px;border-radius:100%;background:#b284f2}
+.nx-home-latch .nx-latch-landing-actions {display:flex;gap:12px;flex-wrap:wrap;margin-top:27px}
+.nx-home-latch .nx-latch-landing-highlights {display:flex;flex-wrap:wrap;gap:0;margin-top:56px}
+.nx-home-latch .nx-latch-landing-highlights div {min-width:130px;padding:0 21px;border-left:1px solid #403747}
+.nx-home-latch .nx-latch-landing-highlights div:first-child {border-left:0;padding-left:0}
+.nx-home-latch .nx-latch-landing-highlights strong {display:block;color:#faf7ff;font-size:23px;font-weight:830;line-height:1.2}
+.nx-home-latch .nx-latch-landing-highlights small {display:block;color:#a49dae;font-size:11px;margin-top:5px}
+.nx-home-latch .nx-latch-game-art {position:absolute;inset:0 0 0 58%;overflow:hidden;z-index:0;pointer-events:none}
+.nx-home-latch .nx-latch-art-orb {position:absolute;width:580px;height:580px;top:2%;right:-11%;transform:rotate(-22deg);border:1px solid #78508d55;border-radius:24%;background:
+  repeating-linear-gradient(90deg,rgba(157,94,217,.08) 0 2px,transparent 2px 35px),
+  repeating-linear-gradient(0deg,rgba(157,94,217,.075) 0 2px,transparent 2px 35px),
+  radial-gradient(ellipse at 35% 25%,rgba(170,95,238,.25),rgba(24,17,33,.35) 60%,transparent 75%);
+  box-shadow:inset 0 0 85px #130c1a}
+.nx-home-latch .nx-latch-art-grid {position:absolute;inset:0;opacity:.65;background-image:linear-gradient(#ae64ef10 1px,transparent 1px),linear-gradient(90deg,#ae64ef10 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(to right,transparent,#000)}
+.nx-home-latch .nx-latch-landing-products {background:#09090d}
+.nx-home-latch .nx-latch-landing-heading {text-align:center;max-width:780px;margin:0 auto 36px}
+.nx-home-latch .nx-latch-landing-heading h2 {font-size:clamp(32px,4vw,52px)}
+.nx-home-latch .nx-latch-landing-heading>p {font-size:13px;max-width:640px;margin:15px auto 0}
+.nx-home-latch .nx-latch-game-select {background:#111016;border-color:#37303e;border-radius:12px;overflow:hidden}
+.nx-home-latch .nx-latch-game-header {border-color:#32293b}
+.nx-home-latch .nx-latch-game-header strong {color:#e3d6f1}
+.nx-home-latch .nx-latch-game-header span {color:#aaa3b6}
+.nx-home-latch .nx-latch-game-choices button {background:#191620;border-color:#41374d;color:#ded7e8;border-radius:7px}
+.nx-home-latch .nx-latch-game-choices button>span {background:#352343;color:#c5a1ff}
+.nx-home-latch .nx-latch-game-choices button.is-active {background:#a855f7;border-color:#a855f7;color:#fff}
+.nx-home-latch .nx-latch-game-choices button.is-active>span {background:#7636b5;color:#fff}
+.nx-home-latch .nx-latch-pricing-heading {display:flex;justify-content:space-between;gap:16px;align-items:center;margin:36px 0 16px}
+.nx-home-latch .nx-latch-pricing-heading strong {font-size:17px;font-weight:820}
+.nx-home-latch .nx-latch-pricing-heading span {font-size:10px;color:#a69caf;letter-spacing:.11em}
+.nx-home-latch .nx-theme-plans--latch-home {grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.nx-home-latch .nx-theme-plan {border:1px solid #35303d;border-radius:12px;background:linear-gradient(150deg,#191720,#121116);padding:24px}
+.nx-home-latch .nx-theme-plan.is-featured {border-color:#9c55eb;box-shadow:0 0 0 1px #7d43ae}
+.nx-home-latch .nx-theme-plan-type,.nx-home-latch .nx-theme-plan-featured {color:#bc88fc}
+.nx-home-latch .nx-theme-plan h3 {font-size:24px}
+.nx-home-latch .nx-theme-order {margin-top:auto}
+.nx-home-latch .nx-latch-viewall {display:flex;justify-content:center;margin-top:30px}
+.nx-home-latch .nx-latch-landing-solutions {background:#0e0d12;border-top:1px solid #27232c}
+.nx-home-latch .nx-latch-solution-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.nx-home-latch .nx-latch-solution-grid>a {min-width:0;border:1px solid #3a3242;border-radius:13px;background:#17141d;padding:27px;display:flex;flex-direction:column;gap:9px}
+.nx-home-latch .nx-latch-solution-grid>a:hover {border-color:#9b5be0}
+.nx-home-latch .nx-latch-solution-grid span {color:#ac80d9;font-size:10px;letter-spacing:.1em;font-weight:800}
+.nx-home-latch .nx-latch-solution-grid h3 {font-size:21px;margin-top:9px}
+.nx-home-latch .nx-latch-solution-grid p {font-size:12px;flex:1}
+.nx-home-latch .nx-latch-solution-grid b {font-size:12px;color:#bd91ef}
+.nx-home-latch .nx-latch-landing-platform {background:#09090e}
+.nx-home-latch .nx-latch-platform-grid {display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.nx-home-latch .nx-latch-platform-grid>div:first-child p {max-width:490px;margin:20px 0 28px}
+.nx-home-latch .nx-latch-panel-preview {border:1px solid #4e3b61;border-radius:13px;background:#16131d;padding:0 24px 20px;box-shadow:0 28px 65px #0005;overflow:hidden}
+.nx-home-latch .nx-latch-panel-top {color:#ac94c1;border-bottom:1px solid #3b3148;padding:19px 0;font-size:10px;letter-spacing:.12em}
+.nx-home-latch .nx-latch-panel-row {display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #342d3c;padding:18px 0}
+.nx-home-latch .nx-latch-panel-row:last-child {border-bottom:0}
+.nx-home-latch .nx-latch-panel-row strong {font-size:13px}
+.nx-home-latch .nx-latch-panel-row span {font-size:11px;color:#a699b5}
+html[data-nodexa-frontend-style="latch"] .nx-footer-latch {background:#0d0c12;border-color:#39303e}
+html[data-nodexa-frontend-style="latch"] .nx-footer-kicker {color:#b68bef}
+html[data-nodexa-frontend-style="latch"] .nx-footer-latch .nx-footer-brand>a span {color:#ac75f6}
+html[data-nodexa-frontend-style="latch"] .nx-latch-footer-top {border-color:#383041}
+html[data-nodexa-frontend-style="latch"] .nx-catalog-latch {background:#0b0a0e}
+html[data-nodexa-frontend-style="latch"] .nx-latch-catalog-head {background:#14101d;border-color:#3d3247}
+html[data-nodexa-frontend-style="latch"] .nx-latch-catalog-side {border-color:#a855f7}
+html[data-nodexa-frontend-style="latch"] .nx-latch-catalog-side .nx-theme-filters button {background:#191622;color:#ece5f5;border-color:#3e3546}
+html[data-nodexa-frontend-style="latch"] .nx-latch-catalog-side .nx-theme-filters button.is-active {background:#a855f7;color:white}
+html[data-nodexa-frontend-style="latch"] .nx-catalog-latch #nxThemeCatalog .nx-theme-plan {background:#191620;border-color:#3e354b}
+html[data-nodexa-frontend-style="latch"] .nx-vps-latch {background:#0c0b10}
+html[data-nodexa-frontend-style="latch"] .nx-latch-vps-head {background:#16101e;border-color:#3f3450}
+html[data-nodexa-frontend-style="latch"] .nx-latch-vps-aside {background:#1b1722;border-color:#403449}
+html[data-nodexa-frontend-style="latch"] .nx-latch-vps-head h1 em {color:#c094ff}
+html[data-nodexa-frontend-style="latch"] .nx-vps-latch .nx-theme-plan {background:#1b1822;border-color:#3b3347}
+@media (max-width:990px) {
+  .nx-home-latch .nx-latch-landing-hero {padding:82px 0 66px}
+  .nx-home-latch .nx-latch-game-art {inset:0 0 0 38%;opacity:.36}
+  .nx-home-latch .nx-latch-platform-grid {grid-template-columns:1fr;gap:35px}
+}
+@media (max-width:760px) {
+  .nx-home-latch .nx-latch-landing-hero {padding:66px 0 57px;min-height:0}
+  .nx-home-latch .nx-latch-game-art {inset:0;opacity:.22}
+  .nx-home-latch .nx-latch-landing-highlights {margin-top:38px}
+  .nx-home-latch .nx-latch-landing-highlights div {min-width:0;flex:1 1 90px;padding:0 10px}
+  .nx-home-latch .nx-latch-landing-highlights div:first-child {padding-left:0}
+  .nx-home-latch .nx-latch-landing-highlights strong {font-size:17px}
+  .nx-home-latch .nx-latch-pricing-heading {display:block}
+  .nx-home-latch .nx-latch-pricing-heading span {display:block;margin-top:7px}
+  .nx-home-latch .nx-latch-solution-grid {grid-template-columns:1fr}
+  .nx-home-latch .nx-theme-plans--latch-home {grid-template-columns:1fr}
+}
