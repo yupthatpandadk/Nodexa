@@ -1,6 +1,21 @@
 {
-  "latest": "1.7.29",
+  "latest": "1.7.30",
   "releases": [
+    {
+      "version": "1.7.30",
+      "date": "2026-11-12",
+      "type": "feature",
+      "title": "Frontend Theme Center – reelle forhåndsvisninger og korrigerede reference-layouts",
+      "changes": [
+        "Latch-forsiden er reelt genopbygget: mørkt gaming-hero, enkelt flydende navigationslayout, dynamisk spilvælger, hostingpakker og særlige hosting-/platformsektioner.",
+        "Tidligere grøn terminalside og dobbeltnavigation i Latch er udskiftet med mørke/lilla layouts, mere i tråd med den angivne Latch-reference.",
+        "DinoNode-variantens branding og centrale temaoverflader er rettet til blå/indigo frem for den tidligere grønne stil, baseret på den originale gaming-reference.",
+        "Admin Area viser nu en direkte forhåndsvisning af den faktiske Nodexa-forside for hvert tema frem for ens farvelagte wireframe-kort.",
+        "Nodexa Original bevares uændret. Serverpanel, Wallet, kundeportal, priser og checkout logik ændres ikke.",
+        "Dette er forbedrede originale Nodexa-temaer, ikke installerede kopier af de licenserede Latch, Xlumia, Horizon eller DinoNode-originalfiler.",
+        "Cache-versionsnumrene for opdaterede frontend-stylesheets er forøget, og der er tilføjet regressionskontrol af temastruktur og forhåndsvisning."
+      ]
+    },
     {
       "version": "1.7.29",
       "date": "2026-11-12",
