@@ -105,7 +105,7 @@ class MinecraftEggSwitchService
             $name = $entry['name'];
             if ($name === '' || $name === '.' || $name === '..'
                 || preg_match('~[\\\\/\x00-\x1F\x7F]~', $name)
-                || !empty($entry['symlink'])) {
+                || !empty($entry['symlink']) || !empty($entry['is_symlink'])) {
                 throw new ConflictHttpException('Der er en ugyldig sti eller et symbolsk link i serverens rodmappe. Ingen filer er slettet.');
             }
 
@@ -292,7 +292,25 @@ class MinecraftEggSwitchService
 
             // Keep mode NEVER deletes files deliberately. The Egg installer
             // may nevertheless overwrite or modify individual files.
-            $this->reinstaller->handle($server->fresh());
+            try {
+                $this->reinstaller->handle($server->fresh());
+            } catch (\Throwable $exception) {
+                // The Egg config and Wings sync may already have changed.
+                // Do not blindly retry or roll back after an uncertain
+                // reinstall response: Wings may have accepted the request.
+                Log::error('Minecraft Egg switched but reinstall request failed', [
+                    'server_id' => $server->id,
+                    'old_egg_id' => $original['egg_id'],
+                    'new_egg_id' => $egg->id,
+                    'exception' => $exception,
+                ]);
+
+                throw new ConflictHttpException(
+                    'Egg-konfigurationen kan være ændret, men geninstallation kunne ikke bekræftes. '
+                    . 'Prøv ikke igen før administrator har kontrolleret Egg, Wings-status og serverfiler.',
+                    $exception
+                );
+            }
 
             return 0;
         } finally {
