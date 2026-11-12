@@ -36,12 +36,12 @@ class FrontendThemeService
             ],
             'latch' => [
                 'name' => 'Latch-stil',
-                'description' => 'Selvstændigt operationslayout med todelt header, terminal-hero og serverkatalog med venstremenu og vandrette pakkekort.',
-                'subtitle' => 'Minimal · operationel',
-                'accent' => '#8DE4A9',
-                'secondary' => '#5AB4A4',
-                'background' => '#080D0C',
-                'surface' => '#101A17',
+                'description' => 'Mørk game-hostingforside med stor hero, lilla handlinger, spilvælger og produktafsnit.',
+                'subtitle' => 'Dark gaming · lilla',
+                'accent' => '#A855F7',
+                'secondary' => '#7C3AED',
+                'background' => '#08080B',
+                'surface' => '#141419',
             ],
             'xlumia' => [
                 'name' => 'Xlumia-stil',
