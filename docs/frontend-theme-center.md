@@ -49,3 +49,16 @@ De alternative temaer har nu **forskellige footers** i stedet for den oprindelig
 
 De kommercielle reference-templates (Latch, Xlumia, Horizon, DinoNode) er licenserede tredjeparters produkter. Nodexas selvstændige varianter må ikke beskrives som binære/visuelt identiske gengivelser af de originale templates. For direkte installation kræves originalfiler og gyldige rettigheder.
 
+
+
+## Reference accuracy – November 2026
+
+These themes are **independently authored Nodexa variants**, not copies of the licensed Latch, Xlumia, Horizon or DinoNode sources.
+
+The Latch variant was corrected to a dark purple game-hosting landing page, single floating navigation, game picker and real prices instead of the previous green terminal homepage.
+The DinoNode variant was corrected to blue/indigo, consistent with public images of its original gaming look.
+The Admin Theme Center now uses real iframe previews of each Nodexa layout instead of identical colored wireframe thumbnails. Original Nodexa is preserved unchanged.
+
+Xlumia and Horizon remain original Nodexa-inspired implementations. For an exact commercial vendor theme, install from its appropriately licensed source files and adapt the vendor's pages and assets to Nodexa's Laravel Blade storefront, catalog, and billing workflows.
+
+After updating, preview all themes under Admin → Settings → Temaer. If cached styles remain, check that the new CSS versions load and purge stale CDN asset cache.
