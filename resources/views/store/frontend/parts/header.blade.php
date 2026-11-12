@@ -2,12 +2,15 @@
 <div class="nx-global-header nx-global-header--{{ $nodexaFrontendLayout }}">
 @if($nodexaFrontendLayout === 'latch')
     <header class="nx-head-shell nx-head-latch" role="banner">
-        <div class="container nx-latch-top">
-            <a class="nx-head-brand" href="{{route('store.home')}}"><span class="nx-head-logo">N.</span><span>NODEXA<small>HOSTING PLATFORM</small></span></a>
+        <div class="container nx-latch-onebar">
+            <a class="nx-head-brand" href="{{route('store.home')}}"><span class="nx-head-logo">N</span><span>Nodexa</span></a>
+            <nav class="nx-head-links" aria-label="Hovednavigation">
+                <a href="{{route('store.hosting')}}">Game Servers</a>
+                <a href="{{route('store.vps')}}">VPS Hosting</a>
+                <a href="{{route('store.features')}}">Platform</a>
+                <a href="{{route('store.support')}}">Support</a>
+            </nav>
             <div class="nx-head-actions">@include('store.frontend.parts.nav-actions')</div>
-        </div>
-        <div class="nx-latch-navrow">
-            <nav class="container nx-head-links" aria-label="Hovednavigation">@include('store.frontend.parts.nav-links')</nav>
         </div>
     </header>
 @elseif($nodexaFrontendLayout === 'xlumia')
