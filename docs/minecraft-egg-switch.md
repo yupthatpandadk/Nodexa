@@ -40,3 +40,24 @@ Skift af server-software er ikke en garanteret sikker migration af verdener fra 
 ## Test
 
 `tests/Nodexa/MinecraftEggSwitchServiceTest.php` tester adgang for Minecraft-ejer, afvisning af FiveM/Rust og medbrugere samt forbud mod at vælge Eggs fra et andet Nest. Før brug i produktion skal en testserver afprøves med Paper → Fabric og tilbage igen, inkl. Wings-sync og geninstallation.
+
+
+## Fejlrettelse: forkerte Egg-valg og ukendte serverfejl
+
+- Aktuelt Egg bestemmes nu af live GET `/settings/minecraft-eggs` (`current_egg_id`), ikke et gammelt Egg-ID i klientens hukommelse efter tidligere ændringer.
+- Hvis dropdown viser `Fabric (nuværende)`, tæller Fabric aldrig som et nyt Egg. Slet-knappen forbliver deaktiveret, indtil et andet Egg er valgt.
+- Ved fejl eller succes hentes den faktiske Egg-status igen. Efter en ukendt serverfejl må kunden ikke gentage forsøget, før support har kontrolleret serverfiler og Egg.
+- Keep-mode giver en tydelig statusfejl og serverlog, hvis Wings ikke kan bekræfte den efterfølgende geninstallation.
+- Ved clean-mode kontrolleres både Wings' `symlink` og `is_symlink` for at undgå sletning gennem symlinks.
+- Opdateringen foretager ingen filændringer på eksisterende Minecraft-servere i sig selv.
+
+### Diagnostik af HTTP 500
+
+Den præcise 500-årsag kan ikke afgøres ud fra et skærmbillede alene. Se seneste Laravel-log på serveren uden at udføre en ny installation:
+
+```bash
+cd /var/www/pterodactyl
+sudo bash -c 'tail -n 100 "$(ls -t storage/logs/laravel*.log | head -1)"'
+```
+
+Skal samme Egg geninstalleres, bruges den separate standardfunktion Reinstall Server efter backup. Der er ingen grund til at forsøge at skifte et Egg til sig selv.
