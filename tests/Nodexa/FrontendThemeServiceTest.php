@@ -117,6 +117,36 @@ class FrontendThemeServiceTest extends TestCase
         }
     }
 
+    public function test_latch_uses_the_reference_inspired_gaming_hero_not_old_terminal(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $homepage = file_get_contents($root . '/resources/views/store/frontend/latch/home.blade.php');
+        $header = file_get_contents($root . '/resources/views/store/frontend/parts/header.blade.php');
+        $presets = FrontendThemeService::presets();
+
+        $this->assertStringContainsString('nx-latch-landing-hero', $homepage);
+        $this->assertStringContainsString('parts.latch-game-selector', $homepage);
+        $this->assertStringNotContainsString('nx-latch-terminal', $homepage);
+        $this->assertStringContainsString('nx-latch-onebar', $header);
+        $this->assertSame('#A855F7', $presets['latch']['accent']);
+    }
+
+    public function test_dinonode_branding_uses_original_blue_style(): void
+    {
+        $presets = FrontendThemeService::presets();
+        $this->assertSame('#289BEE', $presets['dinonode']['accent']);
+        $this->assertSame('#131426', $presets['dinonode']['background']);
+    }
+
+    public function test_admin_thumbnails_render_actual_storefront_not_identical_mockups(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $admin = file_get_contents($root . '/resources/views/admin/settings/themes.blade.php');
+        $this->assertStringContainsString('nx-front-real-preview', $admin);
+        $this->assertStringContainsString('frontend_theme_preview', $admin);
+        $this->assertStringNotContainsString('class="nx-front-demo" aria-hidden="true"', $admin);
+    }
+
     public function test_invalid_theme_is_rejected_before_database_write(): void
     {
         $settings = $this->createMock(SettingsRepositoryInterface::class);
