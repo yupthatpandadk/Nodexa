@@ -32,13 +32,13 @@
 <link rel="stylesheet" href="{{ asset('css/nodexa-frontend-shells.css') }}?v=2">
 <link rel="stylesheet" href="{{ asset('css/nodexa-frontend-page-base.css') }}?v=2">
 @if($nodexaFrontendLayout === 'latch')
-<link rel="stylesheet" href="{{ asset('css/nodexa-frontend-latch.css') }}?v=2">
+<link rel="stylesheet" href="{{ asset('css/nodexa-frontend-latch.css') }}?v=3">
 @elseif($nodexaFrontendLayout === 'xlumia')
 <link rel="stylesheet" href="{{ asset('css/nodexa-frontend-xl.css') }}?v=2">
 @elseif($nodexaFrontendLayout === 'horizon')
 <link rel="stylesheet" href="{{ asset('css/nodexa-frontend-horizon.css') }}?v=2">
 @elseif($nodexaFrontendLayout === 'dinonode')
-<link rel="stylesheet" href="{{ asset('css/nodexa-frontend-dino.css') }}?v=2">
+<link rel="stylesheet" href="{{ asset('css/nodexa-frontend-dino.css') }}?v=3">
 @endif
 @endif
 @stack('styles')</head><body>
