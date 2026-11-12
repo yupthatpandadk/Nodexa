@@ -36,6 +36,9 @@ export default () => {
 
     const [eggs, setEggs] = useState<EggOption[]>([]);
     const [selected, setSelected] = useState<number>(currentEgg);
+    // The Egg from getServer() can be stale following a reinstall. Always
+    // compare against the live Egg ID returned by minecraft-eggs.
+    const [actualEggId, setActualEggId] = useState<number>(currentEgg);
     const [backupReady, setBackupReady] = useState(false);
     const [acknowledged, setAcknowledged] = useState(false);
     const [installationMode, setInstallationMode] = useState<'keep' | 'clean'>('keep');
@@ -55,10 +58,13 @@ export default () => {
             getServerResourceUsage(uuid).then((stats) => stats.status).catch(() => null),
         ]).then(([{ data }, power]) => {
             setEggs(data.eggs);
+            setActualEggId(data.current_egg_id);
             setBackupReady(data.has_recent_backup);
             setResourcePowerState(power);
             setResourceChecked(true);
             setSelected((previous) => {
+                // Never interpret the server's actual current Egg as a new Egg,
+                // even if the cached ServerContext still contains the old ID.
                 if (resetChoice || !data.eggs.some((egg) => egg.id === previous)) {
                     return data.current_egg_id;
                 }
@@ -73,14 +79,15 @@ export default () => {
         setAcknowledged(false);
         setInstallationMode('keep');
         setDeleteConfirmation('');
+        setActualEggId(currentEgg);
         setSelected(currentEgg);
         setResourceChecked(false);
         refresh(true);
     }, [uuid]);
 
-    const current = eggs.find((egg) => egg.id === currentEgg);
+    const current = eggs.find((egg) => egg.id === actualEggId);
     const target = eggs.find((egg) => egg.id === selected);
-    const chosenNewEgg = !!target && target.id !== currentEgg;
+    const chosenNewEgg = !!target && target.id !== actualEggId;
 
     // Prefer the socket's live status, otherwise use the latest resource API.
     // A null/unknown state must not silently count as "offline".
@@ -107,7 +114,7 @@ export default () => {
         }] : []),
     ];
     const missing = requirements.filter((requirement) => !requirement.ok);
-    const canChange = !loading && !pending && missing.length === 0;
+    const canChange = !loading && !pending && !error && missing.length === 0;
 
     const applyChange = () => {
         if (!canChange) return;
@@ -130,10 +137,24 @@ export default () => {
             setAcknowledged(false);
             setDeleteConfirmation('');
             setInstallationMode('keep');
+            // Refresh the actual Egg immediately, not only the broader
+            // ServerContext, to prevent another unsafe stale-Egg action.
+            refresh(true);
             getServer(uuid).catch(() => undefined);
         }).catch((err) => {
-            addFlash({ key: 'settings', type: 'error', message: httpErrorToHuman(err) });
-            refresh();
+            const status = err?.response?.status;
+            const reason = httpErrorToHuman(err);
+            addFlash({
+                key: 'settings',
+                type: 'error',
+                message: status >= 500
+                    ? 'Serverfejl under Egg-skift. Tryk ikke igen, før serverens aktuelle Egg og filer er kontrolleret. Kontakt support med fejlen fra Laravel-loggen.'
+                    : (reason || 'Egg-skift kunne ikke gennemføres. Kontroller serverstatus og prøv igen.'),
+            });
+            // The server's Egg may have changed even if an API response failed.
+            // Re-read current state and reset the choice before another attempt.
+            refresh(true);
+            getServer(uuid).catch(() => undefined);
         }).finally(() => setPending(false));
     };
 
