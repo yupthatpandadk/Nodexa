@@ -65,3 +65,60 @@
 .nx-dino-vps-content {background:#0b1b10}
 @media(max-width:1000px){.nx-dino-hero-grid,.nx-dino-vps-grid {grid-template-columns:1fr;gap:36px}.nx-dino-game-board {max-width:720px}.nx-dino-feature-strip>.container {grid-template-columns:1fr}.nx-dino-feature-strip .container>div {border-right:0;border-bottom:1px solid #3b6245}.nx-dino-feature-strip .container>div:last-child {border-bottom:0}.nx-dino-catalog-filters>.container {flex-wrap:wrap;padding-block:20px;gap:15px}}
 @media(max-width:700px){.nx-dino-hero {padding:63px 0}.nx-dino-hero-bottom {margin-top:25px}.nx-dino-title {display:block}.nx-dino-title>a {margin-top:15px}.nx-dino-start>.container {display:block}.nx-dino-start .nx-theme-primary {margin-top:15px}.nx-dino-catalog-head {display:block}.nx-dino-catalog-head>a {margin-top:20px}.nx-catalog-dino #nxThemeCatalog .nx-theme-plans {grid-template-columns:1fr}.nx-dino-vps-card {box-shadow:6px 6px 0 #102a17;min-height:190px}}
+
+
+
+/*
+ * DinoNode alignment: original DinoNode reference uses electric-blue,
+ * dark-indigo gaming surfaces. Preserve its game launcher/grid structure.
+ */
+html[data-nodexa-frontend-style="dinonode"] {
+  --bg:#111323;--surface:#181d30;--card:#1e2438;--card2:#29304a;
+  --line:#303b54;--line2:#414e6a;--text:#f1f4ff;--muted:#a5b1cc;
+  --blue:#289bee;--purple:#5f6bf2;--green:#6cddb6;
+}
+html[data-nodexa-frontend-style="dinonode"] body {background:#111323}
+html[data-nodexa-frontend-style="dinonode"] .nx-head-dino {background:#171b2d;border-color:#384965}
+html[data-nodexa-frontend-style="dinonode"] .nx-head-dino .nx-head-logo {background:linear-gradient(130deg,#178de1,#5a68ee);color:#fff}
+html[data-nodexa-frontend-style="dinonode"] .nx-head-dino .nx-head-actions .nx-head-panel {background:#289bee;color:#fff}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-games {background:#202940;border-color:#415171}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-games span {color:#80c5ff}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-games a {color:#c8d6ef}
+html[data-nodexa-frontend-style="dinonode"] .nx-home-dino,
+html[data-nodexa-frontend-style="dinonode"] .nx-catalog-dino,
+html[data-nodexa-frontend-style="dinonode"] .nx-vps-dino {background:#111323}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-hero {background:radial-gradient(ellipse at 79% 30%,#293c66,#171b2e 56%,#111323 100%);border-color:#43587c}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-banner {color:#abd9ff;background:#223854;border-color:#4778b0}
+html[data-nodexa-frontend-style="dinonode"] .nx-home-dino .nx-theme-primary,
+html[data-nodexa-frontend-style="dinonode"] .nx-catalog-dino .nx-theme-order,
+html[data-nodexa-frontend-style="dinonode"] .nx-vps-dino .nx-theme-order,
+html[data-nodexa-frontend-style="dinonode"] .nx-vps-dino .nx-theme-primary {background:#289bee;color:#fff!important}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-game-board {background:#1b263f;border-color:#52658c}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-board-head {border-color:#425677;color:#c2ddff}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-game-board>a {background:#23334e;border-color:#445b82}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-game-board>a:hover {border-color:#65b7ff}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-game-board small {color:#abbad4}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-game-board i {color:#89c7ff}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-hero-bottom span {border-color:#469ee9;color:#9dcdf2}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-feature-strip {background:#202b46;border-color:#445779}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-feature-strip .container>div {border-color:#405370}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-feature-strip b {color:#88c7fb}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-products {background:#161b2d}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-products .nx-theme-plan,
+html[data-nodexa-frontend-style="dinonode"] .nx-catalog-dino .nx-theme-plan,
+html[data-nodexa-frontend-style="dinonode"] .nx-vps-dino .nx-theme-plan {background:linear-gradient(155deg,#232d47,#1b2136);border-color:#3e5276}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-products .nx-theme-plan.is-featured {border-color:#53a5fa;box-shadow:0 0 0 1px #3b79ba}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-start {background:linear-gradient(110deg,#27385a,#1a233c);border-color:#475d80}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-start span {color:#9ecdfd}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-catalog-hero {background:linear-gradient(120deg,#25375b,#131929);border-color:#4e6689}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-catalog-filters {background:#22314c;border-color:#4d6485}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-catalog-filters .nx-theme-filters button {background:#2c3d5b;border-color:#4b678c;color:#e3edff}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-catalog-filters .nx-theme-filters button.is-active {background:#289bee;color:#fff}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-catalog-main {background:#111625}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-vps-head {background:radial-gradient(ellipse at top right,#2b416a,#111525 70%)}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-vps-card {background:linear-gradient(130deg,#28456c,#17243d);border-color:#5075a7;box-shadow:12px 12px 0 #121f35}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-vps-content {background:#151b2c}
+html[data-nodexa-frontend-style="dinonode"] .nx-footer-dino {background:#171c2e;border-color:#405477}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-footer-cta {background:linear-gradient(110deg,#2a3f63,#1b2743);border-color:#5877a4}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-footer-cta small {color:#b7d8ff}
+html[data-nodexa-frontend-style="dinonode"] .nx-dino-footer-cta .nx-theme-primary {background:#289bee;color:#fff!important}
