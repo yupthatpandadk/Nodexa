@@ -63,12 +63,12 @@ class FrontendThemeService
             ],
             'dinonode' => [
                 'name' => 'DinoNode-stil',
-                'description' => 'Selvstændigt gaming-layout med kategorinavigation, Minecraft/FiveM/VPS-vælger og store spilpakke-kort.',
-                'subtitle' => 'Gaming · grøn',
-                'accent' => '#7CDB7E',
-                'secondary' => '#C0E782',
-                'background' => '#08130E',
-                'surface' => '#15261C',
+                'description' => 'Gamingorienteret hostingdesign med spilnavigation, blå profil, spilvælger og forskellige pakkesektioner.',
+                'subtitle' => 'Gaming · blå',
+                'accent' => '#289BEE',
+                'secondary' => '#5F6BF2',
+                'background' => '#131426',
+                'surface' => '#1B2035',
             ],
         ];
     }
